@@ -19,7 +19,7 @@
           "name": "ls — List Directory",
           "rows": [
             ["ls", "Quick listing", "Names only, alphabetical"],
-            ["ls -la", "Most common: detailed + hidden", "Shows all files with permissions"],
+            ["ls -la", "Detailed + hidden files", "Shows all files with permissions, size, owner"],
             ["ls -lh", "Human-readable sizes", "4.0K, 1.2M, 3.5G"],
             ["ls -lS", "Find largest files", "Sorted by size descending"],
             ["ls -ltr", "Newest at bottom", "Reverse time sort"],
@@ -44,7 +44,7 @@
             ["mkdir projects", "Single directory", "Creates one folder"],
             ["mkdir -p a/b/c", "Nested directories", "Creates parent dirs automatically"],
             ["mkdir -p {src,dist,test}", "Project structure", "Brace expansion creates multiple subdirs"],
-            ["mkdir -m 700 .ssh", "SSH folder with perms", "700 = rwx only for owner"]
+            ["mkdir -p company/engineering/{backend,frontend} company/hr && touch company/README.md", "Real project structure", "Creates nested structure with file in one command"]
           ]
         },
         {
@@ -53,7 +53,8 @@
             ["rm file.txt", "Delete file", "Permanent, no Trash"],
             ["rm -r node_modules", "Delete folder recursively", "Removes folder and all contents"],
             ["rm -rf .git", "Force delete git history", "Dangerous, no confirmation"],
-            ["rm -i *.tmp", "Interactive delete", "Prompts before each deletion"]
+            ["rm -i *.tmp", "Interactive delete", "Prompts before each deletion"],
+            ["rm -ri ./folder", "Interactive recursive", "Asks before descending and deleting each item"]
           ]
         },
         {
@@ -73,6 +74,41 @@
             ["mv f.txt ~/Documents/", "Move to folder", "Moves file"],
             ["mv *.pdf ~/Documents/", "Move all PDFs", "Batch move by extension"],
             ["mv .env.example .env", "Activate env config", "Rename to actual config"]
+          ]
+        },
+        {
+          "name": "uname — System Information",
+          "rows": [
+            ["uname", "Print system name", "Shows OS kernel name (Linux)"],
+            ["uname -r", "Kernel release", "Shows kernel version number"],
+            ["uname -a", "All system info", "Kernel name, hostname, release, architecture"]
+          ]
+        },
+        {
+          "name": "Additional Utilities",
+          "rows": [
+            ["clear", "Clear terminal screen", "Clears all previous output"],
+            ["history", "Command history", "Shows all previously run commands"],
+            ["tree", "Display folder structure", "Shows directory tree visually (install: sudo apt install tree)"],
+            ["echo \"Hello\"", "Print text", "Outputs text to terminal"],
+            ["echo \"text\" >> file.txt", "Append to file", "Adds text to end of file"],
+            ["echo -e \"Line1\\nLine2\" >> file.txt", "Escape sequences", "-e enables \\n for new lines"]
+          ]
+        },
+        {
+          "name": "VIM Editor Reference",
+          "rows": [
+            ["vim filename", "Open file in Vim", "Creates/opens file with Vim editor"],
+            ["Esc", "Normal mode", "Default mode for commands"],
+            ["i", "Insert mode", "Type text"],
+            [":", "Command mode", "Enter commands"],
+            [":w", "Save file", "Write changes to disk"],
+            [":q", "Quit Vim", "Only if no changes made"],
+            [":wq", "Save and quit", "Write + quit combined"],
+            [":q!", "Force quit", "Quit without saving changes"],
+            ["ZZ", "Save and exit", "Same as :wq (faster)"],
+            ["u", "Undo", "Undo last change"],
+            ["Ctrl + r", "Redo", "Redo undone change"]
           ]
         }
       ]
@@ -95,16 +131,34 @@
             ["cat file.txt", "View file", "Prints entire file"],
             ["cat f1.txt f2.txt > combined", "Merge files", "Joins files into new file"],
             ["cat -n file.ts", "Line numbers", "Prefix each line"],
-            ["cat -E script.sh", "Show line endings", "Find CRLF vs LF"]
+            ["cat -E script.sh", "Show line endings", "Find CRLF vs LF"],
+            ["cat /etc/passwd", "View user database", "Shows all system users"],
+            ["cat /etc/group", "View groups", "Shows all system groups"],
+            ["cat /etc/hosts", "View host mappings", "Static hostname-to-IP mappings"]
           ]
         },
         {
           "name": "less — Scroll Through Files",
           "rows": [
             ["less large.log", "View large file", "Page-by-page, no full load"],
-            ["less +F /var/log/syslog", "Follow live log", "Like tail -f, Ctrl+C to stop"],
+            ["less +F /var/log/syslog", "Follow live log", "Like tail -f, Ctrl+C to stop, Shift+F resume"],
             ["less -N file.txt", "Line numbers", "Shows line count"],
-            ["less -S long.txt", "No line wrap", "Scroll horizontally"]
+            ["less -S long.txt", "No line wrap", "Scroll horizontally"],
+            ["less -p error log.txt", "Search on open", "Jumps to first occurrence of pattern"],
+            ["[Space] in less", "Next page", "Move forward one screen"],
+            ["[/]word in less", "Search forward", "Search for word, n=next, N=prev"],
+            ["[b] in less", "Back page", "Move backward one screen"],
+            ["[q] in less", "Quit", "Exit less"]
+          ]
+        },
+        {
+          "name": "more — Scroll (Basic)",
+          "rows": [
+            ["more file.txt", "View file", "Page-by-page, basic pager"],
+            ["[Space] in more", "Next page", "Move forward one screen"],
+            ["[Enter] in more", "Next line", "Scroll one line at a time"],
+            ["[/]word in more", "Search", "Search within file"],
+            ["[q] in more", "Quit", "Exit more"]
           ]
         },
         {
@@ -113,7 +167,8 @@
             ["head -n 20 file.txt", "First 20 lines", "head = start of file"],
             ["tail -f app.log", "Watch logs live", "tail -f = follow mode"],
             ["tail -f access.log | grep 404", "Filter live logs", "Only 404 errors in real-time"],
-            ["tail -n +20 file.txt", "From line 20 onward", "Skip first 19 lines"]
+            ["tail -n +20 file.txt", "From line 20 onward", "Skip first 19 lines"],
+            ["tail -f -n 100 log.txt", "Show last 100 then follow", "Recent context + live updates"]
           ]
         },
         {
@@ -123,8 +178,18 @@
             ["find / -size +500M 2>/dev/null", "Files >500MB", "Find space hogs, suppress errors"],
             ["find . -mtime -1", "Modified last 24h", "Recent changes"],
             ["find . -name \"*.tmp\" -delete", "Find and delete", "Safe bulk delete"],
-            ["find . \"*.py\" -exec chmod 644 {} \\;", "Find and run command", "Fix permissions on Python files"],
+            ["find . -name \"*.py\" -exec chmod 644 {} \\;", "Find and run command", "Fix permissions on Python files"],
             ["find . -type f | wc -l", "Count total files", "Pipe to wc for line count"]
+          ]
+        },
+        {
+          "name": "echo — Display & Append",
+          "rows": [
+            ["echo \"Hello World\"", "Print text", "Displays text on screen"],
+            ["echo $HOME", "Print variable", "Shows value of environment variable"],
+            ["echo \"new line\" >> file.txt", "Append to file", "Adds one line to end of file"],
+            ["echo -e \"line1\\nline2\\nline3\" >> file.txt", "Multi-line append", "-e interprets \\n as newline"],
+            ["echo \"Error\" >&2", "Print to stderr", "Sends output to error stream"]
           ]
         }
       ]
@@ -133,34 +198,141 @@
       "title": "Stage 3: Permissions & Users",
       "commands": [
         {
-          "name": "chmod — Permissions",
+          "name": "chmod — Numeric Permissions",
           "rows": [
-            ["chmod +x script.sh", "Make executable", "Add execute for all"],
-            ["chmod 755 script.sh", "rwxr-xr-x", "Owner=rwx, group+others=rx"],
+            ["chmod 755 script.sh", "rwxr-xr-x", "Owner=rwx, group+others=rx; standard exe"],
+            ["chmod 644 file.txt", "rw-r--r--", "Owner=rw, group+others=r; standard file"],
             ["chmod 600 ~/.ssh/id_rsa", "SSH private key", "Required by SSH for security"],
-            ["chmod -R 755 web/", "Recursive set", "Sets on dir + all contents"],
-            ["chmod g+s shared_dir", "SGID bit", "New files inherit group"]
+            ["chmod 700 ~/.ssh", "SSH directory", "Only owner can access"],
+            ["chmod 400 key.pem", "AWS EC2 key", "Read-only for owner (AWS requirement)"],
+            ["chmod 777 uploads/", "Writable upload dir", "All users can read/write (use sparingly)"],
+            ["Permission values: r=4, w=2, x=1", "Numeric reference", "7=rwx, 6=rw-, 5=r-x, 4=r--, 0=---"]
           ]
         },
         {
-          "name": "chown — Change Owner",
+          "name": "chmod — Symbolic Permissions",
+          "rows": [
+            ["chmod u+x script.sh", "Add execute for user", "u=user, g=group, o=others, a=all"],
+            ["chmod g-w file.txt", "Remove write from group", "- = remove permission"],
+            ["chmod o=r new.txt", "Set exact for others", "= = set exactly this permission"],
+            ["chmod a+rx folder/", "Add read+execute for all", "a applies to everyone"],
+            ["chmod -R 755 web/", "Recursive set", "Sets on dir + all contents"]
+          ]
+        },
+        {
+          "name": "chown — Change Owner/Group",
           "rows": [
             ["chown john file.txt", "Change owner", "Sets john as owner"],
             ["chown john:dev file.txt", "Owner + group", "Owner=john, group=dev"],
-            ["chown :www-data /var/www", "Group only", "Web server group"],
-            ["chown -R john:john /home/john", "Recursive", "Fix entire home dir"]
+            ["chown :www-data /var/www", "Group only", "Changes group only, owner unchanged"],
+            ["chown -R john:john /home/john", "Recursive", "Fix entire home dir ownership"],
+            ["chgrp dev file.txt", "Change group only", "Alternative to chown :group"],
+            ["chown --from=root john file.txt", "Conditional change", "Only if current owner is root"]
           ]
         },
         {
-          "name": "sudo & User Management",
+          "name": "Special Permissions (SUID, SGID, Sticky)",
           "rows": [
-            ["sudo apt install nginx", "Install as root", "Elevates privileges"],
-            ["sudo !!", "Retry with sudo", "Repeats last command with sudo"],
-            ["sudo -u postgres psql", "Run as user", "Execute as postgres user"],
-            ["sudo visudo", "Edit sudoers", "Safe editor with syntax check"],
-            ["adduser sam", "Create user", "With home + prompt"],
-            ["usermod -aG docker $USER", "Add to group", "Docker without sudo"],
-            ["passwd", "Change password", "Interactive password change"]
+            ["chmod u+s file", "SUID — Set User ID", "Runs as file owner, not the user executing"],
+            ["chmod g+s folder", "SGID — Set Group ID", "New files in folder inherit folder's group"],
+            ["chmod +t /tmp", "Sticky bit", "Only file owners can delete own files"],
+            ["ls -ld myfolder (shows 's' in group execute: rws)", "Check SGID", "s instead of x means SGID is active"]
+          ]
+        },
+        {
+          "name": "id / groups / getent — Identity",
+          "rows": [
+            ["whoami", "Current username", "Prints your username"],
+            ["id", "Full identity", "UID, GID, all groups"],
+            ["id -u", "Numeric UID", "User ID number"],
+            ["id -g", "Numeric GID", "Primary group ID number"],
+            ["groups", "Your groups", "Lists all groups you belong to"],
+            ["groups john", "Another user's groups", "Groups for user john"],
+            ["getent passwd john", "User DB lookup", "Fetch user entry from /etc/passwd"],
+            ["getent group dev", "Group DB lookup", "Fetch group entry from /etc/group"],
+            ["getent group sudo", "Find sudo group members", "Lists all users in sudo group"]
+          ]
+        },
+        {
+          "name": "Key System Files",
+          "rows": [
+            ["cat /etc/passwd", "User accounts", "User account info (username:x:UID:GID:...)"],
+            ["cat /etc/shadow", "Encrypted passwords", "Encrypted password hashes (root only)"],
+            ["cat /etc/group", "Group info", "Group names and members"],
+            ["cat /etc/gshadow", "Secure group info", "Group passwords (root only)"],
+            ["ls /etc/skel/", "Home template", "Default files for new user home dirs"],
+            ["cat /etc/login.defs", "User settings", "Default UID ranges, password aging, etc."],
+            ["cut -d: -f1 /etc/passwd", "List usernames only", "Extracts first column (username)"],
+            ["cut -d: -f1 /etc/group", "List group names only", "Extracts first column (group name)"]
+          ]
+        },
+        {
+          "name": "useradd — Create Users (Low-level)",
+          "rows": [
+            ["sudo useradd -m -s /bin/bash dev1", "Create normal user", "-m=create home, -s=set shell"],
+            ["sudo useradd -r -s /sbin/nologin nginxuser", "Create system user", "-r=system user (UID<1000), no login"],
+            ["sudo useradd -m -d /custom/home -s /bin/bash -u 1500 -g devgroup -G sudo,docker -c \"John Dev\" dev2", "Full options", "-d=custom home, -u=UID, -g=primary group, -G=secondary, -c=comment"],
+            ["useradd options: -m, -d, -s, -u, -g, -G, -c, -e, -r, -M", "Option reference", " -M = do NOT create home, -e = expiry date YYYY-MM-DD"]
+          ]
+        },
+        {
+          "name": "adduser — Create Users (High-level)",
+          "rows": [
+            ["sudo adduser dev2", "Create user interactively", "Creates home, sets shell, asks password, full name"],
+            ["useradd vs adduser", "Comparison", "useradd=low-level/scriptable, adduser=high-level/interactive"]
+          ]
+        },
+        {
+          "name": "passwd — Password Management",
+          "rows": [
+            ["passwd", "Change your password", "Interactive password change"],
+            ["sudo passwd dev1", "Set/reset user password", "Admin can set any user's password"],
+            ["sudo passwd -l dev1", "Lock user", "Prevents login (puts ! in shadow)"],
+            ["sudo passwd -u dev1", "Unlock user", "Re-enables login"],
+            ["sudo passwd -e dev1", "Force password change", "Expires password, user must change on next login"],
+            ["sudo passwd -d dev1", "Delete password", "Removes password (account without password)"],
+            ["sudo passwd -S dev1", "Check status", "Shows if user is locked/unlocked, last change"]
+          ]
+        },
+        {
+          "name": "usermod — Modify Users",
+          "rows": [
+            ["sudo usermod -l newname oldname", "Change username", "Renames user"],
+            ["sudo usermod -d /home/newdir -m dev1", "Change home dir", "-m moves existing files"],
+            ["sudo usermod -s /bin/zsh dev1", "Change shell", "Changes login shell"],
+            ["sudo usermod -aG docker dev1", "Add to group", "Always use -aG (append), never -G alone"],
+            ["sudo usermod -g devgroup dev1", "Change primary group", "Changes default group"],
+            ["sudo usermod -e 2026-12-31 dev1", "Set expiry", "Account expires on this date"],
+            ["sudo usermod -L dev1", "Lock account", "Alternative to passwd -l"],
+            ["sudo usermod -U dev1", "Unlock account", "Re-enables account"]
+          ]
+        },
+        {
+          "name": "chage — Password Aging",
+          "rows": [
+            ["sudo chage -l dev1", "View aging info", "Shows last change, expiry, warn days"],
+            ["sudo chage -M 90 dev1", "Set max days", "Password must change every 90 days"],
+            ["sudo chage -m 7 dev1", "Set min days", "Must wait 7 days between changes"],
+            ["sudo chage -W 14 dev1", "Warning days", "Warns 14 days before expiry"],
+            ["sudo chage -E 2026-12-31 dev1", "Account expiry", "Account disabled after this date"],
+            ["sudo chage -E -1 dev1", "Remove expiry", "No account expiration"],
+            ["sudo chage -E -1 -M -1 dev1", "Disable all expiry", "Fully disable password and account expiration"]
+          ]
+        },
+        {
+          "name": "userdel — Delete Users",
+          "rows": [
+            ["sudo userdel dev1", "Delete user only", "Removes user entry, leaves home dir"],
+            ["sudo userdel -r dev1", "Delete user + home", "Removes user, home dir, and mail spool"]
+          ]
+        },
+        {
+          "name": "System Users vs Normal Users",
+          "rows": [
+            ["System user: UID < 1000, no login, /sbin/nologin", "System user features", "Used for services: nginx, mysql, postgres"],
+            ["Normal user: UID >= 1000, has home, can login", "Normal user features", "Used for human users"],
+            ["ps aux | grep nginx (shows www-data user)", "Check service user", "nginx runs as www-data, not root"],
+            ["System users improve security", "Security principle", "Services run with minimum privileges"]
           ]
         }
       ]
@@ -169,19 +341,87 @@
       "title": "Stage 4: Package Management (APT)",
       "commands": [
         {
-          "name": "apt — Package Manager",
+          "name": "apt update & upgrade",
           "rows": [
             ["sudo apt update", "Refresh packages", "Always do this first"],
             ["sudo apt upgrade -y", "Upgrade all", "-y skips confirmation"],
-            ["sudo apt install build-essential", "Install dev tools", "gcc, g++, make"],
-            ["sudo apt install python3-pip", "Install Python", "Python dev environment"],
-            ["apt search \"web server\"", "Search packages", "Find by keyword"],
-            ["apt show nginx", "Package info", "Version, deps, description"],
-            ["sudo apt purge apache2", "Remove completely", "Removes config files too"],
-            ["sudo apt autoremove", "Clean orphans", "Removes unused deps"],
-            ["dpkg -l | grep nginx", "Check installed", "Is package installed?"],
-            ["apt-mark hold nginx", "Hold version", "Prevent accidental upgrade"]
+            ["sudo apt full-upgrade", "Aggressive upgrade", "May remove/add packages as needed"],
+            ["sudo apt upgrade nginx", "Upgrade specific", "Only upgrades nginx"],
+            ["sudo apt upgrade --dry-run", "Simulate upgrade", "Shows what WOULD be upgraded"],
+            ["sudo apt update && sudo apt upgrade -y", "Common combo", "Update then upgrade in one line"]
           ]
+        },
+        {
+          "name": "apt install — Install Packages",
+          "rows": [
+            ["sudo apt install nginx", "Install single", "Installs nginx and dependencies"],
+            ["sudo apt install nginx curl git vim -y", "Install multiple", "Multiple packages at once"],
+            ["sudo apt install nginx=1.18.0", "Specific version", "Installs exact version"],
+            ["sudo apt install ./package.deb", "Local .deb file", "Installs a downloaded .deb"],
+            ["sudo apt install -f", "Fix broken deps", "Fixes broken dependencies"],
+            ["sudo apt install --no-upgrade nginx", "Only if not installed", "Skips if already present"],
+            ["sudo apt install --reinstall nginx", "Reinstall", "Fixes corrupted installation"],
+            ["sudo apt install --download-only nginx", "Download only", "Downloads but does not install"]
+          ]
+        },
+        {
+          "name": "apt remove/purge — Remove Packages",
+          "rows": [
+            ["sudo apt remove nginx", "Remove (keep config)", "Uninstalls but leaves /etc/nginx"],
+            ["sudo apt purge nginx", "Remove completely", "Uninstalls + deletes all config files"],
+            ["sudo apt autoremove", "Remove orphans", "Removes unused dependencies"],
+            ["sudo apt autoremove --purge", "Remove orphans + configs", "Also removes config of orphaned packages"]
+          ]
+        },
+        {
+          "name": "apt search & inspect",
+          "rows": [
+            ["apt search \"web server\"", "Search packages", "Find by keyword in name/description"],
+            ["apt show nginx", "Package details", "Version, dependencies, description, size"],
+            ["apt list --installed", "Installed packages", "All packages on your system"],
+            ["apt list --upgradable", "Upgradable packages", "What can be upgraded"],
+            ["apt depends nginx", "Dependencies", "What nginx depends on"],
+            ["apt rdepends nginx", "Reverse depends", "What packages depend on nginx"],
+            ["which nginx", "Binary location", "Where the executable is installed"],
+            ["dpkg -l | grep nginx", "Check if installed", "Is this package installed?"],
+            ["dpkg -L nginx", "List package files", "All files installed by the package"],
+            ["dpkg -S /usr/sbin/nginx", "Which package owns file?", "Find package from file path"],
+            ["dpkg -i package.deb", "Install .deb (low-level)", "Direct .deb installer"],
+            ["dpkg --configure -a", "Fix interrupted install", "Configures any unpacked but unconfigured packages"]
+          ]
+        },
+        {
+          "name": "Repository Management",
+          "rows": [
+            ["cat /etc/apt/sources.list", "Main repos", "Primary package repository list"],
+            ["ls /etc/apt/sources.list.d/", "Additional repos", "Third-party repo configs"],
+            ["sudo add-apt-repository ppa:ondrej/php", "Add PPA", "Personal Package Archive (PHP example)"],
+            ["sudo add-apt-repository --remove ppa:user/repo", "Remove PPA", "Removes a PPA"],
+            ["echo \"deb http://repo.url focal main\" | sudo tee /etc/apt/sources.list.d/custom.list", "Add repo manually", "Manual repository addition"],
+            ["curl -fsSL https://repo.url/key.gpg | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/key.gpg", "Add GPG key", "Trust the repository's signing key"],
+            ["sudo apt update (after adding repos)", "Refresh after adding", "Always update after repo changes"]
+          ]
+        },
+        {
+          "name": "APT Cache Management",
+          "rows": [
+            ["sudo apt clean", "Clear all cache", "Deletes all downloaded .deb files"],
+            ["sudo apt autoclean", "Clear outdated", "Deletes only outdated .deb files"],
+            ["du -sh /var/cache/apt/", "Check cache size", "How much space apt cache uses"]
+          ]
+        },
+        {
+          "name": "apt-mark — Hold/Unhold",
+          "rows": [
+            ["apt-mark hold nginx", "Prevent upgrade", "Holds package at current version"],
+            ["apt-mark unhold nginx", "Allow upgrade", "Removes hold"],
+            ["apt-mark showhold", "Show held packages", "Lists all held packages"]
+          ]
+        },
+        {
+          "name": "APT Fresh Setup Workflow",
+          "type": "codeblock",
+          "code": "# Fresh system setup\nsudo apt update                         # 1. Sync repos\nsudo apt upgrade -y                     # 2. Upgrade existing packages\nsudo apt install nginx curl git -y      # 3. Install what you need\napt show nginx                          # 4. Verify package details\ndpkg -L nginx                           # 5. See where files were installed\nsudo systemctl start nginx              # 6. Start the service\n\n# Later - clean uninstall\nsudo apt purge nginx -y\nsudo apt autoremove -y\nsudo apt clean"
         }
       ]
     },
@@ -189,42 +429,104 @@
       "title": "Stage 5: Process Management",
       "commands": [
         {
-          "name": "ps — Process Status",
+          "name": "ps — Process Status (Full)",
           "rows": [
             ["ps aux", "All processes", "Every process with user, CPU%, MEM%"],
             ["ps aux | grep node", "Filter processes", "Find Node.js processes"],
             ["ps aux --sort=-%mem | head -5", "Top 5 memory", "Find memory hogs"],
-            ["ps --forest -eo pid,cmd", "Process tree", "Shows parent-child"]
+            ["ps aux --sort=-%cpu | head -5", "Top 5 CPU", "Find CPU-intensive processes"],
+            ["ps -ef", "Full format with PPID", "Parent PID included"],
+            ["ps -u john", "By user", "Processes owned by john"],
+            ["ps -U dev1", "By user (BSD style)", "Alternative syntax for user filter"],
+            ["ps -p 1234", "Specific PID", "Show only PID 1234"],
+            ["ps --ppid 1234", "Child processes", "Children of PID 1234"],
+            ["ps -eo pid,ppid,cmd,%cpu,%mem --sort=-%mem", "Custom columns", "Choose which columns to show"],
+            ["ps --forest -eo pid,cmd", "Process tree", "Shows parent-child as ASCII tree"],
+            ["pstree", "Visual tree", "Shows process tree visually"],
+            ["pstree -p", "Tree with PIDs", "Includes PID numbers in tree"]
           ]
         },
         {
-          "name": "kill — Terminate",
+          "name": "top — Interactive Monitor",
           "rows": [
-            ["kill 1234", "Graceful kill", "SIGTERM (asks nicely)"],
-            ["kill -9 1234", "Force kill", "SIGKILL (immediate)"],
-            ["killall node", "Kill by name", "All Node.js instances"],
-            ["pkill -f \"node server.js\"", "Kill by command", "Matches full command line"],
-            ["kill -STOP 1234", "Pause process", "Freezes it"]
+            ["top", "Launch top", "q=quit, P=sort CPU, M=sort memory, k=kill, u=filter user, 1=cores"],
+            ["top -u john", "Filter by user", "Only john's processes"],
+            ["top -p 1234,5678", "Specific PIDs", "Monitor only these processes"],
+            ["top -n 5", "Limited iterations", "Runs 5 times then exits"],
+            ["top -b -n 1 > snapshot.txt", "Batch mode to file", "One-shot save for scripting"],
+            ["top -d 2", "Refresh interval", "Refresh every 2 seconds"],
+            ["top fields: us=user cpu, sy=system cpu, id=idle, wa=iowait", "Understanding CPU stats", "load average = 1, 5, 15 min averages"]
           ]
         },
         {
-          "name": "systemctl — Services",
+          "name": "htop — Enhanced Monitor",
           "rows": [
-            ["systemctl status ssh", "Check service", "Running or not?"],
-            ["systemctl start nginx", "Start", "Starts nginx now"],
-            ["systemctl enable --now docker", "Enable + start", "Auto-start + start now"],
-            ["systemctl reload nginx", "Reload config", "No downtime reload"],
+            ["htop", "Launch htop", "Colorful, mouse-friendly, scrollable"],
+            ["htop -u username", "Filter by user", "Only processes for given user"],
+            ["htop -p 1234,5678", "Specific PIDs", "Monitor specific PIDs"],
+            ["htop -d 10", "Delay (x 0.1s)", "Refresh every 1.0 second"]
+          ]
+        },
+        {
+          "name": "kill / killall / pkill — Terminate",
+          "rows": [
+            ["kill 1234", "Graceful (SIGTERM)", "SIGTERM (15) - asks process to stop"],
+            ["kill -9 1234", "Force (SIGKILL)", "SIGKILL - immediate, cannot be ignored"],
+            ["kill -15 1234", "Explicit SIGTERM", "Same as plain kill"],
+            ["kill -1 1234", "SIGHUP (reload)", "Reload config, no restart"],
+            ["kill -2 1234", "SIGINT (Ctrl+C)", "Interrupt, same as pressing Ctrl+C"],
+            ["kill -STOP 1234", "Pause process", "Freezes/suspends the process"],
+            ["kill -CONT 1234", "Resume paused", "Unfreezes stopped process"],
+            ["kill -l", "List all signals", "Shows all available signal names"],
+            ["killall node", "Kill by name", "All Node.js processes"],
+            ["killall -9 python3", "Force kill by name", "All Python processes forced"],
+            ["pkill -f \"node server.js\"", "Kill by full command", "Matches entire command line"],
+            ["pkill -u username", "Kill all by user", "All processes of a user"],
+            ["pidof firefox", "Get PID by name", "Returns PID number of firefox"],
+            ["pgrep -l fire", "Search process by pattern", "Lists PIDs + names matching 'fire'"]
+          ]
+        },
+        {
+          "name": "Background Jobs",
+          "rows": [
+            ["sleep 100 &", "Run directly in background", "& at end sends process to background"],
+            ["nohup python train.py &", "Survive terminal exit", "Keeps running after you close terminal"],
+            ["nohup python server.py > server.log 2>&1 &", "Server with logs", "Both stdout + stderr to file"],
+            ["jobs", "List background jobs", "Shows jobs with IDs like [1]"],
+            ["fg %1", "Bring to foreground", "Resume job 1 in foreground"],
+            ["bg %1", "Resume in background", "Continues stopped job in background"],
+            ["disown %1", "Remove from shell", "Job survives terminal exit"]
+          ]
+        },
+        {
+          "name": "journalctl — System Logs",
+          "rows": [
+            ["journalctl -xe", "Recent system log", "x=extra details, e=jump to end"],
+            ["journalctl -u nginx", "Service logs", "Only nginx log entries"],
             ["journalctl -u nginx -f", "Follow service logs", "Live log for nginx"],
-            ["journalctl -p err -b", "Errors only", "Errors from current boot"]
+            ["journalctl -p err -b", "Errors current boot", "Errors from this boot"],
+            ["journalctl -p err -b -1", "Errors previous boot", "Errors from last boot"],
+            ["journalctl -k", "Kernel messages", "Only kernel logs"],
+            ["journalctl --disk-usage", "Log size", "How much space logs use"],
+            ["sudo journalctl --vacuum-size=100M", "Trim logs", "Limit logs to 100MB"],
+            ["journalctl -u nginx --since \"1 hour ago\"", "Time filter", "Last 60 minutes of logs"]
           ]
         },
         {
-          "name": "nohup — Background Jobs",
+          "name": "NGINX — Web Server Setup",
           "rows": [
-            ["nohup python train.py &", "Long task survive exit", "Continues after closing terminal"],
-            ["nohup python server.py > server.log 2>&1 &", "Server with log", "Both stdout + stderr to file"],
-            ["jobs", "List background", "Shows background jobs"],
-            ["fg %1", "Bring to front", "Resume job 1 in foreground"]
+            ["sudo apt install nginx -y", "Install NGINX", "Installs web server"],
+            ["systemctl status nginx", "Check running", "Active/inactive status"],
+            ["sudo systemctl start nginx", "Start", "Starts nginx"],
+            ["sudo systemctl restart nginx", "Restart", "Stop then start"],
+            ["sudo systemctl reload nginx", "Reload config", "No-downtime reload"],
+            ["sudo systemctl enable nginx", "Auto-start", "Starts on boot"],
+            ["sudo nginx -t", "Test config", "Validates nginx config files"],
+            ["sudo ss -tulnp | grep 80", "Check port 80", "Verify nginx is listening"],
+            ["tail -f /var/log/nginx/access.log", "Access logs", "Watch HTTP requests live"],
+            ["tail -f /var/log/nginx/error.log", "Error logs", "Watch error log live"],
+            ["NGINX dirs: /etc/nginx/, /etc/nginx/sites-available/, /etc/nginx/sites-enabled/, /var/www/html/, /var/log/nginx/", "Key directories", "Config, sites, web root, logs"],
+            ["sudo ln -s /etc/nginx/sites-available/mysite /etc/nginx/sites-enabled/", "Enable site", "Create symlink to enable a site"]
           ]
         }
       ]
@@ -233,29 +535,167 @@
       "title": "Stage 6: Networking",
       "commands": [
         {
-          "name": "ip / ping / curl",
+          "name": "ip — Modern Network Tool",
           "rows": [
-            ["ip a", "Show IPs", "All interfaces + addresses"],
-            ["ip route", "Routing table", "Default gateway"],
-            ["ping -c 4 google.com", "Test connectivity", "4 pings then stop"],
-            ["curl -I https://example.com", "HTTP headers", "Status code, content-type"],
-            ["curl -X POST -H \"Content-Type: application/json\" -d '{\"name\":\"John\"}' https://api.example.com/users", "POST JSON API", "Send JSON data"],
-            ["curl -H 'Authorization: Bearer token' https://api.example.com/me", "API with token", "Bearer auth header"],
-            ["curl -O https://example.com/file.zip", "Download file", "Keeps remote filename"],
-            ["curl -L https://bit.ly/short", "Follow redirects", "Follows 3xx redirects"],
-            ["wget -c https://example.com/large.iso", "Resume download", "-c = continue"],
-            ["wget --limit-rate=200k https://example.com/file.zip", "Limit speed", "200KB/s polite download"]
+            ["ip a", "All IPs and interfaces", "Shows all network interfaces + IPs"],
+            ["ip -br a", "Brief output", "One line per interface, clean"],
+            ["ip -4 a", "IPv4 only", "Only IPv4 addresses"],
+            ["ip -6 a", "IPv6 only", "Only IPv6 addresses"],
+            ["ip link show eth0", "Interface status", "UP/DOWN, MAC address"],
+            ["ip link set eth0 up/down", "Enable/disable", "Bring interface online/offline"],
+            ["ip route", "Routing table", "Default gateway and routes"],
+            ["ip route get 8.8.8.8", "Test routing", "Which interface for 8.8.8.8?"],
+            ["ip neigh", "ARP cache", "Neighbor/MAC address table"],
+            ["ip -s link", "Statistics", "Packets, errors, drops per interface"]
           ]
         },
         {
-          "name": "ss / ufw / dig",
+          "name": "ifconfig — Legacy Network Tool",
           "rows": [
-            ["ss -tuln", "Listening ports", "TCP/UDP listening"],
-            ["ss -tulnp", "With process PID", "What app owns each port?"],
-            ["ufw allow 22/tcp", "Allow SSH", "Open SSH port"],
-            ["ufw allow from 192.168.1.0/24 to any port 22", "SSH from LAN only", "Restrict SSH source"],
-            ["dig +short google.com", "Quick DNS", "Just the IP"],
-            ["dig MX gmail.com", "Mail records", "MX record lookup"]
+            ["sudo ifconfig", "Show active interfaces", "Legacy tool, may need: sudo apt install net-tools"],
+            ["ifconfig eth0 up/down", "Enable/disable", "Bring interface up or down"],
+            ["ifconfig eth0 192.168.1.50 netmask 255.255.255.0", "Set IP temporarily", "Temporary IP assignment (lost on reboot)"],
+            ["ip vs ifconfig: ip addr = ifconfig, ip link set = ifconfig up/down, ip route = route -n, ip neigh = arp -n", "Equivalents table", "ip is modern, ifconfig is deprecated"]
+          ]
+        },
+        {
+          "name": "ping — Test Connectivity",
+          "rows": [
+            ["ping google.com", "Continuous test", "Ctrl+C to stop"],
+            ["ping -c 4 google.com", "4 packets only", "Stops automatically"],
+            ["ping -c 4 -i 0.5 google.com", "Fast interval", "0.5s between pings"],
+            ["ping -s 1400 google.com", "Packet size", "Set custom packet size (bytes)"],
+            ["ping -W 2 google.com", "Timeout per reply", "2s timeout for each reply"],
+            ["ping -q -c 4 google.com", "Quiet mode", "Only summary, good for scripts"],
+            ["ping -f google.com", "Flood ping (root)", "Stress test, sends fast as possible"],
+            ["Understanding output: icmp_seq, ttl, time, packet loss%", "Reading ping", "time=ms latency, 0% loss = good connection"]
+          ]
+        },
+        {
+          "name": "curl — Full HTTP Client",
+          "rows": [
+            ["curl https://example.com", "GET request", "Fetches HTML, prints to terminal"],
+            ["curl -o page.html https://example.com", "Save to file", "Downloads with custom filename"],
+            ["curl -O https://example.com/file.zip", "Save remote filename", "Keeps original filename"],
+            ["curl -L https://example.com", "Follow redirects", "Follows HTTP 3xx redirects"],
+            ["curl -I https://example.com", "Headers only", "Shows HTTP headers, no body"],
+            ["curl -v https://example.com", "Verbose debug", "Shows SSL handshake, request/response"],
+            ["curl -X POST -d \"name=John&age=30\" https://api.example.com", "POST form data", "Sends form-encoded POST request"],
+            ["curl -X POST -H \"Content-Type: application/json\" -d '{\"name\":\"John\"}' https://api.example.com", "POST JSON", "Sends JSON POST request"],
+            ["curl -u username:password https://example.com", "Basic auth", "HTTP Basic Authentication"],
+            ["curl -H \"Authorization: Bearer TOKEN\" https://api.com", "Bearer token", "API authentication"],
+            ["curl -A \"Mozilla/5.0\" https://example.com", "Custom User-Agent", "Spoof browser identity"],
+            ["curl --max-time 10 https://example.com", "Timeout", "Cancel after 10 seconds"],
+            ["curl -k https://self-signed.local", "Skip SSL verify", "For testing, ignores SSL errors"],
+            ["curl -C - -O https://example.com/large.zip", "Resume download", "Continues interrupted download"],
+            ["curl ifconfig.me", "Check public IP", "Shows your public IP address"],
+            ["curl icanhazip.com", "Check public IP", "Alternative public IP service"],
+            ["curl -s https://api.github.com/users/torvalds | python3 -m json.tool", "Pretty-print JSON", "Pipes API response to JSON formatter"]
+          ]
+        },
+        {
+          "name": "wget — Download Tool",
+          "rows": [
+            ["wget https://example.com/file.zip", "Basic download", "Downloads with progress bar"],
+            ["wget -O myfile.zip https://example.com/file.zip", "Custom name", "Save with different name"],
+            ["wget -c https://example.com/large.zip", "Resume download", "-c = continue interrupted download"],
+            ["wget -b https://example.com/large.zip", "Background", "Downloads in background"],
+            ["wget -q https://example.com/file.zip", "Quiet mode", "No output (for scripts)"],
+            ["wget --limit-rate=500k https://example.com/file.zip", "Limit speed", "500KB/s, polite to servers"],
+            ["wget -P /tmp/ https://example.com/file.zip", "Save to directory", "Specify target directory"],
+            ["wget -i urls.txt", "Batch download", "Download all URLs from a file"],
+            ["wget --mirror https://example.com", "Mirror website", "Download entire site"],
+            ["wget -r -np https://example.com/files/", "Recursive", "Download files, no parent dirs"],
+            ["wget -t 3 https://example.com/file.zip", "Retry count", "Retry 3 times on failure"],
+            ["curl vs wget: curl=APIs/POST, wget=downloads/resume", "When to use which", "curl for API, wget for reliable downloads"]
+          ]
+        },
+        {
+          "name": "ss — Socket Statistics",
+          "rows": [
+            ["ss -tulpn", "All listening ports + PIDs", "Most common usage"],
+            ["ss -an", "All sockets, numeric", "Shows every connection"],
+            ["ss -t", "TCP only", "Only TCP connections"],
+            ["ss -u", "UDP only", "Only UDP connections"],
+            ["ss -l", "Listening only", "Only listening sockets"],
+            ["ss -s", "Summary statistics", "Total sockets by state"],
+            ["ss -4", "IPv4 only", "Only IPv4 sockets"],
+            ["ss -6", "IPv6 only", "Only IPv6 sockets"],
+            ["ss -tulpn | grep :80", "Check port 80", "Is anything on port 80?"],
+            ["ss state established", "Established connections", "Active connections only"],
+            ["ss state time-wait", "TIME-WAIT connections", "Sockets waiting to close"],
+            ["ss dst 192.168.1.1", "Filter by destination", "Connections to specific host"],
+            ["ss sport = :22", "Filter source port", "Filter by source port 22"]
+          ]
+        },
+        {
+          "name": "netstat — Legacy Socket Stats",
+          "rows": [
+            ["netstat -tulpn", "All listening ports", "Same as ss -tulpn, install: sudo apt install net-tools"],
+            ["netstat -an", "All connections", "Numeric addresses"],
+            ["netstat -s", "Protocol statistics", "Summary by protocol"],
+            ["netstat -r", "Routing table", "Same as ip route"],
+            ["netstat -i", "Interface stats", "Packets in/out per interface"],
+            ["netstat -c", "Continuous refresh", "Updates every second"]
+          ]
+        },
+        {
+          "name": "Common Port Numbers",
+          "rows": [
+            ["22", "SSH", "Secure Shell"],
+            ["25", "SMTP", "Email sending"],
+            ["53", "DNS", "Domain Name System"],
+            ["80", "HTTP", "Web (unencrypted)"],
+            ["443", "HTTPS", "Web (encrypted SSL/TLS)"],
+            ["3306", "MySQL", "MySQL database"],
+            ["5432", "PostgreSQL", "PostgreSQL database"],
+            ["6379", "Redis", "Redis cache"],
+            ["8080", "HTTP alternate", "Common dev/test port"],
+            ["27017", "MongoDB", "MongoDB database"]
+          ]
+        },
+        {
+          "name": "DNS Tools",
+          "rows": [
+            ["nslookup google.com", "Simple DNS query", "Find IP for domain name"],
+            ["dig google.com", "Detailed DNS", "Full DNS response with TTL, authority"],
+            ["dig +short google.com", "Just the IP", "Only the IP address, no extra info"],
+            ["dig MX gmail.com", "Mail servers", "Query MX (mail exchange) records"],
+            ["host google.com", "Quick DNS lookup", "Simple, fast DNS query"]
+          ]
+        },
+        {
+          "name": "Traceroute & nmap",
+          "rows": [
+            ["traceroute google.com", "Trace network path", "Every hop to destination"],
+            ["traceroute -n google.com", "Skip DNS (faster)", "IPs only, no domain lookup"],
+            ["mtr google.com", "Trace + ping combined", "Continuous traceroute with stats"],
+            ["nmap 192.168.1.1", "Port scan", "Scan common ports on host"],
+            ["nmap -p 80,443 192.168.1.1", "Specific ports", "Scan only specified ports"],
+            ["nmap -sV 192.168.1.1", "Version detection", "Detect service versions"]
+          ]
+        },
+        {
+          "name": "UFW — Firewall",
+          "rows": [
+            ["sudo ufw status", "Check status", "Active/inactive + rules"],
+            ["sudo ufw enable", "Turn on", "Enable firewall"],
+            ["sudo ufw disable", "Turn off", "Disable firewall"],
+            ["sudo ufw allow 22/tcp", "Allow SSH", "Open port 22 for SSH"],
+            ["sudo ufw allow 80/tcp", "Allow HTTP", "Open port 80 for web"],
+            ["sudo ufw deny 8080", "Block port", "Close/block a port"],
+            ["sudo ufw delete allow 80", "Remove rule", "Delete an existing rule"],
+            ["sudo ufw allow from 192.168.1.0/24 to any port 22", "Restrict SSH", "SSH only from local subnet"]
+          ]
+        },
+        {
+          "name": "Network Config Files",
+          "rows": [
+            ["cat /etc/hosts", "Hostname mappings", "Static IP-to-hostname resolution"],
+            ["cat /etc/resolv.conf", "DNS servers", "Configured DNS servers"],
+            ["cat /etc/network/interfaces", "Interface config (Debian)", "Legacy network config"],
+            ["ls /etc/netplan/", "Netplan config (Ubuntu)", "Modern Ubuntu network config"],
+            ["curl ifconfig.me", "Check public IP", "Your internet-facing IP address"]
           ]
         }
       ]
@@ -264,16 +704,20 @@
       "title": "Stage 7: Text Processing",
       "commands": [
         {
-          "name": "grep",
+          "name": "grep — Search Text (Full)",
           "rows": [
-            ["grep \"error\" log.txt", "Find pattern", "Lines with error"],
+            ["grep \"error\" log.txt", "Basic search", "Lines containing 'error'"],
             ["grep -i \"error\" log.txt", "Case-insensitive", "Matches ERROR, Error, error"],
-            ["grep -v \"debug\" log.txt", "Invert match", "Lines WITHOUT debug"],
-            ["grep -r \"TODO\" --include=\"*.py\" .", "Recursive in Python", "Find all TODOs"],
+            ["grep -v \"debug\" log.txt", "Invert match", "Lines WITHOUT 'debug'"],
+            ["grep -n \"error\" file.py", "Line numbers", "Shows line numbers"],
             ["grep -c \"error\" log.txt", "Count matches", "Number of matching lines"],
-            ["grep -A3 -B2 \"Exception\" log.txt", "Context around match", "2 before, 3 after"],
-            ["ps aux | grep nginx", "Pipe filter", "Filter command output"],
-            ["grep -E \"[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\" file", "Regex find IPs", "Pattern match IP addresses"]
+            ["grep -w \"word\" file.txt", "Whole word only", "Not 'sword' or 'words'"],
+            ["grep -r \"TODO\" --include=\"*.py\" .", "Recursive in Python", "Find all TODOs"],
+            ["grep -r \"FIXME\" --exclude-dir=node_modules .", "Exclude node_modules", "Search code excluding deps"],
+            ["grep -l \"main\" *.py", "Filenames only", "List files containing match"],
+            ["grep -A3 -B2 \"Exception\" log.txt", "Context lines", "2 before, 3 after each match"],
+            ["grep -E \"[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\" file", "Regex: IP addresses", "Pattern match IP addresses"],
+            ["ps aux | grep nginx", "Filter command output", "Find specific process"]
           ]
         },
         {
@@ -281,27 +725,52 @@
           "rows": [
             ["awk '{print $1}' file.txt", "First column", "Space-separated field 1"],
             ["awk -F: '{print $1}' /etc/passwd", "Colon delimiter", "Usernames from passwd"],
+            ["awk '{print NR, $0}' file.txt", "Line numbers", "NR = record number"],
+            ["awk '/error/ {print $0}' log.txt", "Match + print", "Lines matching pattern"],
             ["awk '{sum+=$1} END {print \"Total:\", sum}' nums.txt", "Sum values", "Adds column 1"],
+            ["awk '{sum+=$1; count++} END {print \"Avg:\", sum/count}' nums.txt", "Average", "Average of column values"],
             ["df -h | awk '$5+0 > 80 {print $1, $5}'", "Disks >80% full", "Alert on full disks"],
-            ["ps aux | awk '$3 > 50 {print $2, $11}'", "CPU >50%", "Find CPU-heavy processes"]
+            ["ps aux | awk '$3 > 50 {print $2, $11}'", "CPU >50%", "Find CPU-heavy processes"],
+            ["awk '{gsub(/foo/, \"bar\"); print}' file.txt", "Find and replace", "Replace using awk"]
           ]
         },
         {
           "name": "sed — Stream Editor",
           "rows": [
-            ["sed 's/foo/bar/g' file.txt", "Replace all", "Change foo to bar everywhere"],
+            ["sed 's/foo/bar/g' file.txt", "Replace all (print)", "Change foo to bar everywhere"],
             ["sed -i 's/foo/bar/g' file.txt", "Replace in-place", "Edits file directly"],
-            ["sed '/^#/d' config", "Delete comments", "Remove # lines"],
-            ["sed -n '10,20p' file.txt", "Print range", "Lines 10 through 20"]
+            ["sed -i.bak 's/foo/bar/g' file.txt", "Replace + backup", "Creates .bak backup first"],
+            ["sed '3s/foo/bar/' file.txt", "Replace line 3 only", "Only changes line 3"],
+            ["sed '10,20s/old/new/g' file.txt", "Replace range", "Only lines 10-20"],
+            ["sed '/^#/d' config", "Delete comments", "Remove lines starting with #"],
+            ["sed '/^$/d' file.txt", "Delete empty lines", "Remove blank lines"],
+            ["sed -n '10,20p' file.txt", "Print range", "Only lines 10 through 20"],
+            ["sed 's/[0-9]//g' file.txt", "Remove all digits", "Strip all numbers"],
+            ["sed 's/  */ /g' file.txt", "Collapse spaces", "Multiple spaces -> single"]
           ]
         },
         {
           "name": "sort / uniq / wc / cut",
           "rows": [
             ["sort -n numbers.txt", "Numerical sort", "10 comes after 2"],
+            ["sort -rn numbers.txt", "Reverse numerical", "Highest first"],
             ["sort file.txt | uniq -c", "Count duplicates", "Frequency of each line"],
+            ["sort file.txt | uniq -d", "Only duplicates", "Lines appearing >1"],
+            ["sort file.txt | uniq -u", "Only unique", "Lines appearing exactly once"],
             ["wc -l *.py", "Count code lines", "Total Python lines"],
-            ["cut -d: -f1 /etc/passwd", "Extract column", "Usernames only"]
+            ["wc -w file.txt", "Count words", "Number of words"],
+            ["wc -c file.txt", "Count bytes", "File size in bytes"],
+            ["cut -d: -f1 /etc/passwd", "Usernames only", "First field of colon-delimited"],
+            ["cut -d: -f1,3 /etc/passwd", "Multiple fields", "Username and UID"],
+            ["cut -c1-10 file.txt", "First 10 chars", "Character position extraction"]
+          ]
+        },
+        {
+          "name": "tee — Split Output",
+          "rows": [
+            ["ls -la | tee output.txt", "See + save", "Shows on screen AND saves to file"],
+            ["echo \"data\" | tee -a log.txt", "Append", "-a appends, doesn't overwrite"],
+            ["sudo apt update | tee update.log", "Log apt output", "Watch + save in real-time"]
           ]
         }
       ]
@@ -310,15 +779,30 @@
       "title": "Stage 8: Archiving & Compression",
       "commands": [
         {
-          "name": "tar / zip / gzip",
+          "name": "tar — Archive Tool",
           "rows": [
-            ["tar -czvf archive.tar.gz myfolder/", "Create archive", "c=create, z=gzip, v=verbose, f=file"],
-            ["tar -xzvf archive.tar.gz", "Extract", "x=extract"],
+            ["tar -czvf archive.tar.gz myfolder/", "Create archive", "c=create, z=gzip, v=verbose, f=filename"],
+            ["tar -xzvf archive.tar.gz", "Extract here", "x=extract into current dir"],
             ["tar -xzvf archive.tar.gz -C /target", "Extract to folder", "-C = target directory"],
-            ["tar -czf - myfolder/ | ssh user@host \"tar -xzf -\"", "Tar over SSH", "Stream archive remotely"],
-            ["zip -r archive.zip myfolder/", "Create zip", "Recursive zip"],
+            ["tar -tzvf archive.tar.gz", "List contents", "t=list, no extraction"],
+            ["tar -czvf archive.tar.gz --exclude=\"*.log\" folder/", "Exclude patterns", "Skips .log files"],
+            ["tar -xzvf archive.tar.gz --wildcards '*.txt'", "Extract specific files", "Only .txt from archive"],
+            ["tar -czvf backup.tar.gz --exclude=node_modules project/", "Backup project", "Skip node_modules"],
+            ["tar -czf - myfolder/ | ssh user@host \"tar -xzf -\"", "Stream over SSH", "Archive + send remotely"]
+          ]
+        },
+        {
+          "name": "zip / gzip",
+          "rows": [
+            ["zip -r archive.zip myfolder/", "Create zip", "Recursive directory zip"],
             ["zip -e secret.zip file.txt", "Encrypt zip", "Password-protected"],
-            ["gzip -k file.txt", "Gzip keep original", "-k = keep both"]
+            ["zip -r archive.zip folder/ -x \"*.tmp\"", "Exclude from zip", "Skip .tmp files"],
+            ["unzip archive.zip", "Extract zip", "To current folder"],
+            ["unzip archive.zip -d /target", "Extract to folder", "-d = destination directory"],
+            ["unzip -l archive.zip", "List zip contents", "Show contents without extracting"],
+            ["gzip -k file.txt", "Gzip keep original", "-k = keep original file too"],
+            ["gunzip file.txt.gz", "Decompress gzip", "Restores original file"],
+            ["zcat file.txt.gz", "View without extract", "Like cat for gzipped files"]
           ]
         }
       ]
@@ -329,19 +813,22 @@
         {
           "name": "Scripting Patterns",
           "rows": [
-            ["name=\"John\"; echo \"$name\"", "Variable", "No spaces around ="],
-            ["echo \"Script: $0, Args: $1 $2, All: $@\"", "Script arguments", "$0=name, $1=first arg"],
-            ["if [ -f \"$1\" ]; then echo \"exists\"; fi", "Check file exists", "-f = file, -d = directory"],
-            ["for f in *.txt; do echo \"$f\"; done", "Loop over files", "Iterate .txt files"],
-            ["while read line; do echo \"$line\"; done < file.txt", "Read file line by line", "Process each line"],
-            ["myfunc() { echo \"Hello $1\"; }; myfunc \"World\"", "Function", "Define and call"],
-            ["output=$(ls -la)", "Capture output", "Store command result"]
+            ["name=\"John\"; echo \"$name\"", "Variables", "No spaces around =, use $ to read"],
+            ["echo \"Script: $0, Args: $1 $2, All: $@\"", "Script arguments", "$0=script name, $1=first arg, $#=arg count"],
+            ["if [ -f \"$1\" ]; then echo \"exists\"; fi", "Check file exists", "-f=file, -d=dir, -z=empty string"],
+            ["for f in *.txt; do echo \"$f\"; done", "Loop over files", "Iterates each .txt file"],
+            ["for i in 1 2 3 4 5; do echo $i; done", "Numeric loop", "Loop over explicit values"],
+            ["while read line; do echo \"$line\"; done < file.txt", "Read file line by line", "Process each line individually"],
+            ["myfunc() { echo \"Hello $1\"; }; myfunc \"World\"", "Functions", "Define and call with args"],
+            ["output=$(ls -la)", "Capture command output", "Store result in variable"],
+            ["cmd || { echo \"Failed\"; exit 1; }", "Error handling", "Exit with error if command fails"],
+            ["echo \"done\" >> log.txt", "Append to log", ">> appends, > overwrites"]
           ]
         },
         {
           "name": "Complete backup.sh Script",
           "type": "codeblock",
-          "code": "#!/bin/bash\nsrc=\"$1\"\ndst=\"$2\"\ndate=$(date +%Y%m%d_%H%M%S)\narchive=\"backup_$date.tar.gz\"\n\nif [ -z \"$src\" ] || [ -z \"$dst\" ]; then\n    echo \"Usage: $0 <source> <dest>\"\n    exit 1\nfi\n\nif [ ! -d \"$src\" ]; then\n    echo \"Error: Source not found\"\n    exit 1\nfi\n\ntar -czf \"$dst/$archive\" \"$src\" 2>/dev/null\nif [ $? -eq 0 ]; then\n    echo \"Backup created: $dst/$archive\"\nelse\n    echo \"Backup failed\"\n    exit 1\nfi"
+          "code": "#!/bin/bash\n# backup.sh - usage: ./backup.sh source destination\nsrc=\"$1\"\ndst=\"$2\"\ndate=$(date +%Y%m%d_%H%M%S)\narchive=\"backup_$date.tar.gz\"\n\nif [ -z \"$src\" ] || [ -z \"$dst\" ]; then\n    echo \"Usage: $0 <source> <dest>\"\n    exit 1\nfi\n\nif [ ! -d \"$src\" ]; then\n    echo \"Error: Source not found\"\n    exit 1\nfi\n\ntar -czf \"$dst/$archive\" \"$src\" 2>/dev/null\nif [ $? -eq 0 ]; then\n    echo \"Backup created: $dst/$archive\"\nelse\n    echo \"Backup failed\"\n    exit 1\nfi"
         }
       ]
     },
@@ -351,32 +838,55 @@
         {
           "name": "Pipe & Redirection",
           "rows": [
-            ["ls -la | grep \".txt\"", "Pipe output to filter", "Pass output to another command"],
-            ["ls > files.txt", "Redirect stdout", "Save to file (overwrite)"],
+            ["ls -la | grep \".txt\"", "Pipe", "Pass output of one command to another"],
+            ["ls > files.txt", "Redirect stdout", "Save to file (overwrites)"],
+            ["echo \"text\" >> file.txt", "Append stdout", "Adds to end of file"],
             ["cmd 2> errors.txt", "Redirect stderr", "Errors only to file"],
-            ["cmd > out.txt 2>&1", "Both to same file", "stdout + stderr"],
+            ["cmd > out.txt 2>&1", "Both to same file", "stdout + stderr combined"],
             ["cmd &>/dev/null", "Silent", "Discard all output"],
-            ["cmd1 && cmd2", "AND", "cmd2 runs if cmd1 succeeds"],
-            ["cmd1 || cmd2", "OR", "cmd2 runs if cmd1 fails"]
+            ["cmd1 && cmd2", "AND", "cmd2 runs only if cmd1 succeeds"],
+            ["cmd1 || cmd2", "OR", "cmd2 runs only if cmd1 fails"],
+            ["sort < unsorted.txt", "Redirect stdin", "Read input from file"],
+            ["cmd 2>&1 | less", "Stderr through pipe", "Include errors in piped output"]
           ]
         },
         {
           "name": "System Monitoring",
           "rows": [
-            ["df -h", "Disk space per filesystem", ""],
-            ["free -h", "RAM + swap usage", ""],
-            ["uname -a", "Kernel, architecture, hostname", ""],
-            ["uptime", "Uptime + load average", ""],
-            ["lscpu", "CPU model, cores, threads", ""],
-            ["lsblk", "Block devices / partitions", ""],
-            ["lsof -i :3000", "What is on port 3000?", ""],
-            ["last -10", "Last 10 logins", ""]
+            ["df -h", "Disk space", "Filesystem usage in human-readable"],
+            ["du -sh *", "Directory sizes", "Size of each item in current dir"],
+            ["free -h", "RAM usage", "Total, used, free, swap"],
+            ["uname -a", "System info", "Kernel, arch, hostname"],
+            ["uptime", "Uptime + load", "Time since boot + load averages"],
+            ["lscpu", "CPU details", "Model, cores, threads, architecture"],
+            ["lsblk", "Block devices", "Disks and partitions tree"],
+            ["lsof -i :3000", "Port usage", "What process is on port 3000?"],
+            ["last -10", "Last logins", "Login history for last 10 entries"],
+            ["last reboot", "Reboot history", "Shows system reboot times"],
+            ["sudo dmesg | tail -20", "Kernel messages", "Hardware and driver messages"]
+          ]
+        },
+        {
+          "name": "Keyboard Shortcuts",
+          "rows": [
+            ["Ctrl + C", "Interrupt", "Stop/kill current running command"],
+            ["Ctrl + D", "EOF/Exit", "End of file, or exit shell"],
+            ["Ctrl + Z", "Suspend", "Pause and background current command"],
+            ["Ctrl + L", "Clear screen", "Same as clear command"],
+            ["Ctrl + A", "Line start", "Move cursor to beginning of line"],
+            ["Ctrl + E", "Line end", "Move cursor to end of line"],
+            ["Ctrl + W", "Delete word", "Delete word before cursor"],
+            ["Ctrl + U", "Delete line", "Delete entire line before cursor"],
+            ["Ctrl + R", "Search history", "Reverse search through command history"],
+            ["Tab", "Auto-complete", "Complete file names, commands, paths"],
+            ["Tab + Tab", "List suggestions", "Show all matching possibilities"],
+            ["Up/Down arrows", "History scroll", "Navigate through previous commands"]
           ]
         },
         {
           "name": "Useful One-liners",
           "type": "codeblock",
-          "code": "# Delete all .log files\nfind . -name \"*.log\" -type f -delete\n\n# Top 5 memory processes\nps aux --sort=-%mem | head -5\n\n# Monitor port 80 every 2 seconds\nwatch -n 2 'ss -tuln | grep 80'\n\n# Top 10 most frequent lines\nsort file.txt | uniq -c | sort -rn | head -10"
+          "code": "# Delete all .log files\nfind . -name \"*.log\" -type f -delete\n\n# Top 5 memory processes\nps aux --sort=-%mem | head -5\n\n# Monitor port 80 every 2 seconds\nwatch -n 2 'ss -tuln | grep 80'\n\n# Top 10 most frequent lines\nsort file.txt | uniq -c | sort -rn | head -10\n\n# Find files >1GB\nfind / -xdev -size +1G 2>/dev/null\n\n# Check disk space alert (over 80%)\ndf -h | awk '$5+0 > 80 {print $1, $5}'\n\n# List all listening ports with PIDs\nss -tulnp\n\n# Kill all node processes\nkillall node\n\n# Download entire website\nwget --mirror -p --convert-links https://example.com\n\n# Public IP check\ncurl ifconfig.me"
         }
       ]
     }

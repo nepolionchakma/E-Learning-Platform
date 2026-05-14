@@ -1,0 +1,58 @@
+{
+  "title": "Node.js",
+  "icon": "🟢",
+  "description": "Server-side JavaScript. Express, file system, streams, modules, npm, REST APIs, and real-time apps.",
+  "sections": [
+    {
+      "title": "1. Node.js Basics",
+      "type": "code",
+      "items": [
+        { "label": "Hello World", "code": "// hello.js\nconst http = require('http');\n\nconst server = http.createServer((req, res) => {\n  res.writeHead(200, { 'Content-Type': 'text/plain' });\n  res.end('Hello World\\n');\n});\n\nserver.listen(3000, () => {\n  console.log('Server running on http://localhost:3000');\n});" },
+        { "label": "Modules (CommonJS vs ESM)", "code": "// CommonJS (default)\nconst fs = require('fs');\nconst myModule = require('./my-module');\nmodule.exports = { myFunc };\nexports.myFunc = myFunc;\n\n// ES Modules (package.json: \"type\": \"module\")\nimport fs from 'fs';\nimport { myFunc } from './my-module.js';\nexport default myFunc;\nexport { myFunc };\n\n// Built-in modules\nconst path = require('path');\nconst os = require('os');\nconst events = require('events');" }
+      ]
+    },
+    {
+      "title": "2. File System (fs)",
+      "type": "code",
+      "items": [
+        { "label": "FS Operations", "code": "const fs = require('fs');\nconst fsPromises = require('fs').promises;\n\n// Read\nfs.readFile('file.txt', 'utf8', (err, data) => {\n  if (err) throw err;\n  console.log(data);\n});\n\n// Async/await\nasync function read() {\n  const data = await fsPromises.readFile('file.txt', 'utf8');\n  return data;\n}\n\n// Write\nfs.writeFileSync('file.txt', 'content');  // sync (blocking)\nawait fsPromises.writeFile('file.txt', 'content');  // async\n\n// Streams (for large files)\nconst readStream = fs.createReadStream('large.log');\nconst writeStream = fs.createWriteStream('output.log');\nreadStream.pipe(writeStream);\n\n// File info\nfs.stat('file.txt', (err, stats) => {\n  console.log(stats.size, stats.isFile(), stats.mtime);\n});\n\n// Directory\nfs.mkdirSync('dir', { recursive: true });\nfs.readdirSync('.').forEach(file => console.log(file));" }
+      ]
+    },
+    {
+      "title": "3. NPM & Package Management",
+      "type": "code",
+      "items": [
+        { "label": "NPM Commands", "code": "npm init -y                    # create package.json\nnpm install express            # install dependency\nnpm install -D typescript      # dev dependency\nnpm install -g nodemon         # global install\nnpm uninstall lodash           # remove\nnpm update                     # update all\nnpm outdated                   # check outdated\nnpm ls --depth=0               # list top-level deps\nnpm audit                      # security audit\nnpm audit fix                  # fix vulnerabilities\nnpm ci                         # clean install (CI)\n\n# package.json scripts\n\"scripts\": {\n  \"start\": \"node server.js\",\n  \"dev\": \"nodemon server.js\",\n  \"test\": \"jest\",\n  \"build\": \"tsc\"\n}\n# npm run dev" }
+      ]
+    },
+    {
+      "title": "4. Express.js Web Framework",
+      "type": "code",
+      "items": [
+        { "label": "Express Setup", "code": "const express = require('express');\nconst app = express();\n\napp.use(express.json());                 // parse JSON bodies\napp.use(express.urlencoded({ extended: true }));  // form data\napp.use(express.static('public'));        // serve static files\n\n// Routes\napp.get('/api/users', (req, res) => {\n  res.json([{ id: 1, name: 'John' }]);\n});\n\napp.get('/api/users/:id', (req, res) => {\n  const id = req.params.id;\n  res.json({ id });\n});\n\napp.post('/api/users', (req, res) => {\n  const body = req.body;\n  res.status(201).json(body);\n});\n\napp.put('/api/users/:id', (req, res) => {\n  res.json({ updated: req.params.id });\n});\n\napp.delete('/api/users/:id', (req, res) => {\n  res.status(204).send();\n});\n\n// Error handling middleware\napp.use((err, req, res, next) => {\n  console.error(err.stack);\n  res.status(500).json({ error: 'Something broke!' });\n});\n\napp.listen(3000);" },
+        { "label": "Middleware & Router", "code": "// Custom middleware\nconst logger = (req, res, next) => {\n  console.log(`${req.method} ${req.url}`);\n  next();\n};\napp.use(logger);\n\n// Express Router\nconst router = express.Router();\n\nrouter.get('/', (req, res) => {\n  res.send('Users page');\n});\n\nrouter.param('id', (req, res, next, id) => {\n  req.userId = id;\n  next();\n});\n\napp.use('/users', router);\n\n// CORS\nconst cors = require('cors');\napp.use(cors());" }
+      ]
+    },
+    {
+      "title": "5. Environment & Config",
+      "type": "code",
+      "items": [
+        { "label": "Environment Variables", "code": "# .env file\nPORT=3000\nDATABASE_URL=mongodb://localhost:27017/myapp\nJWT_SECRET=mysecretkey\n\n// Load with dotenv\nrequire('dotenv').config();\n\nconst port = process.env.PORT || 3000;\nconst dbUrl = process.env.DATABASE_URL;\n\n// In production, set env variables directly\n// NODE_ENV=production node server.js\n\n// Common env variables\nNODE_ENV=development | production | test\nPORT=3000\nDATABASE_URL=...\nAPI_KEY=...\n\n// 12 Factor App: Store config in environment" }
+      ]
+    },
+    {
+      "title": "6. Async Patterns",
+      "type": "code",
+      "items": [
+        { "label": "Async/Await & Promises", "code": "// Callback pattern (old)\nfs.readFile('file.txt', 'utf8', (err, data) => {\n  if (err) return console.error(err);\n  console.log(data);\n});\n\n// Promise\nfetch('https://api.example.com')\n  .then(res => res.json())\n  .then(data => console.log(data))\n  .catch(err => console.error(err));\n\n// Async/await\nasync function getData() {\n  try {\n    const res = await fetch('https://api.example.com');\n    const data = await res.json();\n    return data;\n  } catch (err) {\n    console.error('Failed:', err);\n    throw err;\n  }\n}\n\n// Parallel execution\nconst [users, posts] = await Promise.all([\n  fetchUsers(),\n  fetchPosts()\n]);\n\n// Race\nconst result = await Promise.race([\n  fetchFast(),\n  timeout(5000)\n]);" }
+      ]
+    },
+    {
+      "title": "7. Testing with Jest",
+      "type": "code",
+      "items": [
+        { "label": "Jest Testing", "code": "// sum.js\nexport function sum(a, b) {\n  return a + b;\n}\n\n// sum.test.js\nimport { sum } from './sum';\n\ntest('adds 1 + 2 equals 3', () => {\n  expect(sum(1, 2)).toBe(3);\n});\n\ntest('object assignment', () => {\n  const data = { one: 1 };\n  data['two'] = 2;\n  expect(data).toEqual({ one: 1, two: 2 });\n});\n\n// Async test\ntest('fetches user', async () => {\n  const data = await fetchUser(1);\n  expect(data.name).toBeDefined();\n});\n\n// Mock\njest.mock('axios');\naxios.get.mockResolvedValue({ data: { id: 1 } });\n\n// Setup/Teardown\nbeforeEach(() => { /* setup */ });\nafterAll(() => { /* cleanup */ });" }
+      ]
+    }
+  ]
+}

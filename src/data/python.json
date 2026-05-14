@@ -1,0 +1,68 @@
+{
+  "title": "Python",
+  "icon": "🐍",
+  "description": "Versatile programming. Data structures, OOP, modules, file I/O, web frameworks, automation and scripting.",
+  "sections": [
+    {
+      "title": "1. Basics",
+      "type": "code",
+      "items": [
+        { "label": "Variables & Data Types", "code": "name = \"John\"         # str\nage = 25               # int\nheight = 5.9           # float\nis_student = True      # bool\nhobbies = [\"read\", \"code\"]  # list\nperson = {\"name\": \"John\", \"age\": 25}  # dict\ncoordinates = (10, 20)  # tuple\nunique = {1, 2, 3}      # set\n\nprint(f\"{name} is {age} years old\")\nprint(type(variable))     # check type\n\n# Dynamic typing\nx = 5       # int\nx = \"hello\" # now str - allowed" },
+        { "label": "Operators", "code": "# Arithmetic\n+ - * /          # basic\n//                # floor division (5//2 = 2)\n%                 # modulus (5%2 = 1)\n**                # exponent (2**3 = 8)\n\n# Comparison\n== != < > <= >=\n\n# Logical\nand or not\n\n# Identity\nis is not\n\n# Membership\nin not in\n\n# Walrus operator (3.8+)\nif (n := len(x)) > 5:\n    print(f\"{n} items\")" }
+      ]
+    },
+    {
+      "title": "2. Control Flow",
+      "type": "code",
+      "items": [
+        { "label": "Conditionals", "code": "if x > 0:\n    print(\"positive\")\nelif x == 0:\n    print(\"zero\")\nelse:\n    print(\"negative\")\n\n# Ternary\nstatus = \"adult\" if age >= 18 else \"minor\"\n\n# Match-case (3.10+)\nmatch status:\n    case 200:\n        print(\"OK\")\n    case 404:\n        print(\"Not found\")\n    case _:\n        print(\"Unknown\")" },
+        { "label": "Loops", "code": "# For loop\nfor i in range(5):      # 0,1,2,3,4\n    print(i)\n\nfor i, item in enumerate(items):\n    print(i, item)\n\nfor key, val in person.items():\n    print(key, val)\n\n# While loop\nwhile count > 0:\n    count -= 1\n    if count == 3:\n        break       # exit loop\n    if count == 5:\n        continue    # skip to next iteration\n\n# List comprehension\nsquares = [x**2 for x in range(10)]\nevens = [x for x in range(10) if x % 2 == 0]" }
+      ]
+    },
+    {
+      "title": "3. Functions",
+      "type": "code",
+      "items": [
+        { "label": "Function Definitions", "code": "def greet(name: str) -> str:\n    return f\"Hello, {name}\"\n\n# Default params\ndef power(base, exp=2):\n    return base ** exp\n\n# *args (variable positional)\ndef sum_all(*args):\n    return sum(args)\n\n# **kwargs (variable keyword)\ndef print_info(**kwargs):\n    for k, v in kwargs.items():\n        print(f\"{k}: {v}\")\n\n# Lambda (anonymous)\ndouble = lambda x: x * 2\nsorted(list, key=lambda x: x[1])\n\n# Decorators\ndef timer(func):\n    def wrapper(*args, **kwargs):\n        start = time.time()\n        result = func(*args, **kwargs)\n        print(f\"Took {time.time()-start:.2f}s\")\n        return result\n    return wrapper\n\n@timer\ndef slow_function():\n    time.sleep(1)" }
+      ]
+    },
+    {
+      "title": "4. Data Structures",
+      "type": "code",
+      "items": [
+        { "label": "List Operations", "code": "fruits = [\"apple\", \"banana\", \"cherry\"]\nfruits.append(\"date\")       # add to end\nfruits.insert(0, \"apricot\") # add at index\nfruits.remove(\"banana\")     # remove by value\npopped = fruits.pop()       # remove and return last\nidx = fruits.index(\"apple\") # find index\n\"apple\" in fruits            # membership check\nfruits.sort()               # sort in-place\nsorted(fruits)              # return new sorted\nfruits.reverse()\n[f.upper() for f in fruits]  # comprehension" },
+        { "label": "Dict & Set Operations", "code": "# Dict\nuser = {\"name\": \"John\", \"age\": 25}\nuser[\"email\"] = \"john@test.com\"   # add/update\ndel user[\"age\"]                    # remove\nfor k, v in user.items(): ...\nuser.get(\"name\", \"default\")         # safe get\nuser.setdefault(\"role\", \"user\")    # set if missing\nmerged = {**user, **other}\n\n# Set\ns1 = {1, 2, 3}\ns2 = {3, 4, 5}\ns1 | s2  # union: {1,2,3,4,5}\ns1 & s2  # intersection: {3}\ns1 - s2  # difference: {1,2}" }
+      ]
+    },
+    {
+      "title": "5. OOP",
+      "type": "code",
+      "items": [
+        { "label": "Classes & Inheritance", "code": "class Animal:\n    def __init__(self, name: str):\n        self.name = name\n        self._private = \"internal\"    # convention\n        self.__mangled = \"name change\"  # name mangling\n\n    def speak(self) -> str:\n        return f\"{self.name} makes a sound\"\n\n    @property\n    def info(self):\n        return f\"Animal: {self.name}\"\n\n    @classmethod\n    def create(cls, name):\n        return cls(name)\n\n    @staticmethod\n    def is_alive():\n        return True\n\n\nclass Dog(Animal):\n    def __init__(self, name, breed):\n        super().__init__(name)\n        self.breed = breed\n\n    def speak(self):\n        return f\"{self.name} barks\"\n\n# Usage\ndog = Dog(\"Rex\", \"German Shepherd\")\nprint(dog.speak())\nprint(dog.info)" }
+      ]
+    },
+    {
+      "title": "6. File I/O & Modules",
+      "type": "code",
+      "items": [
+        { "label": "File Operations", "code": "# Read\nwith open(\"file.txt\", \"r\") as f:\n    content = f.read()\n    lines = f.readlines()\n    for line in f:\n        print(line)\n\n# Write\nwith open(\"file.txt\", \"w\") as f:    # overwrite\n    f.write(\"Hello\")\n\nwith open(\"file.txt\", \"a\") as f:    # append\n    f.write(\"More text\\n\")\n\n# Context managers\nfrom contextlib import contextmanager\n\n@contextmanager\ndef open_file(name):\n    f = open(name, 'w')\n    try:\n        yield f\n    finally:\n        f.close()" },
+        { "label": "Modules & Imports", "code": "# Importing\nimport os\nimport sys\nfrom datetime import datetime, timedelta\nfrom math import sqrt as square_root\n\n# Your module (my_module.py)\ndef my_func():\n    pass\n\n# Import it\nfrom my_module import my_func\n\n# __name__ == \"__main__\" guard\nif __name__ == \"__main__\":\n    # Run only when executed directly\n    main()" }
+      ]
+    },
+    {
+      "title": "7. Error Handling",
+      "type": "code",
+      "items": [
+        { "label": "Try/Except/Finally", "code": "try:\n    result = risky_operation()\n    \nexcept ValueError as e:\n    print(f\"Value error: {e}\")\n\nexcept (TypeError, KeyError) as e:\n    print(f\"Type or Key error: {e}\")\n\nexcept Exception as e:\n    print(f\"Unexpected: {e}\")\n    raise  # re-raise if can't handle\n\nelse:\n    print(\"No errors occurred\")\n\nfinally:\n    cleanup_code()  # always runs\n\n# Custom exception\nclass MyError(Exception):\n    pass\n\nraise MyError(\"Something went wrong\")" }
+      ]
+    },
+    {
+      "title": "8. Popular Libraries",
+      "type": "code",
+      "items": [
+        { "label": "Standard Library", "code": "import os, sys, json, re, math, random, datetime\n\nos.getcwd()          # current dir\nos.listdir(\".\")      # list files\nos.path.exists(path)  # check exists\n\njson.dumps(data)      # dict -> JSON string\njson.loads(json_str)  # JSON string -> dict\n\nre.search(pattern, text)\nre.findall(r\"\\d+\", text)\nre.sub(old, new, text)\n\nrandom.randint(1, 10)\nrandom.choice(items)\nrandom.shuffle(list)\n\nmath.sqrt(16), math.pi, math.floor(3.7)\n\ndatetime.now()\ndatetime.strftime(\"%Y-%m-%d %H:%M:%S\")\n\nfrom collections import Counter, defaultdict, deque\nfrom itertools import chain, groupby, product\nfrom functools import reduce, lru_cache" },
+        { "label": "Third-party Libraries", "code": "# pip install requests\nimport requests\nr = requests.get('https://api.github.com')\nr.status_code  # 200\nr.json()       # parsed JSON\n\n# pip install flask\nfrom flask import Flask, request, jsonify\napp = Flask(__name__)\n\n@app.route('/api/hello')\ndef hello():\n    return jsonify({\"message\": \"Hello\"})\n\n# pip install pandas\nimport pandas as pd\ndf = pd.read_csv('data.csv')\ndf.head()\ndf.describe()\ndf.groupby('column').mean()\n\n# pip install pytest\ndef test_example():\n    assert add(2, 3) == 5" }
+      ]
+    }
+  ]
+}

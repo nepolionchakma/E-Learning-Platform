@@ -1,0 +1,84 @@
+{
+  "title": "CSS",
+  "icon": "🎨",
+  "description": "Style the web. Flexbox, Grid, animations, responsive design, variables, preprocessors, and modern layouts.",
+  "sections": [
+    {
+      "title": "1. Selectors & Specificity",
+      "type": "code",
+      "items": [
+        { "label": "CSS Selectors", "code": "/* Element */\nh1 { color: red; }\n\n/* Class */\n.card { border: 1px solid #ccc; }\n\n/* ID */\n#header { background: black; }\n\n/* Attribute */\n[type=\"text\"] { border-color: blue; }\ninput[required] { border-color: red; }\n\n/* Descendant */\ndiv p { color: gray; }\n\n/* Child */\nul > li { list-style: none; }\n\n/* Adjacent sibling */\nh2 + p { margin-top: 0; }\n\n/* Pseudo-class */\na:hover { color: blue; }\na:focus { outline: 2px solid; }\ntr:nth-child(even) { background: #f5f5f5; }\ninput:valid { border-color: green; }\n\n/* Pseudo-element */\n::before { content: \"\\2192\"; }\n::after { content: \"\"; }\n::first-line { font-weight: bold; }" },
+        { "label": "Specificity Hierarchy", "code": "Inline styles:     1,0,0,0\n#id selectors:     0,1,0,0\n.class, [attr], :pseudo:  0,0,1,0\nElement, ::pseudo: 0,0,0,1\n!important:        Overrides everything\n\n// Example:\n#nav .item a:hover { }  /* 0,1,2,1 */\n\n// Use: specificity, don't rely on !important" }
+      ]
+    },
+    {
+      "title": "2. Box Model",
+      "type": "code",
+      "items": [
+        { "label": "Box Model Properties", "code": "/* Box model: content -> padding -> border -> margin */\n.box {\n  width: 300px;\n  height: 200px;\n  padding: 20px;        /* inside border */\n  border: 2px solid black;\n  margin: 10px;          /* outside border */\n  \n  /* Box-sizing controls how width/height is calculated */\n  box-sizing: border-box;  /* width includes padding + border */\n  /* box-sizing: content-box; (default) width = content only */\n}\n\n/* Shorthand: top right bottom left */\npadding: 10px 20px 10px 20px;\npadding: 10px 20px; /* top/bottom, left/right */\nmargin: 0 auto;     /* center horizontally */" }
+      ]
+    },
+    {
+      "title": "3. Flexbox",
+      "type": "code",
+      "items": [
+        { "label": "Flexbox Layout", "code": ".container {\n  display: flex;\n  flex-direction: row;        /* row (default), column, row-reverse */\n  flex-wrap: wrap;             /* nowrap (default), wrap */\n  justify-content: center;     /* flex-start, center, space-between, space-around */\n  align-items: center;         /* stretch, center, flex-start */\n  align-content: center;       /* for multi-line wrapping */\n  gap: 16px;                   /* spacing between items */\n}\n\n.item {\n  flex: 1;                     /* grow equally */\n  flex: 0 0 200px;             /* grow, shrink, basis */\n  align-self: flex-start;      /* override align-items */\n  order: -1;                   /* reorder items */\n}\n\n/* Common patterns */\n.centered {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}\n\n.nav {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n}\n\n.grid-3 {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 20px;\n}\n.grid-3 > * {\n  flex: 1 1 30%;\n  min-width: 250px;\n}" }
+      ]
+    },
+    {
+      "title": "4. CSS Grid",
+      "type": "code",
+      "items": [
+        { "label": "Grid Layout", "code": ".container {\n  display: grid;\n  grid-template-columns: 1fr 2fr 1fr;   /* 3 columns */\n  grid-template-columns: repeat(3, 1fr); /* 3 equal columns */\n  grid-template-columns: 200px 1fr;      /* fixed + fluid */\n  grid-template-rows: auto 1fr auto;\n  gap: 16px;\n  \n  /* Grid areas */\n  grid-template-areas:\n    \"header header header\"\n    \"sidebar main aside\"\n    \"footer footer footer\";\n}\n\n.header { grid-area: header; }\n.sidebar { grid-area: sidebar; }\n.main { grid-area: main; }\n\n/* Item placement */\n.item {\n  grid-column: 1 / 3;        /* span columns 1-2 */\n  grid-column: span 2;       /* span 2 columns */\n  grid-row: 1 / 3;            /* span rows */\n}\n\n/* Auto-fit for responsive */\n.responsive-grid {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));\n  gap: 20px;\n}" }
+      ]
+    },
+    {
+      "title": "5. Responsive Design",
+      "type": "code",
+      "items": [
+        { "label": "Media Queries", "code": "/* Mobile-first approach (min-width) */\n/* Base styles: mobile */\n.grid {\n  display: grid;\n  grid-template-columns: 1fr;\n}\n\n/* Tablet */\n@media (min-width: 768px) {\n  .grid {\n    grid-template-columns: 1fr 1fr;\n  }\n}\n\n/* Desktop */\n@media (min-width: 1024px) {\n  .grid {\n    grid-template-columns: 1fr 1fr 1fr;\n  }\n}\n\n/* Large desktop */\n@media (min-width: 1440px) {\n  .container { max-width: 1400px; margin: 0 auto; }\n}\n\n/* Dark mode */\n@media (prefers-color-scheme: dark) {\n  :root {\n    --bg: #111;\n    --text: #eee;\n  }\n}\n\n/* Print */\n@media print {\n  nav, footer { display: none; }\n}\n\n/* Reduced motion */\n@media (prefers-reduced-motion: reduce) {\n  * { animation: none !important; }\n}" },
+        { "label": "Responsive Units", "code": "/* Relative units */\n%     - percentage of parent\nem    - relative to parent font-size\nrem   - relative to root font-size (16px default)\nch    - relative to character width '0'\nvw    - 1% of viewport width\nvh    - 1% of viewport height\nvmin  - smaller of vw/vh\nvmax  - larger of vw/vh\n\n/* Examples */\n.container {\n  width: min(90%, 1200px);   /* responsive + capped */\n  padding: clamp(1rem, 5vw, 3rem);  /* fluid range */\n  font-size: clamp(1rem, 2.5vw, 1.5rem);\n  height: 100vh;  /* full viewport */\n}\n\nh1 { font-size: 2.5rem; }  /* 40px */\n.small { font-size: 0.875rem; }  /* 14px */" }
+      ]
+    },
+    {
+      "title": "6. Colors & Typography",
+      "type": "code",
+      "items": [
+        { "label": "Colors", "code": "/* Color formats */\ncolor: red;               /* named */\ncolor: #ff0000;           /* hex */\ncolor: #f00;              /* short hex */\ncolor: rgba(255,0,0,0.5);  /* rgb with alpha */\ncolor: hsl(0, 100%, 50%);  /* hue, saturation, lightness */\ncolor: hsla(0, 100%, 50%, 0.5);\n\n/* Gradients */\nbackground: linear-gradient(to right, red, blue);\nbackground: linear-gradient(45deg, #f00, #00f);\nbackground: radial-gradient(circle, white, black);\nbackground: conic-gradient(red, yellow, green);" },
+        { "label": "Typography", "code": "body {\n  font-family: 'Inter', system-ui, -apple-system, sans-serif;\n  font-size: 16px;\n  font-weight: 400;\n  line-height: 1.6;\n  letter-spacing: 0.02em;\n  text-align: left;\n}\n\nh1 {\n  font-family: 'Poppins', sans-serif;\n  font-weight: 700;\n  font-size: clamp(2rem, 5vw, 3.5rem);\n  line-height: 1.2;\n}\n\n/* Text properties */\ntext-decoration: underline;\ntext-transform: uppercase;\ntext-shadow: 2px 2px 4px rgba(0,0,0,0.3);\nwhite-space: nowrap;\nword-break: break-word;\ntext-overflow: ellipsis;\noverflow: hidden;  /* for ellipsis */\n-webkit-line-clamp: 3;  /* limit to 3 lines */" }
+      ]
+    },
+    {
+      "title": "7. Transitions & Animations",
+      "type": "code",
+      "items": [
+        { "label": "Transitions", "code": ".button {\n  background: blue;\n  color: white;\n  transition: all 0.3s ease;\n  /* transition: property duration timing-function delay */\n}\n\n.button:hover {\n  background: darkblue;\n  transform: scale(1.05);\n}\n\n.card {\n  transition: transform 0.3s ease, box-shadow 0.3s ease;\n}\n.card:hover {\n  transform: translateY(-4px);\n  box-shadow: 0 10px 30px rgba(0,0,0,0.15);\n}\n\n/* Timing functions */\nease | linear | ease-in | ease-out | ease-in-out\ncubic-bezier(0.4, 0, 0.2, 1)" },
+        { "label": "Keyframe Animations", "code": "@keyframes fadeIn {\n  from { opacity: 0; transform: translateY(10px); }\n  to { opacity: 1; transform: translateY(0); }\n}\n\n@keyframes spin {\n  to { transform: rotate(360deg); }\n}\n\n@keyframes pulse {\n  0%, 100% { transform: scale(1); }\n  50% { transform: scale(1.05); }\n}\n\n.element {\n  animation: fadeIn 0.5s ease forwards;\n  animation: spin 1s linear infinite;\n  animation: pulse 2s ease infinite;\n  /* animation: name duration timing-function delay iteration-count direction */\n}\n\n/* Animation properties */\n.animated {\n  animation-name: fadeIn;\n  animation-duration: 0.5s;\n  animation-timing-function: ease-out;\n  animation-delay: 0.2s;\n  animation-iteration-count: 1;\n  animation-direction: normal;\n  animation-fill-mode: forwards;\n}\n\n/* prefers-reduced-motion */\n@media (prefers-reduced-motion: reduce) {\n  *, *::before, *::after {\n    animation-duration: 0.01ms !important;\n    transition-duration: 0.01ms !important;\n  }\n}" }
+      ]
+    },
+    {
+      "title": "8. Positioning & Display",
+      "type": "code",
+      "items": [
+        { "label": "Positioning", "code": "/* Position values */\n.static { position: static; }     /* default */\n.relative { position: relative; top: 10px; }  /* offset from normal */\n.absolute { position: absolute; top: 0; left: 0; }  /* relative to positioned ancestor */\n.fixed { position: fixed; bottom: 0; width: 100%; }  /* relative to viewport */\n.sticky { position: sticky; top: 0; }  /* scrolls then sticks */\n\n/* Display values */\ndisplay: block;       /* full width, new line */\ndisplay: inline;      /* content width, no new line */\ndisplay: inline-block; /* inline but can set width/height */\ndisplay: none;        /* hidden, removed from flow */\ndisplay: flex;        /* flexbox */\ndisplay: grid;        /* grid */\n\n/* Visibility vs display */\nvisibility: hidden;   /* hidden BUT takes space */\ndisplay: none;        /* hidden, NO space */\nopacity: 0;          /* fully transparent but interactive */" },
+        { "label": "Overflow & Z-index", "code": ".scroll-box {\n  overflow: auto;         /* scroll when needed */\n  overflow: scroll;       /* always show scrollbar */\n  overflow: hidden;       /* clip content */\n  overflow-x: auto;       /* horizontal only */\n  overflow-y: scroll;     /* vertical always */\n  \n  /* text overflow */\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n/* Z-index stacking */\n.modal { z-index: 1000; }\n.overlay { z-index: 999; }\n.dropdown { z-index: 100; }\n\n/* Z-index only works on positioned elements */\nz-index: auto;   /* default, follows parent */\nz-index: 1;      /* on top of siblings */" }
+      ]
+    },
+    {
+      "title": "9. CSS Variables & Modern Features",
+      "type": "code",
+      "items": [
+        { "label": "Custom Properties (Variables)", "code": ":root {\n  --primary: #7c3aed;\n  --primary-light: #a78bfa;\n  --text: #171717;\n  --bg: #ffffff;\n  --radius: 8px;\n  --shadow: 0 2px 8px rgba(0,0,0,0.1);\n  --font-main: 'Inter', sans-serif;\n}\n\n[data-theme=\"dark\"] {\n  --text: #ededed;\n  --bg: #0a0a0a;\n}\n\n.button {\n  background: var(--primary);\n  border-radius: var(--radius);\n  box-shadow: var(--shadow);\n  font-family: var(--font-main);\n  color: white;\n  padding: 0.5em 1em;\n}\n\n/* calc, min, max, clamp */\n.responsive {\n  width: calc(100% - 40px);\n  font-size: max(1rem, 2.5vw);\n  padding: clamp(1rem, 3vw, 2rem);\n}" },
+        { "label": "Modern CSS Features", "code": "/* Container queries */\n@container (min-width: 400px) {\n  .card { display: grid; grid-template-columns: 1fr 1fr; }\n}\n\n/* Nesting (CSS Nesting 1) */\n.card {\n  background: white;\n  \n  & h2 { color: blue; }\n  & .body { padding: 1rem; }\n  &:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.2); }\n}\n\n/* has() selector */\n.card:has(img) {\n  grid-template-rows: auto 1fr;\n}\n.form:has(:invalid) .submit { opacity: 0.5; }\n\n/* Scroll snap */\n.gallery {\n  display: flex;\n  overflow-x: auto;\n  scroll-snap-type: x mandatory;\n}\n.gallery img { scroll-snap-align: center; }" }
+      ]
+    },
+    {
+      "title": "10. Frameworks & Preprocessors",
+      "type": "code",
+      "items": [
+        { "label": "Sass/SCSS Basics", "code": "// Variables\n$primary: #7c3aed;\n$breakpoint-md: 768px;\n\n// Nesting\nnav {\n  ul { display: flex; }\n  li { list-style: none; }\n  a { color: $primary; }\n}\n\n// Mixins\n@mixin flex-center {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}\n\n.modal { @include flex-center; }\n\n// Extend\n%btn-base {\n  padding: 0.5em 1em;\n  border-radius: 4px;\n}\n.btn-primary { @extend %btn-base; background: $primary; }\n\n// Functions\n@function rem($px) {\n  @return ($px / 16px) * 1rem;\n}\nh1 { font-size: rem(32px); }" },
+        { "label": "Tailwind CSS Basics", "code": "<!-- Utility-first approach -->\n<div class=\"flex items-center justify-between p-4 bg-white shadow rounded-lg\">\n  <h2 class=\"text-lg font-bold text-gray-900\">Title</h2>\n  <button class=\"px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition\">\n    Click\n  </button>\n</div>\n\n<!-- Responsive prefixes -->\n<div class=\"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4\">\n  <div class=\"p-4 bg-gray-50 rounded\">Item 1</div>\n</div>\n\n<!-- Dark mode -->\n<div class=\"bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100\">\n  Content\n</div>" }
+      ]
+    }
+  ]
+}

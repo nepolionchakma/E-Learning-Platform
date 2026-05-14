@@ -1,0 +1,58 @@
+{
+  "title": "Docker",
+  "icon": "🐳",
+  "description": "Containerization. Images, containers, Dockerfile, Compose, volumes, networking, and orchestration.",
+  "sections": [
+    {
+      "title": "1. Docker Basics",
+      "type": "code",
+      "items": [
+        { "label": "Install & Verify", "code": "# Install on Ubuntu\nsudo apt update\nsudo apt install docker.io -y\nsudo systemctl enable --now docker\n\n# Verify\nsudo docker run hello-world\ndocker --version\ndocker compose version\n\n# Post-install (run without sudo)\nsudo usermod -aG docker $USER\n# Logout and log back in\n\n# Basic commands\ndocker ps                    # running containers\ndocker ps -a                 # all containers\ndocker images                # list images\ndocker info                  # system info" },
+        { "label": "Dockerfile", "code": "# Dockerfile - build instructions\n\nFROM node:20-alpine          # base image\n\nWORKDIR /app                 # working directory\n\nCOPY package*.json ./        # copy dependency files\nRUN npm ci --only=production # install dependencies\n\nCOPY . .                     # copy source\n\nEXPOSE 3000                  # document port\n\nCMD [\"node\", \"server.js\"]    # default command\n\n# Build the image\ndocker build -t myapp:latest .\ndocker build -t myapp:1.0.0 -f Dockerfile.prod ." }
+      ]
+    },
+    {
+      "title": "2. Container Lifecycle",
+      "type": "code",
+      "items": [
+        { "label": "Run & Manage", "code": "# Run\n docker run myapp                  # foreground\ndocker run -d myapp                # detached (background)\ndocker run -p 3000:3000 myapp      # port mapping (host:container)\ndocker run --name myapp myapp      # named container\ndocker run -e NODE_ENV=production myapp   # env variable\ndocker run -v $(pwd):/app myapp    # volume mount\ndocker run --rm myapp              # auto-remove on stop\n\n# Manage\ndocker ps                          # running\ndocker ps -a                       # all\ndocker start myapp                 # start stopped\ndocker stop myapp                  # graceful stop\ndocker kill myapp                  # force stop\ndocker restart myapp               # restart\n\n# Logs & exec\ndocker logs myapp                  # view logs\ndocker logs -f myapp               # follow logs\ndocker logs --tail 50 myapp        # last 50 lines\ndocker exec -it myapp sh           # enter container\ndocker exec -it myapp bash         # if bash available\n\n# Inspect\ndocker inspect myapp               # detailed info\ndocker stats                       # live resource usage\ndocker top myapp                   # running processes" }
+      ]
+    },
+    {
+      "title": "3. Images & Registries",
+      "type": "code",
+      "items": [
+        { "label": "Image Management", "code": "# List & remove\ndocker images                    # all images\ndocker rmi myapp:latest          # remove image\ndocker image prune               # remove dangling images\ndocker image prune -a            # remove all unused\n\n# Tag & push\ndocker tag myapp username/myapp:latest\ndocker login                     # login to registry\ndocker push username/myapp:latest\n\n# Pull\ndocker pull node:20-alpine\ndocker pull username/myapp:latest\n\n# Save & load (air-gapped)\ndocker save -o myapp.tar myapp\ndocker load -i myapp.tar\n\n# History & layers\ndocker history myapp:latest      # layer history\ndocker image inspect myapp\n\n# Common base images\nnode:20-alpine       # small Node.js (117MB)\npython:3.12-slim     # Python slim (147MB)\nnginx:alpine         # Nginx web server (24MB)\nubuntu:22.04         # Ubuntu (77MB)\nalpine:latest        # Alpine Linux (7MB)" }
+      ]
+    },
+    {
+      "title": "4. Volumes & Data",
+      "type": "code",
+      "items": [
+        { "label": "Persistent Data", "code": "# Named volume\ndocker volume create mydata\ndocker run -v mydata:/data myapp\n\n# Bind mount\ndocker run -v $(pwd):/app myapp           # Linux/macOS\ndocker run -v \"%cd%\":/app myapp          # Windows CMD\n\n# Read-only bind mount\ndocker run -v $(pwd):/app:ro myapp\n\n# tmpfs mount (in-memory, for secrets)\ndocker run --tmpfs /tmp myapp\n\n# Manage volumes\ndocker volume ls\ndocker volume inspect mydata\ndocker volume prune\n\n# Copy files between host and container\ndocker cp file.txt myapp:/app/file.txt\ndocker cp myapp:/app/output.txt .\n\n# Backup volume\ndocker run --rm -v mydata:/source -v $(pwd):/backup alpine \\\n  tar czf /backup/mydata.tar.gz -C /source ." }
+      ]
+    },
+    {
+      "title": "5. Networking",
+      "type": "code",
+      "items": [
+        { "label": "Docker Networks", "code": "# Network types\ndocker network ls\n# bridge: default, isolated network\n# host: shares host network\n# none: no network\n\n# Create network\ndocker network create mynetwork\n\n# Connect container on startup\ndocker run --network mynetwork --name web myapp\n\n# Connect existing container\ndocker network connect mynetwork myapp\n\n# DNS resolution\n# Containers on same network resolve by name\n# ping web (not IP, just container name)\n\n# Port publishing\ndocker run -p 80:3000 myapp    # host:container\ndocker run -p 127.0.0.1:8080:3000 myapp  # bind to specific IP\n\n# Inspect network\ndocker network inspect mynetwork\ndocker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' myapp" }
+      ]
+    },
+    {
+      "title": "6. Docker Compose",
+      "type": "code",
+      "items": [
+        { "label": "Compose File", "code": "# docker-compose.yml\nversion: '3.8'\n\nservices:\n  web:\n    build: .\n    ports:\n      - \"3000:3000\"\n    environment:\n      - NODE_ENV=production\n      - DATABASE_URL=postgres://user:pass@db:5432/myapp\n    depends_on:\n      - db\n    volumes:\n      - .:/app\n      - /app/node_modules\n\n  db:\n    image: postgres:15\n    environment:\n      - POSTGRES_DB=myapp\n      - POSTGRES_USER=user\n      - POSTGRES_PASSWORD=secret\n    volumes:\n      - pgdata:/var/lib/postgresql/data\n    ports:\n      - \"5432:5432\"\n\n  redis:\n    image: redis:7-alpine\n    ports:\n      - \"6379:6379\"\n\nvolumes:\n  pgdata:" },
+        { "label": "Compose Commands", "code": "docker compose up           # start services\ndocker compose up -d        # start in background\ndocker compose down         # stop and remove\ndocker compose down -v      # stop + remove volumes\ndocker compose ps           # list services\ndocker compose logs -f      # follow all logs\ndocker compose logs web -f  # follow specific service\ndocker compose exec web sh  # shell into service\ndocker compose build        # rebuild images\ndocker compose pull         # pull latest images\ndocker compose restart      # restart all\ndocker compose config       # validate compose file\n\n# Profiles\ndocker compose --profile dev up\ndocker compose --profile prod up" }
+      ]
+    },
+    {
+      "title": "7. Best Practices",
+      "type": "code",
+      "items": [
+        { "label": "Optimization Tips", "code": "# 1. Use multi-stage builds\nFROM node:20-alpine AS builder\nCOPY . .\nRUN npm run build\n\nFROM nginx:alpine\nCOPY --from=builder /app/dist /usr/share/nginx/html\n\n# 2. Minimize layers\nRUN apt-get update && apt-get install -y \\\n    package1 \\\n    package2 \\\n    && rm -rf /var/lib/apt/lists/*\n\n# 3. Order matters (cache layers)\nCOPY package*.json ./   # changes rarely\nRUN npm install         # cached if package.json same\nCOPY . .                # changes often\n\n# 4. Use .dockerignore\nnode_modules/\nnpm-debug.log\n.env\n.git\n*.md\n\n# 5. Run as non-root\nRUN addgroup -S appgroup && adduser -S appuser -G appgroup\nUSER appuser\n\n# 6. Healthcheck\nHEALTHCHECK --interval=30s --timeout=3s \\\n  CMD curl -f http://localhost/ || exit 1" }
+      ]
+    }
+  ]
+}

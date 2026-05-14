@@ -1,0 +1,44 @@
+{
+  "title": "C++",
+  "icon": "⚙️",
+  "description": "Systems programming. Memory management, STL, pointers, OOP, templates, and performance optimization.",
+  "sections": [
+    {
+      "title": "1. Basics",
+      "type": "code",
+      "items": [
+        { "label": "Hello World & Types", "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    std::cout << \"Hello World!\" << std::endl;\n    \n    // Types\n    int age = 25;\n    double price = 19.99;\n    bool isActive = true;\n    char grade = 'A';\n    std::string name = \"John\";\n    \n    // Auto type deduction\n    auto x = 10;        // int\n    auto y = 3.14;      // double\n    \n    // Const\n    const double PI = 3.14159;\n    constexpr int MAX = 100;  // compile-time constant\n    \n    return 0;\n}" },
+        { "label": "Input/Output", "code": "#include <iostream>\n#include <iomanip>\n\nint main() {\n    int age;\n    std::string name;\n    \n    std::cout << \"Enter name: \";\n    std::cin >> name;\n    \n    std::cout << \"Enter age: \";\n    std::cin >> age;\n    \n    std::cout << \"Name: \" << name << \", Age: \" << age << std::endl;\n    \n    // Formatted output\n    std::cout << std::fixed << std::setprecision(2);\n    std::cout << \"Price: $\" << 19.995 << std::endl;\n    \n    // Get entire line\n    std::cin.ignore();\n    std::getline(std::cin, name);\n}" }
+      ]
+    },
+    {
+      "title": "2. OOP",
+      "type": "code",
+      "items": [
+        { "label": "Classes & Inheritance", "code": "class Animal {\nprotected:\n    std::string name;\n\npublic:\n    Animal(const std::string& name) : name(name) {}\n    \n    virtual void speak() const {\n        std::cout << name << \" makes a sound\" << std::endl;\n    }\n    \n    virtual ~Animal() = default;\n    \n    // Getter\n    std::string getName() const { return name; }\n};\n\nclass Dog : public Animal {\nprivate:\n    std::string breed;\n\npublic:\n    Dog(const std::string& name, const std::string& breed)\n        : Animal(name), breed(breed) {}\n    \n    void speak() const override {\n        std::cout << name << \" barks\" << std::endl;\n    }\n};\n\n// Usage\n// Animal* pet = new Dog(\"Rex\", \"Shepherd\");\n// pet->speak();\n// delete pet;" },
+        { "label": "RAII & Smart Pointers", "code": "#include <memory>\n\n// RAII: Resource Acquisition Is Initialization\n// Resources acquired in constructor, released in destructor\n\n// Smart pointers (C++11+)\n// Unique ownership\nstd::unique_ptr<Dog> dog1 = std::make_unique<Dog>(\"Rex\", \"Shepherd\");\n// Cannot copy, only move\n// std::unique_ptr<Dog> dog2 = dog1; // ERROR\nstd::unique_ptr<Dog> dog2 = std::move(dog1); // OK\n\n// Shared ownership (reference counted)\nstd::shared_ptr<Dog> shared1 = std::make_shared<Dog>(\"Buddy\", \"Lab\");\n{\n    std::shared_ptr<Dog> shared2 = shared1;\n} // shared2 destroyed, shared1 still alive\n// shared1 destroyed when last reference dies\n\n// Weak pointer (non-owning observer)\nstd::weak_ptr<Dog> weak = shared1;" }
+      ]
+    },
+    {
+      "title": "3. STL Containers",
+      "type": "code",
+      "items": [
+        { "label": "Containers", "code": "#include <vector>\n#include <map>\n#include <set>\n#include <unordered_map>\n#include <algorithm>\n\n// Vector (dynamic array)\nstd::vector<int> nums = {1, 2, 3};\nnums.push_back(4);\nnums.pop_back();\nnums.size();\nnums[0];\nnums.at(0);  // bounds-checked\n\nfor (int n : nums) { }\n\n// Map (ordered tree)\nstd::map<std::string, int> ages;\nages[\"John\"] = 25;\nages[\"Jane\"] = 30;\n\nif (ages.count(\"John\")) { }\nauto it = ages.find(\"John\");\n\n// Unordered map (hash table, faster)\nstd::unordered_map<std::string, int> cache;\n\n// Set\nstd::set<int> unique;\nunique.insert(10);\nunique.contains(10);  // C++20\n\n// Algorithm\nstd::sort(nums.begin(), nums.end());\nauto it = std::find(nums.begin(), nums.end(), 3);\nstd::reverse(nums.begin(), nums.end());\nstd::accumulate(nums.begin(), nums.end(), 0);" }
+      ]
+    },
+    {
+      "title": "4. Memory & Pointers",
+      "type": "code",
+      "items": [
+        { "label": "Pointers & References", "code": "int x = 10;\nint* ptr = &x;      // pointer to x\nint& ref = x;        // reference to x\n\n*ptr = 20;           // dereference\nref = 30;            // modifies x\n\n// Null pointer\nint* p = nullptr;    // modern C++ (instead of NULL)\n\n// Pointer to array\nint arr[] = {1, 2, 3};\nint* arrPtr = arr;\narrPtr[0];           // = 1\n*(arrPtr + 1);       // = 2\n\n// Dynamic allocation (prefer smart pointers)\nint* dyn = new int(42);\ndelete dyn;\n\nint* arr2 = new int[10];\ndelete[] arr2;\n\n// Function pointers\nint (*func)(int, int) = &add;\nint result = func(3, 4);" }
+      ]
+    },
+    {
+      "title": "5. Modern C++ (11/14/17/20)",
+      "type": "code",
+      "items": [
+        { "label": "Modern Features", "code": "// Lambda expressions\nauto sum = [](int a, int b) { return a + b; };\n\n// Lambda with capture\nint multiplier = 3;\nauto times = [multiplier](int x) { return x * multiplier; };\n\n// Range-based for (C++11)\nfor (const auto& item : items) { }\n\n// Move semantics\nstd::vector<int> v1 = {1, 2, 3};\nauto v2 = std::move(v1);  // v1 is now empty\n\n// std::optional (C++17)\nstd::optional<int> mightFail(int x) {\n    if (x > 0) return x * 2;\n    return std::nullopt;\n}\n\n// Structured bindings (C++17)\nstd::map<std::string, int> scores;\nfor (const auto& [name, score] : scores) { }\n\n// if with init (C++17)\nif (auto it = map.find(key); it != map.end()) {\n    // use it\n}\n\n// Concepts (C++20)\ntemplate<typename T>\nconcept Numeric = std::is_arithmetic_v<T>;\n\nauto add(Numeric auto a, Numeric auto b) { return a + b; }" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,85 @@
+{
+  "title": "HTML",
+  "icon": "🌐",
+  "description": "Structure the web. Semantic elements, forms, tables, media, SEO, accessibility, and best practices.",
+  "sections": [
+    {
+      "title": "1. Document Structure",
+      "type": "code",
+      "items": [
+        { "label": "Basic HTML5 Template", "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>My Page</title>\n</head>\n<body>\n  <h1>Hello World</h1>\n</body>\n</html>" },
+        { "label": "Head Elements", "code": "<head>\n  <title>Page Title</title>\n  <meta name=\"description\" content=\"Page description\">\n  <meta name=\"keywords\" content=\"html, css, tutorial\">\n  <link rel=\"stylesheet\" href=\"styles.css\">\n  <script src=\"script.js\" defer></script>\n</head>" }
+      ]
+    },
+    {
+      "title": "2. Text Elements",
+      "type": "code",
+      "items": [
+        { "label": "Headings & Paragraphs", "code": "<h1>Heading 1</h1>\n<h2>Heading 2</h2>\n<h3>Heading 3</h3>\n<p>This is a paragraph of text.</p>\n<p>This is another<br>line break.</p>" },
+        { "label": "Text Formatting", "code": "<strong>Bold text</strong>\n<em>Italic text</em>\n<u>Underlined</u>\n<mark>Highlighted</mark>\n<small>Small text</small>\n<del>Deleted text</del>\n<ins>Inserted text</ins>\n<sub>Subscript</sub>\n<sup>Superscript</sup>\n<code>Inline code</code>\n<pre>Preformatted text</pre>" }
+      ]
+    },
+    {
+      "title": "3. Links & Images",
+      "type": "code",
+      "items": [
+        { "label": "Anchor Links", "code": "<a href=\"https://example.com\">Absolute link</a>\n<a href=\"/about\">Relative link</a>\n<a href=\"#section\">Anchor link</a>\n<a href=\"mailto:user@example.com\">Email link</a>\n<a href=\"tel:+123456789\">Phone link</a>\n<a href=\"page.pdf\" download>Download link</a>\n<a href=\"page.html\" target=\"_blank\">New tab</a>" },
+        { "label": "Images", "code": "<img src=\"photo.jpg\" alt=\"Description\" width=\"500\" height=\"300\">\n<img src=\"photo.webp\" alt=\"\" loading=\"lazy\">\n<picture>\n  <source srcset=\"large.webp\" media=\"(min-width: 800px)\">\n  <source srcset=\"small.webp\" media=\"(max-width: 799px)\">\n  <img src=\"fallback.jpg\" alt=\"Responsive image\">\n</picture>\n<figure>\n  <img src=\"chart.png\" alt=\"Chart\">\n  <figcaption>Figure caption</figcaption>\n</figure>" }
+      ]
+    },
+    {
+      "title": "4. Lists",
+      "type": "code",
+      "items": [
+        { "label": "Unordered & Ordered", "code": "<ul>\n  <li>Item A</li>\n  <li>Item B</li>\n  <li>Item C</li>\n</ul>\n\n<ol>\n  <li>First step</li>\n  <li>Second step</li>\n  <li>Third step</li>\n</ol>\n\n<ol type=\"A\">\n  <li>Option A</li>\n  <li>Option B</li>\n</ol>" },
+        { "label": "Definition List", "code": "<dl>\n  <dt>HTML</dt>\n  <dd>HyperText Markup Language</dd>\n  <dt>CSS</dt>\n  <dd>Cascading Style Sheets</dd>\n</dl>" }
+      ]
+    },
+    {
+      "title": "5. Tables",
+      "type": "code",
+      "items": [
+        { "label": "Table Structure", "code": "<table>\n  <thead>\n    <tr>\n      <th>Name</th>\n      <th>Age</th>\n      <th>City</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td>John</td>\n      <td>25</td>\n      <td>NYC</td>\n    </tr>\n    <tr>\n      <td>Jane</td>\n      <td>30</td>\n      <td>LA</td>\n    </tr>\n  </tbody>\n  <tfoot>\n    <tr>\n      <td colspan=\"2\">Total</td>\n      <td>2</td>\n    </tr>\n  </tfoot>\n</table>" },
+        { "label": "Rowspan & Colspan", "code": "<table>\n  <tr>\n    <th>Name</th>\n    <th colspan=\"2\">Details</th>\n  </tr>\n  <tr>\n    <td>John</td>\n    <td>25</td>\n    <td>NYC</td>\n  </tr>\n</table>" }
+      ]
+    },
+    {
+      "title": "6. Forms & Inputs",
+      "type": "code",
+      "items": [
+        { "label": "Form Elements", "code": "<form action=\"/submit\" method=\"POST\">\n  <label for=\"name\">Name:</label>\n  <input type=\"text\" id=\"name\" name=\"name\" required placeholder=\"Enter name\">\n\n  <label for=\"email\">Email:</label>\n  <input type=\"email\" id=\"email\" name=\"email\">\n\n  <label for=\"password\">Password:</label>\n  <input type=\"password\" id=\"password\" name=\"password\" minlength=\"6\">\n\n  <label for=\"age\">Age:</label>\n  <input type=\"number\" id=\"age\" name=\"age\" min=\"0\" max=\"150\">\n\n  <label for=\"country\">Country:</label>\n  <select id=\"country\" name=\"country\">\n    <option value=\"\">Select...</option>\n    <option value=\"us\">USA</option>\n    <option value=\"uk\">UK</option>\n  </select>\n\n  <fieldset>\n    <legend>Gender</legend>\n    <input type=\"radio\" id=\"male\" name=\"gender\" value=\"male\">\n    <label for=\"male\">Male</label>\n    <input type=\"radio\" id=\"female\" name=\"gender\" value=\"female\">\n    <label for=\"female\">Female</label>\n  </fieldset>\n\n  <input type=\"checkbox\" id=\"agree\" name=\"agree\">\n  <label for=\"agree\">I agree</label>\n\n  <input type=\"file\" name=\"file\" accept=\"image/*\" multiple>\n\n  <textarea name=\"bio\" rows=\"4\" cols=\"50\" placeholder=\"Bio\"></textarea>\n\n  <input type=\"range\" min=\"0\" max=\"100\" value=\"50\">\n  <input type=\"color\" value=\"#ff0000\">\n  <input type=\"date\">\n  <input type=\"time\">\n  <input type=\"search\" placeholder=\"Search\">\n\n  <button type=\"submit\">Submit</button>\n  <button type=\"reset\">Reset</button>\n</form>" },
+        { "label": "Input Types Reference", "code": "text, email, password, number, tel, url\nsearch, date, time, datetime-local, month, week\ncolor, range, file, checkbox, radio, hidden\nsubmit, reset, button, image"}
+      ]
+    },
+    {
+      "title": "7. Semantic HTML5",
+      "type": "code",
+      "items": [
+        { "label": "Semantic Layout", "code": "<header>\n  <nav>\n    <ul>\n      <li><a href=\"/\">Home</a></li>\n      <li><a href=\"/about\">About</a></li>\n    </ul>\n  </nav>\n</header>\n\n<main>\n  <article>\n    <header>\n      <h1>Article Title</h1>\n      <time datetime=\"2025-01-01\">Jan 1</time>\n    </header>\n    <section>\n      <h2>Section Title</h2>\n      <p>Content here...</p>\n    </section>\n  </article>\n\n  <aside>\n    <h2>Sidebar</h2>\n  </aside>\n</main>\n\n<footer>\n  <p>&copy; 2025</p>\n</footer>" },
+        { "label": "Semantic Tags Reference", "code": "<header> - Introductory content\n<nav> - Navigation links\n<main> - Primary content (once per page)\n<article> - Self-contained content\n<section> - Thematic group\n<aside> - Sidebar / related content\n<footer> - Footer / closing content\n<figure> - Self-contained media\n<figcaption> - Figure caption\n<time> - Date/time\n<mark> - Highlighted text\n<details> - Collapsible details\n<summary> - Details heading\n<dialog> - Modal dialog" }
+      ]
+    },
+    {
+      "title": "8. Media & Embed",
+      "type": "code",
+      "items": [
+        { "label": "Audio & Video", "code": "<audio controls>\n  <source src=\"song.mp3\" type=\"audio/mpeg\">\n  <source src=\"song.ogg\" type=\"audio/ogg\">\n  Your browser does not support audio.\n</audio>\n\n<video controls width=\"640\" height=\"360\" poster=\"preview.jpg\">\n  <source src=\"movie.mp4\" type=\"video/mp4\">\n  <source src=\"movie.webm\" type=\"video/webm\">\n  <track src=\"subtitles.vtt\" kind=\"subtitles\" srclang=\"en\">\n  Your browser does not support video.\n</video>" },
+        { "label": "Embed & iframe", "code": "<iframe src=\"https://example.com\" width=\"600\" height=\"400\"\n  title=\"Example\" allowfullscreen loading=\"lazy\">\n</iframe>\n\n<embed src=\"file.pdf\" type=\"application/pdf\" width=\"600\" height=\"400\">" }
+      ]
+    },
+    {
+      "title": "9. Meta & SEO",
+      "type": "code",
+      "items": [
+        { "label": "Essential Meta Tags", "code": "<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<meta name=\"description\" content=\"Page description for SEO\">\n<meta name=\"robots\" content=\"index, follow\">\n<meta property=\"og:title\" content=\"Social Share Title\">\n<meta property=\"og:description\" content=\"Social description\">\n<meta property=\"og:image\" content=\"https://example.com/image.jpg\">\n<meta name=\"twitter:card\" content=\"summary_large_image\">\n<link rel=\"canonical\" href=\"https://example.com/page\">\n<link rel=\"icon\" href=\"/favicon.ico\" type=\"image/x-icon\">" }
+      ]
+    },
+    {
+      "title": "10. Accessibility (a11y)",
+      "type": "code",
+      "items": [
+        { "label": "ARIA & Accessibility", "code": "<!-- Roles -->\n<nav role=\"navigation\" aria-label=\"Main menu\">...</nav>\n<div role=\"alert\">Error occurred</div>\n<button aria-expanded=\"false\">Toggle</button>\n\n<!-- Alt text on images -->\n<img src=\"logo.png\" alt=\"Company Logo\">\n<img src=\"decoration.jpg\" alt=\"\">  <!-- Decorative: empty alt -->\n\n<!-- Form accessibility -->\n<label for=\"email\">Email:</label>\n<input id=\"email\" aria-describedby=\"email-help\">\n<p id=\"email-help\" class=\"sr-only\">We'll never share your email</p>\n\n<!-- Skip navigation -->\n<a href=\"#main\" class=\"skip-link\">Skip to main content</a>\n<main id=\"main\">...</main>\n\n<!-- Tabindex -->\n<div tabindex=\"0\">Focusable div</div>" }
+      ]
+    }
+  ]
+}

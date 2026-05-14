@@ -1,0 +1,52 @@
+{
+  "title": "Java",
+  "icon": "☕",
+  "description": "Enterprise programming. OOP, collections, streams, multithreading, Spring Boot, and JVM ecosystem.",
+  "sections": [
+    {
+      "title": "1. Basics & Syntax",
+      "type": "code",
+      "items": [
+        { "label": "Hello World", "code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"Hello World!\");\n    }\n}" },
+        { "label": "Variables & Types", "code": "// Primitive types\nint age = 25;\ndouble price = 19.99;\nboolean isActive = true;\nchar grade = 'A';\nlong bigNumber = 10000000000L;\nfloat rate = 5.5f;\nbyte small = 127;\nshort medium = 32000;\n\n// Reference types\nString name = \"John\";\nInteger count = 100;  // wrapper class\nint[] numbers = {1, 2, 3};\nint[][] matrix = {{1,2}, {3,4}};\n\n// Type inference (Java 10+)\nvar message = \"Hello\";\n\n// Constants\nfinal double PI = 3.14159;\n\n// String methods\nname.length();\nname.substring(0, 2);\nname.toUpperCase();\nString.format(\"Hello %s, age %d\", name, age);\n\"   text   \".trim();" }
+      ]
+    },
+    {
+      "title": "2. Control Flow",
+      "type": "code",
+      "items": [
+        { "label": "Conditionals & Loops", "code": "// If-else\nif (score >= 90) {\n    grade = 'A';\n} else if (score >= 80) {\n    grade = 'B';\n} else {\n    grade = 'F';\n}\n\n// Switch (Java 14+)\nString result = switch (day) {\n    case MONDAY, FRIDAY -> \"Work\";\n    case SATURDAY, SUNDAY -> \"Rest\";\n    default -> \"Unknown\";\n};\n\n// For loop\nfor (int i = 0; i < 10; i++) { }\nfor (String item : list) { }  // enhanced for\n\n// While\ndo { } while (condition);\n\n// Stream forEach\nlist.stream().forEach(System.out::println);" }
+      ]
+    },
+    {
+      "title": "3. OOP",
+      "type": "code",
+      "items": [
+        { "label": "Classes & Inheritance", "code": "public class Animal {\n    protected String name;\n    \n    public Animal(String name) {\n        this.name = name;\n    }\n    \n    public void speak() {\n        System.out.println(name + \" makes a sound\");\n    }\n    \n    // Getter/setter\n    public String getName() { return name; }\n    public void setName(String name) { this.name = name; }\n}\n\npublic class Dog extends Animal {\n    private String breed;\n    \n    public Dog(String name, String breed) {\n        super(name);\n        this.breed = breed;\n    }\n    \n    @Override\n    public void speak() {\n        System.out.println(name + \" barks\");\n    }\n}\n\n// Interface\npublic interface Drawable {\n    void draw();\n    default void print() { }  // Java 8+\n}\n\n// Abstract class\npublic abstract class Shape {\n    abstract double area();\n}" },
+        { "label": "Records & Enums", "code": "// Record (Java 16+): immutable data carrier\npublic record Point(int x, int y) { }\n// Usage: new Point(10, 20).x()\n\n// Enum\npublic enum Status {\n    ACTIVE, INACTIVE, PENDING\n}\n\npublic enum Color {\n    RED(\"#FF0000\"),\n    GREEN(\"#00FF00\");\n    \n    private final String hex;\n    Color(String hex) { this.hex = hex; }\n    public String getHex() { return hex; }\n}" }
+      ]
+    },
+    {
+      "title": "4. Collections Framework",
+      "type": "code",
+      "items": [
+        { "label": "Lists, Sets, Maps", "code": "import java.util.*;\n\n// List\nList<String> list = new ArrayList<>();\nlist.add(\"apple\");\nlist.get(0);\nlist.remove(\"apple\");\nlist.size();\nlist.contains(\"apple\");\n\nList.of(\"a\", \"b\", \"c\");  // immutable list\n\n// Set\nSet<Integer> set = new HashSet<>();\nset.add(1);\nset.contains(1);\n\n// Map\nMap<String, Integer> map = new HashMap<>();\nmap.put(\"John\", 25);\nmap.get(\"John\");\nmap.getOrDefault(\"Jane\", 0);\nmap.forEach((k, v) -> System.out.println(k + \": \" + v));\n\n// Sorting\nCollections.sort(list);\nlist.sort(Comparator.naturalOrder());\nlist.sort((a, b) -> a.compareTo(b));" }
+      ]
+    },
+    {
+      "title": "5. Streams & Lambda",
+      "type": "code",
+      "items": [
+        { "label": "Stream API", "code": "List<Integer> numbers = List.of(1, 2, 3, 4, 5);\n\nnumbers.stream()\n    .filter(n -> n % 2 == 0)\n    .map(n -> n * 2)\n    .sorted()\n    .collect(Collectors.toList());\n\n// Common operations\nlist.stream()\n    .filter(x -> x > 10)\n    .map(String::valueOf)\n    .distinct()\n    .limit(5)\n    .skip(2)\n    .peek(System.out::println)\n    .count();\n\n// Optional\nOptional<String> result = list.stream()\n    .filter(x -> x.startsWith(\"A\"))\n    .findFirst();\n\nresult.ifPresent(System.out::println);\nString val = result.orElse(\"default\");\n\n// Grouping\nMap<String, List<User>> byRole = users.stream()\n    .collect(Collectors.groupingBy(User::role));" }
+      ]
+    },
+    {
+      "title": "6. Spring Boot Basics",
+      "type": "code",
+      "items": [
+        { "label": "REST Controller", "code": "@RestController\n@RequestMapping(\"/api/users\")\npublic class UserController {\n\n    @Autowired\n    private UserService userService;\n\n    @GetMapping\n    public List<User> getAll() {\n        return userService.findAll();\n    }\n\n    @GetMapping(\"/{id}\")\n    public ResponseEntity<User> getById(@PathVariable Long id) {\n        return ResponseEntity.ok(userService.findById(id));\n    }\n\n    @PostMapping\n    public ResponseEntity<User> create(@RequestBody User user) {\n        return ResponseEntity.status(201).body(userService.save(user));\n    }\n\n    @PutMapping(\"/{id}\")\n    public User update(@PathVariable Long id, @RequestBody User user) {\n        return userService.update(id, user);\n    }\n\n    @DeleteMapping(\"/{id}\")\n    public ResponseEntity<Void> delete(@PathVariable Long id) {\n        userService.delete(id);\n        return ResponseEntity.noContent().build();\n    }\n}" },
+        { "label": "JPA Entity", "code": "@Entity\n@Table(name = \"users\")\npublic class User {\n    @Id\n    @GeneratedValue(strategy = GenerationType.IDENTITY)\n    private Long id;\n    \n    @Column(nullable = false)\n    private String name;\n    \n    @Column(unique = true)\n    private String email;\n    \n    private Integer age;\n    \n    @CreationTimestamp\n    private LocalDateTime createdAt;\n    \n    // getters, setters, constructors\n}" }
+      ]
+    }
+  ]
+}
