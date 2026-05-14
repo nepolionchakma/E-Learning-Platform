@@ -1,6 +1,12 @@
+'use client'
+
+import Accordion from './Accordion'
+import CopyButton from './CopyButton'
+import site from '@/data/site.json'
+
 interface CommandRow {
   name: string
-  rows: string[][]
+  rows?: string[][]
   type?: string
   code?: string
 }
@@ -10,56 +16,72 @@ interface Stage {
   commands: CommandRow[]
 }
 
+interface SectionItem {
+  label?: string
+  code?: string
+}
+
+interface Section {
+  title: string
+  type: string
+  items: SectionItem[]
+}
+
 interface TopicData {
   title: string
   icon: string
   description: string
   stages?: Stage[]
-  sections?: {
-    title: string
-    type: string
-    items: { label?: string; code?: string }[]
-  }[]
+  sections?: Section[]
 }
 
 export default function ContentRenderer({ data }: { data: TopicData }) {
-  if (data.stages) {
-    return renderStages(data.stages)
-  }
-  if (data.sections) {
-    return renderSections(data.sections)
-  }
+  if (data.stages) return renderStages(data.stages)
+  if (data.sections) return renderSections(data.sections)
   return null
 }
 
 function renderStages(stages: Stage[]) {
   return (
-    <div className="space-y-12">
+    <div className="space-y-3">
       {stages.map((stage, si) => (
-        <section key={si} className="rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 bg-white dark:bg-zinc-900">
-          <h2 className="text-2xl font-bold text-orange-500 mb-1">{stage.title}</h2>
-          <div className="space-y-6 mt-4">
+        <Accordion key={si} title={stage.title} defaultOpen={si === 0}>
+          <div className="space-y-5">
             {stage.commands.map((cmd, ci) => (
               <div key={ci}>
-                <h3 className="font-bold text-lg mb-2">{cmd.name}</h3>
+                <h4 className="font-semibold text-sm text-zinc-800 dark:text-zinc-200 mb-2 flex items-center gap-2">
+                  <span className="w-1 h-4 bg-orange-500 rounded-full inline-block" />
+                  {cmd.name}
+                </h4>
                 {cmd.type === 'codeblock' ? (
-                  <pre className="text-sm bg-zinc-900 text-zinc-100 p-4 rounded-lg overflow-x-auto">{cmd.code}</pre>
+                  <div className="relative group">
+                    <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <CopyButton text={cmd.code || ''} />
+                    </div>
+                    <pre className="text-sm bg-zinc-900 text-zinc-100 p-4 rounded-lg overflow-x-auto border border-zinc-700">{cmd.code}</pre>
+                  </div>
                 ) : (
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
                     <table className="w-full text-sm border-collapse">
                       <thead>
                         <tr className="bg-zinc-100 dark:bg-zinc-800">
-                          <th className="p-2 text-left">Example</th>
-                          <th className="p-2 text-left">Scenario</th>
-                          <th className="p-2 text-left">Explanation</th>
+                          <th className="p-3 text-left font-semibold text-zinc-700 dark:text-zinc-300 border-b border-zinc-200 dark:border-zinc-700">Command</th>
+                          <th className="p-3 text-left font-semibold text-zinc-700 dark:text-zinc-300 border-b border-zinc-200 dark:border-zinc-700">Scenario</th>
+                          <th className="p-3 text-left font-semibold text-zinc-700 dark:text-zinc-300 border-b border-zinc-200 dark:border-zinc-700">Explanation</th>
+                          <th className="p-3 w-16 border-b border-zinc-200 dark:border-zinc-700" />
                         </tr>
                       </thead>
                       <tbody className="text-zinc-600 dark:text-zinc-300">
-                        {cmd.rows.map((row, ri) => (
-                          <tr key={ri} className="border-b border-zinc-100 dark:border-zinc-800">
-                            <td className="p-2"><code className="text-xs bg-zinc-100 dark:bg-zinc-800 px-1 rounded">{row[0]}</code></td>
-                            <td className="p-2">{row[1]}</td>
-                            <td className="p-2">{row[2]}</td>
+                        {cmd.rows?.map((row, ri) => (
+                          <tr key={ri} className="border-b border-zinc-100 dark:border-zinc-800 last:border-0 hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
+                            <td className="p-3 font-mono text-xs text-zinc-800 dark:text-zinc-200">
+                              <code>{row[0]}</code>
+                            </td>
+                            <td className="p-3 text-xs">{row[1]}</td>
+                            <td className="p-3 text-xs text-zinc-500">{row[2]}</td>
+                            <td className="p-2">
+                              <CopyButton text={row[0]} />
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -69,59 +91,68 @@ function renderStages(stages: Stage[]) {
               </div>
             ))}
           </div>
-        </section>
+        </Accordion>
       ))}
       <ResourcesSection />
     </div>
   )
 }
 
-function renderSections(sections: { title: string; type: string; items: { label?: string; code?: string }[] }[]) {
+function renderSections(sections: Section[]) {
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {sections.map((section, si) => (
-        <section key={si} className="rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 bg-white dark:bg-zinc-900">
-          <h2 className="text-xl font-bold mb-4">{section.title}</h2>
-          <div className="space-y-4">
+        <div key={si} className="rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden">
+          <div className="px-5 py-3 bg-zinc-50 dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700">
+            <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">{section.title}</h3>
+          </div>
+          <div className="px-5 py-4 bg-white dark:bg-zinc-900 space-y-4">
             {section.items.map((item, ii) => (
-              <div key={ii} className="p-4 bg-zinc-50 dark:bg-zinc-800 rounded-xl">
-                {item.label && <p className="text-sm font-medium text-zinc-500 mb-2">{item.label}</p>}
-                {item.code && <pre className="text-sm bg-zinc-900 text-zinc-100 p-4 rounded-lg overflow-x-auto">{item.code}</pre>}
+              <div key={ii}>
+                {item.label && (
+                  <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wide">
+                    {item.label}
+                  </p>
+                )}
+                {item.code && (
+                  <div className="relative group">
+                    <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <CopyButton text={item.code} />
+                    </div>
+                    <pre className="text-sm bg-zinc-900 text-zinc-100 p-4 rounded-lg overflow-x-auto border border-zinc-700 leading-relaxed">{item.code}</pre>
+                  </div>
+                )}
               </div>
             ))}
           </div>
-        </section>
+        </div>
       ))}
+      <ResourcesSection />
     </div>
   )
 }
 
 function ResourcesSection() {
+  const r = site.resources
   return (
-    <section className="rounded-2xl border border-orange-200 dark:border-orange-800 p-6 bg-orange-50 dark:bg-zinc-800">
-      <h2 className="text-xl font-bold text-orange-600 dark:text-orange-400 mb-4">Resources & Tips</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <h3 className="font-bold mb-2">Free Learning Resources</h3>
-          <ul className="space-y-2 text-sm text-zinc-600 dark:text-zinc-300">
-            <li>explainshell.com &ndash; paste any command to learn it</li>
-            <li>tldr.sh &ndash; simplified man pages</li>
-            <li>OverTheWire Bandit &ndash; game-like CLI challenges</li>
-            <li>learnshell.org &ndash; interactive shell scripting</li>
-            <li>linuxcommand.org &ndash; tutorials for all levels</li>
-          </ul>
-        </div>
-        <div>
-          <h3 className="font-bold mb-2">Study Plan</h3>
-          <ol className="space-y-2 text-sm text-zinc-600 dark:text-zinc-300 list-decimal list-inside">
-            <li>Install Ubuntu in VirtualBox (sandbox, break things)</li>
-            <li>15 min daily: practice 3-4 commands</li>
-            <li>Master basics first: 1 week per stage</li>
-            <li>Always use <code className="text-xs">man</code> and <code className="text-xs">--help</code></li>
-            <li>Build projects: backup script, log analyzer, deploy script</li>
-          </ol>
-        </div>
+    <div className="rounded-xl border border-orange-200 dark:border-orange-800 p-5 bg-orange-50 dark:bg-zinc-800">
+      <h3 className="font-bold text-orange-600 dark:text-orange-400 mb-3">{r.heading}</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-zinc-600 dark:text-zinc-300">
+        {r.items.map((item, i) => (
+          <div key={i}>
+            <p className="font-medium mb-1">{item.title}</p>
+            {item.type === 'ordered' ? (
+              <ol className="space-y-1 list-decimal list-inside">
+                {item.entries.map((e, j) => <li key={j}>{e}</li>)}
+              </ol>
+            ) : (
+              <ul className="space-y-1 list-disc list-inside">
+                {item.entries.map((e, j) => <li key={j}>{e}</li>)}
+              </ul>
+            )}
+          </div>
+        ))}
       </div>
-    </section>
+    </div>
   )
 }

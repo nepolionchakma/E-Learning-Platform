@@ -1,15 +1,16 @@
 import TopicCard from "@/components/TopicCard";
 import topics from "@/data/topics.json";
+import site from "@/data/site.json";
 
 export default function Home() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="text-center mb-16">
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-4">
-          <span className="gradient-text">Master Technology</span>
+          <span className="gradient-text">{site.hero.title}</span>
         </h1>
         <p className="max-w-2xl mx-auto text-lg text-zinc-500 dark:text-zinc-400">
-          Your all-in-one learning platform. Choose a topic below and start learning with practical examples, guides, and best practices.
+          {site.hero.subtitle}
         </p>
       </div>
 
@@ -27,23 +28,15 @@ export default function Home() {
       </div>
 
       <div className="mt-20 text-center">
-        <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-4">Why This Platform?</h2>
+        <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-4">{site.features.heading}</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-          <div className="p-6">
-            <div className="text-3xl mb-3">📚</div>
-            <h3 className="font-semibold mb-2">Structured Learning</h3>
-            <p className="text-sm text-zinc-500">Step-by-step guides from beginner to advanced, with real examples.</p>
-          </div>
-          <div className="p-6">
-            <div className="text-3xl mb-3">🛠️</div>
-            <h3 className="font-semibold mb-2">Practical Examples</h3>
-            <p className="text-sm text-zinc-500">Every concept comes with code examples you can run and modify.</p>
-          </div>
-          <div className="p-6">
-            <div className="text-3xl mb-3">🎯</div>
-            <h3 className="font-semibold mb-2">Modern & Relevant</h3>
-            <p className="text-sm text-zinc-500">Curated content covering the latest tools, frameworks, and practices.</p>
-          </div>
+          {site.features.items.map((item, i) => (
+            <div key={i} className="p-6">
+              <div className="text-3xl mb-3">{item.icon}</div>
+              <h3 className="font-semibold mb-2">{item.title}</h3>
+              <p className="text-sm text-zinc-500">{item.description}</p>
+            </div>
+          ))}
         </div>
       </div>
     </div>

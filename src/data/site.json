@@ -1,0 +1,54 @@
+{
+  "hero": {
+    "title": "Master Technology",
+    "subtitle": "Your all-in-one learning platform. Choose a topic below and start learning with practical examples, guides, and best practices."
+  },
+  "features": {
+    "heading": "Why This Platform?",
+    "items": [
+      {
+        "icon": "📚",
+        "title": "Structured Learning",
+        "description": "Step-by-step guides from beginner to advanced, with real examples."
+      },
+      {
+        "icon": "🛠️",
+        "title": "Practical Examples",
+        "description": "Every concept comes with code examples you can run and modify."
+      },
+      {
+        "icon": "🎯",
+        "title": "Modern & Relevant",
+        "description": "Curated content covering the latest tools, frameworks, and practices."
+      }
+    ]
+  },
+  "resources": {
+    "heading": "Resources & Tips",
+    "items": [
+      {
+        "title": "Free Resources",
+        "type": "list",
+        "entries": [
+          "explainshell.com - paste any command to learn it",
+          "tldr.sh - simplified man pages",
+          "OverTheWire Bandit - game-like CLI challenges",
+          "learnshell.org - interactive shell scripting"
+        ]
+      },
+      {
+        "title": "Tips",
+        "type": "ordered",
+        "entries": [
+          "Use Ubuntu in a VM (break things safely)",
+          "15 min daily practice",
+          "Use man and --help for every command",
+          "Build real projects to solidify learning"
+        ]
+      }
+    ]
+  },
+  "footer": {
+    "text": "E-Learning Platform. Built with Next.js"
+  }
+}
