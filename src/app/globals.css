@@ -56,6 +56,7 @@ body {
 .topic-gradient-devops { background: linear-gradient(135deg, #5270ff, #3bb75e); }
 .topic-gradient-db { background: linear-gradient(135deg, #336791, #f29111); }
 .topic-gradient-ml { background: linear-gradient(135deg, #ff6f00, #d500f9); }
+.topic-gradient-git { background: linear-gradient(135deg, #f05032, #b33b26); }
 
 pre {
   overflow-x: auto;

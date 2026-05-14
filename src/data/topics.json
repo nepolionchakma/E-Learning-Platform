@@ -62,5 +62,13 @@
     "gradientClass": "topic-gradient-ml",
     "icon": "🤖",
     "bgColor": "from-pink-500 to-purple-500"
+  },
+  {
+    "slug": "git",
+    "title": "Git",
+    "description": "Version control mastery. Commits, branches, merging, remotes, GitHub, collaboration workflows, and advanced Git.",
+    "gradientClass": "topic-gradient-git",
+    "icon": "🔀",
+    "bgColor": "from-red-500 to-orange-600"
   }
 ]
