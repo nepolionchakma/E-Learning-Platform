@@ -1,25 +1,7 @@
 import { notFound } from 'next/navigation'
 import ContentRenderer from '@/components/ContentRenderer'
 import topicsData from '@/data/topics.json'
-import jsData from '@/data/javascript.json'
-import tsData from '@/data/typescript.json'
-import reactData from '@/data/react.json'
-import rnData from '@/data/react-native.json'
-import linuxData from '@/data/linux.json'
-import devopsData from '@/data/devops.json'
-import dbData from '@/data/database.json'
-import mlData from '@/data/machine-learning.json'
-
-const dataMap: Record<string, any> = {
-  'javascript': jsData,
-  'typescript': tsData,
-  'react': reactData,
-  'react-native': rnData,
-  'linux': linuxData,
-  'devops': devopsData,
-  'database': dbData,
-  'machine-learning': mlData,
-}
+import { loadTopicData } from '@/lib/loadData'
 
 export async function generateStaticParams() {
   return topicsData.map((t) => ({ topic: t.slug }))
@@ -30,7 +12,7 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
   const topicMeta = topicsData.find((t) => t.slug === topic)
   if (!topicMeta) notFound()
 
-  const data = dataMap[topic]
+  const data = await loadTopicData(topic)
   if (!data) notFound()
 
   return (
