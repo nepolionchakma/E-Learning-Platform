@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import { ToastProvider } from "@/components/ToastContext";
 import site from "@/data/site.json";
 
 const geistSans = Geist({
@@ -41,8 +42,10 @@ export default function RootLayout({
         }} />
       </head>
       <body className="min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950">
-        <Navbar />
-        <main className="flex-1">{children}</main>
+        <ToastProvider>
+          <Navbar />
+          <main className="flex-1">{children}</main>
+        </ToastProvider>
         <footer className="border-t border-zinc-200 dark:border-zinc-800 py-6 text-center text-sm text-zinc-400">
           &copy; {new Date().getFullYear()} {site.footer.text}
         </footer>

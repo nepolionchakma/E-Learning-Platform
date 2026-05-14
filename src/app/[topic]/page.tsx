@@ -22,7 +22,7 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
         <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">{data.title}</h1>
         <p className="text-zinc-500 mt-2">{data.description}</p>
       </div>
-      <ContentRenderer data={data} />
+      <ContentRenderer data={data} topic={topic} />
     </div>
   )
 }

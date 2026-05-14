@@ -35,17 +35,17 @@ interface TopicData {
   sections?: Section[]
 }
 
-export default function ContentRenderer({ data }: { data: TopicData }) {
-  if (data.stages) return renderStages(data.stages)
+export default function ContentRenderer({ data, topic }: { data: TopicData; topic?: string }) {
+  if (data.stages) return renderStages(data.stages, topic || '')
   if (data.sections) return renderSections(data.sections)
   return null
 }
 
-function renderStages(stages: Stage[]) {
+function renderStages(stages: Stage[], topicSlug: string) {
   return (
     <div className="space-y-3">
       {stages.map((stage, si) => (
-        <Accordion key={si} title={stage.title} defaultOpen={si === 0}>
+        <Accordion key={si} title={stage.title} topicSlug={topicSlug} stageIndex={si} defaultOpen={si === 0}>
           <div className="space-y-5">
             {stage.commands.map((cmd, ci) => (
               <div key={ci}>
