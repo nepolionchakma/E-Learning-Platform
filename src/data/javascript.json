@@ -1,0 +1,31 @@
+{
+  "title": "JavaScript",
+  "icon": "🟨",
+  "description": "Master the language of the web",
+  "sections": [
+    {
+      "title": "1. Basics",
+      "type": "code",
+      "items": [
+        { "label": "Variables & Data Types", "code": "let name = \"John\";\nconst age = 25;\nvar isStudent = true;\n\nconsole.log(typeof name);" },
+        { "label": "Functions", "code": "const add = (a, b) => a + b;\n\nconst greet = (name = \"Guest\") => `Hello, ${name}`;\n\nconst sum = (...nums) => nums.reduce((a, b) => a + b, 0);" }
+      ]
+    },
+    {
+      "title": "2. Arrays & Objects",
+      "type": "code",
+      "items": [
+        { "label": "Array Methods", "code": "const fruits = [\"apple\", \"banana\", \"cherry\"];\nfruits.map(f => f.toUpperCase());\nfruits.filter(f => f.startsWith(\"b\"));\nfruits.reduce((acc, f) => acc + \", \" + f);" },
+        { "label": "Object Destructuring", "code": "const user = { id: 1, name: \"John\", role: \"admin\" };\nconst { name, role } = user;\nconst updated = { ...user, age: 30 };" }
+      ]
+    },
+    {
+      "title": "3. Async JavaScript",
+      "type": "code",
+      "items": [
+        { "label": "Promises", "code": "fetch('/api/users')\n  .then(res => res.json())\n  .then(data => console.log(data))\n  .catch(err => console.error(err));" },
+        { "label": "Async/Await", "code": "async function getUsers() {\n  try {\n    const res = await fetch('/api/users');\n    const data = await res.json();\n    return data;\n  } catch (err) {\n    console.error('Failed:', err);\n  }\n}" }
+      ]
+    }
+  ]
+}

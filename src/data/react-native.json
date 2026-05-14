@@ -1,0 +1,21 @@
+{
+  "title": "React Native",
+  "icon": "📱",
+  "description": "Cross-platform mobile apps with React",
+  "sections": [
+    {
+      "title": "1. Core Components",
+      "type": "code",
+      "items": [
+        { "label": "Basic Structure", "code": "import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';\n\nfunction App() {\n  return (\n    <View style={styles.container}>\n      <Text style={styles.title}>Hello React Native</Text>\n      <FlatList\n        data={[{ id: '1', name: 'Item 1' }]}\n        renderItem={({ item }) => (\n          <TouchableOpacity>\n            <Text>{item.name}</Text>\n          </TouchableOpacity>\n        )}\n      />\n    </View>\n  );\n}\n\nconst styles = StyleSheet.create({\n  container: { flex: 1, padding: 20 },\n  title: { fontSize: 24, fontWeight: 'bold' },\n});" }
+      ]
+    },
+    {
+      "title": "2. Navigation",
+      "type": "code",
+      "items": [
+        { "label": "Stack Navigator", "code": "import { NavigationContainer } from '@react-navigation/native';\nimport { createNativeStackNavigator } from '@react-navigation/native-stack';\n\nconst Stack = createNativeStackNavigator();\n\nfunction App() {\n  return (\n    <NavigationContainer>\n      <Stack.Navigator>\n        <Stack.Screen name=\"Home\" component={HomeScreen} />\n        <Stack.Screen name=\"Details\" component={DetailsScreen} />\n      </Stack.Navigator>\n    </NavigationContainer>\n  );\n}" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "title": "DevOps",
+  "icon": "🔄",
+  "description": "Automate, deploy, and scale with confidence",
+  "sections": [
+    {
+      "title": "1. Docker",
+      "type": "code",
+      "items": [
+        { "label": "Dockerfile", "code": "FROM node:20-alpine\nWORKDIR /app\nCOPY package*.json ./\nRUN npm ci --only=production\nCOPY . .\nEXPOSE 3000\nCMD [\"node\", \"server.js\"]" },
+        { "label": "Docker Commands", "code": "docker build -t myapp .\ndocker run -d -p 3000:3000 --name myapp myapp\ndocker logs -f myapp\ndocker exec -it myapp sh" }
+      ]
+    },
+    {
+      "title": "2. Docker Compose",
+      "type": "code",
+      "items": [
+        { "label": "docker-compose.yml", "code": "version: '3.8'\nservices:\n  web:\n    build: .\n    ports:\n      - \"3000:3000\"\n    depends_on:\n      - db\n  db:\n    image: postgres:15\n    environment:\n      POSTGRES_DB: myapp\n      POSTGRES_PASSWORD: secret\n    volumes:\n      - pgdata:/var/lib/postgresql/data\n\nvolumes:\n  pgdata:" }
+      ]
+    },
+    {
+      "title": "3. CI/CD Pipeline",
+      "type": "code",
+      "items": [
+        { "label": "GitHub Actions", "code": "name: CI/CD\non: [push]\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with: { node-version: 20 }\n      - run: npm ci\n      - run: npm test\n  deploy:\n    needs: test\n    if: github.ref == 'refs/heads/main'\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo \"Deploying...\"" }
+      ]
+    }
+  ]
+}

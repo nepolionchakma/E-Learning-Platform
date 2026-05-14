@@ -1,0 +1,28 @@
+{
+  "title": "Database",
+  "icon": "🗄️",
+  "description": "SQL, NoSQL, data modeling, and optimization",
+  "sections": [
+    {
+      "title": "1. SQL Basics (PostgreSQL)",
+      "type": "code",
+      "items": [
+        { "label": "CRUD Operations", "code": "CREATE TABLE users (\n  id SERIAL PRIMARY KEY,\n  name VARCHAR(100) NOT NULL,\n  email VARCHAR(255) UNIQUE NOT NULL,\n  created_at TIMESTAMP DEFAULT NOW()\n);\n\nINSERT INTO users (name, email) VALUES ('John', 'john@example.com');\nSELECT * FROM users WHERE email LIKE '%@example.com';\nUPDATE users SET name = 'Jane' WHERE id = 1;\nDELETE FROM users WHERE id = 1;" }
+      ]
+    },
+    {
+      "title": "2. Joins & Indexing",
+      "type": "code",
+      "items": [
+        { "label": "Joins", "code": "SELECT u.name, o.total\nFROM users u\nJOIN orders o ON u.id = o.user_id\nWHERE o.total > 100\nORDER BY o.total DESC;\n\nCREATE INDEX idx_users_email ON users(email);" }
+      ]
+    },
+    {
+      "title": "3. MongoDB (NoSQL)",
+      "type": "code",
+      "items": [
+        { "label": "MongoDB Queries", "code": "db.users.insertOne({\n  name: \"John\",\n  email: \"john@example.com\",\n  roles: [\"admin\", \"editor\"],\n  address: { city: \"NYC\", zip: \"10001\" }\n});\n\ndb.users.find({ email: /@example.com$/ });\ndb.users.aggregate([\n  { $group: { _id: \"$city\", count: { $sum: 1 } } }\n]);" }
+      ]
+    }
+  ]
+}

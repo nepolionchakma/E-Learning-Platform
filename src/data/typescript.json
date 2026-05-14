@@ -1,0 +1,28 @@
+{
+  "title": "TypeScript",
+  "icon": "🔷",
+  "description": "Type-safe JavaScript for scalable applications",
+  "sections": [
+    {
+      "title": "1. Basic Types",
+      "type": "code",
+      "items": [
+        { "label": "Type Annotations", "code": "let name: string = \"John\";\nlet age: number = 25;\nlet isActive: boolean = true;\nlet id: string | number = \"ABC123\";\n\nfunction add(a: number, b: number): number {\n  return a + b;\n}" }
+      ]
+    },
+    {
+      "title": "2. Interfaces & Types",
+      "type": "code",
+      "items": [
+        { "label": "Interface", "code": "interface User {\n  id: number;\n  name: string;\n  email: string;\n  role?: 'admin' | 'user';\n}\n\ntype Point = { x: number; y: number; };\n\nconst user: User = { id: 1, name: \"John\", email: \"john@test.com\" };" }
+      ]
+    },
+    {
+      "title": "3. Generics",
+      "type": "code",
+      "items": [
+        { "label": "Generic Functions", "code": "function first<T>(arr: T[]): T | undefined {\n  return arr[0];\n}\n\ninterface ApiResponse<T> {\n  data: T;\n  status: number;\n  message: string;\n}\n\ntype UserResponse = ApiResponse<User>;" }
+      ]
+    }
+  ]
+}

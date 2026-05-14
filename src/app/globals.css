@@ -3,6 +3,10 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --primary: #7c3aed;
+  --primary-light: #a78bfa;
+  --secondary: #06b6d4;
+  --accent: #f59e0b;
 }
 
 @theme inline {
@@ -23,4 +27,40 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.gradient-bg {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #667eea, #a78bfa, #06b6d4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.card-hover {
+  transition: all 0.3s ease;
+}
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+.topic-gradient-js { background: linear-gradient(135deg, #f7df1e, #e6a700); }
+.topic-gradient-ts { background: linear-gradient(135deg, #3178c6, #235a97); }
+.topic-gradient-react { background: linear-gradient(135deg, #61dafb, #20232a); }
+.topic-gradient-rn { background: linear-gradient(135deg, #61dafb, #6a1b9a); }
+.topic-gradient-linux { background: linear-gradient(135deg, #f7941e, #e95420); }
+.topic-gradient-devops { background: linear-gradient(135deg, #5270ff, #3bb75e); }
+.topic-gradient-db { background: linear-gradient(135deg, #336791, #f29111); }
+.topic-gradient-ml { background: linear-gradient(135deg, #ff6f00, #d500f9); }
+
+pre {
+  overflow-x: auto;
+}
+
+code {
+  font-family: 'Courier New', monospace;
 }

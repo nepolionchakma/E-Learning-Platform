@@ -1,0 +1,28 @@
+{
+  "title": "React",
+  "icon": "⚛️",
+  "description": "Build modern user interfaces",
+  "sections": [
+    {
+      "title": "1. Components & Hooks",
+      "type": "code",
+      "items": [
+        { "label": "useState & useEffect", "code": "function Counter() {\n  const [count, setCount] = useState(0);\n\n  useEffect(() => {\n    document.title = `Count: ${count}`;\n  }, [count]);\n\n  return (\n    <div>\n      <p>Count: {count}</p>\n      <button onClick={() => setCount(c => c + 1)}>+</button>\n    </div>\n  );\n}" }
+      ]
+    },
+    {
+      "title": "2. Custom Hooks",
+      "type": "code",
+      "items": [
+        { "label": "useFetch Hook", "code": "function useFetch<T>(url: string) {\n  const [data, setData] = useState<T | null>(null);\n  const [loading, setLoading] = useState(true);\n\n  useEffect(() => {\n    fetch(url)\n      .then(res => res.json())\n      .then(d => { setData(d); setLoading(false); });\n  }, [url]);\n\n  return { data, loading };\n}\n\nconst { data: user } = useFetch<User>('/api/user');" }
+      ]
+    },
+    {
+      "title": "3. Context API",
+      "type": "code",
+      "items": [
+        { "label": "Theme Context", "code": "const ThemeContext = createContext('light');\n\nfunction App() {\n  const [theme, setTheme] = useState('light');\n  return (\n    <ThemeContext.Provider value={{ theme, setTheme }}>\n      <Dashboard />\n    </ThemeContext.Provider>\n  );\n}\n\nfunction Dashboard() {\n  const { theme, setTheme } = useContext(ThemeContext);\n  return <div className={theme}>...</div>;\n}" }
+      ]
+    }
+  ]
+}
