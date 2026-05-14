@@ -57,6 +57,14 @@ body {
 .topic-gradient-db { background: linear-gradient(135deg, #336791, #f29111); }
 .topic-gradient-ml { background: linear-gradient(135deg, #ff6f00, #d500f9); }
 .topic-gradient-git { background: linear-gradient(135deg, #f05032, #b33b26); }
+.topic-gradient-html { background: linear-gradient(135deg, #e44d26, #f16529); }
+.topic-gradient-css { background: linear-gradient(135deg, #264de4, #2965f1); }
+.topic-gradient-nodejs { background: linear-gradient(135deg, #339933, #026e00); }
+.topic-gradient-python { background: linear-gradient(135deg, #3776ab, #ffd43b); }
+.topic-gradient-java { background: linear-gradient(135deg, #ed8b00, #007396); }
+.topic-gradient-cpp { background: linear-gradient(135deg, #00599c, #004482); }
+.topic-gradient-sql { background: linear-gradient(135deg, #336791, #e48e2b); }
+.topic-gradient-docker { background: linear-gradient(135deg, #2496ed, #0db7ed); }
 
 pre {
   overflow-x: auto;

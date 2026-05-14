@@ -1,0 +1,72 @@
+{
+  "title": "SQL",
+  "icon": "📊",
+  "description": "Database queries. SELECT, JOIN, subqueries, indexes, transactions, normalization, and performance tuning.",
+  "sections": [
+    {
+      "title": "1. SELECT & Filtering",
+      "type": "code",
+      "items": [
+        { "label": "Basic SELECT", "code": "-- Select all columns\nSELECT * FROM users;\n\n-- Select specific columns\nSELECT id, name, email FROM users;\n\n-- Aliases\nSELECT name AS username, email FROM users;\n\n-- Distinct values\nSELECT DISTINCT city FROM users;\n\n-- Literal columns\nSELECT name, 'Active' AS status FROM users;\n\n-- Expressions\nSELECT name, salary * 1.1 AS raised_salary FROM employees;\nSELECT CONCAT(first_name, ' ', last_name) AS full_name FROM users;\n\n-- LIMIT / OFFSET\nSELECT * FROM users LIMIT 10 OFFSET 20;" },
+        { "label": "WHERE & Filtering", "code": "-- Comparison operators\nSELECT * FROM users WHERE age > 18;\nSELECT * FROM products WHERE price BETWEEN 10 AND 50;\nSELECT * FROM users WHERE name LIKE 'J%';      -- starts with J\nSELECT * FROM users WHERE name LIKE '%son%';    -- contains 'son'\nSELECT * FROM users WHERE email IS NOT NULL;\n\n-- IN clause\nSELECT * FROM users WHERE country IN ('USA', 'UK', 'Canada');\n\n-- Multiple conditions\nSELECT * FROM orders\nWHERE status = 'active'\n  AND total > 100\n  AND (created_at >= '2025-01-01' OR priority = 'high');\n\n-- String functions\nUPPER(name), LOWER(name), LENGTH(name), TRIM(name)\nSUBSTRING(name, 1, 3) -- first 3 chars\nREPLACE(name, 'old', 'new')" }
+      ]
+    },
+    {
+      "title": "2. Aggregation & Grouping",
+      "type": "code",
+      "items": [
+        { "label": "GROUP BY & HAVING", "code": "-- Aggregate functions\nSELECT COUNT(*), MAX(price), MIN(price), AVG(price), SUM(quantity)\nFROM products;\n\n-- Group by\nSELECT country, COUNT(*) AS user_count\nFROM users\nGROUP BY country;\n\n-- Group by with HAVING (filter after group)\nSELECT department, AVG(salary) AS avg_salary\nFROM employees\nGROUP BY department\nHAVING AVG(salary) > 50000;\n\n-- Multiple levels\nSELECT state, city, COUNT(*) AS count\nFROM users\nGROUP BY state, city\nORDER BY count DESC;\n\n-- Group with ROLLUP\nSELECT department, SUM(salary)\nFROM employees\nGROUP BY ROLLUP(department);" }
+      ]
+    },
+    {
+      "title": "3. JOINs",
+      "type": "code",
+      "items": [
+        { "label": "JOIN Types", "code": "-- INNER JOIN (only matching rows)\nSELECT u.name, o.total\nFROM users u\nINNER JOIN orders o ON u.id = o.user_id;\n\n-- LEFT JOIN (all users, even without orders)\nSELECT u.name, o.total\nFROM users u\nLEFT JOIN orders o ON u.id = o.user_id;\n\n-- RIGHT JOIN (all orders, even without user)\nSELECT u.name, o.total\nFROM users u\nRIGHT JOIN orders o ON u.id = o.user_id;\n\n-- FULL OUTER JOIN (all from both)\nSELECT u.name, o.total\nFROM users u\nFULL OUTER JOIN orders o ON u.id = o.user_id;\n\n-- CROSS JOIN (cartesian product)\nSELECT * FROM products CROSS JOIN categories;\n\n-- Self JOIN\nSELECT e1.name AS employee, e2.name AS manager\nFROM employees e1\nJOIN employees e2 ON e1.manager_id = e2.id;\n\n-- Multiple JOINs\nSELECT u.name, o.total, p.name AS product\nFROM users u\nJOIN orders o ON u.id = o.user_id\nJOIN order_items oi ON o.id = oi.order_id\nJOIN products p ON oi.product_id = p.id;" }
+      ]
+    },
+    {
+      "title": "4. Subqueries & CTE",
+      "type": "code",
+      "items": [
+        { "label": "Subqueries", "code": "-- Subquery in WHERE\nSELECT * FROM products\nWHERE price > (SELECT AVG(price) FROM products);\n\n-- Subquery in FROM\nSELECT dept, avg_salary\nFROM (\n  SELECT department AS dept, AVG(salary) AS avg_salary\n  FROM employees\n  GROUP BY department\n) AS sub\nWHERE avg_salary > 60000;\n\n-- Subquery in SELECT\nSELECT name,\n  (SELECT COUNT(*) FROM orders WHERE user_id = users.id) AS order_count\nFROM users;\n\n-- EXISTS\nSELECT * FROM users u\nWHERE EXISTS (\n  SELECT 1 FROM orders o WHERE o.user_id = u.id\n);\n\n-- ANY / ALL\nSELECT * FROM products\nWHERE price > ANY (SELECT price FROM products WHERE category = 'Electronics');" },
+        { "label": "CTE (WITH clause)", "code": "-- Common Table Expression\nWITH dept_avg AS (\n  SELECT department, AVG(salary) AS avg_sal\n  FROM employees\n  GROUP BY department\n)\nSELECT e.name, e.department, e.salary, d.avg_sal\nFROM employees e\nJOIN dept_avg d ON e.department = d.department\nWHERE e.salary > d.avg_sal;\n\n-- Recursive CTE (hierarchy/org tree)\nWITH RECURSIVE org_tree AS (\n  SELECT id, name, manager_id, 1 AS level\n  FROM employees WHERE manager_id IS NULL\n  UNION ALL\n  SELECT e.id, e.name, e.manager_id, t.level + 1\n  FROM employees e\n  JOIN org_tree t ON e.manager_id = t.id\n)\nSELECT * FROM org_tree;" }
+      ]
+    },
+    {
+      "title": "5. DML (Insert/Update/Delete)",
+      "type": "code",
+      "items": [
+        { "label": "Data Modification", "code": "-- INSERT\nINSERT INTO users (name, email) VALUES ('John', 'john@example.com');\nINSERT INTO users (name, email) VALUES\n  ('Jane', 'jane@example.com'),\n  ('Bob', 'bob@example.com');\nINSERT INTO archive SELECT * FROM old_users WHERE deleted = true;\n\n-- UPDATE\nUPDATE users SET email = 'new@email.com' WHERE id = 1;\nUPDATE products SET price = price * 1.1 WHERE category = 'Electronics';\n\n-- DELETE\nDELETE FROM users WHERE id = 1;\nDELETE FROM logs WHERE created_at < '2024-01-01';\n\n-- TRUNCATE (remove all rows, faster than DELETE)\nTRUNCATE TABLE temp_data;\n\n-- MERGE / UPSERT (PostgreSQL)\nINSERT INTO users (id, name, email)\nVALUES (1, 'John', 'john@test.com')\nON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name;" }
+      ]
+    },
+    {
+      "title": "6. DDL (Table & Schema)",
+      "type": "code",
+      "items": [
+        { "label": "CREATE & ALTER", "code": "-- Create table\nCREATE TABLE users (\n  id SERIAL PRIMARY KEY,\n  name VARCHAR(100) NOT NULL,\n  email VARCHAR(255) UNIQUE NOT NULL,\n  age INTEGER CHECK (age >= 0),\n  salary DECIMAL(10,2) DEFAULT 0.00,\n  status VARCHAR(20) DEFAULT 'active',\n  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n);\n\n-- Constraints\nNOT NULL, UNIQUE, PRIMARY KEY, FOREIGN KEY, CHECK, DEFAULT\n\n-- Foreign key\nCREATE TABLE orders (\n  id SERIAL PRIMARY KEY,\n  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,\n  total DECIMAL(10,2),\n  created_at TIMESTAMP DEFAULT NOW()\n);\n\n-- ALTER TABLE\nALTER TABLE users ADD COLUMN phone VARCHAR(20);\nALTER TABLE users DROP COLUMN phone;\nALTER TABLE users ALTER COLUMN name SET NOT NULL;\nALTER TABLE users RENAME TO customers;\n\n-- Indexes\nCREATE INDEX idx_users_email ON users(email);\nCREATE UNIQUE INDEX idx_users_email ON users(email);\nCREATE INDEX idx_orders_user_date ON orders(user_id, created_at);\nDROP INDEX idx_users_email;" }
+      ]
+    },
+    {
+      "title": "7. Transactions & Locking",
+      "type": "code",
+      "items": [
+        { "label": "Transactions", "code": "BEGIN;\nUPDATE accounts SET balance = balance - 100 WHERE id = 1;\nUPDATE accounts SET balance = balance + 100 WHERE id = 2;\nCOMMIT;\n\n-- Rollback on error\nBEGIN;\nDELETE FROM orders WHERE id = 1;\n-- Something went wrong...\nROLLBACK;\n\n-- Savepoints\nBEGIN;\nSAVEPOINT sp1;\nDELETE FROM products WHERE id = 1;\nROLLBACK TO sp1;\nCOMMIT;\n\n-- Isolation levels\nSET TRANSACTION ISOLATION LEVEL READ COMMITTED;\nSET TRANSACTION ISOLATION LEVEL SERIALIZABLE;\n\n-- ACID: Atomicity, Consistency, Isolation, Durability" }
+      ]
+    },
+    {
+      "title": "8. Window Functions",
+      "type": "code",
+      "items": [
+        { "label": "Window Functions", "code": "-- ROW_NUMBER\nSELECT name, department, salary,\n  ROW_NUMBER() OVER (PARTITION BY department ORDER BY salary DESC) AS rank\nFROM employees;\n\n-- RANK / DENSE_RANK\nSELECT name, salary,\n  RANK() OVER (ORDER BY salary DESC) AS rank,\n  DENSE_RANK() OVER (ORDER BY salary DESC) AS dense_rank\nFROM employees;\n\n-- LAG / LEAD (previous/next row)\nSELECT date, amount,\n  LAG(amount) OVER (ORDER BY date) AS prev_day,\n  LEAD(amount) OVER (ORDER BY date) AS next_day\nFROM daily_sales;\n\n-- Running total\nSELECT date, amount,\n  SUM(amount) OVER (ORDER BY date) AS running_total\nFROM sales;\n\n-- Moving average\nSELECT date, amount,\n  AVG(amount) OVER (ORDER BY date ROWS BETWEEN 6 PRECEDING AND CURRENT ROW)\n    AS moving_avg_7day\nFROM sales;" }
+      ]
+    },
+    {
+      "title": "9. Performance & Optimization",
+      "type": "code",
+      "items": [
+        { "label": "Query Optimization", "code": "-- EXPLAIN plan\nEXPLAIN ANALYZE SELECT * FROM users WHERE email = 'test@test.com';\n\n-- Index usage\nCREATE INDEX ON users (email);  -- B-tree default\nCREATE INDEX ON users USING GIN (tags);  -- for array/JSON\nCREATE INDEX ON products USING GIST (location);  -- for geo\n\n-- Partial index\nCREATE INDEX ON users (email) WHERE active = true;\n\n-- Covering index\nCREATE INDEX ON users (email) INCLUDE (name, age);\n\n-- Slow query signs\n-- Seq Scan on large tables (missing index)\n-- Sort with high memory usage (missing index)\n-- Nested Loop on large datasets\n\n-- Best practices\n-- 1. Use indexes on WHERE, JOIN, ORDER BY columns\n-- 2. Avoid SELECT * (fetch only needed columns)\n-- 3. Use EXPLAIN ANALYZE to find bottlenecks\n-- 4. Partition large tables\n-- 5. Use connection pooling\n-- 6. Regular VACUUM and ANALYZE" }
+      ]
+    }
+  ]
+}
