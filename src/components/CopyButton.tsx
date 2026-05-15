@@ -23,7 +23,7 @@ export default function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="p-1.5 rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-500 hover:text-indigo-600 hover:border-indigo-400 transition-colors"
+      className="p-1.5 rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-500 hover:text-indigo-600 hover:border-indigo-400 transition-colors cursor-pointer"
       title="Copy to clipboard"
     >
       {copied ? (

@@ -148,7 +148,7 @@ function SectionBlock({
       </div>
       <button
         onClick={handleCopy}
-        className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 text-zinc-500 hover:text-indigo-600 hover:border-indigo-400 shadow-sm"
+        className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 text-zinc-500 hover:text-indigo-600 hover:border-indigo-400 shadow-sm cursor-pointer"
         title="Copy this block"
       >
         {copied ? (
@@ -282,7 +282,7 @@ function TableRow({ row }: { row: string[] }) {
             {hasResult && (
               <button
                 onClick={() => setShowResult(!showResult)}
-                className="p-1.5 rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-500 hover:text-green-600 hover:border-green-400 transition-colors"
+                className="p-1.5 rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-500 hover:text-green-600 hover:border-green-400 transition-colors cursor-pointer"
                 title="Show example output"
               >
                 <svg
