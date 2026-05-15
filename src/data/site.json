@@ -49,6 +49,8 @@
     ]
   },
   "footer": {
-    "text": "E-Learning Platform. Built with Next.js"
+    "text": "E-Learning Platform. Developed by ",
+    "linkText": "ABC",
+    "linkUrl": "#"
   }
 }
