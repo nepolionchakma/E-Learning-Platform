@@ -1,28 +1,1865 @@
 {
   "title": "DevOps",
   "icon": "🔄",
-  "description": "Automate, deploy, and scale with confidence",
-  "sections": [
+  "description": "Complete DevOps reference: CI/CD, Kubernetes, Terraform, Ansible, monitoring, cloud, SRE, and more",
+  "stages": [
     {
-      "title": "1. Docker",
-      "type": "code",
-      "items": [
-        { "label": "Dockerfile", "code": "FROM node:20-alpine\nWORKDIR /app\nCOPY package*.json ./\nRUN npm ci --only=production\nCOPY . .\nEXPOSE 3000\nCMD [\"node\", \"server.js\"]" },
-        { "label": "Docker Commands", "code": "docker build -t myapp .\ndocker run -d -p 3000:3000 --name myapp myapp\ndocker logs -f myapp\ndocker exec -it myapp sh" }
+      "title": "Stage 1: DevOps Fundamentals",
+      "commands": [
+        {
+          "name": "What is DevOps?",
+          "type": "codeblock",
+          "code": "DevOps = Development + Operations\n\nCore Principles:\n- Collaboration between dev and ops teams\n- Automation of everything (build, test, deploy, infra)\n- Continuous Integration (CI): merge code changes frequently, auto-test\n- Continuous Delivery (CD): auto-deploy to production\n- Infrastructure as Code (IaC): manage infra via code\n- Monitoring & Observability: know what's happening\n- Fast feedback loops: detect issues early\n\nDevOps Lifecycle:\nPlan -> Code -> Build -> Test -> Release -> Deploy -> Operate -> Monitor -> (back to Plan)\n\nKey Practices:\n- CI/CD Pipelines (GitHub Actions, Jenkins, GitLab CI)\n- Infrastructure as Code (Terraform, Ansible, Pulumi)\n- Containerization (Docker, Kubernetes)\n- Monitoring (Prometheus, Grafana, ELK)\n- Configuration Management (Ansible, Helm)\n- Secrets Management (Vault, SOPS)"
+        },
+        {
+          "name": "DevOps Tools Overview",
+          "rows": [
+            [
+              "Version Control",
+              "Git, GitHub, GitLab, Bitbucket",
+              "Track code changes, collaborate"
+            ],
+            [
+              "CI/CD",
+              "GitHub Actions, Jenkins, GitLab CI, CircleCI, ArgoCD",
+              "Automate build, test, deploy"
+            ],
+            [
+              "Containers",
+              "Docker, Podman, containerd",
+              "Package apps with dependencies"
+            ],
+            [
+              "Orchestration",
+              "Kubernetes (K8s), Docker Swarm, Nomad",
+              "Manage container fleets"
+            ],
+            [
+              "IaC",
+              "Terraform, Pulumi, AWS CDK, CloudFormation",
+              "Infrastructure as Code"
+            ],
+            [
+              "Config Management",
+              "Ansible, Puppet, Chef, SaltStack",
+              "Automate server configuration"
+            ],
+            [
+              "Monitoring",
+              "Prometheus, Grafana, Datadog, New Relic",
+              "Metrics, alerts, dashboards"
+            ],
+            [
+              "Logging",
+              "ELK Stack, Loki, Fluentd, Splunk",
+              "Centralized log management"
+            ],
+            [
+              "Secrets",
+              "Vault, AWS Secrets Manager, SOPS",
+              "Secure credentials storage"
+            ],
+            [
+              "Service Mesh",
+              "Istio, Linkerd, Consul",
+              "Microservices networking"
+            ],
+            [
+              "GitOps",
+              "ArgoCD, Flux",
+              "Git as single source of truth"
+            ],
+            [
+              "Cloud",
+              "AWS, Azure, GCP",
+              "Cloud infrastructure providers"
+            ]
+          ]
+        }
       ]
     },
     {
-      "title": "2. Docker Compose",
-      "type": "code",
-      "items": [
-        { "label": "docker-compose.yml", "code": "version: '3.8'\nservices:\n  web:\n    build: .\n    ports:\n      - \"3000:3000\"\n    depends_on:\n      - db\n  db:\n    image: postgres:15\n    environment:\n      POSTGRES_DB: myapp\n      POSTGRES_PASSWORD: secret\n    volumes:\n      - pgdata:/var/lib/postgresql/data\n\nvolumes:\n  pgdata:" }
+      "title": "Stage 2: CI/CD Pipelines",
+      "commands": [
+        {
+          "name": "GitHub Actions",
+          "rows": [
+            [
+              ".github/workflows/ci.yml",
+              "Workflow file location",
+              "YAML defines automated tasks",
+              "john@pc:~/repo$ ls .github/workflows/\nci.yml  deploy.yml"
+            ],
+            [
+              "name: CI\\non: [push]\\njobs:\\n  test:\\n    runs-on: ubuntu-latest\\n    steps:\\n      - uses: actions/checkout@v4\\n      - run: npm ci\\n      - run: npm test",
+              "Basic CI workflow",
+              "Run tests on every push",
+              "Creating .github/workflows/ci.yml\n(workflow runs automatically on push)"
+            ],
+            [
+              "on:\\n  pull_request:\\n    branches: [main]",
+              "Trigger on PR only",
+              "Run only for PRs to main",
+              "jobs:\n  test:\n    if: github.event_name == 'pull_request'"
+            ],
+            [
+              "- name: Docker build\\n  run: docker build -t app:${{ github.sha }} .",
+              "Build Docker image",
+              "Tag with commit SHA",
+              "docker build -t app:a1b2c3d .\nSuccessfully built abc123"
+            ],
+            [
+              "- name: Deploy to EC2\\n  run: |\\n    ssh deploy@server 'cd /app && git pull && docker-compose up -d'",
+              "Deploy step",
+              "SSH into server and deploy",
+              "ssh deploy@server 'cd /app && docker-compose up -d'\nContainer started successfully"
+            ],
+            [
+              "gh workflow run deploy.yml --ref main",
+              "Trigger workflow via CLI",
+              "Run workflow manually",
+              "john@pc:~$ gh workflow run deploy.yml --ref main\n✓ Workdown \"deploy\" has been triggered"
+            ]
+          ]
+        },
+        {
+          "name": "Jenkins Pipeline",
+          "rows": [
+            [
+              "// Jenkinsfile (Declarative Pipeline)\\npipeline {\\n  agent any\\n  stages {\\n    stage('Checkout') { steps { checkout scm } }\\n    stage('Build') { steps { sh 'npm run build' } }\\n    stage('Test') { steps { sh 'npm test' } }\\n    stage('Deploy') { steps { sh './deploy.sh' } }\\n  }\\n}",
+              "Jenkinsfile",
+              "Pipeline as Code",
+              "Pipeline created.\nRunning on Jenkins node."
+            ],
+            [
+              "// Post actions\\npost {\\n  success { emailext to: 'team@co.com', subject: 'Build passed' }\\n  failure { emailext to: 'team@co.com', subject: 'Build failed' }\\n}",
+              "Post-build actions",
+              "Notify on success/failure",
+              "Email sent to team@co.com"
+            ],
+            [
+              "stage('Docker Push') {\\n  steps {\\n    withCredentials([string(credentialsId: 'dockerhub', variable: 'PASS')]) {\\n      sh 'docker login -u user -p $PASS'\\n      sh 'docker push user/app:latest'\\n    }\\n  }\\n}",
+              "Docker push with credentials",
+              "Securely push to registry",
+              "docker push user/app:latest\nThe push refers to repository [docker.io/user/app]"
+            ]
+          ]
+        },
+        {
+          "name": "GitLab CI & CircleCI",
+          "rows": [
+            [
+              ".gitlab-ci.yml\\nstages:\\n  - build\\n  - test\\n  - deploy\\n\\nbuild:\\n  stage: build\\n  script:\\n    - docker build -t app .\\n    - docker push registry.gitlab.com/user/app",
+              "GitLab CI config",
+              "Pipeline stages defined",
+              "Job: build\nDocker image pushed to registry"
+            ],
+            [
+              "variables:\\n  DATABASE_URL: $DB_URL\\n  NODE_ENV: production",
+              "GitLab variables",
+              "Environment variables in pipeline",
+              "Variables set from GitLab CI/CD settings"
+            ],
+            [
+              ".circleci/config.yml\\nversion: 2.1\\njobs:\\n  test:\\n    docker:\\n      - image: cimg/node:20.0\\n    steps:\\n      - checkout\\n      - run: npm test\\nworkflows:\\n  version: 2\\n  test-deploy:\\n    jobs:\\n      - test\\n      - deploy:\\n          requires:\\n            - test",
+              "CircleCI config",
+              "Docker-based CI",
+              "Job 'test' running on cimg/node:20.0\nJob 'deploy' waiting for 'test'"
+            ]
+          ]
+        }
       ]
     },
     {
-      "title": "3. CI/CD Pipeline",
-      "type": "code",
-      "items": [
-        { "label": "GitHub Actions", "code": "name: CI/CD\non: [push]\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with: { node-version: 20 }\n      - run: npm ci\n      - run: npm test\n  deploy:\n    needs: test\n    if: github.ref == 'refs/heads/main'\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo \"Deploying...\"" }
+      "title": "Stage 3: Infrastructure as Code (IaC)",
+      "commands": [
+        {
+          "name": "Terraform",
+          "rows": [
+            [
+              "# main.tf\\nprovider \"aws\" {\\n  region = \"us-east-1\"\\n}\\n\\nresource \"aws_s3_bucket\" \"data\" {\\n  bucket = \"myapp-data-123\"\\n  tags = { Name = \"MyApp Data\" }\\n}",
+              "Terraform config",
+              "Declare AWS S3 bucket",
+              "john@pc:~$ cat main.tf\n(infrastructure defined as code)"
+            ],
+            [
+              "terraform init",
+              "Initialize Terraform",
+              "Download providers, setup backend",
+              "john@pc:~$ terraform init\nInitializing the backend...\nInitializing provider plugins...\n- Finding hashicorp/aws versions...\n- Installing hashicorp/aws v5.0.0...\nTerraform has been successfully initialized!"
+            ],
+            [
+              "terraform plan",
+              "Preview changes",
+              "Show what will be created/changed",
+              "john@pc:~$ terraform plan\nTerraform will perform the following actions:\n  # aws_s3_bucket.data will be created\n  + resource \"aws_s3_bucket\" \"data\" {\n      + bucket = \"myapp-data-123\"\n      + id     = (known after apply)\n    }\nPlan: 1 to add, 0 to change, 0 to destroy."
+            ],
+            [
+              "terraform apply -auto-approve",
+              "Apply infrastructure",
+              "Create/modify resources",
+              "john@pc:~$ terraform apply -auto-approve\naws_s3_bucket.data: Creating...\naws_s3_bucket.data: Creation complete after 3s [id=myapp-data-123]\n\nApply complete! Resources: 1 added, 0 changed, 0 destroyed."
+            ],
+            [
+              "terraform destroy -auto-approve",
+              "Destroy infrastructure",
+              "Delete all managed resources",
+              "john@pc:~$ terraform destroy -auto-approve\naws_s3_bucket.data: Destroying...\naws_s3_bucket.data: Destruction complete\n\nDestroy complete! Resources: 0 destroyed."
+            ],
+            [
+              "terraform state list",
+              "List managed resources",
+              "Show tracked resources",
+              "john@pc:~$ terraform state list\naws_s3_bucket.data\naws_instance.web_server"
+            ],
+            [
+              "terraform output",
+              "Show outputs",
+              "Display declared output values",
+              "john@pc:~$ terraform output\nbucket_arn = \"arn:aws:s3:::myapp-data-123\"\ninstance_ip = \"54.123.45.67\""
+            ]
+          ]
+        },
+        {
+          "name": "Ansible",
+          "rows": [
+            [
+              "ansible all -m ping",
+              "Ping all servers",
+              "Test connectivity",
+              "john@pc:~$ ansible all -m ping\nserver1 | SUCCESS => {\n    \"changed\": false,\n    \"ping\": \"pong\"\n}\nserver2 | SUCCESS => {\n    \"ping\": \"pong\"\n}"
+            ],
+            [
+              "# playbook.yml\\n---\\n- hosts: webservers\\n  become: yes\\n  tasks:\\n    - name: Install nginx\\n      apt:\\n        name: nginx\\n        state: present\\n    - name: Start nginx\\n      service:\\n        name: nginx\\n        state: started\\n        enabled: yes",
+              "Ansible playbook",
+              "Declarative server config",
+              "john@pc:~$ cat playbook.yml\n(playbook defined)"
+            ],
+            [
+              "ansible-playbook playbook.yml",
+              "Run playbook",
+              "Execute automation",
+              "john@pc:~$ ansible-playbook playbook.yml\nPLAY [webservers]\nTASK [Gathering Facts] *************************************************\nok: [server1]\nTASK [Install nginx] ***************************************************\nchanged: [server1]\nTASK [Start nginx] *****************************************************\nchanged: [server1]\nPLAY RECAP *************************************************************\nserver1: ok=3 changed=2 unreachable=0 failed=0"
+            ],
+            [
+              "ansible-vault encrypt secrets.yml",
+              "Encrypt sensitive data",
+              "Secure passwords/keys",
+              "john@pc:~$ ansible-vault encrypt secrets.yml\nNew Vault password: \nConfirm New Vault password: \nEncryption successful"
+            ],
+            [
+              "ansible-playbook playbook.yml --ask-vault-pass",
+              "Run with vault",
+              "Decrypt vault on execution",
+              "john@pc:~$ ansible-playbook playbook.yml --ask-vault-pass\nVault password: \n(playbook runs with decrypted secrets)"
+            ]
+          ]
+        },
+        {
+          "name": "Pulumi & CloudFormation",
+          "rows": [
+            [
+              "// Pulumi (TypeScript)\\nimport * as aws from '@pulumi/aws'\\n\\nconst bucket = new aws.s3.Bucket('my-bucket', {\\n  acl: 'private',\\n  tags: { Environment: 'dev' }\\n});\\n\\nexport const bucketName = bucket.id",
+              "Pulumi IaC",
+              "Code infra in TypeScript/Python/Go",
+              "john@pc:~$ pulumi up\nPreviewing update...\n  + aws:s3/bucket:Bucket (my-bucket): create\nResources: +1 to create"
+            ],
+            [
+              "pulumi up",
+              "Deploy Pulumi stack",
+              "Provision infrastructure",
+              "john@pc:~$ pulumi up -y\nUpdating (dev)\n  + aws:s3/bucket:Bucket (my-bucket): created\nOutputs:\n  bucketName: \"my-bucket-abc123\"\nResources: +1 created"
+            ],
+            [
+              "# AWS CloudFormation (template.yaml)\\nAWSTemplateFormatVersion: '2010-09-09'\\nResources:\\n  MyBucket:\\n    Type: AWS::S3::Bucket\\n    Properties:\\n      BucketName: myapp-data-123",
+              "CloudFormation template",
+              "AWS-native IaC",
+              "john@pc:~$ cat template.yaml\n(CloudFormation template defined)"
+            ],
+            [
+              "aws cloudformation deploy --template-file template.yaml --stack-name myapp",
+              "Deploy CloudFormation",
+              "Create AWS stack",
+              "john@pc:~$ aws cloudformation deploy\nWaiting for stack create to complete...\nSuccessfully created/updated stack"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 4: Container Orchestration (Kubernetes)",
+      "commands": [
+        {
+          "name": "Kubernetes Basics",
+          "rows": [
+            [
+              "kubectl version",
+              "Check K8s version",
+              "Verify cluster access",
+              "john@pc:~$ kubectl version\nClient Version: v1.29.0\nServer Version: v1.29.0"
+            ],
+            [
+              "kubectl cluster-info",
+              "Cluster info",
+              "Show API server details",
+              "john@pc:~$ kubectl cluster-info\nKubernetes control plane is running at https://192.168.1.100:6443\nCoreDNS is running at https://192.168.1.100:6443/api/v1/namespaces/kube-system/services/kube-dns"
+            ],
+            [
+              "kubectl get nodes",
+              "List cluster nodes",
+              "Show all worker nodes",
+              "john@pc:~$ kubectl get nodes\nNAME      STATUS   ROLES           AGE   VERSION\nmaster    Ready    control-plane   45d   v1.29.0\nworker1   Ready    <none>          45d   v1.29.0\nworker2   Ready    <none>          42d   v1.29.0"
+            ],
+            [
+              "kubectl get pods -A",
+              "All pods in all namespaces",
+              "Show every running pod",
+              "john@pc:~$ kubectl get pods -A\nNAMESPACE     NAME                     READY   STATUS    RESTARTS   AGE\nkube-system   coredns-12345            1/1     Running   0          45d\ndefault       nginx-6789abc            1/1     Running   0          10d"
+            ],
+            [
+              "kubectl get namespaces",
+              "List namespaces",
+              "Show isolated environments",
+              "john@pc:~$ kubectl get namespaces\nNAME              STATUS   AGE\ndefault           Active   45d\nkube-system       Active   45d\nproduction        Active   20d\nstaging           Active   20d"
+            ]
+          ]
+        },
+        {
+          "name": "Pods & Deployments",
+          "rows": [
+            [
+              "# pod.yaml\\napiVersion: v1\\nkind: Pod\\nmetadata:\\n  name: nginx\\nspec:\\n  containers:\\n    - name: nginx\\n      image: nginx:alpine\\n      ports:\\n        - containerPort: 80",
+              "Pod definition",
+              "Single container instance",
+              "john@pc:~$ cat pod.yaml\n(Pod YAML defined)"
+            ],
+            [
+              "kubectl apply -f pod.yaml",
+              "Create pod from file",
+              "Deploy a pod",
+              "john@pc:~$ kubectl apply -f pod.yaml\npod/nginx created"
+            ],
+            [
+              "# deployment.yaml\\napiVersion: apps/v1\\nkind: Deployment\\nmetadata:\\n  name: web-app\\nspec:\\n  replicas: 3\\n  selector:\\n    matchLabels:\\n      app: web\\n  template:\\n    metadata:\\n      labels:\\n        app: web\\n    spec:\\n      containers:\\n        - name: app\\n          image: myapp:latest\\n          ports:\\n            - containerPort: 3000",
+              "Deployment YAML",
+              "Scalable app with replicas",
+              "john@pc:~$ cat deployment.yaml\n(Deployment defines desired state)"
+            ],
+            [
+              "kubectl apply -f deployment.yaml",
+              "Create deployment",
+              "Start 3 pod replicas",
+              "john@pc:~$ kubectl apply -f deployment.yaml\ndeployment.apps/web-app created"
+            ],
+            [
+              "kubectl scale deployment web-app --replicas=5",
+              "Scale deployment",
+              "Change replica count",
+              "john@pc:~$ kubectl scale deployment web-app --replicas=5\ndeployment.apps/web-app scaled\njohn@pc:~$ kubectl get pods\nNAME                       READY   STATUS\nweb-app-6789abc-1          1/1     Running\nweb-app-6789abc-2          1/1     Running\nweb-app-6789abc-3          1/1     Running\nweb-app-6789abc-4          1/1     Running\nweb-app-6789abc-5          1/1     Running"
+            ],
+            [
+              "kubectl rollout status deployment/web-app",
+              "Check rollout status",
+              "Monitor deployment progress",
+              "john@pc:~$ kubectl rollout status deployment/web-app\ndeployment \"web-app\" successfully rolled out"
+            ],
+            [
+              "kubectl rollout undo deployment/web-app",
+              "Rollback deployment",
+              "Revert to previous version",
+              "john@pc:~$ kubectl rollout undo deployment/web-app\ndeployment.apps/web-app rolled back"
+            ],
+            [
+              "kubectl delete pod nginx",
+              "Delete a pod",
+              "Pod removed, if in Deployment it recreates",
+              "john@pc:~$ kubectl delete pod nginx\npod \"nginx\" deleted"
+            ]
+          ]
+        },
+        {
+          "name": "Services & Networking",
+          "rows": [
+            [
+              "# service.yaml\\napiVersion: v1\\nkind: Service\\nmetadata:\\n  name: web-service\\nspec:\\n  selector:\\n    app: web\\n  ports:\\n    - port: 80\\n      targetPort: 3000\\n  type: LoadBalancer",
+              "Service definition",
+              "Expose pods to network",
+              "john@pc:~$ cat service.yaml\n(Service YAML)"
+            ],
+            [
+              "kubectl expose deployment web-app --port=80 --target-port=3000 --type=ClusterIP",
+              "Expose deployment",
+              "Create service via CLI",
+              "john@pc:~$ kubectl expose deployment web-app --port=80 --target-port=3000\nservice/web-app exposed"
+            ],
+            [
+              "kubectl get svc",
+              "List services",
+              "Show all services and their IPs",
+              "john@pc:~$ kubectl get svc\nNAME          TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)\nweb-service   LoadBalancer   10.100.20.30    <pending>     80:32000/TCP\nkubernetes    ClusterIP      10.100.0.1      <none>        443/TCP"
+            ],
+            [
+              "# ingress.yaml\\napiVersion: networking.k8s.io/v1\\nkind: Ingress\\nmetadata:\\n  name: app-ingress\\nspec:\\n  rules:\\n    - host: myapp.example.com\\n      http:\\n        paths:\\n          - path: /\\n            pathType: Prefix\\n            backend:\\n              service:\\n                name: web-service\\n                port:\\n                  number: 80",
+              "Ingress definition",
+              "HTTP routing to services",
+              "john@pc:~$ cat ingress.yaml\n(Ingress routes external traffic)"
+            ],
+            [
+              "kubectl apply -f ingress.yaml",
+              "Create ingress",
+              "Configure HTTP routing",
+              "john@pc:~$ kubectl apply -f ingress.yaml\ningress.networking.k8s.io/app-ingress created"
+            ],
+            [
+              "kubectl get ingress",
+              "List ingresses",
+              "Show routing rules",
+              "john@pc:~$ kubectl get ingress\nNAME          CLASS    HOSTS                 ADDRESS         PORTS\napp-ingress   nginx    myapp.example.com     192.168.1.50    80"
+            ]
+          ]
+        },
+        {
+          "name": "ConfigMaps & Secrets",
+          "rows": [
+            [
+              "kubectl create configmap app-config --from-literal=APP_ENV=production",
+              "Create ConfigMap",
+              "Store env config",
+              "john@pc:~$ kubectl create configmap app-config --from-literal=APP_ENV=production\nconfigmap/app-config created"
+            ],
+            [
+              "kubectl create configmap app-files --from-file=config.json",
+              "ConfigMap from file",
+              "Store file content",
+              "john@pc:~$ kubectl create configmap app-files --from-file=config.json\nconfigmap/app-files created"
+            ],
+            [
+              "kubectl create secret generic db-secret --from-literal=password=mysecret123",
+              "Create Secret",
+              "Store sensitive data",
+              "john@pc:~$ kubectl create secret generic db-secret --from-literal=password=mysecret123\nsecret/db-secret created"
+            ],
+            [
+              "# Using in pod\\nspec:\\n  containers:\\n    - envFrom:\\n        - configMapRef:\\n            name: app-config\\n      env:\\n        - name: DB_PASSWORD\\n          valueFrom:\\n            secretKeyRef:\\n              name: db-secret\\n              key: password",
+              "Consume in pod",
+              "Inject config into container",
+              "(ConfigMap and Secret values injected as env vars)"
+            ]
+          ]
+        },
+        {
+          "name": "Helm (Package Manager)",
+          "rows": [
+            [
+              "helm repo add bitnami https://charts.bitnami.com/bitnami",
+              "Add Helm repo",
+              "Add chart repository",
+              "john@pc:~$ helm repo add bitnami https://charts.bitnami.com/bitnami\n\"bitnami\" has been added to your repositories"
+            ],
+            [
+              "helm search repo nginx",
+              "Search charts",
+              "Find available packages",
+              "john@pc:~$ helm search repo nginx\nNAME                    CHART VERSION   APP VERSION\nbitnami/nginx           18.0.0          1.25.0"
+            ],
+            [
+              "helm install my-release bitnami/nginx",
+              "Install chart",
+              "Deploy application",
+              "john@pc:~$ helm install my-release bitnami/nginx\nNAME: my-release\nLAST DEPLOYED: Thu May 14 10:00:00 2026\nNAMESPACE: default\nSTATUS: deployed\nNOTES:\n1. Get the URL: http://my-release-nginx.default.svc.cluster.local"
+            ],
+            [
+              "helm list",
+              "List releases",
+              "Show installed charts",
+              "john@pc:~$ helm list\nNAME            NAMESPACE       REVISION        STATUS      CHART\nmy-release      default         1               deployed    nginx-18.0.0"
+            ],
+            [
+              "helm upgrade my-release bitnami/nginx --set service.type=LoadBalancer",
+              "Upgrade release",
+              "Update chart config",
+              "john@pc:~$ helm upgrade my-release bitnami/nginx --set service.type=LoadBalancer\nRelease \"my-release\" has been upgraded."
+            ],
+            [
+              "helm rollback my-release 1",
+              "Rollback release",
+              "Revert to previous version",
+              "john@pc:~$ helm rollback my-release 1\nRollback was a success!"
+            ],
+            [
+              "helm uninstall my-release",
+              "Delete release",
+              "Remove deployed chart",
+              "john@pc:~$ helm uninstall my-release\nrelease \"my-release\" uninstalled"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 5: Monitoring & Observability",
+      "commands": [
+        {
+          "name": "Prometheus",
+          "rows": [
+            [
+              "# prometheus.yml\\nglobal:\\n  scrape_interval: 15s\\nscrape_configs:\\n  - job_name: 'node'\\n    static_configs:\\n      - targets: ['localhost:9100']",
+              "Prometheus config",
+              "Metrics scrape targets",
+              "john@pc:~$ cat prometheus.yml\n(collects metrics every 15s)"
+            ],
+            [
+              "prometheus --config.file=prometheus.yml",
+              "Start Prometheus",
+              "Launch monitoring server",
+              "john@pc:~$ prometheus --config.file=prometheus.yml\nlevel=info msg=\"Starting Prometheus\"\nlevel=info msg=\"Server is ready to receive web requests.\" at=0.0.0.0:9090"
+            ],
+            [
+              "PromQL queries:\\n- up{job=\"node\"}\\n- rate(http_requests_total[5m])\\n- 100 - (avg(irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+              "PromQL queries",
+              "Query metrics",
+              "PromQL example:\nup{job=\"node\"} = 1 (target is up)"
+            ],
+            [
+              "node_exporter --path.rootfs=/host",
+              "Node Exporter",
+              "System metrics",
+              "john@pc:~$ node_exporter\nINFO[0000] Starting node_exporter (version=1.7.0)\nINFO[0000] Listening on :9100"
+            ]
+          ]
+        },
+        {
+          "name": "Grafana",
+          "rows": [
+            [
+              "docker run -d -p 3000:3000 grafana/grafana",
+              "Start Grafana",
+              "Launch dashboard UI",
+              "john@pc:~$ docker run -d -p 3000:3000 grafana/grafana\n(container started on port 3000)"
+            ],
+            [
+              "Grafana UI: http://localhost:3000\\nDefault login: admin / admin",
+              "Access Grafana",
+              "Login and configure",
+              "Web UI at localhost:3000\nChange password on first login"
+            ],
+            [
+              "Add Prometheus data source:\\nURL: http://prometheus:9090\\nType: Prometheus",
+              "Add data source",
+              "Connect Prometheus to Grafana",
+              "Data source added and tested successfully"
+            ],
+            [
+              "CPU Usage dashboard query:\\nsort(avg by (instance) (irate(node_cpu_seconds_total{mode!=\"idle\"}[5m])))",
+              "Dashboard query",
+              "Visualize CPU metrics",
+              "(CPU usage graph displayed in Grafana)"
+            ]
+          ]
+        },
+        {
+          "name": "ELK Stack (Elasticsearch, Logstash, Kibana)",
+          "rows": [
+            [
+              "# Filebeat config\\nfilebeat.inputs:\\n- type: log\\n  paths:\\n    - /var/log/nginx/*.log\\noutput.elasticsearch:\\n  hosts: ['localhost:9200']",
+              "Filebeat config",
+              "Ship logs to Elasticsearch",
+              "john@pc:~$ cat filebeat.yml\n(ships nginx logs to ES)"
+            ],
+            [
+              "# Logstash config\\ninput { beats { port => 5044 } }\\nfilter { grok { match => { \"message\" => \"%{COMBINEDAPACHELOG}\" } } }\\noutput { elasticsearch { hosts => [\"localhost:9200\"] } }",
+              "Logstash pipeline",
+              "Parse and transform logs",
+              "john@pc:~$ cat logstash.conf\n(parses Apache logs with grok pattern)"
+            ],
+            [
+              "curl -XGET 'localhost:9200/_cat/indices?v'",
+              "Check Elasticsearch indices",
+              "View stored logs",
+              "john@pc:~$ curl 'localhost:9200/_cat/indices?v'\nhealth status index                     size\ngreen  open   filebeat-2026.05.14       1.2mb\n(green = healthy)"
+            ],
+            [
+              "Kibana query: \\nkubernetes.pod_name: web-app*",
+              "Kibana search",
+              "Search logs in browser",
+              "(logs filtered in Kibana web UI at port 5601)"
+            ]
+          ]
+        },
+        {
+          "name": "OpenTelemetry & Distributed Tracing",
+          "rows": [
+            [
+              "# OpenTelemetry Collector config\\nrecechers:\\n  otlp:\\n    protocols:\\n      grpc:\\n      http:\\nexporters:\\n  otlp:\\n    endpoint: jaeger:4317\\nservice:\\n  pipelines:\\n    tracess:\\n      recechers: [otlp]\\n      exporters: [otlp]",
+              "OTel Collector",
+              "Collect traces, metrics, logs",
+              "john@pc:~$ cat otel-collector-config.yaml\n(collects OTLP data)"
+            ],
+            [
+              "# Node.js instrumentation\\nconst { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');\\nconst { SimpleSpanProcessor } = require('@opentelemetry/sdk-trace-base');\\nconst { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http');\\n\\nconst provider = new NodeTracerProvider();\\nprovider.addSpanProcessor(new SimpleSpanProcessor(new OTLPTraceExporter()));\\nprovider.register();",
+              "Auto-instrument Node.js",
+              "Add tracing to app",
+              "(traces sent to OTel Collector)"
+            ],
+            [
+              "Jaeger UI: http://localhost:16686",
+              "View traces",
+              "Distributed tracing UI",
+              "Jaeger web interface\nSearch traces by service, operation, tags"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 6: Cloud Platforms",
+      "commands": [
+        {
+          "name": "AWS CLI",
+          "rows": [
+            [
+              "aws configure",
+              "Configure AWS CLI",
+              "Set access key, region, output",
+              "john@pc:~$ aws configure\nAWS Access Key ID [None]: AKIA...\nAWS Secret Access Key [None]: wJalr...\nDefault region name [None]: us-east-1\nDefault output format [None]: json"
+            ],
+            [
+              "aws s3 ls",
+              "List S3 buckets",
+              "Show all buckets",
+              "john@pc:~$ aws s3 ls\n2026-05-14 10:00:00 myapp-data\n2026-05-13 09:00:00 logs-archive"
+            ],
+            [
+              "aws s3 cp file.txt s3://myapp-data/",
+              "Upload to S3",
+              "Copy file to bucket",
+              "john@pc:~$ aws s3 cp file.txt s3://myapp-data/\nupload: ./file.txt to s3://myapp-data/file.txt"
+            ],
+            [
+              "aws ec2 describe-instances --query 'Reservations[*].Instances[*].[InstanceId,State.Name]' --output table",
+              "List EC2 instances",
+              "Show running servers",
+              "john@pc:~$ aws ec2 describe-instances\n--------------------------------------------------\n|            DescribeInstances            |\n+----------------------+------------------+\n|  i-0abc123def456     |  running         |\n|  i-0def789abc012     |  stopped         |\n+----------------------+------------------+"
+            ],
+            [
+              "aws ecs update-service --cluster prod --service web --desired-count 5",
+              "Scale ECS service",
+              "Change task count",
+              "john@pc:~$ aws ecs update-service --cluster prod --service web --desired-count 5\n{\"service\": {\"desiredCount\": 5}}"
+            ],
+            [
+              "aws lambda invoke --function-name my-function response.json",
+              "Invoke Lambda",
+              "Run serverless function",
+              "john@pc:~$ aws lambda invoke --function-name my-function response.json\n{\n    \"StatusCode\": 200,\n    \"ExecutedVersion\": \"$LATEST\"\n}"
+            ],
+            [
+              "aws cloudformation describe-stacks --query 'Stacks[*].StackStatus'",
+              "Check CloudFormation status",
+              "Stack creation status",
+              "john@pc:~$ aws cloudformation describe-stacks\n[\"CREATE_COMPLETE\"]"
+            ]
+          ]
+        },
+        {
+          "name": "Azure CLI",
+          "rows": [
+            [
+              "az login",
+              "Login to Azure",
+              "Authenticate CLI",
+              "john@pc:~$ az login\nYou have logged in. Web browser has opened...\n[\n  {\n    \"user\": {\"name\": \"john@example.com\"}\n  }\n]"
+            ],
+            [
+              "az group create --name myapp-rg --location eastus",
+              "Create resource group",
+              "Container for resources",
+              "john@pc:~$ az group create --name myapp-rg --location eastus\n{\n  \"id\": \"/subscriptions/.../myapp-rg\",\n  \"location\": \"eastus\",\n  \"name\": \"myapp-rg\"\n}"
+            ],
+            [
+              "az vm create --resource-group myapp-rg --name web-vm --image UbuntuLTS --generate-ssh-keys",
+              "Create VM",
+              "Provision virtual machine",
+              "john@pc:~$ az vm create ...\n{\n  \"publicIpAddress\": \"52.123.45.67\",\n  \"provisioningState\": \"Succeeded\"\n}"
+            ],
+            [
+              "az aks get-credentials --resource-group myapp-rg --name my-cluster",
+              "Get K8s credentials",
+              "Connect to AKS cluster",
+              "john@pc:~$ az aks get-credentials ...\nMerged \"my-cluster\" as current context in /home/john/.kube/config"
+            ]
+          ]
+        },
+        {
+          "name": "GCP CLI",
+          "rows": [
+            [
+              "gcloud init",
+              "Initialize GCloud",
+              "Setup project and auth",
+              "john@pc:~$ gcloud init\nWelcome! This command will guide you through...\nPick configuration to use:\n [1] Create a new configuration"
+            ],
+            [
+              "gcloud compute instances list",
+              "List compute instances",
+              "Show all VMs",
+              "john@pc:~$ gcloud compute instances list\nNAME       ZONE        MACHINE_TYPE  PREEMPTIBLE  STATUS\nweb-server us-central1  e2-medium     false        RUNNING"
+            ],
+            [
+              "gcloud container clusters get-credentials my-cluster --zone us-central1",
+              "Connect to GKE",
+              "Get K8s credentials for GKE",
+              "john@pc:~$ gcloud container clusters get-credentials my-cluster ...\nFetching cluster endpoint and auth data.\nkubeconfig entry generated for my-cluster"
+            ],
+            [
+              "gcloud builds submit --tag gcr.io/my-project/myapp",
+              "Build container with Cloud Build",
+              "Build and push to Container Registry",
+              "john@pc:~$ gcloud builds submit --tag gcr.io/my-project/myapp\nCreating temporary tarball archive of 5 files...\nSending tarball to Google Cloud Storage...\nSUCCESS"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 7: Secrets & Configuration Management",
+      "commands": [
+        {
+          "name": "HashiCorp Vault",
+          "rows": [
+            [
+              "vault server -dev -dev-root-token-id=root",
+              "Start Vault dev server",
+              "Local development server",
+              "john@pc:~$ vault server -dev\n==> Vault server configuration:\n             Api Address: http://127.0.0.1:8200\n                     Token: root\n==> Vault started!"
+            ],
+            [
+              "export VAULT_ADDR=http://127.0.0.1:8200\\nvault login root",
+              "Login to Vault",
+              "Authenticate CLI",
+              "john@pc:~$ vault login root\nSuccess! You are now authenticated."
+            ],
+            [
+              "vault kv put secret/db password=mysecret123 username=app_user",
+              "Store secret",
+              "Save key-value data",
+              "john@pc:~$ vault kv put secret/db password=mysecret123 username=app_user\nSuccess! Data written to: secret/data/db"
+            ],
+            [
+              "vault kv get secret/db",
+              "Read secret",
+              "Retrieve stored data",
+              "john@pc:~$ vault kv get secret/db\n====== Data ======\nKey         Value\n---         -----\npassword    mysecret123\nusername    app_user"
+            ],
+            [
+              "vault kv delete secret/db",
+              "Delete secret",
+              "Remove stored secret",
+              "john@pc:~$ vault kv delete secret/db\nSuccess! Data deleted (if it existed) at: secret/data/db"
+            ],
+            [
+              "# Vault Agent sidecar injector\\nannotations:\\n  vault.hashicorp.com/agent-inject: 'true'\\n  vault.hashicorp.com/role: 'app'\\n  vault.hashicorp.com/agent-inject-secret-db: 'secret/data/db'",
+              "Vault in Kubernetes",
+              "Inject secrets into pods",
+              "(Vault Agent sidecar injects secrets as files)"
+            ]
+          ]
+        },
+        {
+          "name": "SOPS & Mozilla SOPS",
+          "rows": [
+            [
+              "# .sops.yaml\\ncreation_rules:\\n  - kms: arn:aws:kms:us-east-1:123456789:key/abc-123",
+              "SOPS config",
+              "Encryption rules",
+              "john@pc:~$ cat .sops.yaml\n(encryption config)"
+            ],
+            [
+              "sops --encrypt secrets.yaml > secrets.enc.yaml",
+              "Encrypt file",
+              "Encrypt with KMS/PGP",
+              "john@pc:~$ sops --encrypt secrets.yaml > secrets.enc.yaml\njohn@pc:~$ cat secrets.enc.yaml\ndb_password: ENC[AES256_GCM,data:abc123...,iv:...]"
+            ],
+            [
+              "sops secrets.enc.yaml",
+              "Edit encrypted file",
+              "Decrypt in editor, re-encrypt on save",
+              "john@pc:~$ sops secrets.enc.yaml\n(opens decrypted file in $EDITOR)"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 8: Service Mesh & API Gateway",
+      "commands": [
+        {
+          "name": "Istio Service Mesh",
+          "rows": [
+            [
+              "istioctl install --set profile=demo -y",
+              "Install Istio",
+              "Deploy service mesh",
+              "john@pc:~$ istioctl install --set profile=demo -y\nIstio core installed\nIstiod installed\nIngress gateways installed\nInstallation complete"
+            ],
+            [
+              "kubectl label namespace default istio-injection=enabled",
+              "Enable sidecar injection",
+              "Auto-inject Envoy proxy",
+              "john@pc:~$ kubectl label namespace default istio-injection=enabled\nnamespace/default labeled"
+            ],
+            [
+              "kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml",
+              "Deploy sample app",
+              "Test Istio with Bookinfo",
+              "john@pc:~$ kubectl apply -f samples/bookinfo/...\nservice/productpage created\ndeployment.apps/productpage-v1 created\n(pods each get an Envoy sidecar)"
+            ],
+            [
+              "kubectl get pods -l app=productpage\\nREADY 2/2 (shows sidecar)",
+              "Check sidecar injection",
+              "Sidecar = 2/2 containers",
+              "NAME                              READY   STATUS    RESTARTS\nproductpage-v1-abc123              2/2     Running   0"
+            ],
+            [
+              "# DestinationRule\\napiVersion: networking.istio.io/v1beta1\\nkind: DestinationRule\\nmetadata:\\n  name: reviews\\nspec:\\n  host: reviews\\n  trafficPolicy:\\n    connectionPool:\\n      tcp:\\n        maxConnections: 100",
+              "Traffic management",
+              "Circuit breaking, retries, timeouts",
+              "john@pc:~$ kubectl apply -f dr.yaml\ndestinationrule.networking.istio.io/reviews created"
+            ],
+            [
+              "# VirtualService (canary)\\napiVersion: networking.istio.io/v1beta1\\nkind: VirtualService\\nmetadata:\\n  name: reviews\\nspec:\\n  hosts:\\n    - reviews\\n  http:\\n    - match:\\n        - headers:\\n            version:\\n              exact: v2\\n      route:\\n        - destination:\\n            host: reviews\\n            subset: v2\\n    - route:\\n        - destination:\\n            host: reviews\\n            subset: v1",
+              "Canary deployment",
+              "Route 100% of traffic to v1, except header version=v2",
+              "(Canary routing configured)"
+            ]
+          ]
+        },
+        {
+          "name": "Kong / NGINX API Gateway",
+          "rows": [
+            [
+              "# Kong declarative config (kong.yml)\\n_format_version: \"3.0\"\\nservices:\\n  - name: my-api\\n    url: http://backend:3000\\n    routes:\\n      - name: api-route\\n        paths:\\n          - /api\\n        methods: [GET, POST]\\n    plugins:\\n      - name: rate-limiting\\n        config:\\n          minute: 60",
+              "Kong config",
+              "API Gateway setup",
+              "john@pc:~$ cat kong.yml\n(Kong gateway config defined)"
+            ],
+            [
+              "docker run -d --name kong \\n  -e \"KONG_DATABASE=off\" \\n  -e \"KONG_DECLARATIVE_CONFIG=/kong.yml\" \\n  -p 8000:8000 kong:latest",
+              "Run Kong with config",
+              "Start API gateway",
+              "john@pc:~$ docker run ...\n(kong started on port 8000)"
+            ],
+            [
+              "curl -i http://localhost:8000/api/users",
+              "Test API via Kong",
+              "Request through gateway",
+              "HTTP/1.1 200 OK\nX-RateLimit-Remaining: 59\n...\n(response from backend)"
+            ],
+            [
+              "# NGINX as API Gateway\\nserver {\\n  listen 80;\\n  location /api/ {\\n    proxy_pass http://backend:3000/;\\n    limit_req zone=api burst=20;\\n    proxy_set_header X-Real-IP $remote_addr;\\n  }\\n}",
+              "NGINX reverse proxy",
+              "API routing with rate limiting",
+              "john@pc:~$ nginx -t\nnginx: configuration file test is successful"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 9: GitOps & DevSecOps",
+      "commands": [
+        {
+          "name": "ArgoCD (GitOps)",
+          "rows": [
+            [
+              "kubectl create namespace argocd\\nkubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml",
+              "Install ArgoCD",
+              "Deploy GitOps operator",
+              "john@pc:~$ kubectl apply -n argocd -f install.yaml\nnamespace/argocd created\ncustomresourcedefinition.apiextensions.k8s.io/applications.argoproj.io created\n... (all ArgoCD components deployed)"
+            ],
+            [
+              "kubectl get pods -n argocd",
+              "Check ArgoCD pods",
+              "Verify installation",
+              "john@pc:~$ kubectl get pods -n argocd\nNAME                                                READY   STATUS\nargocd-server-abc123                               1/1     Running\nargocd-repo-server-def456                          1/1     Running\nargocd-application-controller-0                    1/1     Running"
+            ],
+            [
+              "argocd login localhost:8080 --username admin",
+              "Login to ArgoCD",
+              "Authenticate CLI",
+              "john@pc:~$ argocd login localhost:8080\nPassword: \n'admin:login' logged in successfully"
+            ],
+            [
+              "# Application YAML\\napiVersion: argoproj.io/v1alpha1\\nkind: Application\\nmetadata:\\n  name: myapp\\nspec:\\n  destination:\\n    namespace: default\\n    server: https://kubernetes.default.svc\\n  project: default\\n  source:\\n    repoURL: https://github.com/user/repo.git\\n    path: k8s\\n    targetRevision: main\\n  syncPolicy:\\n    automated:\\n      prune: true\\n      selfHeal: true",
+              "ArgoCD Application",
+              "Declare app from Git repo",
+              "john@pc:~$ kubectl apply -f app.yaml\napplication.argoproj.io/myapp created"
+            ],
+            [
+              "argocd app sync myapp",
+              "Manually sync",
+              "Force sync from Git",
+              "john@pc:~$ argocd app sync myapp\nTIMESTAMP                  GROUP        KIND    STATUS\n2026-05-14T10:00:00        apps         Deployment  Synced\n2026-05-14T10:00:01        v1           Service     Synced"
+            ],
+            [
+              "argocd app get myapp",
+              "Check app status",
+              "View sync health",
+              "john@pc:~$ argocd app get myapp\nName:               myapp\nProject:            default\nServer:             https://kubernetes.default.svc\nNamespace:          default\nURL:                https://localhost:8080/applications/myapp\nStatus:             Synced\nHealth:             Healthy"
+            ]
+          ]
+        },
+        {
+          "name": "DevSecOps (Security Scanning)",
+          "rows": [
+            [
+              "# Trivy scan container image\\ntrivy image myapp:latest",
+              "Vulnerability scan",
+              "Find CVEs in container",
+              "john@pc:~$ trivy image myapp:latest\nTotal: 15 (UNKNOWN: 0, LOW: 8, MEDIUM: 5, HIGH: 2, CRITICAL: 0)\n\nHIGH: CVE-2026-1234 (node)\n  Fix: upgrade to 20.12.0"
+            ],
+            [
+              "# Trivy scan filesystem\\ntrivy fs .",
+              "Scan code/repo",
+              "Find vulnerable deps",
+              "john@pc:~$ trivy fs .\npackage-lock.json (npm)\nTotal: 3 (LOW: 1, MEDIUM: 2)\n\nnode_modules/express (CVE-2026-5678)"
+            ],
+            [
+              "# Trivy in CI (GitHub Actions)\\n- name: Scan image\\n  uses: aquasecurity/trivy-action@master\\n  with:\\n    image-ref: 'myapp:${{ github.sha }}'\\n    format: 'sarif'\\n    output: 'trivy-results.sarif'",
+              "CI/CD vulnerability scan",
+              "Auto-scan in pipeline",
+              "(trivy-results.sarif uploaded to GitHub Security)"
+            ],
+            [
+              "# SAST with Semgrep\\nsemgrep --config=auto .",
+              "Static code analysis",
+              "Find code vulnerabilities",
+              "john@pc:~$ semgrep --config=auto .\n┌─────┐\n│ FIND │\n└─────┘\n   src/auth.js \n    ❯🔴 Possible SQL injection detected\n        sql.execute(query)"
+            ],
+            [
+              "# Snyk CLI\\nsnyk test",
+              "Dependency scanning",
+              "Check for known vulnerabilities",
+              "john@pc:~$ snyk test\nTesting /home/john/repo...\nTested 150 dependencies for known vulnerabilities, found 3 vulnerabilities.\n\n✗ High severity vulnerability found in lodash"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 10: SRE & Reliability",
+      "commands": [
+        {
+          "name": "SLIs, SLOs, SLAs",
+          "rows": [
+            [
+              "SLI = Service Level Indicator\\nExamples:\\n- Request latency (p99 < 200ms)\\n- Error rate (< 0.1%)\\n- Availability (uptime %)\\n- Throughput (requests/sec)",
+              "SLI definition",
+              "What you measure",
+              "SLI: Service Level Indicator\nthe metric measuring service performance"
+            ],
+            [
+              "SLO = Service Level Objective\\nExample:\\n- 99.9% of requests complete in < 200ms over 30 days\\n- 99.99% availability per quarter",
+              "SLO definition",
+              "Target value for SLI",
+              "SLO: Service Level Objective\nyour reliability target"
+            ],
+            [
+              "SLA = Service Level Agreement\\nExample:\\n- If uptime < 99.9%, customer gets 10% credit",
+              "SLA definition",
+              "Contractual commitment",
+              "SLA: Service Level Agreement\nexternal commitment to customers"
+            ],
+            [
+              "Error Budget = 100% - SLO\\nExample:\\n- SLO: 99.9% uptime\\n- Error Budget: 0.1% = 43 minutes/month\\n- If budget exhausted, stop risky deployments",
+              "Error Budget",
+              "How much failure is acceptable",
+              "Error Budget Calculation:\nMonthly uptime SLO: 99.9%\nAllowed downtime: 43m 12s per month"
+            ]
+          ]
+        },
+        {
+          "name": "Chaos Engineering",
+          "rows": [
+            [
+              "# Chaos Monkey (Netflix)\\n# Terminates random instances in production\\n# Ensures system survives failures",
+              "Chaos Monkey concept",
+              "Random failure injection",
+              "(tests if system handles instance failure)"
+            ],
+            [
+              "# LitmusChaos in Kubernetes\\napiVersion: litmuschaos.io/v1alpha1\\nkind: ChaosEngine\\nmetadata:\\n  name: pod-delete\\nspec:\\n  appinfo:\\n    appns: default\\n    applabel: app=web\\n  experiments:\\n    - name: pod-delete\\n      spec:\\n        components:\\n          env:\\n            - name: TOTAL_CHAOS_DURATION\\n              value: '30'\\n            - name: CHAOS_INTERVAL\\n              value: '10'",
+              "LitmusChaos experiment",
+              "Kill pods to test resilience",
+              "john@pc:~$ kubectl apply -f chaos-engine.yaml\nchaosengine.litmuschaos.io/pod-delete created\n(expertiment runs, kills random pods)"
+            ],
+            [
+              "# Check experiment status\\nkubectl get chaosresult -n default",
+              "Verify chaos experiment",
+              "Did system survive?",
+              "john@pc:~$ kubectl get chaosresult\nNAME                              STATUS\npod-delete-pod-delete             Completed\n(experiment completed, app survived)"
+            ]
+          ]
+        },
+        {
+          "name": "Incident Management",
+          "rows": [
+            [
+              "1. Detect (monitoring alert)\\n2. Respond (acknowledge, page on-call)\\n3. Diagnose (find root cause)\\n4. Mitigate (fix/rollback/scale)\\n5. Resolve (confirm fixed)\\n6. Learn (postmortem, action items)",
+              "Incident lifecycle",
+              "Standard incident response flow"
+            ],
+            [
+              "# Postmortem template\\n## Summary\\n## Timeline\\n## Root Cause\\n## Impact\\n## Action Items\\n## Lessons Learned",
+              "Postmortem",
+              "Learn from incidents",
+              "Postmortem documents:\n- What happened?\n- Why did it happen?\n- How do we prevent it?"
+            ],
+            [
+              "PagerDuty / OpsGenie / Grafana OnCall\\n- Define escalation policies\\n- Set up on-call schedules\\n- Integrate alert sources",
+              "On-call tools",
+              "Alerting and paging",
+              "(on-call engineer gets notified of critical alerts)"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 11: Message Queues & Streaming",
+      "commands": [
+        {
+          "name": "Kafka",
+          "rows": [
+            [
+              "# Start Kafka (using KRaft mode)\\nkafka-storage.sh format -t <uuid> -c config/kraft/server.properties\\nkafka-server-start.sh config/kraft/server.properties",
+              "Start Kafka",
+              "Launch Kafka broker",
+              "john@pc:~$ kafka-server-start.sh\n[2026-05-14 10:00:00] Kafka Server started (kafka.server.KafkaServer)"
+            ],
+            [
+              "kafka-topics.sh --create --topic orders --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1",
+              "Create topic",
+              "Create Kafka topic",
+              "john@pc:~$ kafka-topics.sh --create --topic orders ...\nCreated topic orders."
+            ],
+            [
+              "kafka-topics.sh --list --bootstrap-server localhost:9092",
+              "List topics",
+              "Show all topics",
+              "john@pc:~$ kafka-topics.sh --list\norders\npayments\nnotifications"
+            ],
+            [
+              "kafka-console-producer.sh --topic orders --bootstrap-server localhost:9092",
+              "Produce messages",
+              "Publish to topic (type messages)",
+              "john@pc:~$ kafka-console-producer.sh\n> {\"orderId\": 123, \"userId\": 456}\n> {\"orderId\": 124, \"userId\": 457}\n(published to 'orders' topic)"
+            ],
+            [
+              "kafka-console-consumer.sh --topic orders --from-beginning --bootstrap-server localhost:9092",
+              "Consume messages",
+              "Read from topic",
+              "john@pc:~$ kafka-console-consumer.sh\n{\"orderId\": 123, \"userId\": 456}\n{\"orderId\": 124, \"userId\": 457}\n(reading from beginning of 'orders')"
+            ],
+            [
+              "kafka-consumer-groups.sh --group my-group --bootstrap-server localhost:9092 --describe",
+              "Consumer group info",
+              "Check lag and offsets",
+              "john@pc:~$ kafka-consumer-groups.sh --describe\nGROUP           TOPIC     PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG\nmy-group        orders    0          150             200             50"
+            ]
+          ]
+        },
+        {
+          "name": "RabbitMQ & Redis",
+          "rows": [
+            [
+              "# RabbitMQ commands\\nrabbitmqctl add_user myuser mypass",
+              "Create user",
+              "Add RabbitMQ user",
+              "john@pc:~$ rabbitmqctl add_user myuser mypass\nAdding user \"myuser\" ... done."
+            ],
+            [
+              "rabbitmqctl add_vhost myapp",
+              "Create virtual host",
+              "Isolate environments",
+              "john@pc:~$ rabbitmqctl add_vhost myapp\nAdding vhost \"myapp\" ... done."
+            ],
+            [
+              "rabbitmqctl set_permissions -p myapp myuser \".*\" \".*\" \".*\"",
+              "Set permissions",
+              "Grant user access to vhost",
+              "john@pc:~$ rabbitmqctl set_permissions ...\nSetting permissions for user \"myuser\" in vhost \"myapp\" ... done."
+            ],
+            [
+              "rabbitmq-plugins enable rabbitmq_management",
+              "Enable management UI",
+              "Web UI on port 15672",
+              "john@pc:~$ rabbitmq-plugins enable rabbitmq_management\nEnabling plugin rabbitmq_management ...\ndone."
+            ],
+            [
+              "# Redis commands\\nredis-cli SET user:123 '{\"name\":\"John\"}'",
+              "Set Redis key",
+              "Store string value",
+              "john@pc:~$ redis-cli SET user:123 '{\"name\":\"John\"}'\nOK"
+            ],
+            [
+              "redis-cli GET user:123",
+              "Get Redis key",
+              "Retrieve value",
+              "john@pc:~$ redis-cli GET user:123\n\"{\\\"name\\\":\\\"John\\\"}\""
+            ],
+            [
+              "redis-cli LPUSH queue:orders '{\"id\": 1}'",
+              "Redis list (queue)",
+              "Push to list",
+              "john@pc:~$ redis-cli LPUSH queue:orders '{\"id\": 1}'\n(integer) 1"
+            ],
+            [
+              "redis-cli BRPOP queue:orders 0",
+              "Blocking pop (consumer)",
+              "Wait for message",
+              "john@pc:~$ redis-cli BRPOP queue:orders 0\n1) \"queue:orders\"\n2) \"{\\\"id\\\": 1}\""
+            ],
+            [
+              "redis-cli PUBLISH channel:updates '{\"msg\": \"deploy\"}'",
+              "Redis pub/sub",
+              "Publish message",
+              "john@pc:~$ redis-cli PUBLISH channel:updates '{\"msg\": \"deploy\"}'\n(integer) 2 (two subscribers received)"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 12: DevOps Tools Quick Reference",
+      "commands": [
+        {
+          "name": "Must-Know Tools",
+          "rows": [
+            [
+              "Docker",
+              "Container runtime",
+              "Package apps in containers",
+              "docker build / docker run / docker compose"
+            ],
+            [
+              "Kubernetes",
+              "Container orchestration",
+              "Manage container fleets",
+              "kubectl get pods / apply / scale / rollout"
+            ],
+            [
+              "Terraform",
+              "Infrastructure as Code",
+              "Provision cloud resources",
+              "terraform init / plan / apply / destroy"
+            ],
+            [
+              "Ansible",
+              "Configuration management",
+              "Automate server setup",
+              "ansible-playbook playbook.yml"
+            ],
+            [
+              "Helm",
+              "K8s package manager",
+              "Deploy complex apps on K8s",
+              "helm install / upgrade / rollback"
+            ],
+            [
+              "Prometheus",
+              "Metrics & alerting",
+              "Collect system metrics",
+              "PromQL queries, alertmanager"
+            ],
+            [
+              "Grafana",
+              "Dashboard & visualization",
+              "Visualize metrics",
+              "Grafana dashboards, alerting"
+            ],
+            [
+              "ELK Stack",
+              "Log management",
+              "Centralized logging",
+              "Filebeat -> Logstash -> ES -> Kibana"
+            ],
+            [
+              "ArgoCD",
+              "GitOps delivery",
+              "Git as source of truth",
+              "argocd app sync / get"
+            ],
+            [
+              "Vault",
+              "Secrets management",
+              "Secure credential storage",
+              "vault kv get/put/delete"
+            ],
+            [
+              "Istio",
+              "Service mesh",
+              "Microservices networking",
+              "Traffic management, security, telemetry"
+            ],
+            [
+              "Kafka",
+              "Event streaming",
+              "Real-time data pipelines",
+              "kafka-console-producer/consumer"
+            ],
+            [
+              "Trivy",
+              "Security scanner",
+              "Vulnerability scanning",
+              "trivy image / fs / repo"
+            ],
+            [
+              "Pulumi",
+              "IaC with real code",
+              "Infra with TypeScript/Python/Go",
+              "pulumi up / destroy / stack"
+            ],
+            [
+              "Packer",
+              "Image builder",
+              "Create VM/images",
+              "packer build template.pkr.hcl"
+            ],
+            [
+              "Vagrant",
+              "Dev environment mgmt",
+              "Reproducible VMs",
+              "vagrant up / ssh / destroy"
+            ],
+            [
+              "Consul",
+              "Service discovery",
+              "DNS-based service mesh",
+              "consul members / kv get"
+            ],
+            [
+              "Nomad",
+              "Workload orchestrator",
+              "Alternative to K8s (simpler)",
+              "nomad job run / status"
+            ],
+            [
+              "Waypoint",
+              "Build/deploy/release",
+              "Application delivery",
+              "waypoint up / deploy / release"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 13: Image Building & Packer",
+      "commands": [
+        {
+          "name": "Packer - Build Machine Images",
+          "rows": [
+            [
+              "# aws-ubuntu.pkr.hcl\\nvariable \"ami_name\" { default = \"myapp-ami\" }\\nsource \"amazon-ebs\" \"ubuntu\" {\\n  ami_name = var.ami_name\\n  instance_type = \"t2.micro\"\\n  region = \"us-east-1\"\\n  source_ami_filter {\\n    filters { virtualization-type = \"hvm\" }\\n    most_recent = true\\n    owners = [\"099720109477\"]\\n  }\\n  ssh_username = \"ubuntu\"\\n}\\nbuild {\\n  sources = [\"source.amazon-ebs.ubuntu\"]\\n  provisioner \"shell\" {\\n    inline = [\"sudo apt-get update\", \"sudo apt-get install -y nginx\"]\\n  }\\n}",
+              "Packer template",
+              "Define AMI with provisioners",
+              "john@pc:~$ cat aws-ubuntu.pkr.hcl\n(Packer HCL template defined)"
+            ],
+            [
+              "packer init aws-ubuntu.pkr.hcl",
+              "Initialize Packer",
+              "Download plugins",
+              "john@pc:~$ packer init aws-ubuntu.pkr.hcl\nInstalled packer-plugin-amazon from..."
+            ],
+            [
+              "packer validate aws-ubuntu.pkr.hcl",
+              "Validate template",
+              "Check syntax",
+              "john@pc:~$ packer validate aws-ubuntu.pkr.hcl\nThe configuration is valid."
+            ],
+            [
+              "packer build aws-ubuntu.pkr.hcl",
+              "Build AMI",
+              "Create Amazon Machine Image",
+              "john@pc:~$ packer build aws-ubuntu.pkr.hcl\namazon-ebs.ubuntu: output will be in this color.\namazon-ebs.ubuntu: Creating AMI myapp-ami from instance...\nAMIs were created:\nus-east-1: ami-0abc123def456"
+            ]
+          ]
+        },
+        {
+          "name": "Docker Multi-Stage Builds",
+          "rows": [
+            [
+              "# Multi-stage Dockerfile\\nFROM node:20 AS build\\nWORKDIR /app\\nCOPY . .\\nRUN npm ci && npm run build\\n\\nFROM nginx:alpine\\nCOPY --from=build /app/dist /usr/share/nginx/html\\nEXPOSE 80\\nCMD [\"nginx\", \"-g\", \"daemon off;\"]",
+              "Multi-stage build",
+              "Smaller final images",
+              "john@pc:~$ docker build -t myapp:latest .\nStep 1/7 : FROM node:20 AS build\nStep 6/7 : COPY --from=build /app/dist /usr/share/nginx/html\nSuccessfully built abc123\njohn@pc:~$ docker images\nmyapp        latest    45MB (vs 1.2GB without multi-stage)"
+            ],
+            [
+              "# Docker compose build with cache\\ndocker build --cache-from=myapp:cache --target=build -t myapp:latest .",
+              "Cache optimization",
+              "Faster builds",
+              "john@pc:~$ docker build --cache-from=myapp:cache\n=> CACHED [build 1/5] COPY package*.json\n=> CACHED [build 2/5] RUN npm ci"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 14: Serverless Computing",
+      "commands": [
+        {
+          "name": "AWS Lambda & Serverless Framework",
+          "rows": [
+            [
+              "# serverless.yml\\nservice: my-api\\nprovider:\\n  name: aws\\n  runtime: nodejs20.x\\n  region: us-east-1\\nfunctions:\\n  hello:\\n    handler: handler.hello\\n    events:\\n      - httpApi:\\n          path: /hello\\n          method: get",
+              "Serverless Framework config",
+              "Define serverless functions",
+              "john@pc:~$ cat serverless.yml\n(serverless config)"
+            ],
+            [
+              "serverless deploy",
+              "Deploy serverless",
+              "Deploy to AWS",
+              "john@pc:~$ serverless deploy\nDeploying my-api to stage dev (us-east-1)\nFunctions:\n  hello: my-api-dev-hello (3.2 MB)\nEndpoints:\n  GET https://abc123.execute-api.us-east-1.amazonaws.com/hello\nStack: my-api-dev\nService deployed"
+            ],
+            [
+              "serverless invoke -f hello",
+              "Invoke function",
+              "Test locally",
+              "john@pc:~$ serverless invoke -f hello\n{\n    \"statusCode\": 200,\n    \"body\": \"Hello from Lambda!\"\n}"
+            ],
+            [
+              "serverless logs -f hello -t",
+              "View logs",
+              "Tail function logs",
+              "john@pc:~$ serverless logs -f hello -t\nSTART RequestId: abc123\n2026-05-14T10:00:00Z  INFO  Hello from Lambda!\nEND RequestId: abc123"
+            ],
+            [
+              "# AWS Lambda CLI\\naws lambda invoke --function-name my-function --payload '{}' response.json",
+              "Invoke Lambda via CLI",
+              "Run function",
+              "john@pc:~$ aws lambda invoke --function-name my-function --payload '{}' response.json\nStatusCode: 200\nExecutedVersion: $LATEST"
+            ],
+            [
+              "# Lambda with API Gateway\\n# Lambda URL (direct function URL)\\naws lambda create-function-url-config --function-name my-function --auth-type NONE",
+              "Lambda Function URL",
+              "HTTPS endpoint for Lambda",
+              "john@pc:~$ aws lambda create-function-url-config ...\n{\n  \"FunctionUrl\": \"https://abc123.lambda-url.us-east-1.on.aws/\",\n  \"AuthType\": \"NONE\"\n}"
+            ]
+          ]
+        },
+        {
+          "name": "Event-Driven Architecture",
+          "rows": [
+            [
+              "# AWS EventBridge rule\\naws events put-rule --name my-rule --event-pattern '{\"source\": [\"aws.s3\"]}'",
+              "Create EventBridge rule",
+              "React to AWS events",
+              "john@pc:~$ aws events put-rule ...\n{\n    \"RuleArn\": \"arn:aws:events:us-east-1:123:rule/my-rule\"\n}"
+            ],
+            [
+              "aws events put-targets --rule my-rule --targets \"Arn=arn:aws:lambda:us-east-1:123:function:my-function,Id=1\"",
+              "Add Lambda target",
+              "Trigger Lambda on events",
+              "john@pc:~$ aws events put-targets ...\n{\n    \"FailedEntryCount\": 0\n}"
+            ],
+            [
+              "# Knative (K8s serverless)\\n# Service YAML\\napiVersion: serving.knative.dev/v1\\nkind: Service\\nmetadata:\\n  name: hello\\nspec:\\n  template:\\n    spec:\\n      containers:\\n        - image: gcr.io/knative-samples/helloworld-go",
+              "Knative Service",
+              "K8s-based serverless",
+              "john@pc:~$ kubectl apply -f service.yaml\nservice.serving.knative.dev/hello created\njohn@pc:~$ kubectl get ksvc\nNAME     URL                                       READY\nhello    http://hello.default.example.com          True"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 15: Database DevOps & Migrations",
+      "commands": [
+        {
+          "name": "Flyway - Database Migrations",
+          "rows": [
+            [
+              "# V1__create_users.sql\\nCREATE TABLE users (\\n  id SERIAL PRIMARY KEY,\\n  name VARCHAR(100) NOT NULL,\\n  email VARCHAR(255) UNIQUE NOT NULL,\\n  created_at TIMESTAMP DEFAULT NOW()\\n);",
+              "Migration file",
+              "Versioned SQL migration",
+              "john@pc:~$ cat sql/V1__create_users.sql\n(SQL migration file)"
+            ],
+            [
+              "# V2__add_orders.sql\\nCREATE TABLE orders (\\n  id SERIAL PRIMARY KEY,\\n  user_id INTEGER REFERENCES users(id),\\n  total DECIMAL(10,2),\\n  created_at TIMESTAMP DEFAULT NOW()\\n);",
+              "Second migration",
+              "Add more tables",
+              "john@pc:~$ cat sql/V2__add_orders.sql"
+            ],
+            [
+              "flyway -url=jdbc:postgresql://localhost:5432/mydb -user=admin -password=secret migrate",
+              "Run migrations",
+              "Apply pending migrations",
+              "john@pc:~$ flyway migrate\nFlyway Community Edition 10.0.0\nDatabase: jdbc:postgresql://localhost:5432/mydb\nSuccessfully applied 2 migrations (execution time 00:00.123s)"
+            ],
+            [
+              "flyway info",
+              "Check migration status",
+              "Show applied/pending",
+              "john@pc:~$ flyway info\n+-----------+---------+-----------------------+-------+\n| Category  | Version | Description           | State |\n+-----------+---------+-----------------------+-------+\n| Versioned | 1       | create users          | Success |\n| Versioned | 2       | add orders            | Success |\n+-----------+---------+-----------------------+-------+"
+            ],
+            [
+              "flyway -url=jdbc:postgresql://localhost:5432/mydb -user=admin -password=secret undo",
+              "Undo last migration",
+              "Rollback (if undo file exists)",
+              "john@pc:~$ flyway undo\nFlyway Community Edition does not support undo. Use Enterprise edition."
+            ]
+          ]
+        },
+        {
+          "name": "Liquibase",
+          "rows": [
+            [
+              "# db/changelog/db.changelog-master.xml\\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\\n<databaseChangeLog xmlns=\"http://www.liquibase.org/xml/ns/dbchangelog\">\\n  <changeSet id=\"1\" author=\"john\">\\n    <createTable tableName=\"users\">\\n      <column name=\"id\" type=\"int\" autoIncrement=\"true\">\\n        <constraints primaryKey=\"true\"/>\\n      </column>\\n      <column name=\"name\" type=\"varchar(100)\"/>\\n    </createTable>\\n  </changeSet>\\n</databaseChangeLog>",
+              "Liquibase changelog",
+              "XML/YAML/JSON/DBL migration",
+              "john@pc:~$ cat db.changelog-master.xml\n(XML changelog)"
+            ],
+            [
+              "liquibase --changeLogFile=db.changelog-master.xml --url=jdbc:postgresql://localhost:5432/mydb --username=admin --password=secret update",
+              "Apply migration",
+              "Run Liquibase changesets",
+              "john@pc:~$ liquibase update\nLiquibase Community 4.27.0\nChangeset db.changelog-master.xml::1::john ran successfully"
+            ],
+            [
+              "liquibase --changeLogFile=db.changelog-master.xml status",
+              "Check status",
+              "Show pending changesets",
+              "john@pc:~$ liquibase status\n3 changesets have not been applied to postgresql@localhost"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 16: Artifact Management & Registries",
+      "commands": [
+        {
+          "name": "Container Registries",
+          "rows": [
+            [
+              "# Docker Hub\\ndocker login",
+              "Login to Docker Hub",
+              "Authenticate with registry",
+              "john@pc:~$ docker login\nLogin with your Docker ID or email:\nUsername: john\nPassword: \nLogin Succeeded"
+            ],
+            [
+              "docker tag myapp:latest john/myapp:latest\\ndocker push john/myapp:latest",
+              "Push to Docker Hub",
+              "Publish image publicly",
+              "john@pc:~$ docker push john/myapp:latest\nThe push refers to repository [docker.io/john/myapp]\nlatest: digest: sha256:abc123 size: 1024"
+            ],
+            [
+              "# AWS ECR\\naws ecr create-repository --repository-name myapp",
+              "Create ECR repo",
+              "AWS container registry",
+              "john@pc:~$ aws ecr create-repository --repository-name myapp\n{\n    \"repository\": {\n        \"repositoryUri\": \"123.dkr.ecr.us-east-1.amazonaws.com/myapp\"\n    }\n}"
+            ],
+            [
+              "aws ecr get-login-password | docker login --username AWS --password-stdin 123.dkr.ecr.us-east-1.amazonaws.com",
+              "Login to ECR",
+              "Authenticate Docker to ECR",
+              "john@pc:~$ aws ecr get-login-password | docker login ...\nLogin Succeeded"
+            ],
+            [
+              "docker tag myapp:latest 123.dkr.ecr.us-east-1.amazonaws.com/myapp:latest\\ndocker push 123.dkr.ecr.us-east-1.amazonaws.com/myapp:latest",
+              "Push to ECR",
+              "Upload to AWS registry",
+              "john@pc:~$ docker push 123.dkr.ecr.us-east-1.amazonaws.com/myapp:latest\nThe push refers to repository [123.dkr.ecr.us-east-1.amazonaws.com/myapp]"
+            ]
+          ]
+        },
+        {
+          "name": "Package Registries (Nexus, Artifactory)",
+          "rows": [
+            [
+              "# Sonatype Nexus\\n# Supports: npm, maven, pypi, docker, raw\\ncurl -u admin:password -X PUT \"http://nexus:8081/repository/npm-hosted/package\" -H \"Content-Type: multipart/form-data\" --data-binary @package.tgz",
+              "Nexus REST API",
+              "Upload npm package",
+              "john@pc:~$ curl -u admin:password -X PUT ...\n(201 Created)"
+            ],
+            [
+              "# npm publish to Nexus\\nnpm config set registry http://nexus:8081/repository/npm-group/",
+              "Nexus npm registry",
+              "Use Nexus as npm registry",
+              "john@pc:~$ npm config set registry http://nexus:8081/repository/npm-group/"
+            ],
+            [
+              "# JFrog Artifactory\\n# Multi-format repo manager\\ncurl -u admin:password -T myfile.jar \"http://artifactory:8082/artifactory/libs-release-local/\"",
+              "JFrog Artifactory",
+              "Universal artifact manager",
+              "john@pc:~$ curl -u admin:password -T myfile.jar ...\n{\n  \"uri\": \"http://artifactory:8082/artifactory/libs-release-local/myfile.jar\"\n}"
+            ],
+            [
+              "# Cosign (Container Signing)\\ncosign sign --key cosign.key 123.dkr.ecr.us-east-1.amazonaws.com/myapp:latest",
+              "Sign container image",
+              "Cryptographically sign images",
+              "john@pc:~$ cosign sign --key cosign.key 123.dkr.ecr.us-east-1.amazonaws.com/myapp:latest\nPushing signature to: 123.dkr.ecr.us-east-1.amazonaws.com/myapp:sha256-abc123.sig"
+            ],
+            [
+              "cosign verify --key cosign.pub 123.dkr.ecr.us-east-1.amazonaws.com/myapp:latest",
+              "Verify signature",
+              "Validate image authenticity",
+              "john@pc:~$ cosign verify --key cosign.pub ...\nVerification for 123.dkr.ecr.us-east-1.amazonaws.com/myapp:latest --\nThe following checks were performed on each of these signatures:\n  - The cosign claims were validated"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 17: Policy as Code & Security",
+      "commands": [
+        {
+          "name": "OPA (Open Policy Agent)",
+          "rows": [
+            [
+              "# policy.rego\\npackage kubernetes.admission\\n\\ndeny[msg] {\\n  input.request.kind.kind == \"Deployment\"\\n  not input.request.object.spec.replicas > 1\\n  msg := \"Deployments must have replicas > 1\"\\n}",
+              "Rego policy",
+              "K8s admission control",
+              "john@pc:~$ cat policy.rego\n(Policy: Deployments must have >1 replica)"
+            ],
+            [
+              "# OPA test\\nopa eval --data policy.rego --input input.json \"data.kubernetes.admission\"",
+              "Test policy",
+              "Evaluate Rego rules",
+              "john@pc:~$ opa eval --data policy.rego --input depl.json\n{\n  \"result\": [\n    {\n      \"deny\": [\"Deployments must have replicas > 1\"]\n    }\n  ]\n}"
+            ],
+            [
+              "opa run --server",
+              "Start OPA server",
+              "Run OPA as daemon",
+              "john@pc:~$ opa run --server\n{\"level\":\"info\",\"msg\":\"Starting OPA\",\"addr\":\":8181\"}"
+            ],
+            [
+              "curl -X POST http://localhost:8181/v1/data/kubernetes/admission -d @input.json",
+              "Query OPA API",
+              "Evaluate via REST",
+              "john@pc:~$ curl -X POST http://localhost:8181/v1/data/...\n{\"result\":{\"deny\":[\"Deployments must have replicas > 1\"]}}"
+            ]
+          ]
+        },
+        {
+          "name": "Kyverno (K8s Native Policy)",
+          "rows": [
+            [
+              "# require-labels.yaml\\napiVersion: kyverno.io/v1\\nkind: ClusterPolicy\\nmetadata:\\n  name: require-labels\\nspec:\\n  validationFailureAction: Enforce\\n  rules:\\n    - name: check-for-labels\\n      match:\\n        any:\\n          - resources:\\n              kinds:\\n                - Pod\\n      validate:\\n        message: \"Label app required\"\\n        pattern:\\n          metadata:\\n            labels:\\n              app: \"?*\"",
+              "Kyverno policy",
+              "Enforce labels on Pods",
+              "john@pc:~$ kubectl apply -f require-labels.yaml\nclusterpolicy.kyverno.io/require-labels created"
+            ],
+            [
+              "kubectl run nginx --image=nginx",
+              "Test policy (should fail)",
+              "Missing labels blocked",
+              "john@pc:~$ kubectl run nginx --image=nginx\nError: admission webhook \"validate.kyverno.svc\" denied: ...\nlabel app required"
+            ]
+          ]
+        },
+        {
+          "name": "Falco (Runtime Security)",
+          "rows": [
+            [
+              "# Falco rules\\n- rule: Terminal shell in container\\n  desc: Shell spawned in container\\n  condition: container.id != \\\"\\\" and proc.name = bash\\n  output: Shell opened in container (user=%user.name)\\n  priority: WARNING",
+              "Falco rule",
+              "Detect suspicious activity",
+              "john@pc:~$ cat falco_rules.yaml\n(Rule: detect shell in container)"
+            ],
+            [
+              "falco -r falco_rules.yaml",
+              "Start Falco",
+              "Run security monitor",
+              "john@pc:~$ falco\n2026-05-14T10:00:00Z: Warning Shell opened in container (user=root)"
+            ],
+            [
+              "# Kubernetes audit with Falco\\nhelm install falco falcosecurity/falco --set falcosidekick.enabled=true",
+              "Install Falco on K8s",
+              "Container security with Helm",
+              "john@pc:~$ helm install falco ...\n(deployed Falco with sidekick for alerts)"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 18: Feature Flags & Progressive Delivery",
+      "commands": [
+        {
+          "name": "Feature Flags & Canary Releases",
+          "rows": [
+            [
+              "# Flagsmith / LaunchDarkly pattern\\nif flag_value == \"new-feature\":\\n    render_new_ui()\\nelse:\\n    render_old_ui()",
+              "Feature flag code",
+              "Toggle features at runtime",
+              "(Feature flag evaluated, path chosen based on flag value)"
+            ],
+            [
+              "# Flagger (progressive delivery on K8s)\\nkubectl apply -f https://flagger.app/install.yaml",
+              "Install Flagger",
+              "Automated canary/AB testing",
+              "john@pc:~$ kubectl apply -f ...\nnamespace/flagger-system created\ndeployment.apps/flagger created"
+            ],
+            [
+              "# Flagger canary config\\napiVersion: flagger.app/v1beta1\\nkind: Canary\\nmetadata:\\n  name: myapp\\nspec:\\n  targetRef:\\n    apiVersion: apps/v1\\n    kind: Deployment\\n    name: myapp\\n  service:\\n    port: 80\\n  analysis:\\n    interval: 30s\\n    threshold: 5\\n    stepWeight: 10\\n    maxWeight: 100\\n    metrics:\\n      - name: request-success-rate\\n        threshold: 99\\n    webhooks:\\n      - name: load-test\\n        url: http://loadtester.flagger-system/\\n        timeout: 5s",
+              "Flagger canary config",
+              "Gradual traffic shifting",
+              "john@pc:~$ kubectl apply -f canary.yaml\ncanary.flagger.app/myapp created\n(flagger starts canary rollout)"
+            ],
+            [
+              "# Flagger canary status\\nkubectl describe canary myapp",
+              "Check canary status",
+              "Monitor rollout progress",
+              "Status:\n  Canary Weight:  50%\n  Failed Checks:  0\n  Phase:          Progressing\n(gradual 10% increments)"
+            ],
+            [
+              "# Flagger promote (manual approval)\\nkubectl annotate canary myapp flagger.app/approve=canary",
+              "Promote canary",
+              "Manual approval gate",
+              "john@pc:~$ kubectl annotate canary myapp flagger.app/approve=canary\ncanary.flagger.app/myapp annotated\n(remaining traffic shifted to new version)"
+            ]
+          ]
+        },
+        {
+          "name": "Semantic Release & Conventional Commits",
+          "rows": [
+            [
+              "# Conventional commit formats\\n# fix: -> PATCH version bump\\n# feat: -> MINOR version bump\\n# BREAKING CHANGE: -> MAJOR version bump\\n\\ngit commit -m \"feat: add login page\"\\ngit commit -m \"fix: resolve timeout issue\"\\ngit commit -m \"feat(api): add new endpoint\\n\\nBREAKING CHANGE: deprecated old endpoint\"",
+              "Conventional commits",
+              "Standardized commit messages",
+              "(commit messages determine next semver)"
+            ],
+            [
+              "# .releaserc.json\\n{\\n  \"branches\": [\"main\"],\\n  \"plugins\": [\\n    \"@semantic-release/commit-analyzer\",\\n    \"@semantic-release/release-notes-generator\",\\n    \"@semantic-release/changelog\",\\n    \"@semantic-release/github\",\\n    \"@semantic-release/npm\"\\n  ]\\n}",
+              "semantic-release config",
+              "Auto versioning and releases",
+              "john@pc:~$ cat .releaserc.json\n(plugins: analyze commits, generate notes, publish)"
+            ],
+            [
+              "npx semantic-release",
+              "Run semantic-release",
+              "Create GitHub release + npm publish",
+              "john@pc:~$ npx semantic-release\n[1:25:00 PM] Start step \"analyzeCommits\"\n[1:25:00 PM] Analysis of 2 commits complete: release type: minor\n[1:25:00 PM] Published release: v2.1.0 on GitHub\n[1:25:00 PM] Published version v2.1.0 to npm"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 19: Performance Testing & Build Tools",
+      "commands": [
+        {
+          "name": "Performance Testing (k6)",
+          "rows": [
+            [
+              "# k6 script (test.js)\\nimport http from \"k6/http\";\\nimport { check, sleep } from \"k6\";\\n\\nexport let options = {\\n  vus: 10,            // virtual users\\n  duration: \"30s\",    // test duration\\n  thresholds: {\\n    http_req_duration: [\"p(95)<500\"],  // 95% < 500ms\\n  }\\n};\\n\\nexport default function () {\\n  let res = http.get(\"https://api.example.com/users\");\\n  check(res, { \"status is 200\": (r) => r.status === 200 });\\n  sleep(1);\\n}",
+              "k6 load test script",
+              "Define VUs, duration, thresholds",
+              "john@pc:~$ cat test.js\n(k6 performance test script)"
+            ],
+            [
+              "k6 run test.js",
+              "Run load test",
+              "Execute performance test",
+              "john@pc:~$ k6 run test.js\n     data_received.........: 15 MB 500 kB/s\n     http_req_duration.....: avg=245ms  p(95)=480ms\n     iterations.............: 300   10/s\n     ✓ status is 200\n     ✗ http_req_duration < 500: p(95)=480ms - PASSED"
+            ],
+            [
+              "# k6 with HTML report\\nk6 run --out json=results.json test.js",
+              "Output results as JSON",
+              "For CI/CD integration",
+              "john@pc:~$ k6 run --out json=results.json test.js\n(results.json saved for analysis)"
+            ],
+            [
+              "# locust load test\\nfrom locust import HttpUser, task, between\\n\\nclass WebsiteUser(HttpUser):\\n    wait_time = between(1, 5)\\n\\n    @task\\n    def index(self):\\n        self.client.get(\"/\")",
+              "Locust script (Python)",
+              "Distributed load testing",
+              "john@pc:~$ cat locustfile.py\n(Locust test script)"
+            ],
+            [
+              "locust -f locustfile.py --headless -u 100 -r 10 --run-time 30s",
+              "Run locust headless",
+              "100 users, 10/s spawn rate",
+              "john@pc:~$ locust -f locustfile.py --headless\nType     Name   # reqs  # fails  Avg  Min  Max  Med\nGET      /      1500    0        120  45   890  95"
+            ]
+          ]
+        },
+        {
+          "name": "Build Tools & Monorepos",
+          "rows": [
+            [
+              "# Nx monorepo\\nnx generate @nrwl/react:app myapp",
+              "Generate app in monorepo",
+              "Scaffold new app",
+              "john@pc:~$ nx generate @nrwl/react:app myapp\nCREATE apps/myapp/...\nNX Generating... done"
+            ],
+            [
+              "nx run-many -t test -p myapp myapi",
+              "Run tests in parallel",
+              "Test multiple projects",
+              "john@pc:~$ nx run-many -t test -p myapp myapi\n———————————————————————————————————————————————\n>  NX   Successfully ran target test for 2 projects\n———————————————————————————————————————————————"
+            ],
+            [
+              "nx affected:test",
+              "Test affected projects",
+              "Only test changed projects",
+              "john@pc:~$ nx affected:test\nNX  Running target test for affected projects:\n- myapp (only project changed)"
+            ],
+            [
+              "nx build myapp --prod",
+              "Build with Nx",
+              "Optimized production build",
+              "john@pc:~$ nx build myapp --prod\nBuild at: dist/apps/myapp\nOutput size: 245 kB\nDone in 12.5s"
+            ],
+            [
+              "# Turborepo\\nnpx create-turbo@latest my-turborepo",
+              "Create Turbo repo",
+              "High-performance monorepo",
+              "john@pc:~$ npx create-turbo@latest\nSuccessfully created Turborepo."
+            ],
+            [
+              "turbo run build",
+              "Build all packages",
+              "Parallel build with caching",
+              "john@pc:~$ turbo run build\n• Packages: 3\n• Total time: 8.2s (cached: 1/3)"
+            ],
+            [
+              "# Bazel\\nbazel build //myapp:all",
+              "Build with Bazel",
+              "Google build system",
+              "john@pc:~$ bazel build //myapp:all\nINFO: Build completed successfully, 3 actions"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 20: Workflow Orchestration & Automation",
+      "commands": [
+        {
+          "name": "Apache Airflow",
+          "rows": [
+            [
+              "# Docker Compose for Airflow\\ncurl -LfO 'https://airflow.apache.org/docs/apache-airflow/stable/docker-compose.yaml'",
+              "Get Airflow compose",
+              "Download official docker-compose",
+              "john@pc:~$ curl -LfO 'https://airflow.apache.org/.../docker-compose.yaml'\n  % Total    % Received\n100 24k    100 24k"
+            ],
+            [
+              "docker compose up -d",
+              "Start Airflow",
+              "Launch all Airflow services",
+              "john@pc:~$ docker compose up -d\n ✔ Container postgres  Started\n ✔ Container redis     Started\n ✔ Container airflow-init  Started\n ✔ Container webserver  Started\nAirflow UI: http://localhost:8080"
+            ],
+            [
+              "# DAG definition\\nfrom datetime import datetime\\nfrom airflow import DAG\\nfrom airflow.operators.bash import BashOperator\\nfrom airflow.operators.python import PythonOperator\\n\\ndefault_args = {\\n    'owner': 'data-team',\\n    'retries': 2,\\n    'retry_delay': timedelta(minutes=5),\\n}\\n\\ndag = DAG(\\n    'data_pipeline',\\n    default_args=default_args,\\n    schedule='@daily',\\n    start_date=datetime(2026, 1, 1),\\n    catchup=False\\n)\\n\\nextract = BashOperator(\\n    task_id='extract',\\n    bash_command=\\\"python /scripts/extract.py\\\",\\n    dag=dag\\n)\\n\\ntransform = BashOperator(\\n    task_id='transform',\\n    bash_command=\\\"python /scripts/transform.py\\\",\\n    dag=dag\\n)\\n\\nload = BashOperator(\\n    task_id='load',\\n    bash_command=\\\"python /scripts/load.py\\\",\\n    dag=dag\\n)\\n\\nextract >> transform >> load",
+              "Airflow DAG",
+              "Define task pipeline",
+              "john@pc:~$ cat dags/data_pipeline.py\n(DAG: extract -> transform -> load)"
+            ],
+            [
+              "airflow dags list",
+              "List DAGs",
+              "Show all pipelines",
+              "john@pc:~$ airflow dags list\ndags  |  owner  |  runs\n------+---------+-------------\ndata_pipeline  | data-team | 12 success"
+            ],
+            [
+              "airflow tasks test data_pipeline extract 2026-05-14",
+              "Test task",
+              "Run single task manually",
+              "john@pc:~$ airflow tasks test data_pipeline extract 2026-05-14\n...Running <Task: BashOperator: extract>\n...Task completed successfully"
+            ]
+          ]
+        },
+        {
+          "name": "Argo Workflows (K8s Native)",
+          "rows": [
+            [
+              "kubectl create namespace argo\\nkubectl apply -n argo -f https://github.com/argoproj/argo-workflows/releases/download/v3.5.0/install.yaml",
+              "Install Argo Workflows",
+              "K8s-native workflow engine",
+              "john@pc:~$ kubectl apply -n argo -f install.yaml\ncustomresourcedefinition.apiextensions.k8s.io/workflows.argoproj.io created"
+            ],
+            [
+              "# Argo Workflow YAML\\napiVersion: argoproj.io/v1alpha1\\nkind: Workflow\\nmetadata:\\n  generateName: hello-world-\\nspec:\\n  entrypoint: main\\n  templates:\\n    - name: main\\n      dag:\\n        tasks:\\n          - name: build\\n            template: build-app\\n          - name: test\\n            depends: build\\n            template: test-app\\n          - name: deploy\\n            depends: test\\n            template: deploy-app\\n    - name: build-app\\n      container:\\n        image: node:20\\n        command: [npm, run, build]\\n    - name: test-app\\n      container:\\n        image: node:20\\n        command: [npm, test]\\n    - name: deploy-app\\n      container:\\n        image: alpine\\n        command: [echo, \"Deployed!\"]",
+              "Argo Workflow DAG",
+              "Define CI/CD as K8s workflow",
+              "john@pc:~$ kubectl apply -f workflow.yaml\nworkflow.argoproj.io/hello-world-abc123 created"
+            ],
+            [
+              "argo list",
+              "List workflows",
+              "Show running/completed",
+              "john@pc:~$ argo list\nNAME                  STATUS    AGE   DURATION\nhello-world-abc123    Succeeded 2m    45s"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 21: Backup, DR & Cost Management",
+      "commands": [
+        {
+          "name": "Velero (K8s Backup)",
+          "rows": [
+            [
+              "velero install --provider aws --bucket my-backups --backup-location-config region=us-east-1 --snapshot-location-config region=us-east-1 --plugins velero/velero-plugin-for-aws:v1.0.0",
+              "Install Velero",
+              "K8s backup/restore tool",
+              "john@pc:~$ velero install ...\nCustomResourceDefinition/backups.velero.io: created\nDeployment/velero: created\nVelero is installed! Use kubectl get deployments -n velero to verify."
+            ],
+            [
+              "velero backup create daily-backup --include-namespaces default --ttl 720h",
+              "Create backup",
+              "Backup default namespace",
+              "john@pc:~$ velero backup create daily-backup\nBackup request \"daily-backup\" submitted successfully.\nRun `velero backup describe daily-backup` for more details."
+            ],
+            [
+              "velero backup get",
+              "List backups",
+              "Show available backups",
+              "john@pc:~$ velero backup get\nNAME             STATUS      CREATED                         EXPIRES\nweekly-backup    Completed   2026-05-14 10:00:00 +0000 UTC   28d\ndaily-backup     Completed   2026-05-14 00:00:00 +0000 UTC   30d"
+            ],
+            [
+              "velero restore create --from-backup daily-backup",
+              "Restore from backup",
+              "Restore namespace",
+              "john@pc:~$ velero restore create --from-backup daily-backup\nRestore request \"daily-backup-20260514\" submitted successfully."
+            ],
+            [
+              "velero schedule create daily --schedule=\"0 2 * * *\" --include-namespaces production --ttl 168h",
+              "Schedule backups",
+              "Automated daily backups",
+              "john@pc:~$ velero schedule create daily --schedule=\"0 2 * * *\"\nSchedule \"daily\" created successfully."
+            ]
+          ]
+        },
+        {
+          "name": "Cloud Cost Management",
+          "rows": [
+            [
+              "# Infracost (Terraform cost estimation)\\ninfracost breakdown --path .",
+              "Estimate Terraform costs",
+              "Show monthly cost of infra",
+              "john@pc:~$ infracost breakdown --path .\nProject: myapp\n\n Name                              Monthly Qty  Unit   Monthly Cost\n aws_s3_bucket.data                Storage      100GB  $2.30\n aws_instance.web_server           Instance              $45.00\n ─────────────────────────────────────────────────────────────\n OVERALL TOTAL                                           $47.30"
+            ],
+            [
+              "infracost diff --path . --compare-to infracost-base.json",
+              "Cost diff",
+              "Show cost change vs baseline",
+              "john@pc:~$ infracost diff --path .\n+ aws_instance.web_server  $45.00\n- aws_instance.old_server  $30.00\n  Monthly cost change      +$15.00"
+            ],
+            [
+              "# AWS Cost Explorer CLI\\naws ce get-cost-and-usage --time-period Start=2026-04-14,End=2026-05-14 --granularity MONTHLY --metrics BlendedCost",
+              "AWS cost data",
+              "Monthly spending breakdown",
+              "john@pc:~$ aws ce get-cost-and-usage ...\n{\n  \"ResultsByTime\": [{\n    \"TimePeriod\": {\"Start\": \"2026-04-14\", \"End\": \"2026-05-14\"},\n    \"Total\": {\"BlendedCost\": {\"Amount\": \"1250.45\", \"Unit\": \"USD\"}}\n  }]\n}"
+            ]
+          ]
+        }
       ]
     }
   ]

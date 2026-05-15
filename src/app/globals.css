@@ -65,6 +65,7 @@ body {
 .topic-gradient-cpp { background: linear-gradient(135deg, #00599c, #004482); }
 .topic-gradient-sql { background: linear-gradient(135deg, #336791, #e48e2b); }
 .topic-gradient-docker { background: linear-gradient(135deg, #2496ed, #0db7ed); }
+.topic-gradient-bash { background: linear-gradient(135deg, #4eaa25, #2d7a12); }
 
 pre {
   overflow-x: auto;
