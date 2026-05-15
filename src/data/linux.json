@@ -9,70 +9,215 @@
         {
           "name": "pwd - Print Working Directory",
           "rows": [
-            ["pwd", "Current location", "Shows absolute path", "john@pc:~$ pwd\n/home/john"],
-            ["cd /var && pwd", "After changing directory", "Confirms current path", "john@pc:/var/log$ pwd\n/var/log"],
-            ["pwd -P", "Physical path (no symlinks)", "Resolves symbolic links", "john@pc:~/link$ pwd -P\n/home/john/real_folder"]
+            [
+              "pwd",
+              "Current location",
+              "Shows absolute path",
+              "john@nc:~$ pwd\n/home/john"
+            ],
+            [
+              "cd /var && pwd",
+              "After changing directory",
+              "Confirms current path",
+              "john@nc:/var/log$ pwd\n/var/log"
+            ],
+            [
+              "pwd -P",
+              "Physical path (no symlinks)",
+              "Resolves symbolic links",
+              "john@nc:~/link$ pwd -P\n/home/john/real_folder"
+            ]
           ]
         },
         {
           "name": "ls - List Directory",
           "rows": [
-            ["ls", "Quick listing", "Names only, alphabetical", "john@pc:~$ ls\nDesktop  Documents  Downloads  photos  script.sh"],
-            ["ls -la", "Detailed + hidden", "Permissions, size, owner, date", "john@pc:~$ ls -la\ntotal 32\ndrwxr-xr-x 5 john john 4096 May 14 10:00 .\ndrwxr-xr-x 3 root root 4096 May 14 09:00 ..\n-rw-r--r-- 1 john john  220 May 14 10:00 .bashrc"],
-            ["ls -lh", "Human-readable sizes", "Sizes as K/M/G instead of bytes", "john@pc:~$ ls -lh\ntotal 1.2M\n-rw-r--r-- 1 john john 1.2M May 14 video.mp4"],
-            ["ls -lS", "Sorted by size", "Largest files first", "john@pc:~$ ls -lS\n-rw-r--r-- 1 john john 5.0M May 14 big.zip\n-rw-r--r-- 1 john john 2.0K May 14 small.txt"],
-            ["ls -ltr", "Reverse time order", "Oldest files last", "john@pc:~$ ls -ltr\n-rw-r--r-- 1 john john 0 Jan 1  2024 old.txt\n-rw-r--r-- 1 john john 0 May 14 12:00 new.txt"]
+            [
+              "ls",
+              "Quick listing",
+              "Names only, alphabetical",
+              "john@nc:~$ ls\nDesktop  Documents  Downloads  photos  script.sh"
+            ],
+            [
+              "ls -la",
+              "Detailed + hidden",
+              "Permissions, size, owner, date",
+              "john@nc:~$ ls -la\ntotal 32\ndrwxr-xr-x 5 john john 4096 May 14 10:00 .\ndrwxr-xr-x 3 root root 4096 May 14 09:00 ..\n-rw-r--r-- 1 john john  220 May 14 10:00 .bashrc"
+            ],
+            [
+              "ls -lh",
+              "Human-readable sizes",
+              "Sizes as K/M/G instead of bytes",
+              "john@nc:~$ ls -lh\ntotal 1.2M\n-rw-r--r-- 1 john john 1.2M May 14 video.mp4"
+            ],
+            [
+              "ls -lS",
+              "Sorted by size",
+              "Largest files first",
+              "john@nc:~$ ls -lS\n-rw-r--r-- 1 john john 5.0M May 14 big.zip\n-rw-r--r-- 1 john john 2.0K May 14 small.txt"
+            ],
+            [
+              "ls -ltr",
+              "Reverse time order",
+              "Oldest files last",
+              "john@nc:~$ ls -ltr\n-rw-r--r-- 1 john john 0 Jan 1  2024 old.txt\n-rw-r--r-- 1 john john 0 May 14 12:00 new.txt"
+            ]
           ]
         },
         {
           "name": "cd - Change Directory",
           "rows": [
-            ["cd /etc", "Go to system config", "Changes directory", "john@pc:~$ cd /etc\njohn@pc:/etc$"],
-            ["cd ..", "Go up one level", "Parent directory", "john@pc:/etc/nginx$ cd ..\njohn@pc:/etc$"],
-            ["cd ~", "Go home", "Back to /home/username", "john@pc:/etc$ cd ~\njohn@pc:~$"],
-            ["cd -", "Previous directory", "Toggle between two dirs", "john@pc:~$ cd -\n/etc\njohn@pc:/etc$"]
+            [
+              "cd /etc",
+              "Go to system config",
+              "Changes directory",
+              "john@nc:~$ cd /etc\njohn@nc:/etc$"
+            ],
+            [
+              "cd ..",
+              "Go up one level",
+              "Parent directory",
+              "john@nc:/etc/nginx$ cd ..\njohn@nc:/etc$"
+            ],
+            [
+              "cd ~",
+              "Go home",
+              "Back to /home/username",
+              "john@nc:/etc$ cd ~\njohn@nc:~$"
+            ],
+            [
+              "cd -",
+              "Previous directory",
+              "Toggle between two dirs",
+              "john@nc:~$ cd -\n/etc\njohn@nc:/etc$"
+            ]
           ]
         },
         {
           "name": "mkdir - Make Directory",
           "rows": [
-            ["mkdir projects", "Create single dir", "Creates one folder", "john@pc:~$ mkdir projects\njohn@pc:~$ ls -ld projects/\ndrwxr-xr-x 2 john john 4096 May 14 10:00 projects/"],
-            ["mkdir -p a/b/c", "Nested directories", "Creates parent dirs automatically", "john@pc:~$ mkdir -p a/b/c\njohn@pc:~$ tree a\na\n  b\n      c\n\n2 directories, 0 files"],
-            ["mkdir -p company/{engineering/{backend,frontend},hr} && touch company/README.md", "Full project structure", "Creates nested tree in one command", "john@pc:~$ mkdir -p company/{engineering/{backend,frontend},hr} && touch company/README.md\njohn@pc:~$ tree company\ncompany\n  engineering\n      backend\n      frontend\n  hr\n  README.md"]
+            [
+              "mkdir projects",
+              "Create single dir",
+              "Creates one folder",
+              "john@nc:~$ ls\nnotes.txt  photo.jpg\n\njohn@nc:~$ mkdir projects\njohn@nc:~$ ls\nnotes.txt  photo.jpg  projects"
+            ],
+            [
+              "mkdir -p a/b/c",
+              "Nested directories",
+              "Creates parent dirs automatically",
+              "john@nc:~$ mkdir -p a/b/c\njohn@nc:~$ tree a\na\n  b\n      c\n\n2 directories, 0 files"
+            ],
+            [
+              "mkdir -p company/{engineering/{backend,frontend},hr} && touch company/README.md",
+              "Full project structure",
+              "Creates nested tree in one command",
+              "john@nc:~$ mkdir -p company/{engineering/{backend,frontend},hr} && touch company/README.md\njohn@nc:~$ tree company\ncompany\n  engineering\n      backend\n      frontend\n  hr\n  README.md"
+            ]
           ]
         },
         {
           "name": "rm - Remove Files/Dirs",
           "rows": [
-            ["rm file.txt", "Delete single file", "Permanent delete, no Trash", "john@pc:~$ rm file.txt\njohn@pc:~$ ls file.txt\nls - cannot access 'file.txt' - No such file or directory"],
-            ["rm -r node_modules", "Delete folder recursively", "Remove directory + all contents", "john@pc:~$ rm -r node_modules\njohn@pc:~$ ls node_modules\nls - cannot access 'node_modules' - No such file or directory"],
-            ["rm -ri ./folder", "Interactive recursive", "Prompts before each step", "john@pc:~$ rm -ri ./folder\nrm - descend into directory './folder'? y\nrm - remove regular empty file './folder/file.txt'? y\nrm - remove directory './folder'? y"],
-            ["rm -rf .git", "Force delete git history", "No confirmation (dangerous)", "john@pc:~$ rm -rf .git\njohn@pc:~$ ls -la | grep .git\n(no output, .git is gone)"]
+            [
+              "rm file.txt",
+              "Delete single file",
+              "Permanent delete, no Trash",
+              "john@nc:~$ ls\nfile.txt  notes.txt\n\njohn@nc:~$ rm file.txt\njohn@nc:~$ ls\nnotes.txt"
+            ],
+            [
+              "rm -r node_modules",
+              "Delete folder recursively",
+              "Remove directory + all contents",
+              "john@nc:~$ ls\nindex.js  node_modules  package.json\n\njohn@nc:~$ rm -r node_modules\njohn@nc:~$ ls\nindex.js  package.json"
+            ],
+            [
+              "rm -ri ./folder",
+              "Interactive recursive",
+              "Prompts before each step",
+              "john@nc:~$ rm -ri ./folder\nrm - descend into directory './folder'? y\nrm - remove regular empty file './folder/file.txt'? y\nrm - remove directory './folder'? y"
+            ],
+            [
+              "rm -rf .git",
+              "Force delete git history",
+              "No confirmation (dangerous)",
+              "john@nc:~$ rm -rf .git\njohn@nc:~$ ls -la | grep .git\n(no output, .git is gone)"
+            ]
           ]
         },
         {
           "name": "cp - Copy",
           "rows": [
-            ["cp file.txt backup.txt", "Copy with new name", "Creates identical copy", "john@pc:~$ cp file.txt backup.txt\njohn@pc:~$ ls -l backup.txt\n-rw-r--r-- 1 john john 2048 May 14 10:01 backup.txt"],
-            ["cp -r project/ /backup/", "Copy entire directory", "Recursive copy", "john@pc:~$ cp -r project/ /backup/\njohn@pc:~$ ls /backup/project/\nmain.py  utils.py"],
-            ["cp -u *.txt ~/backup/", "Only newer files", "Incremental copy", "john@pc:~$ cp -u *.txt ~/backup/\njohn@pc:~$ ls ~/backup/\nfile.txt  notes.txt"]
+            [
+              "cp file.txt backup.txt",
+              "Copy with new name",
+              "Creates identical copy",
+              "john@nc:~$ ls\nfile.txt  notes.txt\n\njohn@nc:~$ cp file.txt backup.txt\njohn@nc:~$ ls\nbackup.txt  file.txt  notes.txt"
+            ],
+            [
+              "cp -r project/ /backup/",
+              "Copy entire directory",
+              "Recursive copy",
+              "john@nc:~$ ls\nfile.txt  project\n\njohn@nc:~$ cp -r project/ /backup/\njohn@nc:~$ ls /backup/\nproject"
+            ],
+            [
+              "cp -u *.txt ~/backup/",
+              "Only newer files",
+              "Incremental copy",
+              "john@nc:~$ ls\nfile.txt  notes.txt\n\njohn@nc:~$ cp -u *.txt ~/backup/\njohn@nc:~$ ls ~/backup/\nfile.txt  notes.txt"
+            ]
           ]
         },
         {
           "name": "mv - Move / Rename",
           "rows": [
-            ["mv file.txt old.txt", "Rename in same folder", "Changes filename", "john@pc:~$ mv file.txt old.txt\njohn@pc:~$ ls old.txt\nold.txt\njohn@pc:~$ ls file.txt\nls - cannot access 'file.txt' - No such file or directory"],
-            ["mv file.txt ~/Documents/", "Move to folder", "Relocates file", "john@pc:~$ mv file.txt ~/Documents/\njohn@pc:~$ ls ~/Documents/file.txt\n/home/john/Documents/file.txt"],
-            ["mv .env.example .env", "Activate config file", "Rename to actual config name", "john@pc:~$ mv .env.example .env\njohn@pc:~$ ls -la .env\n-rw-r--r-- 1 john john 120 May 14 10:00 .env"]
+            [
+              "mv file.txt old.txt",
+              "Rename in same folder",
+              "Changes filename",
+              "john@nc:~$ ls\nfile.txt  notes.txt\n\njohn@nc:~$ mv file.txt old.txt\njohn@nc:~$ ls\nnotes.txt  old.txt"
+            ],
+            [
+              "mv file.txt ~/Documents/",
+              "Move to folder",
+              "Relocates file",
+              "john@nc:~$ mv file.txt ~/Documents/\njohn@nc:~$ ls ~/Documents/file.txt\n/home/john/Documents/file.txt"
+            ],
+            [
+              "mv .env.example .env",
+              "Activate config file",
+              "Rename to actual config name",
+              "john@nc:~$ mv .env.example .env\njohn@nc:~$ ls -la .env\n-rw-r--r-- 1 john john 120 May 14 10:00 .env"
+            ]
           ]
         },
         {
           "name": "uname / echo / clear / history",
           "rows": [
-            ["uname -r", "Kernel version", "Shows running kernel", "john@pc:~$ uname -r\n6.8.0-45-generic"],
-            ["uname -a", "All system info", "Full system details", "john@pc:~$ uname -a\nLinux john-pc 6.8.0-45-generic #46-Ubuntu SMP x86_64 x86_64 x86_64 GNU/Linux"],
-            ["echo \"Hello World\"", "Print text", "Outputs to terminal", "john@pc:~$ echo \"Hello World\"\nHello World"],
-            ["history", "Command history", "Previously run commands", "john@pc:~$ history\n  1  ls\n  2  cd projects\n  3  git init\n  4  npm install"]
+            [
+              "uname -r",
+              "Kernel version",
+              "Shows running kernel",
+              "john@nc:~$ uname -r\n6.8.0-45-generic"
+            ],
+            [
+              "uname -a",
+              "All system info",
+              "Full system details",
+              "john@nc:~$ uname -a\nLinux john-pc 6.8.0-45-generic #46-Ubuntu SMP x86_64 x86_64 x86_64 GNU/Linux"
+            ],
+            [
+              "echo \"Hello World\"",
+              "Print text",
+              "Outputs to terminal",
+              "john@nc:~$ echo \"Hello World\"\nHello World"
+            ],
+            [
+              "history",
+              "Command history",
+              "Previously run commands",
+              "john@nc:~$ history\n  1  ls\n  2  cd projects\n  3  git init\n  4  npm install"
+            ]
           ]
         }
       ]
@@ -83,36 +228,111 @@
         {
           "name": "touch - Create/Update File",
           "rows": [
-            ["touch newfile.txt", "Create empty file", "0-byte file created", "john@pc:~$ touch newfile.txt\njohn@pc:~$ ls -l newfile.txt\n-rw-r--r-- 1 john john 0 May 14 10:00 newfile.txt"],
-            ["touch existing.txt", "Update timestamp", "Modify time set to now", "john@pc:~$ touch existing.txt\njohn@pc:~$ ls -l existing.txt\n-rw-r--r-- 1 john john 0 May 14 10:01 existing.txt"],
-            ["touch -t 202501011200 f.txt", "Backdate timestamp", "Set specific date/time", "john@pc:~$ touch -t 202501011200 f.txt\njohn@pc:~$ ls -l f.txt\n-rw-r--r-- 1 john john 0 Jan  1  2025 f.txt"]
+            [
+              "touch newfile.txt",
+              "Create empty file",
+              "0-byte file created",
+              "john@nc:~$ touch newfile.txt\njohn@nc:~$ ls -l newfile.txt\n-rw-r--r-- 1 john john 0 May 14 10:00 newfile.txt"
+            ],
+            [
+              "touch existing.txt",
+              "Update timestamp",
+              "Modify time set to now",
+              "john@nc:~$ touch existing.txt\njohn@nc:~$ ls -l existing.txt\n-rw-r--r-- 1 john john 0 May 14 10:01 existing.txt"
+            ],
+            [
+              "touch -t 202501011200 f.txt",
+              "Backdate timestamp",
+              "Set specific date/time",
+              "john@nc:~$ touch -t 202501011200 f.txt\njohn@nc:~$ ls -l f.txt\n-rw-r--r-- 1 john john 0 Jan  1  2025 f.txt"
+            ]
           ]
         },
         {
           "name": "cat - View File",
           "rows": [
-            ["cat file.txt", "View contents", "Prints file to terminal", "john@pc:~$ cat file.txt\nHello World\nThis is a text file.\nLine 3 here."],
-            ["cat -n file.ts", "With line numbers", "Shows line numbers", "john@pc:~$ cat -n file.ts\n     1  const x = 5;\n     2  console.log(x);"],
-            ["cat /etc/passwd", "View user database", "All system users", "john@pc:~$ cat /etc/passwd\nroot:x:0:0:root:/root:/bin/bash\njohn:x:1000:1000:John,,,:/home/john:/bin/bash"],
-            ["cat f1.txt f2.txt > combined.txt", "Merge two files", "Combine into new file", "john@pc:~$ cat f1.txt f2.txt > combined.txt\njohn@pc:~$ cat combined.txt\n(contents of both files combined)"]
+            [
+              "cat file.txt",
+              "View contents",
+              "Prints file to terminal",
+              "john@nc:~$ cat file.txt\nHello World\nThis is a text file.\nLine 3 here."
+            ],
+            [
+              "cat -n file.ts",
+              "With line numbers",
+              "Shows line numbers",
+              "john@nc:~$ cat -n file.ts\n     1  const x = 5;\n     2  console.log(x);"
+            ],
+            [
+              "cat /etc/passwd",
+              "View user database",
+              "All system users",
+              "john@nc:~$ cat /etc/passwd\nroot:x:0:0:root:/root:/bin/bash\njohn:x:1000:1000:John,,,:/home/john:/bin/bash"
+            ],
+            [
+              "cat f1.txt f2.txt > combined.txt",
+              "Merge two files",
+              "Combine into new file",
+              "john@nc:~$ cat f1.txt f2.txt > combined.txt\njohn@nc:~$ cat combined.txt\n(contents of both files combined)"
+            ]
           ]
         },
         {
           "name": "head / tail - View File Parts",
           "rows": [
-            ["head -n 3 file.txt", "First 3 lines", "Quick peek at start", "john@pc:~$ head -n 3 file.txt\nline 1\nline 2\nline 3"],
-            ["tail -f app.log", "Follow log end", "Watch new entries live", "[live streaming output - Ctrl+C to stop]"],
-            ["tail -n +20 file.txt", "From line 20", "Skip first 19 lines", "john@pc:~$ tail -n +20 file.txt\nline 20\nline 21\n..."]
+            [
+              "head -n 3 file.txt",
+              "First 3 lines",
+              "Quick peek at start",
+              "john@nc:~$ head -n 3 file.txt\nline 1\nline 2\nline 3"
+            ],
+            [
+              "tail -f app.log",
+              "Follow log end",
+              "Watch new entries live",
+              "[live streaming output - Ctrl+C to stop]"
+            ],
+            [
+              "tail -n +20 file.txt",
+              "From line 20",
+              "Skip first 19 lines",
+              "john@nc:~$ tail -n +20 file.txt\nline 20\nline 21\n..."
+            ]
           ]
         },
         {
           "name": "find - Search Files",
           "rows": [
-            ["find . -name \"file.txt\"", "Find by name", "Searches current dir + subdirs", "john@pc:~$ find . -name \"file.txt\"\n./file.txt\n./src/file.txt"],
-            ["find / -size +500M 2>/dev/null", "Files over 500MB", "Find space-consuming files", "john@pc:~$ find / -size +500M 2>/dev/null\n/var/log/syslog.1\n/home/john/video.mp4"],
-            ["find . -mtime -1", "Recent changes (24h)", "Modified in last day", "john@pc:~$ find . -mtime -1\n./src/main.ts\n./README.md"],
-            ["find . -name \"*.tmp\" -delete", "Find and delete temp files", "Bulk cleanup", "john@pc:~$ find . -name \"*.tmp\" -delete\njohn@pc:~$ find . -name \"*.tmp\"\n(no output, no .tmp files found)"],
-            ["find . -type f | wc -l", "Count all files", "Total file count in project", "john@pc:~$ find . -type f | wc -l\n142"]
+            [
+              "find . -name \"file.txt\"",
+              "Find by name",
+              "Searches current dir + subdirs",
+              "john@nc:~$ find . -name \"file.txt\"\n./file.txt\n./src/file.txt"
+            ],
+            [
+              "find / -size +500M 2>/dev/null",
+              "Files over 500MB",
+              "Find space-consuming files",
+              "john@nc:~$ find / -size +500M 2>/dev/null\n/var/log/syslog.1\n/home/john/video.mp4"
+            ],
+            [
+              "find . -mtime -1",
+              "Recent changes (24h)",
+              "Modified in last day",
+              "john@nc:~$ find . -mtime -1\n./src/main.ts\n./README.md"
+            ],
+            [
+              "find . -name \"*.tmp\" -delete",
+              "Find and delete temp files",
+              "Bulk cleanup",
+              "john@nc:~$ find . -name \"*.tmp\" -delete\njohn@nc:~$ find . -name \"*.tmp\"\n(no output, no .tmp files found)"
+            ],
+            [
+              "find . -type f | wc -l",
+              "Count all files",
+              "Total file count in project",
+              "john@nc:~$ find . -type f | wc -l\n142"
+            ]
           ]
         }
       ]
@@ -123,32 +343,112 @@
         {
           "name": "chmod - Change Permissions",
           "rows": [
-            ["chmod 755 script.sh", "rwxr-xr-x", "Standard executable permissions", "john@pc:~$ chmod 755 script.sh\njohn@pc:~$ ls -l script.sh\n-rwxr-xr-x 1 john john 0 May 14 10:00 script.sh"],
-            ["chmod 644 file.txt", "rw-r--r--", "Standard file permissions", "john@pc:~$ chmod 644 file.txt\njohn@pc:~$ ls -l file.txt\n-rw-r--r-- 1 john john 0 May 14 10:00 file.txt"],
-            ["chmod 600 ~/.ssh/id_rsa", "SSH private key", "Owner read/write only", "john@pc:~$ chmod 600 ~/.ssh/id_rsa\njohn@pc:~$ ls -l ~/.ssh/id_rsa\n-rw------- 1 john john 2602 May 14 10:00 /home/john/.ssh/id_rsa"],
-            ["chmod u+x script.sh", "Add execute for owner", "Symbolic permission method", "john@pc:~$ chmod u+x script.sh\njohn@pc:~$ ls -l script.sh\n-rwxr--r-- 1 john john 0 May 14 10:00 script.sh"],
-            ["chmod -R 755 web/", "Recursive permission set", "Dir + all contents", "john@pc:~$ chmod -R 755 web/\njohn@pc:~$ ls -ld web/\ndrwxr-xr-x 2 john john 4096 May 14 10:00 web/"]
+            [
+              "chmod 755 script.sh",
+              "rwxr-xr-x",
+              "Standard executable permissions",
+              "john@nc:~$ ls -l script.sh\n-rw-r--r-- 1 john john 250 May 14 09:00 script.sh\n\njohn@nc:~$ chmod 755 script.sh\njohn@nc:~$ ls -l script.sh\n-rwxr-xr-x 1 john john 250 May 14 09:00 script.sh"
+            ],
+            [
+              "chmod 644 file.txt",
+              "rw-r--r--",
+              "Standard file permissions",
+              "john@nc:~$ ls -l file.txt\n-rwxr-xr-x 1 john john 100 May 14 09:00 file.txt\n\njohn@nc:~$ chmod 644 file.txt\njohn@nc:~$ ls -l file.txt\n-rw-r--r-- 1 john john 100 May 14 09:00 file.txt"
+            ],
+            [
+              "chmod 600 ~/.ssh/id_rsa",
+              "SSH private key",
+              "Owner read/write only",
+              "john@nc:~$ chmod 600 ~/.ssh/id_rsa\njohn@nc:~$ ls -l ~/.ssh/id_rsa\n-rw------- 1 john john 2602 May 14 10:00 /home/john/.ssh/id_rsa"
+            ],
+            [
+              "chmod u+x script.sh",
+              "Add execute for owner",
+              "Symbolic permission method",
+              "john@nc:~$ chmod u+x script.sh\njohn@nc:~$ ls -l script.sh\n-rwxr--r-- 1 john john 0 May 14 10:00 script.sh"
+            ],
+            [
+              "chmod -R 755 web/",
+              "Recursive permission set",
+              "Dir + all contents",
+              "john@nc:~$ chmod -R 755 web/\njohn@nc:~$ ls -ld web/\ndrwxr-xr-x 2 john john 4096 May 14 10:00 web/"
+            ]
           ]
         },
         {
           "name": "chown - Change Owner",
           "rows": [
-            ["sudo chown john file.txt", "Change owner", "Sets john as file owner", "john@pc:~$ sudo chown john file.txt\njohn@pc:~$ ls -l file.txt\n-rw-r--r-- 1 john root 0 May 14 10:00 file.txt"],
-            ["sudo chown john:dev file.txt", "Owner + group", "Sets both owner and group", "john@pc:~$ sudo chown john:dev file.txt\njohn@pc:~$ ls -l file.txt\n-rw-r--r-- 1 john dev 0 May 14 10:00 file.txt"],
-            ["sudo chown -R john:john /home/john", "Recursive fix", "Fix entire home ownership", "john@pc:~$ sudo chown -R john:john /home/john\njohn@pc:~$ ls -ld /home/john\ndrwxr-xr-x 5 john john 4096 May 14 10:00 /home/john"]
+            [
+              "sudo chown john file.txt",
+              "Change owner",
+              "Sets john as file owner",
+              "john@nc:~$ ls -l file.txt\n-rw-r--r-- 1 root root 100 May 14 09:00 file.txt\n\njohn@nc:~$ sudo chown john file.txt\njohn@nc:~$ ls -l file.txt\n-rw-r--r-- 1 john root 100 May 14 09:00 file.txt"
+            ],
+            [
+              "sudo chown john:dev file.txt",
+              "Owner + group",
+              "Sets both owner and group",
+              "john@nc:~$ ls -l file.txt\n-rw-r--r-- 1 john root 100 May 14 09:00 file.txt\n\njohn@nc:~$ sudo chown john:dev file.txt\njohn@nc:~$ ls -l file.txt\n-rw-r--r-- 1 john dev 100 May 14 09:00 file.txt"
+            ],
+            [
+              "sudo chown -R john:john /home/john",
+              "Recursive fix",
+              "Fix entire home ownership",
+              "john@nc:~$ sudo chown -R john:john /home/john\njohn@nc:~$ ls -ld /home/john\ndrwxr-xr-x 5 john john 4096 May 14 10:00 /home/john"
+            ]
           ]
         },
         {
           "name": "id / whoami / groups / passwd",
           "rows": [
-            ["id", "User identity", "UID, GID, all group memberships", "john@pc:~$ id\nuid=1000(john) gid=1000(john) groups=1000(john),4(adm),27(sudo),999(docker)"],
-            ["whoami", "Current user", "Username of logged-in user", "john@pc:~$ whoami\njohn"],
-            ["groups john", "User groups", "All groups a user belongs to", "john@pc:~$ groups john\njohn  - john sudo docker"],
-            ["sudo passwd dev1", "Set/reset password", "Change user password", "john@pc:~$ sudo passwd dev1\nNew password - \nRetype new password - \npasswd - password updated successfully"],
-            ["sudo passwd -l dev1", "Lock account", "Prevent user login", "john@pc:~$ sudo passwd -l dev1\npasswd - password expiry information changed."],
-            ["sudo useradd -m -s /bin/bash dev1", "Create new user", "Normal user with home + bash", "john@pc:~$ sudo useradd -m -s /bin/bash dev1\njohn@pc:~$ getent passwd dev1\ndev1:x:1001:1001::/home/dev1:/bin/bash"],
-            ["sudo usermod -aG docker john", "Add to group", "Append user to docker group", "john@pc:~$ sudo usermod -aG docker john\njohn@pc:~$ groups john\njohn  - john sudo docker"],
-            ["sudo userdel -r dev1", "Delete user + home", "Remove user and all files", "john@pc:~$ sudo userdel -r dev1\njohn@pc:~$ getent passwd dev1\n(no output, user deleted)"]
+            [
+              "id",
+              "User identity",
+              "UID, GID, all group memberships",
+              "john@nc:~$ id\nuid=1000(john) gid=1000(john) groups=1000(john),4(adm),27(sudo),999(docker)"
+            ],
+            [
+              "whoami",
+              "Current user",
+              "Username of logged-in user",
+              "john@nc:~$ whoami\njohn"
+            ],
+            [
+              "groups john",
+              "User groups",
+              "All groups a user belongs to",
+              "john@nc:~$ groups john\njohn  - john sudo docker"
+            ],
+            [
+              "sudo passwd dev1",
+              "Set/reset password",
+              "Change user password",
+              "john@nc:~$ sudo passwd dev1\nNew password - \nRetype new password - \npasswd - password updated successfully"
+            ],
+            [
+              "sudo passwd -l dev1",
+              "Lock account",
+              "Prevent user login",
+              "john@nc:~$ sudo passwd -l dev1\npasswd - password expiry information changed."
+            ],
+            [
+              "sudo useradd -m -s /bin/bash dev1",
+              "Create new user",
+              "Normal user with home + bash",
+              "john@nc:~$ sudo useradd -m -s /bin/bash dev1\njohn@nc:~$ getent passwd dev1\ndev1:x:1001:1001::/home/dev1:/bin/bash"
+            ],
+            [
+              "sudo usermod -aG docker john",
+              "Add to group",
+              "Append user to docker group",
+              "john@nc:~$ sudo usermod -aG docker john\njohn@nc:~$ groups john\njohn  - john sudo docker"
+            ],
+            [
+              "sudo userdel -r dev1",
+              "Delete user + home",
+              "Remove user and all files",
+              "john@nc:~$ sudo userdel -r dev1\njohn@nc:~$ getent passwd dev1\n(no output, user deleted)"
+            ]
           ]
         }
       ]
@@ -159,18 +459,53 @@
         {
           "name": "apt - Update & Upgrade",
           "rows": [
-            ["sudo apt update", "Refresh package database", "Fetch latest package info from repos", "john@pc:~$ sudo apt update\nHit:1 http://archive.ubuntu.com jammy InRelease\nHit:2 http://archive.ubuntu.com jammy-updates InRelease\nReading package lists... Done"],
-            ["sudo apt upgrade -y", "Upgrade all packages", "Update all installed software", "john@pc:~$ sudo apt upgrade -y\nReading package lists... Done\nBuilding dependency tree... Done\n0 upgraded, 0 newly installed, 0 to remove"]
+            [
+              "sudo apt update",
+              "Refresh package database",
+              "Fetch latest package info from repos",
+              "john@nc:~$ sudo apt update\nHit:1 http://archive.ubuntu.com jammy InRelease\nHit:2 http://archive.ubuntu.com jammy-updates InRelease\nReading package lists... Done"
+            ],
+            [
+              "sudo apt upgrade -y",
+              "Upgrade all packages",
+              "Update all installed software",
+              "john@nc:~$ sudo apt upgrade -y\nReading package lists... Done\nBuilding dependency tree... Done\n0 upgraded, 0 newly installed, 0 to remove"
+            ]
           ]
         },
         {
           "name": "apt - Install & Remove",
           "rows": [
-            ["sudo apt install nginx -y", "Install package", "Install nginx web server", "john@pc:~$ sudo apt install nginx -y\nReading package lists... Done\nSetting up nginx (1.24.0) ...\nCreated symlink ...\nStarting nginx... done."],
-            ["apt search \"web server\"", "Search packages", "Find packages by keyword", "john@pc:~$ apt search \"web server\"\nnginx/stable 1.24.0 amd64\n  high-performance web server\napache2/stable 2.4.57 amd64\n  Apache HTTP Server"],
-            ["apt show nginx", "Package details", "View metadata about package", "john@pc:~$ apt show nginx\nPackage - nginx\nVersion - 1.24.0\nPriority - optional\nSection - web\nInstalled-Size - 1,024 kB"],
-            ["sudo apt purge nginx", "Remove completely", "Delete package + config files", "john@pc:~$ sudo apt purge nginx\nReading package lists... Done\nRemoving nginx (1.24.0) ...\nPurging configuration files..."],
-            ["sudo apt autoremove", "Clean unused deps", "Remove orphaned dependencies", "john@pc:~$ sudo apt autoremove\n0 upgraded, 0 newly installed, 3 to remove\nFreed disk space - 42.5 MB"]
+            [
+              "sudo apt install nginx -y",
+              "Install package",
+              "Install nginx web server",
+              "john@nc:~$ sudo apt install nginx -y\nReading package lists... Done\nSetting up nginx (1.24.0) ...\nCreated symlink ...\nStarting nginx... done."
+            ],
+            [
+              "apt search \"web server\"",
+              "Search packages",
+              "Find packages by keyword",
+              "john@nc:~$ apt search \"web server\"\nnginx/stable 1.24.0 amd64\n  high-performance web server\napache2/stable 2.4.57 amd64\n  Apache HTTP Server"
+            ],
+            [
+              "apt show nginx",
+              "Package details",
+              "View metadata about package",
+              "john@nc:~$ apt show nginx\nPackage - nginx\nVersion - 1.24.0\nPriority - optional\nSection - web\nInstalled-Size - 1,024 kB"
+            ],
+            [
+              "sudo apt purge nginx",
+              "Remove completely",
+              "Delete package + config files",
+              "john@nc:~$ sudo apt purge nginx\nReading package lists... Done\nRemoving nginx (1.24.0) ...\nPurging configuration files..."
+            ],
+            [
+              "sudo apt autoremove",
+              "Clean unused deps",
+              "Remove orphaned dependencies",
+              "john@nc:~$ sudo apt autoremove\n0 upgraded, 0 newly installed, 3 to remove\nFreed disk space - 42.5 MB"
+            ]
           ]
         }
       ]
@@ -181,37 +516,117 @@
         {
           "name": "ps - Process Status",
           "rows": [
-            ["ps aux", "All processes", "Complete process list with resources", "john@pc:~$ ps aux\nUSER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\nroot         1  0.0  0.5  50000 12000 ?        Ss   May14   0:02 /sbin/init\njohn      1234  0.3  1.2 500000 30000 ?        Ssl  May14   0:15 node server.js\njohn      5678  2.0  8.0 2.5G 250000 ?        Sl   10:00   0:45 chrome"],
-            ["ps aux | grep nginx", "Filter processes", "Find specific process", "john@pc:~$ ps aux | grep nginx\nroot      1000  0.0  0.5  30000 12000 ?        Ss   May14   0:00 nginx - master\nwww-data  1001  0.0  0.3  30000  8000 ?        S    May14   0:00 nginx - worker"],
-            ["ps aux --sort=-%mem | head -3", "Top 3 memory usage", "Find memory hogs", "john@pc:~$ ps aux --sort=-%mem | head -3\nUSER       PID %CPU %MEM    VSZ   RSS COMMAND\njohn      5678  2.0  8.0 2.5G 250000 chrome\njohn      1234  0.3  1.2 500K  30000 node"]
+            [
+              "ps aux",
+              "All processes",
+              "Complete process list with resources",
+              "john@nc:~$ ps aux\nUSER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\nroot         1  0.0  0.5  50000 12000 ?        Ss   May14   0:02 /sbin/init\njohn      1234  0.3  1.2 500000 30000 ?        Ssl  May14   0:15 node server.js\njohn      5678  2.0  8.0 2.5G 250000 ?        Sl   10:00   0:45 chrome"
+            ],
+            [
+              "ps aux | grep nginx",
+              "Filter processes",
+              "Find specific process",
+              "john@nc:~$ ps aux | grep nginx\nroot      1000  0.0  0.5  30000 12000 ?        Ss   May14   0:00 nginx - master\nwww-data  1001  0.0  0.3  30000  8000 ?        S    May14   0:00 nginx - worker"
+            ],
+            [
+              "ps aux --sort=-%mem | head -3",
+              "Top 3 memory usage",
+              "Find memory hogs",
+              "john@nc:~$ ps aux --sort=-%mem | head -3\nUSER       PID %CPU %MEM    VSZ   RSS COMMAND\njohn      5678  2.0  8.0 2.5G 250000 chrome\njohn      1234  0.3  1.2 500K  30000 node"
+            ]
           ]
         },
         {
           "name": "kill - Terminate Processes",
           "rows": [
-            ["kill 1234", "Graceful termination", "Sends SIGTERM (signal 15)", "john@pc:~$ kill 1234\njohn@pc:~$ ps -p 1234\n  PID TTY          TIME CMD\n(no output - process terminated)"],
-            ["kill -9 1234", "Force kill", "SIGKILL - immediate termination", "john@pc:~$ kill -9 1234\njohn@pc:~$ ps -p 1234\n  PID TTY          TIME CMD\n(no output - process killed)"],
-            ["killall node", "Kill by name", "All Node.js processes", "john@pc:~$ killall node\njohn@pc:~$ pgrep node\n(no output - no node processes)"],
-            ["pkill -f \"python server.py\"", "Kill by command", "Matches full command line", "john@pc:~$ pkill -f \"python server.py\"\n[1]+  Terminated              python server.py"]
+            [
+              "kill 1234",
+              "Graceful termination",
+              "Sends SIGTERM (signal 15)",
+              "john@nc:~$ kill 1234\njohn@nc:~$ ps -p 1234\n  PID TTY          TIME CMD\n(no output - process terminated)"
+            ],
+            [
+              "kill -9 1234",
+              "Force kill",
+              "SIGKILL - immediate termination",
+              "john@nc:~$ kill -9 1234\njohn@nc:~$ ps -p 1234\n  PID TTY          TIME CMD\n(no output - process killed)"
+            ],
+            [
+              "killall node",
+              "Kill by name",
+              "All Node.js processes",
+              "john@nc:~$ killall node\njohn@nc:~$ pgrep node\n(no output - no node processes)"
+            ],
+            [
+              "pkill -f \"python server.py\"",
+              "Kill by command",
+              "Matches full command line",
+              "john@nc:~$ pkill -f \"python server.py\"\n[1]+  Terminated              python server.py"
+            ]
           ]
         },
         {
           "name": "systemctl - Service Manager",
           "rows": [
-            ["systemctl status ssh", "Service status", "Check if service is running", "john@pc:~$ systemctl status ssh\n.service - OpenSSH Daemon\n     Loaded - loaded (/lib/systemd/system/ssh.service; enabled)\n     Active - active (running) since 2026-05-14 09:00:00 UTC\n   Main PID - 1000 (sshd)\n     Memory - 5.2M"],
-            ["sudo systemctl restart nginx", "Restart service", "Stop then start", "john@pc:~$ sudo systemctl restart nginx\njohn@pc:~$ systemctl is-active nginx\nactive"],
-            ["sudo systemctl enable --now docker", "Enable + start", "Auto-start at boot + start now", "john@pc:~$ sudo systemctl enable --now docker\nSynchronizing state of docker.service with SysV service script..."],
-            ["journalctl -u nginx -f", "Follow service logs", "Live log streaming", "-- Logs begin at May 14 09:00:00. --\nMay 14 10:00:01 host nginx[1000] - starting nginx ..."],
-            ["journalctl -p err -b", "Errors this boot", "Only error-level messages", "-- Logs begin at May 14 09:00:00. --\nMay 14 09:05:12 kernel - error -110\nMay 14 09:05:15 network - Failed to start Network Manager"]
+            [
+              "systemctl status ssh",
+              "Service status",
+              "Check if service is running",
+              "john@nc:~$ systemctl status ssh\n.service - OpenSSH Daemon\n     Loaded - loaded (/lib/systemd/system/ssh.service; enabled)\n     Active - active (running) since 2026-05-14 09:00:00 UTC\n   Main PID - 1000 (sshd)\n     Memory - 5.2M"
+            ],
+            [
+              "sudo systemctl restart nginx",
+              "Restart service",
+              "Stop then start",
+              "john@nc:~$ sudo systemctl restart nginx\njohn@nc:~$ systemctl is-active nginx\nactive"
+            ],
+            [
+              "sudo systemctl enable --now docker",
+              "Enable + start",
+              "Auto-start at boot + start now",
+              "john@nc:~$ sudo systemctl enable --now docker\nSynchronizing state of docker.service with SysV service script..."
+            ],
+            [
+              "journalctl -u nginx -f",
+              "Follow service logs",
+              "Live log streaming",
+              "-- Logs begin at May 14 09:00:00. --\nMay 14 10:00:01 host nginx[1000] - starting nginx ..."
+            ],
+            [
+              "journalctl -p err -b",
+              "Errors this boot",
+              "Only error-level messages",
+              "-- Logs begin at May 14 09:00:00. --\nMay 14 09:05:12 kernel - error -110\nMay 14 09:05:15 network - Failed to start Network Manager"
+            ]
           ]
         },
         {
           "name": "Background Jobs",
           "rows": [
-            ["sleep 100 &", "Run in background", "Process runs in background", "john@pc:~$ sleep 100 &\n[1] 12345"],
-            ["jobs", "List background jobs", "Show all background processes", "john@pc:~$ jobs\n[1]+  Running                 sleep 100 &"],
-            ["fg %1", "Bring to foreground", "Resume in foreground", "john@pc:~$ fg %1\nsleep 100\n(process comes to foreground)"],
-            ["nohup python server.py > server.log 2>&1 &", "Persistent background", "Survives terminal close", "john@pc:~$ nohup python server.py > server.log 2>&1 &\n[2] 12346\nnohup - ignoring input and appending output to 'server.log'"]
+            [
+              "sleep 100 &",
+              "Run in background",
+              "Process runs in background",
+              "john@nc:~$ sleep 100 &\n[1] 12345"
+            ],
+            [
+              "jobs",
+              "List background jobs",
+              "Show all background processes",
+              "john@nc:~$ jobs\n[1]+  Running                 sleep 100 &"
+            ],
+            [
+              "fg %1",
+              "Bring to foreground",
+              "Resume in foreground",
+              "john@nc:~$ fg %1\nsleep 100\n(process comes to foreground)"
+            ],
+            [
+              "nohup python server.py > server.log 2>&1 &",
+              "Persistent background",
+              "Survives terminal close",
+              "john@nc:~$ nohup python server.py > server.log 2>&1 &\n[2] 12346\nnohup - ignoring input and appending output to 'server.log'"
+            ]
           ]
         }
       ]
@@ -222,25 +637,70 @@
         {
           "name": "ip / ping",
           "rows": [
-            ["ip a", "Show all IPs", "All interfaces and addresses", "john@pc:~$ ip a\n1 - lo - <LOOPBACK,UP,LOWER_UP> mtu 65536\n    inet 127.0.0.1/8 scope host lo\n2 - eth0 - <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500\n    inet 192.168.1.100/24 scope global eth0"],
-            ["ip route", "Routing table", "Default gateway and routes", "john@pc:~$ ip route\ndefault via 192.168.1.1 dev eth0\n192.168.1.0/24 dev eth0  proto kernel  scope link  src 192.168.1.100"],
-            ["ping -c 4 google.com", "Test connectivity", "4 packets, then stop", "john@pc:~$ ping -c 4 google.com\nPING google.com (142.250.80.46) 56(84) bytes of data.\n64 bytes from 142.250.80.46 - icmp_seq=1 ttl=116 time=12.3 ms\n64 bytes from 142.250.80.46 - icmp_seq=2 ttl=116 time=11.8 ms\n\n--- ping statistics ---\n4 packets transmitted, 4 received, 0% packet loss"]
+            [
+              "ip a",
+              "Show all IPs",
+              "All interfaces and addresses",
+              "john@nc:~$ ip a\n1 - lo - <LOOPBACK,UP,LOWER_UP> mtu 65536\n    inet 127.0.0.1/8 scope host lo\n2 - eth0 - <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500\n    inet 192.168.1.100/24 scope global eth0"
+            ],
+            [
+              "ip route",
+              "Routing table",
+              "Default gateway and routes",
+              "john@nc:~$ ip route\ndefault via 192.168.1.1 dev eth0\n192.168.1.0/24 dev eth0  proto kernel  scope link  src 192.168.1.100"
+            ],
+            [
+              "ping -c 4 google.com",
+              "Test connectivity",
+              "4 packets, then stop",
+              "john@nc:~$ ping -c 4 google.com\nPING google.com (142.250.80.46) 56(84) bytes of data.\n64 bytes from 142.250.80.46 - icmp_seq=1 ttl=116 time=12.3 ms\n64 bytes from 142.250.80.46 - icmp_seq=2 ttl=116 time=11.8 ms\n\n--- ping statistics ---\n4 packets transmitted, 4 received, 0% packet loss"
+            ]
           ]
         },
         {
           "name": "curl - HTTP Client",
           "rows": [
-            ["curl -I https://example.com", "HTTP headers only", "Shows response headers", "john@pc:~$ curl -I https://example.com\nHTTP/2 200\ncontent-type - text/html; charset=UTF-8\nserver - nginx\ncontent-length - 1256"],
-            ["curl ifconfig.me", "Check public IP", "Your internet-facing IP", "john@pc:~$ curl ifconfig.me\n203.0.113.42"],
-            ["curl -O https://example.com/file.zip", "Download file", "Save with remote filename", "john@pc:~$ curl -O https://example.com/file.zip\n  % Total    % Received % Xferd  Average Speed\n100 1024k  100 1024k    0     0   500k      0  0:00:02"]
+            [
+              "curl -I https://example.com",
+              "HTTP headers only",
+              "Shows response headers",
+              "john@nc:~$ curl -I https://example.com\nHTTP/2 200\ncontent-type - text/html; charset=UTF-8\nserver - nginx\ncontent-length - 1256"
+            ],
+            [
+              "curl ifconfig.me",
+              "Check public IP",
+              "Your internet-facing IP",
+              "john@nc:~$ curl ifconfig.me\n203.0.113.42"
+            ],
+            [
+              "curl -O https://example.com/file.zip",
+              "Download file",
+              "Save with remote filename",
+              "john@nc:~$ curl -O https://example.com/file.zip\n  % Total    % Received % Xferd  Average Speed\n100 1024k  100 1024k    0     0   500k      0  0:00:02"
+            ]
           ]
         },
         {
           "name": "ss / ufw / dig",
           "rows": [
-            ["ss -tuln", "Listening ports", "All TCP/UDP listening ports", "john@pc:~$ ss -tuln\nNetid  State   Recv-Q  Send-Q  Local Address:Port\ntcp    LISTEN  0       128     0.0.0.0:22\ntcp    LISTEN  0       511     0.0.0.0:80"],
-            ["sudo ufw status", "Firewall status", "Show active rules", "john@pc:~$ sudo ufw status\nStatus - active\n\nTo                         Action      From\n--                         ------      ----\n22/tcp                     ALLOW       Anywhere\n80/tcp                     ALLOW       Anywhere"],
-            ["dig +short google.com", "Quick DNS lookup", "Just the IP address", "john@pc:~$ dig +short google.com\n142.250.80.46"]
+            [
+              "ss -tuln",
+              "Listening ports",
+              "All TCP/UDP listening ports",
+              "john@nc:~$ ss -tuln\nNetid  State   Recv-Q  Send-Q  Local Address:Port\ntcp    LISTEN  0       128     0.0.0.0:22\ntcp    LISTEN  0       511     0.0.0.0:80"
+            ],
+            [
+              "sudo ufw status",
+              "Firewall status",
+              "Show active rules",
+              "john@nc:~$ sudo ufw status\nStatus - active\n\nTo                         Action      From\n--                         ------      ----\n22/tcp                     ALLOW       Anywhere\n80/tcp                     ALLOW       Anywhere"
+            ],
+            [
+              "dig +short google.com",
+              "Quick DNS lookup",
+              "Just the IP address",
+              "john@nc:~$ dig +short google.com\n142.250.80.46"
+            ]
           ]
         }
       ]
@@ -251,23 +711,83 @@
         {
           "name": "grep - Search Text",
           "rows": [
-            ["grep \"error\" log.txt", "Basic search", "Lines containing 'error'", "john@pc:~$ grep \"error\" log.txt\n[2026-05-14] ERROR - Connection refused\n[2026-05-14] ERROR - Timeout exceeded"],
-            ["grep -c \"error\" log.txt", "Count matches", "Number of matching lines", "john@pc:~$ grep -c \"error\" log.txt\n15"],
-            ["grep -r \"TODO\" --include=\"*.py\" .", "Recursive in Python files", "Find all TODOs in project", "john@pc:~$ grep -r \"TODO\" --include=\"*.py\" .\n./src/main.py:5 - # TODO - add error handling"],
-            ["grep -A2 -B2 \"Exception\" server.log", "Context lines", "2 lines before and after", "john@pc:~$ grep -A2 -B2 \"Exception\" server.log\n2026-05-14 10:00:00 [INFO] processing request\n2026-05-14 10:00:01 [ERROR] Exception - NullPointerException\n2026-05-14 10:00:01 [WARN] retrying request"],
-            ["ps aux | grep nginx", "Pipe filter", "Find specific process", "john@pc:~$ ps aux | grep nginx\nroot      1000  0.0  0.5  30000 12000 ?   Ss  May14  nginx - master"]
+            [
+              "grep \"error\" log.txt",
+              "Basic search",
+              "Lines containing 'error'",
+              "john@nc:~$ grep \"error\" log.txt\n[2026-05-14] ERROR - Connection refused\n[2026-05-14] ERROR - Timeout exceeded"
+            ],
+            [
+              "grep -c \"error\" log.txt",
+              "Count matches",
+              "Number of matching lines",
+              "john@nc:~$ grep -c \"error\" log.txt\n15"
+            ],
+            [
+              "grep -r \"TODO\" --include=\"*.py\" .",
+              "Recursive in Python files",
+              "Find all TODOs in project",
+              "john@nc:~$ grep -r \"TODO\" --include=\"*.py\" .\n./src/main.py:5 - # TODO - add error handling"
+            ],
+            [
+              "grep -A2 -B2 \"Exception\" server.log",
+              "Context lines",
+              "2 lines before and after",
+              "john@nc:~$ grep -A2 -B2 \"Exception\" server.log\n2026-05-14 10:00:00 [INFO] processing request\n2026-05-14 10:00:01 [ERROR] Exception - NullPointerException\n2026-05-14 10:00:01 [WARN] retrying request"
+            ],
+            [
+              "ps aux | grep nginx",
+              "Pipe filter",
+              "Find specific process",
+              "john@nc:~$ ps aux | grep nginx\nroot      1000  0.0  0.5  30000 12000 ?   Ss  May14  nginx - master"
+            ]
           ]
         },
         {
           "name": "awk / sed / sort / wc",
           "rows": [
-            ["awk -F - '{print $1}' /etc/passwd", "Custom delimiter", "Extract colon-delimited field", "john@pc:~$ awk -F - '{print $1}' /etc/passwd\nroot\ndaemon\njohn"],
-            ["awk '{sum+=$1} END {print sum}' nums.txt", "Sum column values", "Add all numbers in column 1", "john@pc:~$ awk '{sum+=$1} END {print sum}' nums.txt\n150"],
-            ["df -h | awk '$5+0 > 80 {print $1, $5}'", "Filter disk usage", "Filesystems over 80% capacity", "john@pc:~$ df -h | awk '$5+0 > 80 {print $1, $5}'\n/dev/sda1 85%"],
-            ["sed -n '2,4p' file.txt", "Print line range", "Only lines 2 through 4", "john@pc:~$ sed -n '2,4p' file.txt\nline 2\nline 3\nline 4"],
-            ["sort -n numbers.txt", "Numerical sort", "Numbers in proper order", "john@pc:~$ sort -n numbers.txt\n1\n2\n10\n20"],
-            ["wc -l file.txt", "Line count", "Count lines in file", "john@pc:~$ wc -l file.txt\n42 file.txt"],
-            ["cut -d - -f1 /etc/passwd", "Usernames only", "Extract first field", "john@pc:~$ cut -d - -f1 /etc/passwd\nroot\ndaemon\njohn"]
+            [
+              "awk -F - '{print $1}' /etc/passwd",
+              "Custom delimiter",
+              "Extract colon-delimited field",
+              "john@nc:~$ awk -F - '{print $1}' /etc/passwd\nroot\ndaemon\njohn"
+            ],
+            [
+              "awk '{sum+=$1} END {print sum}' nums.txt",
+              "Sum column values",
+              "Add all numbers in column 1",
+              "john@nc:~$ awk '{sum+=$1} END {print sum}' nums.txt\n150"
+            ],
+            [
+              "df -h | awk '$5+0 > 80 {print $1, $5}'",
+              "Filter disk usage",
+              "Filesystems over 80% capacity",
+              "john@nc:~$ df -h | awk '$5+0 > 80 {print $1, $5}'\n/dev/sda1 85%"
+            ],
+            [
+              "sed -n '2,4p' file.txt",
+              "Print line range",
+              "Only lines 2 through 4",
+              "john@nc:~$ sed -n '2,4p' file.txt\nline 2\nline 3\nline 4"
+            ],
+            [
+              "sort -n numbers.txt",
+              "Numerical sort",
+              "Numbers in proper order",
+              "john@nc:~$ sort -n numbers.txt\n1\n2\n10\n20"
+            ],
+            [
+              "wc -l file.txt",
+              "Line count",
+              "Count lines in file",
+              "john@nc:~$ wc -l file.txt\n42 file.txt"
+            ],
+            [
+              "cut -d - -f1 /etc/passwd",
+              "Usernames only",
+              "Extract first field",
+              "john@nc:~$ cut -d - -f1 /etc/passwd\nroot\ndaemon\njohn"
+            ]
           ]
         }
       ]
@@ -278,12 +798,42 @@
         {
           "name": "tar - Archive Tool",
           "rows": [
-            ["tar -czvf archive.tar.gz myfolder/", "Create compressed archive", "Verbose output shows files", "john@pc:~$ tar -czvf archive.tar.gz myfolder/\nmyfolder/\nmyfolder/file1.txt\nmyfolder/file2.txt"],
-            ["tar -xzvf archive.tar.gz", "Extract archive", "Restore files from tar", "john@pc:~$ tar -xzvf archive.tar.gz\nmyfolder/\nmyfolder/file1.txt\nmyfolder/file2.txt"],
-            ["tar -tzvf archive.tar.gz", "List contents", "Preview without extracting", "john@pc:~$ tar -tzvf archive.tar.gz\ndrwxr-xr-x john/john       0 2026-05-14 myfolder/\n-rw-r--r-- john/john    1024 2026-05-14 file1.txt"],
-            ["zip -r archive.zip myfolder/", "Create zip archive", "Recursive compression", "john@pc:~$ zip -r archive.zip myfolder/\n  adding - myfolder/ (stored 0%)\n  adding - myfolder/file1.txt (deflated 45%)"],
-            ["unzip -l archive.zip", "List zip contents", "Show files without extracting", "john@pc:~$ unzip -l archive.zip\nArchive -  archive.zip\n  Length      Date    Time    Name\n     1024  2026-05-14 10:00   myfolder/file1.txt\n     2048  2026-05-14 10:00   myfolder/file2.txt\n     3072                     2 files"],
-            ["gzip -k file.txt", "Compress keep original", "-k retains the source file", "john@pc:~$ gzip -k file.txt\njohn@pc:~$ ls -l file.txt*\n-rw-r--r-- 1 john john 1024 May 14 10:00 file.txt\n-rw-r--r-- 1 john john  512 May 14 10:00 file.txt.gz"]
+            [
+              "tar -czvf archive.tar.gz myfolder/",
+              "Create compressed archive",
+              "Verbose output shows files",
+              "john@nc:~$ tar -czvf archive.tar.gz myfolder/\nmyfolder/\nmyfolder/file1.txt\nmyfolder/file2.txt"
+            ],
+            [
+              "tar -xzvf archive.tar.gz",
+              "Extract archive",
+              "Restore files from tar",
+              "john@nc:~$ tar -xzvf archive.tar.gz\nmyfolder/\nmyfolder/file1.txt\nmyfolder/file2.txt"
+            ],
+            [
+              "tar -tzvf archive.tar.gz",
+              "List contents",
+              "Preview without extracting",
+              "john@nc:~$ tar -tzvf archive.tar.gz\ndrwxr-xr-x john/john       0 2026-05-14 myfolder/\n-rw-r--r-- john/john    1024 2026-05-14 file1.txt"
+            ],
+            [
+              "zip -r archive.zip myfolder/",
+              "Create zip archive",
+              "Recursive compression",
+              "john@nc:~$ zip -r archive.zip myfolder/\n  adding - myfolder/ (stored 0%)\n  adding - myfolder/file1.txt (deflated 45%)"
+            ],
+            [
+              "unzip -l archive.zip",
+              "List zip contents",
+              "Show files without extracting",
+              "john@nc:~$ unzip -l archive.zip\nArchive -  archive.zip\n  Length      Date    Time    Name\n     1024  2026-05-14 10:00   myfolder/file1.txt\n     2048  2026-05-14 10:00   myfolder/file2.txt\n     3072                     2 files"
+            ],
+            [
+              "gzip -k file.txt",
+              "Compress keep original",
+              "-k retains the source file",
+              "john@nc:~$ gzip -k file.txt\njohn@nc:~$ ls -l file.txt*\n-rw-r--r-- 1 john john 1024 May 14 10:00 file.txt\n-rw-r--r-- 1 john john  512 May 14 10:00 file.txt.gz"
+            ]
           ]
         }
       ]
@@ -294,11 +844,36 @@
         {
           "name": "Scripting Patterns",
           "rows": [
-            ["name=\"John\"; echo \"$name\"", "Variable assignment", "Print variable value", "john@pc:~$ name=\"John\"; echo \"$name\"\nJohn"],
-            ["for f in *.txt; do echo \"$f\"; done", "Loop over files", "Iterate all .txt files", "john@pc:~$ for f in *.txt; do echo \"$f\"; done\nfile1.txt\nfile2.txt\nnotes.txt"],
-            ["if [ -f \"$1\" ]; then echo \"exists\"; fi", "File existence check", "Conditional if file exists", "john@pc:~$ ./check.sh file.txt\nexists"],
-            ["output=$(ls -la); echo \"$output\"", "Capture command output", "Store result in variable", "john@pc:~$ output=$(ls -la); echo \"$output\"\ntotal 12\ndrwxr-xr-x 2 john john 4096 May 14 10:00 ."],
-            ["cmd || { echo \"Failed\"; exit 1; }", "Error handling", "Exit on failure", "john@pc:~$ false || { echo \"Failed\"; exit 1; }\nFailed"]
+            [
+              "name=\"John\"; echo \"$name\"",
+              "Variable assignment",
+              "Print variable value",
+              "john@nc:~$ name=\"John\"; echo \"$name\"\nJohn"
+            ],
+            [
+              "for f in *.txt; do echo \"$f\"; done",
+              "Loop over files",
+              "Iterate all .txt files",
+              "john@nc:~$ for f in *.txt; do echo \"$f\"; done\nfile1.txt\nfile2.txt\nnotes.txt"
+            ],
+            [
+              "if [ -f \"$1\" ]; then echo \"exists\"; fi",
+              "File existence check",
+              "Conditional if file exists",
+              "john@nc:~$ ./check.sh file.txt\nexists"
+            ],
+            [
+              "output=$(ls -la); echo \"$output\"",
+              "Capture command output",
+              "Store result in variable",
+              "john@nc:~$ output=$(ls -la); echo \"$output\"\ntotal 12\ndrwxr-xr-x 2 john john 4096 May 14 10:00 ."
+            ],
+            [
+              "cmd || { echo \"Failed\"; exit 1; }",
+              "Error handling",
+              "Exit on failure",
+              "john@nc:~$ false || { echo \"Failed\"; exit 1; }\nFailed"
+            ]
           ]
         }
       ]
@@ -309,21 +884,71 @@
         {
           "name": "Pipe & Redirection",
           "rows": [
-            ["ls -la | grep \".txt\"", "Pipe to filter", "Pass output to another command", "john@pc:~$ ls -la | grep \".txt\"\n-rw-r--r-- 1 john john    0 May 14 10:00 file.txt"],
-            ["ls > files.txt && cat files.txt", "Redirect to file", "Save listing, then view it", "john@pc:~$ ls > files.txt && cat files.txt\nDesktop\nDocuments\nDownloads\nfile.txt"],
-            ["echo \"error\" >&2", "Redirect to stderr", "Send output to error stream", "john@pc:~$ echo \"error\" >&2\nerror\n(printed to stderr, not stdout)"],
-            ["cmd1 && cmd2", "AND operator", "cmd2 only if cmd1 succeeds", "john@pc:~$ mkdir test && cd test\njohn@pc:~/test$"],
-            ["cmd1 || cmd2", "OR operator", "cmd2 only if cmd1 fails", "john@pc:~$ cd /nonexistent || echo \"Not found\"\nbash - cd - /nonexistent - No such file or directory\nNot found"]
+            [
+              "ls -la | grep \".txt\"",
+              "Pipe to filter",
+              "Pass output to another command",
+              "john@nc:~$ ls -la | grep \".txt\"\n-rw-r--r-- 1 john john    0 May 14 10:00 file.txt"
+            ],
+            [
+              "ls > files.txt && cat files.txt",
+              "Redirect to file",
+              "Save listing, then view it",
+              "john@nc:~$ ls > files.txt && cat files.txt\nDesktop\nDocuments\nDownloads\nfile.txt"
+            ],
+            [
+              "echo \"error\" >&2",
+              "Redirect to stderr",
+              "Send output to error stream",
+              "john@nc:~$ echo \"error\" >&2\nerror\n(printed to stderr, not stdout)"
+            ],
+            [
+              "cmd1 && cmd2",
+              "AND operator",
+              "cmd2 only if cmd1 succeeds",
+              "john@nc:~$ mkdir test && cd test\njohn@nc:~/test$"
+            ],
+            [
+              "cmd1 || cmd2",
+              "OR operator",
+              "cmd2 only if cmd1 fails",
+              "john@nc:~$ cd /nonexistent || echo \"Not found\"\nbash - cd - /nonexistent - No such file or directory\nNot found"
+            ]
           ]
         },
         {
           "name": "System Monitoring",
           "rows": [
-            ["df -h", "Disk space", "Filesystem usage overview", "john@pc:~$ df -h\nFilesystem      Size  Used Avail Use% Mounted on\n/dev/sda1       100G   45G   55G  45% /\n/dev/sdb1       500G  200G  300G  40% /data"],
-            ["free -h", "Memory usage", "RAM + swap summary", "john@pc:~$ free -h\n               total        used        free      shared  buff/cache   available\nMem -            16G          8G         4G         1G         4G         10G\nSwap -           2G          0G         2G"],
-            ["uptime", "System uptime", "Time since last boot + load", "john@pc:~$ uptime\n 10:00:00 up 5 days,  2:30,  2 users,  load average - 0.50, 0.30, 0.10"],
-            ["lsof -i :3000", "Port usage", "What process is on port 3000?", "john@pc:~$ lsof -i :3000\nCOMMAND   PID  USER   FD   TYPE  DEVICE SIZE/OFF NODE NAME\nnode     12345 john   12u  IPv4  54321      0t0  TCP *:3000 (LISTEN)"],
-            ["last -5", "Login history", "Last 5 logins", "john@pc:~$ last -5\njohn     pts/0        May 14 09:00   still logged in\njohn     pts/1        May 13 18:00 - 20:00  (02:00)\nreboot   system boot  May 13 07:55   still running"]
+            [
+              "df -h",
+              "Disk space",
+              "Filesystem usage overview",
+              "john@nc:~$ df -h\nFilesystem      Size  Used Avail Use% Mounted on\n/dev/sda1       100G   45G   55G  45% /\n/dev/sdb1       500G  200G  300G  40% /data"
+            ],
+            [
+              "free -h",
+              "Memory usage",
+              "RAM + swap summary",
+              "john@nc:~$ free -h\n               total        used        free      shared  buff/cache   available\nMem -            16G          8G         4G         1G         4G         10G\nSwap -           2G          0G         2G"
+            ],
+            [
+              "uptime",
+              "System uptime",
+              "Time since last boot + load",
+              "john@nc:~$ uptime\n 10:00:00 up 5 days,  2:30,  2 users,  load average - 0.50, 0.30, 0.10"
+            ],
+            [
+              "lsof -i :3000",
+              "Port usage",
+              "What process is on port 3000?",
+              "john@nc:~$ lsof -i :3000\nCOMMAND   PID  USER   FD   TYPE  DEVICE SIZE/OFF NODE NAME\nnode     12345 john   12u  IPv4  54321      0t0  TCP *:3000 (LISTEN)"
+            ],
+            [
+              "last -5",
+              "Login history",
+              "Last 5 logins",
+              "john@nc:~$ last -5\njohn     pts/0        May 14 09:00   still logged in\njohn     pts/1        May 13 18:00 - 20:00  (02:00)\nreboot   system boot  May 13 07:55   still running"
+            ]
           ]
         }
       ]

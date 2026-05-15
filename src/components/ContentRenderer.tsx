@@ -187,96 +187,65 @@ function stripPrompt(line: string): string {
 
 function renderTerminalSections(text: string) {
   const lines = text.split("\n");
-  const cmdLines: string[] = [];
-  const contentLines: string[] = [];
-  const execLines: string[] = [];
-  const outLines: string[] = [];
-  let cmdCopy = "";
-  let contentCopy = "";
-  let execCopy = "";
-  let outCopy = "";
+  const blocks: { lines: string[]; bg: string; textColor: string; copy: string }[] = [];
 
-  let section: "cmd" | "code" | "exec" | "out" = "cmd";
-
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     const isPrompt = /^\S+@\S+[:~#\$]/.test(line);
 
-    if (section === "cmd") {
-      cmdLines.push(line);
-      cmdCopy += stripPrompt(line) + "\n";
-      if (cmdLines.length === 1 && line.includes("nano ")) {
-        section = "code";
-      } else if (!line.includes("nano ")) {
-        section = "code";
-      }
+    if (isPrompt) {
+      blocks.push({
+        lines: [line],
+        bg: "bg-zinc-200 dark:bg-zinc-800/60",
+        textColor: "text-green-600 dark:text-green-400",
+        copy: stripPrompt(line)
+      });
       continue;
     }
 
-    if (section === "code") {
-      if (
-        isPrompt &&
-        (line.includes(" bash ") || line.includes("./") || line.includes("sh "))
-      ) {
-        execLines.push(line);
-        execCopy += stripPrompt(line) + "\n";
-        section = "out";
-        continue;
-      }
-      contentLines.push(line);
-      if (!line.startsWith("#!/")) contentCopy += line + "\n";
+    if (line.startsWith("#!/") || line.startsWith("# ")) {
+      blocks.push({
+        lines: [line],
+        bg: "bg-zinc-50 dark:bg-zinc-900",
+        textColor: "text-zinc-700 dark:text-zinc-100",
+        copy: line
+      });
       continue;
     }
 
-    if (section === "out") {
-      if (isPrompt) {
-        execLines.push(line);
-        execCopy += stripPrompt(line) + "\n";
+    if (blocks.length > 0 && !isPrompt) {
+      const last = blocks[blocks.length - 1];
+      if (last.bg === "bg-zinc-50 dark:bg-zinc-900" && !last.textColor.includes("green")) {
+        last.lines.push(line);
       } else {
-        outLines.push(line);
-        outCopy += line + "\n";
+        blocks.push({
+          lines: [line],
+          bg: "bg-zinc-50 dark:bg-zinc-900",
+          textColor: "text-zinc-500 dark:text-zinc-400",
+          copy: ""
+        });
       }
+    } else {
+      blocks.push({
+        lines: [line],
+        bg: "bg-zinc-50 dark:bg-zinc-900",
+        textColor: "text-zinc-500 dark:text-zinc-400",
+        copy: ""
+      });
     }
   }
 
-  cmdCopy = cmdCopy.trim();
-  contentCopy = contentCopy.trim();
-  execCopy = execCopy.trim();
-  outCopy = outCopy.trim();
-
   return (
     <div className="space-y-0">
-      {cmdLines.length > 0 && (
+      {blocks.filter(b => b.lines.length > 0 || b.lines[0] !== "").map((block, i) => (
         <SectionBlock
-          lines={cmdLines}
-          bg="bg-zinc-200 dark:bg-zinc-800/60"
-          textColor="text-green-600 dark:text-green-400"
-          copyContent={cmdCopy}
+          key={i}
+          lines={block.lines}
+          bg={block.bg}
+          textColor={block.textColor}
+          copyContent={block.copy}
         />
-      )}
-      {contentLines.length > 0 && (
-        <SectionBlock
-          lines={contentLines}
-          bg="bg-zinc-50 dark:bg-zinc-900"
-          textColor="text-zinc-700 dark:text-zinc-100"
-          copyContent={contentCopy}
-        />
-      )}
-      {execLines.length > 0 && (
-        <SectionBlock
-          lines={execLines}
-          bg="bg-zinc-200 dark:bg-zinc-800/60"
-          textColor="text-green-600 dark:text-green-400"
-          copyContent={execCopy}
-        />
-      )}
-      {outLines.length > 0 && (
-        <SectionBlock
-          lines={outLines}
-          bg="bg-zinc-50 dark:bg-zinc-900"
-          textColor="text-zinc-500 dark:text-zinc-400"
-          copyContent={outCopy}
-        />
-      )}
+      ))}
     </div>
   );
 }
