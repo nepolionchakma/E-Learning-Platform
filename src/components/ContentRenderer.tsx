@@ -47,7 +47,7 @@ function renderStages(stages: Stage[], topicSlug: string) {
   return (
     <div className="space-y-3">
       {stages.map((stage, si) => (
-        <Accordion key={si} title={stage.title} topicSlug={topicSlug} stageIndex={si} defaultOpen={si === 0}>
+        <Accordion key={si} title={stage.title} topicSlug={topicSlug} stageIndex={si} defaultOpen={false}>
           <div className="space-y-5">
             {stage.commands.map((cmd, ci) => (
               <div key={ci}>

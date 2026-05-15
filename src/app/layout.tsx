@@ -48,6 +48,9 @@ export default function RootLayout({
         </ToastProvider>
         <footer className="border-t border-zinc-200 dark:border-zinc-800 py-6 text-center text-sm text-zinc-400">
           &copy; {new Date().getFullYear()} {site.footer.text}
+          <a href={site.footer.linkUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-zinc-500 dark:text-zinc-300 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors underline underline-offset-2">
+            {site.footer.linkText}
+          </a>
         </footer>
       </body>
     </html>

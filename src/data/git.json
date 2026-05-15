@@ -12,7 +12,8 @@
             ["git --version", "Check if installed", "Verify Git is available", "john@pc:~$ git --version\ngit version 2.43.0"],
             ["git config --global user.name \"Your Name\"", "Set username", "Name appears on commits", "john@pc:~$ git config --global user.name \"John Doe\"\n(no output, config saved)"],
             ["git config --global user.email \"you@example.com\"", "Set email", "Email for commit attribution", "john@pc:~$ git config --global user.email \"john@example.com\"\n(no output, config saved)"],
-            ["git config --list", "View all config", "Show current Git settings", "john@pc:~$ git config --list\nuser.name=John Doe\nuser.email=john@example.com\ncore.editor=nano\ncolor.ui=auto"]
+            ["git config --list", "View all config", "Show current Git settings", "john@pc:~$ git config --list\nuser.name=John Doe\nuser.email=john@example.com\ncore.editor=nano\ncolor.ui=auto"],
+            ["git config --global core.editor \"code --wait\"", "Set VS Code as editor", "Opens code for commit messages", "john@pc:~$ git config --global core.editor \"code --wait\"\n(no output, config saved)"]
           ]
         },
         {
@@ -27,7 +28,9 @@
           "name": "Create First Repository",
           "rows": [
             ["git init", "Initialize repository", "Creates .git folder, starts tracking", "john@pc:~/myproject$ git init\nInitialized empty Git repository in /home/john/myproject/.git/"],
-            ["ls -la (check .git)", "Verify init", "Hidden .git folder means Git is active", "john@pc:~/myproject$ ls -la\ntotal 12\ndrwxr-xr-x 3 john john 4096 May 14 10:00 .\ndrwxr-xr-x 3 john john 4096 May 14 10:00 ..\ndrwxr-xr-x 7 john john 4096 May 14 10:00 .git"]
+            ["git init myrepo", "Init with folder name", "Create repo in specific folder", "john@pc:~$ git init myrepo\nInitialized empty Git repository in /home/john/myrepo/.git/"],
+            ["git init --bare repo.git", "Create bare repo (server)", "No working directory, for sharing", "john@pc:~$ git init --bare repo.git\nInitialized empty Git repository in /home/john/repo.git/"],
+            ["ls -la .git", "Inspect .git folder", "Shows internal Git structure", "john@pc:~/myproject$ ls -la .git\ntotal 12\ndrwxr-xr-x 7 john john 4096 May 14 10:00 .\ndrwxr-xr-x 3 john john 4096 May 14 10:00 ..\n-rw-r--r-- 1 john john   23 May 14 10:00 HEAD\ndrwxr-xr-x 2 john john 4096 May 14 10:00 config\ndrwxr-xr-x 4 john john 4096 May 14 10:00 objects\ndrwxr-xr-x 2 john john 4096 May 14 10:00 refs"]
           ]
         }
       ]
@@ -38,34 +41,60 @@
         {
           "name": "Status & Add",
           "rows": [
-            ["git status", "Check repository state", "Shows modified, staged, untracked files", "john@pc:~/myproject$ git status\nOn branch main\n\nNo commits yet\n\nUntracked files:\n  (use \"git add <file>...\" to include in what will be committed)\n\tindex.html\n\tstyle.css\n\nnothing added to commit but untracked files present"],
-            ["git add index.html", "Stage specific file", "Adds index.html to staging area", "john@pc:~/myproject$ git add index.html\njohn@pc:~/myproject$ git status\nOn branch main\n\nChanges to be committed:\n  (use \"git rm --cached <file>...\" to unstage)\n\tnew file:   index.html"],
-            ["git add .", "Stage all changes", "Adds all new/modified files", "john@pc:~/myproject$ git add .\njohn@pc:~/myproject$ git status\nOn branch main\n\nChanges to be committed:\n  (use \"git rm --cached <file>...\" to unstage)\n\tnew file:   index.html\n\tnew file:   style.css"],
-            ["git status -s", "Short status", "Compact output", "john@pc:~/myproject$ git status -s\n M README.md\n?? newfile.txt\n(M=modified, space=staged, ??=untracked)"]
+            ["git status", "Check repo state", "Shows modified, staged, untracked", "john@pc:~/myproject$ git status\nOn branch main\nNo commits yet\n\nUntracked files:\n  (use \"git add <file>...\" to include)\n\tindex.html\n\tstyle.css"],
+            ["git status -s", "Short status", "Compact output (M=mod, ??=untracked)", "john@pc:~/myproject$ git status -s\n M README.md\n?? newfile.txt"],
+            ["git add index.html", "Stage specific file", "Adds to staging area", "john@pc:~/myproject$ git add index.html\njohn@pc:~/myproject$ git status -s\nA  index.html\n?? style.css"],
+            ["git add .", "Stage all changes", "Adds all new/modified files", "john@pc:~/myproject$ git add .\njohn@pc:~/myproject$ git status\nChanges to be committed:\n\tnew file:   index.html\n\tnew file:   style.css"],
+            ["git add -p", "Interactive staging", "Stage changes hunk by hunk", "john@pc:~/myproject$ git add -p\nStage this hunk [y,n,q,a,d,e,?]? y\n(interactive hunk selection)"],
+            ["git rm file.txt", "Remove + stage deletion", "Delete file and stage the removal", "john@pc:~/myproject$ git rm file.txt\nrm 'file.txt'\njohn@pc:~/myproject$ git status\nChanges to be committed:\n\tdeleted:    file.txt"],
+            ["git rm --cached file.txt", "Keep file, stop tracking", "Remove from Git, keep on disk", "john@pc:~/myproject$ git rm --cached file.txt\njohn@pc:~/myproject$ ls file.txt\nfile.txt (still exists on disk)"],
+            ["git mv old.txt new.txt", "Rename tracked file", "Move/rename + stage in one step", "john@pc:~/myproject$ git mv old.txt new.txt\njohn@pc:~/myproject$ git status\nChanges to be committed:\n\trenamed:    old.txt -> new.txt"]
           ]
         },
         {
           "name": "Commit",
           "rows": [
             ["git commit -m \"Initial commit\"", "Commit with message", "Saves staged changes", "john@pc:~/myproject$ git commit -m \"Initial commit\"\n[main (root-commit) a1b2c3d] Initial commit\n 2 files changed, 45 insertions(+)\n create mode 100644 index.html\n create mode 100644 style.css"],
-            ["git commit -a -m \"Fix typo\"", "Skip staging (tracked files)", "Add + commit in one step", "john@pc:~/myproject$ git commit -a -m \"Fix typo\"\n[main d4e5f6g] Fix typo\n 1 file changed, 1 insertion(+), 1 deletion(-)"],
-            ["git commit --amend -m \"Better message\"", "Fix last commit", "Replace last commit message", "john@pc:~/myproject$ git commit --amend -m \"Better message\"\n[main a1b2c3d] Better message\n Date: Thu May 14 10:00:00 2026 +0000\n 2 files changed, 45 insertions(+)"]
+            ["git commit -a -m \"Fix typo\"", "Skip staging (tracked only)", "Add + commit tracked files", "john@pc:~/myproject$ git commit -a -m \"Fix typo\"\n[main d4e5f6g] Fix typo\n 1 file changed, 1 insertion(+), 1 deletion(-)"],
+            ["git commit --amend -m \"Better msg\"", "Fix last commit", "Replace last commit message", "john@pc:~/myproject$ git commit --amend -m \"Better msg\"\n[main a1b2c3d] Better msg\n Date: Thu May 14 10:00:00 2026\n 2 files changed, 45 insertions(+)"],
+            ["git commit --amend --no-edit", "Add to last commit", "Include staged changes in last commit", "john@pc:~/myproject$ git commit --amend --no-edit\n[main a1b2c3d] Initial commit\n Date: Thu May 14 10:00:00 2026\n 3 files changed, 50 insertions(+)"],
+            ["git commit --allow-empty -m \"CI trigger\"", "Empty commit", "Force a commit with no changes", "john@pc:~/myproject$ git commit --allow-empty -m \"CI trigger\"\n[main 9i0j1k2] CI trigger"]
           ]
         },
         {
-          "name": "Log & Diff",
+          "name": "Log & Show",
           "rows": [
-            ["git log --oneline", "Compact history", "One commit per line", "john@pc:~/myproject$ git log --oneline\na1b2c3d Initial commit\nb2c3d4e Add README\nc3d4e5f Fix typo in header"],
-            ["git log --oneline --graph", "Graph view", "Shows branch structure", "john@pc:~/myproject$ git log --oneline --graph\n* a1b2c3d Initial commit\n* b2c3d4e Add README\n* c3d4e5f Fix typo in header"],
-            ["git diff", "Unstaged changes", "Show working dir changes", "john@pc:~/myproject$ git diff\ndiff --git a/index.html b/index.html\nindex e69de29..c27a56 100644\n--- a/index.html\n+++ b/index.html\n@@ -1 +1 @@\n-<h1>Old</h1>\n+<h1>New</h1>"],
-            ["git diff --staged", "Staged changes", "Show what will be committed", "john@pc:~/myproject$ git diff --staged\ndiff --git a/newfile.txt b/newfile.txt\nnew file mode 100644\nindex 0000000..e69de29"]
+            ["git log --oneline", "Compact history", "One commit per line", "john@pc:~/myproject$ git log --oneline\na1b2c3d Initial commit\nb2c3d4e Add README\nc3d4e5f Fix typo"],
+            ["git log --oneline --graph --all", "Graph view all branches", "Branch structure visualized", "john@pc:~/myproject$ git log --oneline --graph --all\n* a1b2c3d (HEAD -> main) Initial commit\n| * d4e5f6g (feature) Add feature\n|/  \n* c3d4e5f Fix typo"],
+            ["git log -p", "With patch/diff", "Show actual changes in each commit", "john@pc:~/myproject$ git log -p -1\ncommit a1b2c3d\nAuthor: John <john@example.com>\n\n    Initial commit\n\ndiff --git a/index.html b/index.html\nnew file mode 100644\nindex 0000000..e69de29"],
+            ["git log --stat", "With file stats", "Which files changed, lines added", "john@pc:~/myproject$ git log --stat --oneline\na1b2c3d Initial commit\n index.html | 10 +++++++++\n style.css  |  5 +++++\n 2 files changed, 15 insertions(+)"],
+            ["git log --since=\"2024-01-01\" --until=\"2024-12-31\"", "Date range", "Commits in a date range", "john@pc:~/myproject$ git log --since=\"2024-01-01\" --oneline\nb2c3d4e Add README\nc3d4e5f Fix typo"],
+            ["git log --author=\"John\" --grep=\"fix\"", "Filter by author + message", "Commits by John about fix", "john@pc:~/myproject$ git log --author=\"John\" --grep=\"fix\" --oneline\nc3d4e5f Fix typo"],
+            ["git show a1b2c3d", "View commit details", "Full diff + metadata of commit", "john@pc:~/myproject$ git show a1b2c3d\ncommit a1b2c3d\nAuthor: John <john@example.com>\nDate:   Thu May 14 10:00:00 2026\n\n    Initial commit\n\ndiff --git a/index.html b/index.html\nnew file mode 100644"],
+            ["git blame index.html", "Who changed each line", "Shows author per line", "john@pc:~/myproject$ git blame index.html\na1b2c3d (John 2026-05-14 10:00:00 1) <h1>Hello</h1>\nb2c3d4e (Jane 2026-05-15 09:00:00 2) <p>World</p>"],
+            ["git shortlog -s -n", "Contributor summary", "Commits per author", "john@pc:~/myproject$ git shortlog -s -n\n    42  John Doe\n    15  Jane Smith\n     3  Bob Wilson"]
           ]
         },
         {
-          "name": ".gitignore",
+          "name": "Diff & Clean",
           "rows": [
-            ["echo \"node_modules/\" >> .gitignore", "Ignore node_modules", "Node dependencies stay untracked", "john@pc:~/myproject$ echo \"node_modules/\" >> .gitignore\njohn@pc:~/myproject$ echo \".env\" >> .gitignore\njohn@pc:~/myproject$ cat .gitignore\nnode_modules/\n.env"],
-            ["git add .gitignore && git commit -m \"Add gitignore\"", "Commit gitignore", "Make exclusions official", "john@pc:~/myproject$ git add .gitignore && git commit -m \"Add gitignore\"\n[main 7f8g9h0] Add gitignore\n 1 file changed, 2 insertions(+)\n create mode 100644 .gitignore"]
+            ["git diff", "Unstaged changes", "Working dir vs staging", "john@pc:~/myproject$ git diff\ndiff --git a/index.html b/index.html\nindex e69de29..c27a56 100644\n--- a/index.html\n+++ b/index.html\n@@ -1 +1 @@\n-<h1>Old</h1>\n+<h1>New</h1>"],
+            ["git diff --staged", "Staged changes", "Staging vs last commit", "john@pc:~/myproject$ git diff --staged\ndiff --git a/newfile.txt b/newfile.txt\nnew file mode 100644\nindex 0000000..e69de29"],
+            ["git diff branch1..branch2", "Between branches", "Compare two branches", "john@pc:~/myproject$ git diff main..feature\n...shows all changes between branches"],
+            ["git clean -n", "Preview untracked files", "Dry run, shows what would be deleted", "john@pc:~/myproject$ git clean -n\nWould remove build.log\ntmp/"],
+            ["git clean -fd", "Force delete untracked", "Remove untracked files + dirs", "john@pc:~/myproject$ git clean -fd\nRemoving build.log\nRemoving tmp/"],
+            ["git clean -fdx", "Delete ignored too", "Also remove .gitignore'd files", "john@pc:~/myproject$ git clean -fdx\nRemoving node_modules/\nRemoving .env"]
+          ]
+        },
+        {
+          "name": ".gitignore Patterns",
+          "rows": [
+            ["echo \"node_modules/\" >> .gitignore", "Ignore directory", "Entire directory ignored", "john@pc:~/myproject$ echo \"node_modules/\" >> .gitignore\njohn@pc:~/myproject$ echo \".env\" >> .gitignore\njohn@pc:~/myproject$ cat .gitignore\nnode_modules/\n.env"],
+            ["echo \"*.log\" >> .gitignore", "Ignore by extension", "All log files ignored", "john@pc:~/myproject$ echo \"*.log\" >> .gitignore"],
+            ["echo \"!important.log\" >> .gitignore", "Negate pattern", "Don't ignore this even if *.log", "john@pc:~/myproject$ echo \"!important.log\" >> .gitignore"],
+            ["echo \"/build/\" >> .gitignore", "Root-relative path", "Only ignore /build, not src/build", "john@pc:~/myproject$ echo \"/build/\" >> .gitignore"],
+            ["git check-ignore -v file.txt", "Debug gitignore", "Which rule is ignoring file?", "john@pc:~/myproject$ git check-ignore -v build.log\n.gitignore:1:*.log  build.log"],
+            ["git add .gitignore && git commit -m \"Add gitignore\"", "Commit gitignore", "Make exclusions official", "john@pc:~/myproject$ git add .gitignore && git commit -m \"Add gitignore\"\n[main 7f8g9h0] Add gitignore\n 1 file changed, 2 insertions(+)"]
           ]
         }
       ]
@@ -76,17 +105,22 @@
         {
           "name": "Restore & Revert",
           "rows": [
-            ["git restore file.txt", "Discard unstaged changes", "Revert file to last committed version", "john@pc:~/myproject$ git restore file.txt\njohn@pc:~/myproject$ git status\nOn branch main\nnothing to commit, working tree clean"],
-            ["git restore --staged file.txt", "Unstage file", "Remove from staging, keep changes", "john@pc:~/myproject$ git restore --staged file.txt\njohn@pc:~/myproject$ git status\nChanges not staged for commit:\n  (use \"git add <file>...\" to update what will be committed)\n\tmodified:   file.txt"],
-            ["git revert HEAD", "Revert last commit", "Creates new undo commit", "john@pc:~/myproject$ git revert HEAD\n[main 8i9j0k1] Revert \"Add feature\"\n 1 file changed, 5 deletions(-)"]
+            ["git restore file.txt", "Discard unstaged changes", "Revert to last committed", "john@pc:~/myproject$ git restore file.txt\njohn@pc:~/myproject$ git status\nnothing to commit, working tree clean"],
+            ["git restore --staged file.txt", "Unstage file", "Keep changes, remove from staging", "john@pc:~/myproject$ git restore --staged file.txt\njohn@pc:~/myproject$ git status\nChanges not staged for commit:\n\tmodified:   file.txt"],
+            ["git restore --source=HEAD~2 file.txt", "Restore older version", "Get file from 2 commits ago", "john@pc:~/myproject$ git restore --source=HEAD~2 file.txt\njohn@pc:~/myproject$ cat file.txt\n(older version restored)"],
+            ["git revert HEAD", "Revert last commit", "Creates new undo commit", "john@pc:~/myproject$ git revert HEAD\n[main 8i9j0k1] Revert \"Add feature\"\n 1 file changed, 5 deletions(-)"],
+            ["git revert --no-commit HEAD", "Stage revert only", "Don't auto-commit the revert", "john@pc:~/myproject$ git revert --no-commit HEAD\njohn@pc:~/myproject$ git status\nChanges to be committed:\n\tmodified:   file.txt"],
+            ["git revert a1b2c3d..b2c3d4e", "Revert a range", "Undo multiple commits", "john@pc:~/myproject$ git revert a1b2c3d..b2c3d4e\n[main 0a1b2c3] Revert \"Add feature\"\n[main 1b2c3d4] Revert \"Initial commit\""]
           ]
         },
         {
           "name": "Reset",
           "rows": [
-            ["git reset --soft HEAD~1", "Undo commit, keep staged", "Remove last commit, files in staging", "john@pc:~/myproject$ git reset --soft HEAD~1\njohn@pc:~/myproject$ git status\nOn branch main\nChanges to be committed:\n  (use \"git rm --cached <file>...\" to unstage)\n\tmodified:   index.html"],
-            ["git reset --mixed HEAD~1", "Undo commit, keep changes (default)", "Remove last commit, files unstaged", "john@pc:~/myproject$ git reset --mixed HEAD~1\njohn@pc:~/myproject$ git status\nChanges not staged for commit:\n\tmodified:   index.html"],
-            ["git reset --hard HEAD~1", "Undo commit, DISCARD changes", "Completely remove last commit", "john@pc:~/myproject$ git reset --hard HEAD~1\nHEAD is now at a1b2c3d Initial commit\njohn@pc:~/myproject$ git status\nnothing to commit, working tree clean"]
+            ["git reset --soft HEAD~1", "Undo commit, keep staged", "Remove last commit, files stay in staging", "john@pc:~/myproject$ git reset --soft HEAD~1\njohn@pc:~/myproject$ git status\nChanges to be committed:\n\tmodified:   index.html"],
+            ["git reset --mixed HEAD~1", "Undo commit, keep changes (default)", "Remove last commit, files unstaged", "john@pc:~/myproject$ git reset HEAD~1\njohn@pc:~/myproject$ git status\nChanges not staged for commit:\n\tmodified:   index.html"],
+            ["git reset --hard HEAD~1", "Undo + DELETE changes", "Completely remove last commit + changes", "john@pc:~/myproject$ git reset --hard HEAD~1\nHEAD is now at a1b2c3d Initial commit\njohn@pc:~/myproject$ git status\nnothing to commit, working tree clean"],
+            ["git reset --hard origin/main", "Reset to remote", "Discard all local commits, match remote", "john@pc:~/myproject$ git reset --hard origin/main\nHEAD is now at c3d4e5f Last remote commit"],
+            ["WARNING: --hard deletes changes permanently", "Safety warning", "Cannot be recovered (usually - use reflog)"]
           ]
         }
       ]
@@ -98,38 +132,52 @@
           "name": "Branch Basics",
           "rows": [
             ["git branch", "List local branches", "Current branch has * marker", "john@pc:~/myproject$ git branch\n* main\n  feature-login"],
-            ["git branch feature-nav", "Create new branch", "Creates branch at current commit", "john@pc:~/myproject$ git branch feature-nav\njohn@pc:~/myproject$ git branch\n* main\n  feature-login\n  feature-nav"],
-            ["git branch -d feature-login", "Delete merged branch", "Only if fully merged", "john@pc:~/myproject$ git branch -d feature-login\nDeleted branch feature-login (was b2c3d4e)."]
+            ["git branch feature-nav", "Create new branch", "At current commit", "john@pc:~/myproject$ git branch feature-nav\njohn@pc:~/myproject$ git branch\n* main\n  feature-login\n  feature-nav"],
+            ["git branch -a", "All branches (incl. remote)", "Local + remote branches", "john@pc:~/myproject$ git branch -a\n* main\n  feature-nav\n  remotes/origin/main"],
+            ["git branch -r", "Remote branches only", "Only remote-tracking branches", "john@pc:~/myproject$ git branch -r\n  origin/main\n  origin/feature-nav"],
+            ["git branch -m old-name new-name", "Rename branch", "Rename current or specified branch", "john@pc:~/myproject$ git branch -m feature-login login\njohn@pc:~/myproject$ git branch\n* main\n  login"],
+            ["git branch -d feature-login", "Delete merged branch", "Only if fully merged", "john@pc:~/myproject$ git branch -d feature-login\nDeleted branch feature-login (was b2c3d4e)."],
+            ["git branch -D feature-login", "Force delete unmerged", "Delete even if not merged", "john@pc:~/myproject$ git branch -D feature-login\nDeleted branch feature-login (was b2c3d4e)."]
           ]
         },
         {
           "name": "Switch & Checkout",
           "rows": [
-            ["git checkout feature-nav", "Switch to branch", "Moves HEAD to feature-nav", "john@pc:~/myproject$ git checkout feature-nav\nSwitched to branch 'feature-nav'"],
-            ["git checkout -b new-feature", "Create + switch", "Creates branch and switches", "john@pc:~/myproject$ git checkout -b new-feature\nSwitched to a new branch 'new-feature'"],
-            ["git switch main", "Switch (modern)", "Newer syntax for checkout", "john@pc:~/myproject$ git switch main\nSwitched to branch 'main'"]
+            ["git checkout feature-nav", "Switch to branch (classic)", "Moves HEAD to feature-nav", "john@pc:~/myproject$ git checkout feature-nav\nSwitched to branch 'feature-nav'"],
+            ["git checkout -b new-feature", "Create + switch (classic)", "Creates branch and switches", "john@pc:~/myproject$ git checkout -b new-feature\nSwitched to a new branch 'new-feature'"],
+            ["git switch main", "Switch (modern)", "Newer, safer syntax", "john@pc:~/myproject$ git switch main\nSwitched to branch 'main'"],
+            ["git switch -c new-feature", "Create + switch (modern)", "Modern checkout -b", "john@pc:~/myproject$ git switch -c new-feature\nSwitched to a new branch 'new-feature'"],
+            ["git checkout -", "Switch to previous branch", "Quick toggle between branches", "john@pc:~/myproject$ git checkout -\nSwitched to branch 'main'"],
+            ["git checkout a1b2c3d", "Detached HEAD", "View commit, not on any branch", "john@pc:~/myproject$ git checkout a1b2c3d\nNote: switching to 'a1b2c3d'.\nYou are in 'detached HEAD' state."]
           ]
         },
         {
-          "name": "Merge & Conflicts",
+          "name": "Merge",
           "rows": [
             ["git merge feature-nav", "Merge branch into current", "Integrates changes", "john@pc:~/myproject$ git merge feature-nav\nUpdating a1b2c3d..d4e5f6g\nFast-forward\n index.html | 5 +++++\n 1 file changed, 5 insertions(+)"],
-            ["git merge --no-ff feature-nav", "No fast-forward merge", "Preserves branch history", "john@pc:~/myproject$ git merge --no-ff feature-nav\nMerge made by the 'ort' strategy.\n index.html | 3 +++\n 1 file changed, 3 insertions(+)"],
-            ["git merge --abort", "Abort on conflict", "Cancel merge safely", "john@pc:~/myproject$ git merge --abort\njohn@pc:~/myproject$ git status\nOn branch main\nnothing to commit, working tree clean"]
+            ["git merge --no-ff feature-nav", "No fast-forward", "Creates merge commit always", "john@pc:~/myproject$ git merge --no-ff feature-nav\nMerge made by the 'ort' strategy.\n index.html | 3 +++\n 1 file changed, 3 insertions(+)"],
+            ["git merge --squash feature-nav", "Squash merge", "Combine all branch commits into one", "john@pc:~/myproject$ git merge --squash feature-nav\nSquash commit -- not updating HEAD\njohn@pc:~/myproject$ git commit -m \"Add feature\"\n[main 8i9j0k1] Add feature"],
+            ["git merge --abort", "Abort on conflict", "Cancel merge, return to pre-merge", "john@pc:~/myproject$ git merge --abort\njohn@pc:~/myproject$ git status\nnothing to commit, working tree clean"],
+            ["git mergetool", "Visual merge tool", "Opens configured GUI merge tool", "(opens visual merge tool like vimdiff, meld, etc.)"]
           ]
         },
         {
           "name": "Rebase",
           "rows": [
             ["git rebase main", "Rebase onto main", "Replays branch on top of main", "john@pc:~/myproject$ git rebase main\nCurrent branch feature-x is up to date."],
-            ["git rebase -i HEAD~3", "Interactive rebase", "Edit/squash/reorder last 3 commits", "john@pc:~/myproject$ git rebase -i HEAD~3\n[detached HEAD 0a1b2c3] Squashed commit\n Date: Thu May 14 10:00:00 2026\n 1 file changed, 10 insertions(+)\nSuccessfully rebased and updated refs/heads/feature-x."],
-            ["git rebase --abort", "Abort rebase", "Cancel and return to original", "john@pc:~/myproject$ git rebase --abort\njohn@pc:~/myproject$ git log --oneline -1\n(back to original state)"]
+            ["git rebase -i HEAD~3", "Interactive rebase", "Edit/squash/reorder commits", "john@pc:~/myproject$ git rebase -i HEAD~3\n[detached HEAD 0a1b2c3] Squashed commit\nSuccessfully rebased and updated refs/heads/feature-x."],
+            ["git rebase --abort", "Abort rebase", "Cancel and return to original", "john@pc:~/myproject$ git rebase --abort\njohn@pc:~/myproject$ git log --oneline -1\n(back to original state)"],
+            ["git rebase --continue", "Continue after conflict", "Resolve conflicts, then continue", "john@pc:~/myproject$ git rebase --continue\n[detached HEAD 1a2b3c4] Fix conflict\nSuccessfully rebased."],
+            ["NEVER rebase shared/remote branches", "Golden rule", "Only rebase local/unpushed commits"]
           ]
         },
         {
-          "name": "Cherry Pick",
+          "name": "Cherry Pick & Conflict Resolution",
           "rows": [
-            ["git cherry-pick a1b2c3d", "Apply specific commit", "Copy commit to current branch", "john@pc:~/myproject$ git cherry-pick a1b2c3d\n[main 1a2b3c4] Fix login bug\n Date: Thu May 14 10:00:00 2026\n 1 file changed, 3 insertions(+), 1 deletion(-)"]
+            ["git cherry-pick a1b2c3d", "Apply specific commit", "Copy commit to current branch", "john@pc:~/myproject$ git cherry-pick a1b2c3d\n[main 1a2b3c4] Fix login bug\n 1 file changed, 3 insertions(+), 1 deletion(-)"],
+            ["git cherry-pick abc123..def456", "Range of commits", "Copy multiple commits", "john@pc:~/myproject$ git cherry-pick abc123..def456\n[main 2b3c4d5] Change 1\n[main 3c4d5e6] Change 2"],
+            ["git cherry-pick -n a1b2c3d", "No auto-commit", "Stage changes without committing", "john@pc:~/myproject$ git cherry-pick -n a1b2c3d\njohn@pc:~/myproject$ git status\nChanges to be committed:\n\tmodified:   file.txt"],
+            ["git merge --continue (or git cherry-pick --continue)", "Continue after conflict fix", "Resume merge/cherry-pick", "john@pc:~/myproject$ git merge --continue\n[main 4d5e6f7] Merge branch 'feature'"]
           ]
         }
       ]
@@ -140,42 +188,61 @@
         {
           "name": "Clone & Remote",
           "rows": [
-            ["git clone https://github.com/user/repo.git", "Clone repository", "Download repo to your computer", "john@pc:~$ git clone https://github.com/user/repo.git\nCloning into 'repo'...\nremote: Enumerating objects: 45, done.\nremote: Total 45 (delta 12), reused 45 (delta 12)\nReceiving objects: 100% (45/45), done.\nResolving deltas: 100% (12/12), done."],
+            ["git clone https://github.com/user/repo.git", "Clone via HTTPS", "Download repo", "john@pc:~$ git clone https://github.com/user/repo.git\nCloning into 'repo'...\nremote: Enumerating objects: 45, done.\nReceiving objects: 100% (45/45), done.\nResolving deltas: 100% (12/12), done."],
+            ["git clone git@github.com:user/repo.git", "Clone via SSH", "Uses SSH key authentication", "john@pc:~$ git clone git@github.com:user/repo.git\nCloning into 'repo'...\nremote: Total 45 (delta 12), reused 45\nReceiving objects: 100% (45/45), done."],
+            ["git clone --depth 1 https://github.com/user/repo.git", "Shallow clone", "Only latest commit (faster)", "john@pc:~$ git clone --depth 1 https://github.com/user/repo.git\nCloning into 'repo'...\nremote: Total 45 (delta 0), reused 0\nReceiving objects: 100% (45/45), done."],
+            ["git clone --branch develop https://github.com/user/repo.git", "Clone specific branch", "Clone only the develop branch", "john@pc:~$ git clone --branch develop https://github.com/user/repo.git\nCloning into 'repo'...\nReceiving objects: 100% (45/45), done."],
             ["git remote -v", "List remotes", "Show fetch/push URLs", "john@pc:~/repo$ git remote -v\norigin  https://github.com/user/repo.git (fetch)\norigin  https://github.com/user/repo.git (push)"],
-            ["git remote add origin https://github.com/user/repo.git", "Add remote", "Link local repo to remote", "john@pc:~/repo$ git remote add origin https://github.com/user/repo.git\njohn@pc:~/repo$ git remote -v\norigin  https://github.com/user/repo.git (fetch)\norigin  https://github.com/user/repo.git (push)"]
+            ["git remote add origin https://github.com/user/repo.git", "Add remote", "Link local repo to remote", "john@pc:~/repo$ git remote add origin https://github.com/user/repo.git\njohn@pc:~/repo$ git remote -v\norigin  https://github.com/user/repo.git (fetch)"],
+            ["git remote remove origin", "Remove remote", "Unlink remote from local", "john@pc:~/repo$ git remote remove origin\njohn@pc:~/repo$ git remote -v\n(no output, no remotes)"],
+            ["git remote rename origin upstream", "Rename remote", "Changes remote name", "john@pc:~/repo$ git remote rename origin upstream\njohn@pc:~/repo$ git remote -v\nupstream  https://github.com/user/repo.git (fetch)"],
+            ["git remote set-url origin git@github.com:user/repo.git", "Change URL", "Switch HTTPS to SSH", "john@pc:~/repo$ git remote set-url origin git@github.com:user/repo.git\njohn@pc:~/repo$ git remote -v\norigin  git@github.com:user/repo.git (fetch)"]
           ]
         },
         {
           "name": "Push & Pull",
           "rows": [
-            ["git push -u origin main", "Push to remote", "Upload commits, set upstream", "john@pc:~/repo$ git push -u origin main\nEnumerating objects: 5, done.\nCounting objects: 100% (5/5), done.\nWriting objects: 100% (3/3), 1.2 KiB | 1.20 MiB/s, done.\nTotal 3 (delta 0), reused 0 (delta 0)\nTo https://github.com/user/repo.git\n * [new branch]      main -> main\nBranch 'main' set up to track remote branch 'main' from 'origin'."],
-            ["git pull origin main", "Pull from remote", "Fetch + merge remote changes", "john@pc:~/repo$ git pull origin main\nFrom https://github.com/user/repo\n * branch            main       -> FETCH_HEAD\nAlready up to date."],
-            ["git fetch origin", "Fetch without merge", "Download changes, don't integrate", "john@pc:~/repo$ git fetch origin\nFrom https://github.com/user/repo\n * [new branch]      main       -> origin/main"],
-            ["git pull --rebase origin main", "Pull with rebase", "Rebase instead of merge", "john@pc:~/repo$ git pull --rebase origin main\nCurrent branch main is up to date."]
+            ["git push -u origin main", "Push + set upstream", "Upload commits, set tracking branch", "john@pc:~/repo$ git push -u origin main\nEnumerating objects: 5, done.\nWriting objects: 100% (3/3), 1.2 KiB | 1.20 MiB/s, done.\nTo https://github.com/user/repo.git\n * [new branch]      main -> main\nBranch 'main' set up to track remote 'origin/main'."],
+            ["git push origin main", "Push to main", "Upload commits", "john@pc:~/repo$ git push origin main\nEverything up-to-date"],
+            ["git push origin --delete feature-login", "Delete remote branch", "Remove branch from remote", "john@pc:~/repo$ git push origin --delete feature-login\nTo https://github.com/user/repo.git\n - [deleted]         feature-login"],
+            ["git push --tags", "Push all tags", "Upload tags to remote", "john@pc:~/repo$ git push --tags\nTo https://github.com/user/repo.git\n * [new tag]         v1.0.0 -> v1.0.0"],
+            ["git push --force-with-lease origin main", "Safer force push", "Only force if no one else pushed", "john@pc:~/repo$ git push --force-with-lease\n + a1b2c3d...b2c3d4e main -> main (forced)"],
+            ["git push -f origin main", "Force push (danger)", "Overwrites remote history", "john@pc:~/repo$ git push -f origin main\n + a1b2c3d...b2c3d4e main -> main (forced)"],
+            ["git pull origin main", "Pull from remote", "Fetch + merge", "john@pc:~/repo$ git pull origin main\nFrom https://github.com/user/repo\n * branch main -> FETCH_HEAD\nAlready up to date."],
+            ["git pull --rebase origin main", "Pull with rebase", "Fetch + rebase instead of merge", "john@pc:~/repo$ git pull --rebase origin main\nSuccessfully rebased and updated refs/heads/main."],
+            ["git fetch origin", "Fetch only", "Download changes, don't merge", "john@pc:~/repo$ git fetch origin\nFrom https://github.com/user/repo\n * [new branch]      main       -> origin/main"],
+            ["git fetch --prune origin", "Fetch + prune", "Remove stale remote tracking branches", "john@pc:~/repo$ git fetch --prune origin\n - [deleted]         (none)     -> origin/old-branch"]
           ]
         },
         {
-          "name": "Tags",
+          "name": "Tags & Describe",
           "rows": [
-            ["git tag v1.0.0", "Create lightweight tag", "Mark current commit", "john@pc:~/repo$ git tag v1.0.0\njohn@pc:~/repo$ git tag\nv1.0.0"],
-            ["git tag -a v1.0.0 -m \"Release v1.0.0\"", "Annotated tag", "Tag with message", "john@pc:~/repo$ git tag -a v1.0.0 -m \"Release v1.0.0\"\njohn@pc:~/repo$ git show v1.0.0 --stat\ntag v1.0.0\nTagger: John Doe <john@example.com>\nDate: Thu May 14 10:00:00 2026\n\nRelease v1.0.0"],
-            ["git push origin --tags", "Push all tags", "Upload tags to remote", "john@pc:~/repo$ git push origin --tags\nTotal 0 (delta 0), reused 0 (delta 0)\nTo https://github.com/user/repo.git\n * [new tag]         v1.0.0 -> v1.0.0"]
+            ["git tag v1.0.0", "Lightweight tag", "Mark current commit", "john@pc:~/repo$ git tag v1.0.0\njohn@pc:~/repo$ git tag\nv1.0.0"],
+            ["git tag -a v1.0.0 -m \"Release v1.0.0\"", "Annotated tag", "Tag with message + author", "john@pc:~/repo$ git tag -a v1.0.0 -m \"Release v1.0.0\"\njohn@pc:~/repo$ git show v1.0.0 --stat\ntag v1.0.0\nTagger: John Doe\nDate: Thu May 14 10:00:00 2026\n\nRelease v1.0.0"],
+            ["git tag -l \"v1.*\"", "Search tags", "Filter tags by pattern", "john@pc:~/repo$ git tag -l \"v1.*\"\nv1.0.0\nv1.1.0"],
+            ["git tag -d v1.0.0", "Delete local tag", "Remove tag from local", "john@pc:~/repo$ git tag -d v1.0.0\nDeleted tag 'v1.0.0' (was a1b2c3d)"],
+            ["git push origin --delete v1.0.0", "Delete remote tag", "Remove tag from remote", "john@pc:~/repo$ git push origin --delete v1.0.0\nTo https://github.com/user/repo.git\n - [deleted]         v1.0.0"],
+            ["git describe", "Describe current commit", "Nearest tag + commit info", "john@pc:~/repo$ git describe\nv1.0.0-5-g1a2b3c4\n(5 commits after v1.0.0, hash g1a2b3c4)"],
+            ["git describe --tags", "Describe with lightweight tags", "Include lightweight tags", "john@pc:~/repo$ git describe --tags\nv1.0.0"]
           ]
         }
       ]
     },
     {
-      "title": "Stage 6: Stashing",
+      "title": "Stage 6: Stashing & Temporary Work",
       "commands": [
         {
           "name": "Stash Operations",
           "rows": [
-            ["git stash", "Save work temporarily", "Stash tracked changes", "john@pc:~/repo$ git stash\nSaved working directory and index state WIP on main: a1b2c3d Initial commit\njohn@pc:~/repo$ git status\nnothing to commit, working tree clean"],
-            ["git stash list", "List stashes", "Show all stashes", "john@pc:~/repo$ git stash list\nstash@{0}: WIP on main: a1b2c3d Initial commit\nstash@{1}: WIP on feature-x: b2c3d4e Add feature"],
-            ["git stash pop", "Apply + remove stash", "Restore latest stash", "john@pc:~/repo$ git stash pop\nOn branch main\nChanges not staged for commit:\n\tmodified:   index.html\n\ndropped refs/stash@{0} (abc123)"],
-            ["git stash apply stash@{1}", "Apply specific stash", "Restore without removing", "john@pc:~/repo$ git stash apply stash@{1}\nOn branch main\nChanges not staged for commit:\n\tmodified:   style.css"],
-            ["git stash drop stash@{0}", "Remove specific stash", "Delete a stash entry", "john@pc:~/repo$ git stash drop stash@{0}\nDropped stash@{0} (abc123)"],
-            ["git stash clear", "Remove ALL stashes", "Empty the stash list", "john@pc:~/repo$ git stash clear\njohn@pc:~/repo$ git stash list\n(no output, stash is empty)"]
+            ["git stash", "Save tracked changes", "Stash modified tracked files", "john@pc:~/repo$ git stash\nSaved working directory and index state WIP on main: a1b2c3d\njohn@pc:~/repo$ git status\nnothing to commit, working tree clean"],
+            ["git stash push -m \"WIP: login form\"", "Stash with message", "Named stash", "john@pc:~/repo$ git stash push -m \"WIP: login form\"\nSaved working directory and index state On main: WIP: login form"],
+            ["git stash -u", "Include untracked files", "Also stash new files", "john@pc:~/repo$ git stash -u\nSaved working directory and index state WIP on main: a1b2c3d"],
+            ["git stash list", "List all stashes", "Show stash stack", "john@pc:~/repo$ git stash list\nstash@{0}: On main: WIP: login form\nstash@{1}: WIP on main: a1b2c3d"],
+            ["git stash pop", "Apply + remove latest", "Restore and delete stash", "john@pc:~/repo$ git stash pop\nOn branch main\nChanges not staged for commit:\n\tmodified:   index.html\ndropped refs/stash@{0} (abc123)"],
+            ["git stash apply stash@{1}", "Apply specific stash", "Restore but keep stash", "john@pc:~/repo$ git stash apply stash@{1}\nOn branch main\nChanges not staged for commit:\n\tmodified:   style.css"],
+            ["git stash drop stash@{0}", "Delete specific stash", "Remove a stash entry", "john@pc:~/repo$ git stash drop stash@{0}\nDropped stash@{0} (abc123)"],
+            ["git stash clear", "Delete ALL stashes", "Empty entire stash list", "john@pc:~/repo$ git stash clear\njohn@pc:~/repo$ git stash list\n(no output, stash is empty)"],
+            ["git stash branch feature-x", "Create branch from stash", "Branch and apply stash", "john@pc:~/repo$ git stash branch feature-x\nSwitched to a new branch 'feature-x'\nOn branch feature-x\nChanges to be committed:\n\tmodified:   index.html"]
           ]
         }
       ]
@@ -184,11 +251,14 @@
       "title": "Stage 7: Collaboration & GitHub",
       "commands": [
         {
-          "name": "Fork & Pull Request",
+          "name": "Fork & Upstream Workflow",
           "rows": [
-            ["git remote add upstream https://github.com/original/repo.git", "Add upstream remote", "Link original repo (after fork)", "john@pc:~/repo$ git remote add upstream https://github.com/original/repo.git\njohn@pc:~/repo$ git remote -v\norigin  https://github.com/myuser/repo.git (fetch)\nupstream https://github.com/original/repo.git (fetch)"],
-            ["git fetch upstream", "Get original changes", "Download from upstream", "john@pc:~/repo$ git fetch upstream\nFrom https://github.com/original/repo\n * [new branch]      main       -> upstream/main"],
-            ["git checkout -b fix-bug && git push -u origin fix-bug", "Create and push branch", "Start a PR branch", "john@pc:~/repo$ git checkout -b fix-bug\nSwitched to a new branch 'fix-bug'\njohn@pc:~/repo$ git push -u origin fix-bug\nTotal 0 (delta 0), reused 0 (delta 0)\n * [new branch]      fix-bug -> fix-bug"]
+            ["git remote add upstream https://github.com/original/repo.git", "Add upstream remote", "Link original repo after fork", "john@pc:~/repo$ git remote add upstream https://github.com/original/repo.git\njohn@pc:~/repo$ git remote -v\norigin  https://github.com/myuser/repo.git (fetch)\nupstream https://github.com/original/repo.git (fetch)"],
+            ["git fetch upstream", "Get upstream changes", "Download from original repo", "john@pc:~/repo$ git fetch upstream\nFrom https://github.com/original/repo\n * [new branch]      main       -> upstream/main"],
+            ["git checkout main && git merge upstream/main", "Sync with upstream", "Update local main", "john@pc:~/repo$ git checkout main && git merge upstream/main\nAlready on 'main'\nUpdating a1b2c3d..b2c3d4e\nFast-forward"],
+            ["git checkout -b fix-bug", "Create PR branch", "Work on a fix", "john@pc:~/repo$ git checkout -b fix-bug\nSwitched to a new branch 'fix-bug'"],
+            ["git push -u origin fix-bug", "Push PR branch", "Upload for pull request", "john@pc:~/repo$ git push -u origin fix-bug\n * [new branch]      fix-bug -> fix-bug"],
+            ["Format: git format-patch -1 HEAD", "Generate patch file", "Create .patch for email", "john@pc:~/repo$ git format-patch -1 HEAD\n0001-Fix-login-bug.patch"]
           ]
         }
       ]
@@ -199,24 +269,52 @@
         {
           "name": "Reflog & Recovery",
           "rows": [
-            ["git reflog", "Show reference log", "All HEAD movements, even lost commits", "john@pc:~/repo$ git reflog\na1b2c3d HEAD@{0}: reset: moving to HEAD~1\nb2c3d4e HEAD@{1}: commit: Add feature\nc3d4e5f HEAD@{2}: commit: Fix header\na1b2c3d HEAD@{3}: commit (initial): Initial commit"],
-            ["git reset --hard HEAD@{1}", "Recover lost commit", "Restore from reflog", "john@pc:~/repo$ git reset --hard HEAD@{1}\nHEAD is now at b2c3d4e Add feature\njohn@pc:~/repo$ git log --oneline -1\nb2c3d4e Add feature"]
+            ["git reflog", "Show reference log", "All HEAD movements (even lost commits)", "john@pc:~/repo$ git reflog\na1b2c3d HEAD@{0}: reset: moving to HEAD~1\nb2c3d4e HEAD@{1}: commit: Add feature\nc3d4e5f HEAD@{2}: commit: Fix header\na1b2c3d HEAD@{3}: commit (initial): Initial commit"],
+            ["git reset --hard HEAD@{1}", "Recover from reflog", "Restore lost commit", "john@pc:~/repo$ git reset --hard HEAD@{1}\nHEAD is now at b2c3d4e Add feature\njohn@pc:~/repo$ git log --oneline -1\nb2c3d4e Add feature"],
+            ["git reflog expire --expire=30.days", "Manage reflog retention", "Control how long reflog keeps history", "(maintenance command)"]
           ]
         },
         {
           "name": "Bisect — Find Bugs",
           "rows": [
-            ["git bisect start && git bisect bad && git bisect good v1.0", "Start bisect", "Binary search for bug", "john@pc:~/repo$ git bisect start\njohn@pc:~/repo$ git bisect bad\njohn@pc:~/repo$ git bisect good v1.0\nBisecting: 5 revisions left to test after this (roughly 3 steps)\n[abc123] Commit message"],
-            ["git bisect good (or bad)", "Mark current commit", "Continue binary search", "john@pc:~/repo$ git bisect good\nabc123 is the first bad commit\ncommit abc123\nAuthor: John <john@example.com>\nDate: Mon May 11 10:00:00 2026\n\n    Introduced the bug"],
-            ["git bisect reset", "End bisect", "Return to original branch", "john@pc:~/repo$ git bisect reset\nPrevious HEAD position was abc123...\nSwitched to branch 'main'"]
+            ["git bisect start", "Start bisect", "Begin binary search", "john@pc:~/repo$ git bisect start\njohn@pc:~/repo$ git bisect bad\njohn@pc:~/repo$ git bisect good v1.0\nBisecting: 5 revisions left to test after this (roughly 3 steps)"],
+            ["git bisect good (or bad)", "Mark current commit", "Continue binary search", "john@pc:~/repo$ git bisect good\nabc123 is the first bad commit\ncommit abc123\nAuthor: John\nDate: Mon May 11 2026\n\n    Introduced the bug"],
+            ["git bisect reset", "End bisect", "Return to original branch", "john@pc:~/repo$ git bisect reset\nPrevious HEAD position was abc123...\nSwitched to branch 'main'"],
+            ["git bisect run npm test", "Auto bisect", "Let script test each commit", "john@pc:~/repo$ git bisect run npm test\n... automatically finds the bug commit"]
           ]
         },
         {
-          "name": "Submodules & Archive",
+          "name": "Submodules & Worktrees",
           "rows": [
-            ["git submodule add https://github.com/user/lib.git lib/", "Add submodule", "Embed external repo", "john@pc:~/repo$ git submodule add https://github.com/user/lib.git lib/\nCloning into 'lib'...\ndone.\njohn@pc:~/repo$ git status\nChanges to be committed:\n\tnew file:   .gitmodules\n\tnew file:   lib"],
+            ["git submodule add https://github.com/user/lib.git lib/", "Add submodule", "Embed external repo", "john@pc:~/repo$ git submodule add https://github.com/user/lib.git lib/\nCloning into 'lib'...\ndone.\njohn@pc:~/repo$ git status\n\tnew file:   .gitmodules\n\tnew file:   lib"],
+            ["git clone --recursive https://github.com/user/repo.git", "Clone with submodules", "Download repo + all submodules", "john@pc:~$ git clone --recursive https://github.com/user/repo.git\nCloning into 'repo'...\nSubmodule 'lib' registered for path 'lib'"],
+            ["git submodule update --init --recursive", "Update all submodules", "Pull latest from each submodule", "john@pc:~/repo$ git submodule update --init --recursive\nSubmodule path 'lib': checked out 'abc123'"],
+            ["git worktree add ../hotfix hotfix", "Create new worktree", "Checkout branch in separate folder", "john@pc:~/repo$ git worktree add ../hotfix hotfix\nPreparing worktree (new branch 'hotfix')\nHEAD is now at a1b2c3d Initial commit"],
+            ["git worktree list", "List worktrees", "Show all checked-out worktrees", "john@pc:~/repo$ git worktree list\n/home/john/repo  main\n/home/john/hotfix  hotfix"],
+            ["git worktree remove ../hotfix", "Remove worktree", "Clean up worktree", "john@pc:~/repo$ git worktree remove ../hotfix"]
+          ]
+        },
+        {
+          "name": "Archive, GC & Maintenance",
+          "rows": [
             ["git archive --format=zip HEAD > project.zip", "Export repo", "Create zip of current state", "john@pc:~/repo$ git archive --format=zip HEAD > project.zip\njohn@pc:~/repo$ ls -lh project.zip\n-rw-r--r-- 1 john john 12K May 14 10:00 project.zip"],
-            ["git shortlog -s -n", "Contributor summary", "Commits per author", "john@pc:~/repo$ git shortlog -s -n\n    42  John Doe\n    15  Jane Smith\n     3  Bob Wilson"]
+            ["git archive --format=tar.gz --prefix=myapp/ HEAD > myapp.tar.gz", "Export with prefix", "Files inside myapp/ folder", "john@pc:~/repo$ git archive --format=tar.gz --prefix=myapp/ HEAD > myapp.tar.gz"],
+            ["git gc", "Garbage collection", "Optimize repo, compress objects", "john@pc:~/repo$ git gc\nEnumerating objects: 45, done.\nCounting objects: 100% (45/45), done.\nDelta compression using up to 8 threads.\nWriting objects: 100% (45/45), done.\nTotal 45 (delta 12), reused 45 (delta 12)"],
+            ["git gc --aggressive", "Aggressive optimization", "More thorough compression", "john@pc:~/repo$ git gc --aggressive\n... takes longer but saves more space"],
+            ["git fsck", "Check repository integrity", "Verify objects are valid", "john@pc:~/repo$ git fsck\nChecking object directories: 100% (256/256), done.\n(no output = healthy repo)"],
+            ["git count-objects -v", "Disk usage", "How much space .git uses", "john@pc:~/repo$ git count-objects -v\ncount: 45\nsize: 120\ngarbage: 0\npack: 1\nsize-pack: 45"],
+            ["git verify-pack -v .git/objects/pack/*.idx", "Verify pack file", "Inspect pack contents", "(detailed pack file analysis)"]
+          ]
+        },
+        {
+          "name": "Hooks & GPG Signing",
+          "rows": [
+            ["ls .git/hooks/", "List available hooks", "Sample hook scripts", "john@pc:~/repo$ ls .git/hooks/\npre-commit.sample  pre-push.sample  post-commit.sample\ncommit-msg.sample  prepare-commit-msg.sample  update.sample"],
+            ["cp .git/hooks/pre-commit.sample .git/hooks/pre-commit", "Enable a hook", "Remove .sample to activate", "john@pc:~/repo$ mv .git/hooks/pre-commit.sample .git/hooks/pre-commit\n(john edits hooks/pre-commit to customize)"],
+            ["git config --global user.signingkey ABCDEF12", "Set GPG key", "Configure signing key", "john@pc:~$ git config --global user.signingkey ABCDEF12\n(no output)"],
+            ["git commit -S -m \"Signed commit\"", "Sign a commit", "Creates a GPG-signed commit", "john@pc:~/repo$ git commit -S -m \"Signed commit\"\n[main 1a2b3c4] Signed commit\n 1 file changed, 1 insertion(+)"],
+            ["git tag -s v1.0.0 -m \"Signed tag\"", "Sign a tag", "Creates a GPG-signed tag", "john@pc:~/repo$ git tag -s v1.0.0 -m \"Signed tag\"\njohn@pc:~/repo$ git tag -v v1.0.0\nobject abc123...\ntype commit\ntag v1.0.0\ngpg: Signature made ... using RSA key"],
+            ["git log --show-signature", "Show signatures", "See which commits are signed", "john@pc:~/repo$ git log --show-signature -1\ngpg: Signature made Thu May 14 2026\ngpg: Good signature from \"John Doe\"\ncommit a1b2c3d"]
           ]
         }
       ]
@@ -227,9 +325,29 @@
         {
           "name": "Common Fixes",
           "rows": [
-            ["git status (first step)", "What's happening?", "Always check status first", "john@pc:~/repo$ git status\nOn branch main\nYour branch is up to date with 'origin/main'.\n\nnothing to commit, working tree clean"],
-            ["git pull --rebase (fix divergence)", "Divergent branches", "Remote has different history", "john@pc:~/repo$ git pull --rebase origin main\nFrom https://github.com/user/repo\n * branch            main       -> FETCH_HEAD\nSuccessfully rebased and updated refs/heads/main."],
-            ["git push --force-with-lease", "Safer force push", "Only force if no one else pushed", "john@pc:~/repo$ git push --force-with-lease origin main\nTotal 0 (delta 0), reused 0 (delta 0)\nTo https://github.com/user/repo.git\n + a1b2c3d...b2c3d4e main -> main (forced update)"]
+            ["git status (first step for any issue)", "What's happening?", "Always check status", "john@pc:~/repo$ git status\nOn branch main\nYour branch is up to date with 'origin/main'.\nnothing to commit, working tree clean"],
+            ["Fatal: not a git repository", "Fix: run inside a Git repo", "Run git init or cd to a repo", "fatal: not a git repository (or any of the parent directories): .git"],
+            ["Please commit or stash them", "Uncommitted changes blocking", "Commit, stash, or discard", "error: Your local changes would be overwritten by merge."],
+            ["Merge conflict in file.txt", "Conflicting changes", "Edit file, remove markers, git add", "Auto-merging file.txt\nCONFLICT (content): Merge conflict in file.txt\nAutomatic merge failed; fix conflicts and commit."],
+            ["Permission denied (publickey)", "SSH key issue", "Check SSH key and agent", "git@github.com: Permission denied (publickey).\nSolution: ssh-add ~/.ssh/id_rsa"],
+            ["Updates were rejected", "Remote has changes", "Pull first, then push", "! [rejected] main -> main (fetch first)\nerror: failed to push some refs\nhint: Updates were rejected because the remote contains work"],
+            ["Your branch is ahead of 'origin/main' by 2 commits", "Unpushed commits", "Run git push", "On branch main\nYour branch is ahead of 'origin/main' by 2 commits.\n  (use \"git push\" to publish your local commits)"],
+            ["You are in 'detached HEAD' state", "No branch checked out", "Run git checkout main", "You are in 'detached HEAD' state.\nIf you want to create a new branch:\n  git switch -c new-branch-name"],
+            ["Cannot pull: divergent branches", "Local and remote diverged", "Pull --rebase or merge", "hint: You have divergent branches and need to specify how to reconcile them.\nhint: git pull --rebase"]
+          ]
+        },
+        {
+          "name": "Best Practices",
+          "rows": [
+            ["Commit often, small changes", "Atomic commits", "One commit = one logical change"],
+            ["Write clear commit messages", "Good messages", "Subject line (<50 chars) + blank line + body"],
+            ["Use feature branches", "Branch per feature", "Never commit directly to main"],
+            ["Pull before you push", "Stay synced", "Avoid unnecessary merge conflicts"],
+            ["Review your own diff first", "Self-review", "git diff --staged before committing"],
+            ["Don't commit secrets", "Security", "Use .gitignore for .env, keys, passwords"],
+            ["Never force push shared branches", "Golden rule", "Use --force-with-lease if needed"],
+            ["Tag releases with semver", "Versioning", "v1.0.0, v1.1.0, v2.0.0"],
+            ["Write meaningful PR descriptions", "PR quality", "Explain WHAT and WHY"]
           ]
         }
       ]
