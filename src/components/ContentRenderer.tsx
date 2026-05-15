@@ -10,6 +10,7 @@ interface CommandRow {
   rows?: string[][];
   type?: string;
   code?: string;
+  details?: string;
 }
 
 interface Stage {
@@ -49,6 +50,60 @@ export default function ContentRenderer({
   return null;
 }
 
+function CommandGroup({ cmd }: { cmd: CommandRow }) {
+  const [showDetails, setShowDetails] = useState(false)
+
+  return (
+    <div>
+      <h4 className="font-semibold text-sm text-zinc-800 dark:text-zinc-200 mb-2 flex items-center gap-2">
+        <span className="w-1 h-4 bg-orange-500 rounded-full inline-block" />
+        {cmd.name}
+        {cmd.details && (
+          <button
+            onClick={() => setShowDetails(!showDetails)}
+            className="ml-1 px-2 py-0.5 text-[10px] font-medium rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-500 hover:text-indigo-600 hover:border-indigo-400 transition-colors cursor-pointer"
+          >
+            {showDetails ? 'Hide Details' : 'Details'}
+          </button>
+        )}
+      </h4>
+      {cmd.type === "codeblock" ? (
+        <div className="relative group">
+          <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+            <CopyButton text={cmd.code || ""} />
+          </div>
+          <pre className="text-sm bg-zinc-900 text-zinc-100 p-4 rounded-lg overflow-x-auto border border-zinc-700">{cmd.code}</pre>
+        </div>
+      ) : (
+        <>
+          <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="bg-zinc-100 dark:bg-zinc-800">
+                  <th className="p-3 text-left font-semibold text-zinc-700 dark:text-zinc-300 border-b border-zinc-200 dark:border-zinc-700">Command</th>
+                  <th className="p-3 text-left font-semibold text-zinc-700 dark:text-zinc-300 border-b border-zinc-200 dark:border-zinc-700">Scenario</th>
+                  <th className="p-3 text-left font-semibold text-zinc-700 dark:text-zinc-300 border-b border-zinc-200 dark:border-zinc-700">Explanation</th>
+                  <th className="p-3 w-24 border-b border-zinc-200 dark:border-zinc-700" />
+                </tr>
+              </thead>
+              <tbody className="text-zinc-600 dark:text-zinc-300">
+                {cmd.rows?.map((row, ri) => (
+                  <TableRow key={ri} row={row} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {showDetails && cmd.details && (
+            <div className="mt-3 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed whitespace-pre-wrap">
+              {cmd.details}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
 function renderStages(stages: Stage[], topicSlug: string) {
   return (
     <div className="space-y-3">
@@ -62,46 +117,7 @@ function renderStages(stages: Stage[], topicSlug: string) {
         >
           <div className="space-y-5">
             {stage.commands.map((cmd, ci) => (
-              <div key={ci}>
-                <h4 className="font-semibold text-sm text-zinc-800 dark:text-zinc-200 mb-2 flex items-center gap-2">
-                  <span className="w-1 h-4 bg-orange-500 rounded-full inline-block" />
-                  {cmd.name}
-                </h4>
-                {cmd.type === "codeblock" ? (
-                  <div className="relative group">
-                    <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <CopyButton text={cmd.code || ""} />
-                    </div>
-                    <pre className="text-sm bg-zinc-900 text-zinc-100 p-4 rounded-lg overflow-x-auto border border-zinc-700">
-                      {cmd.code}
-                    </pre>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
-                    <table className="w-full text-sm border-collapse">
-                      <thead>
-                        <tr className="bg-zinc-100 dark:bg-zinc-800">
-                          <th className="p-3 text-left font-semibold text-zinc-700 dark:text-zinc-300 border-b border-zinc-200 dark:border-zinc-700">
-                            Command
-                          </th>
-                          <th className="p-3 text-left font-semibold text-zinc-700 dark:text-zinc-300 border-b border-zinc-200 dark:border-zinc-700">
-                            Scenario
-                          </th>
-                          <th className="p-3 text-left font-semibold text-zinc-700 dark:text-zinc-300 border-b border-zinc-200 dark:border-zinc-700">
-                            Explanation
-                          </th>
-                          <th className="p-3 w-24 border-b border-zinc-200 dark:border-zinc-700" />
-                        </tr>
-                      </thead>
-                      <tbody className="text-zinc-600 dark:text-zinc-300">
-                        {cmd.rows?.map((row, ri) => (
-                          <TableRow key={ri} row={row} />
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
+              <CommandGroup key={ci} cmd={cmd} />
             ))}
           </div>
         </Accordion>
