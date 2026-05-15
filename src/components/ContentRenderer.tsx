@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Accordion from './Accordion'
 import CopyButton from './CopyButton'
 import site from '@/data/site.json'
@@ -19,6 +20,7 @@ interface Stage {
 interface SectionItem {
   label?: string
   code?: string
+  result?: string
 }
 
 interface Section {
@@ -68,21 +70,12 @@ function renderStages(stages: Stage[], topicSlug: string) {
                           <th className="p-3 text-left font-semibold text-zinc-700 dark:text-zinc-300 border-b border-zinc-200 dark:border-zinc-700">Command</th>
                           <th className="p-3 text-left font-semibold text-zinc-700 dark:text-zinc-300 border-b border-zinc-200 dark:border-zinc-700">Scenario</th>
                           <th className="p-3 text-left font-semibold text-zinc-700 dark:text-zinc-300 border-b border-zinc-200 dark:border-zinc-700">Explanation</th>
-                          <th className="p-3 w-16 border-b border-zinc-200 dark:border-zinc-700" />
+                          <th className="p-3 w-24 border-b border-zinc-200 dark:border-zinc-700" />
                         </tr>
                       </thead>
                       <tbody className="text-zinc-600 dark:text-zinc-300">
                         {cmd.rows?.map((row, ri) => (
-                          <tr key={ri} className="border-b border-zinc-100 dark:border-zinc-800 last:border-0 hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
-                            <td className="p-3 font-mono text-xs text-zinc-800 dark:text-zinc-200">
-                              <code>{row[0]}</code>
-                            </td>
-                            <td className="p-3 text-xs">{row[1]}</td>
-                            <td className="p-3 text-xs text-zinc-500">{row[2]}</td>
-                            <td className="p-2">
-                              <CopyButton text={row[0]} />
-                            </td>
-                          </tr>
+                          <TableRow key={ri} row={row} />
                         ))}
                       </tbody>
                     </table>
@@ -95,6 +88,83 @@ function renderStages(stages: Stage[], topicSlug: string) {
       ))}
       <ResourcesSection />
     </div>
+  )
+}
+
+function renderTerminalLines(text: string) {
+  const lines = text.split('\n')
+  return (
+    <div className="space-y-0">
+      {lines.map((line, i) => {
+        const isPrompt = /^\S+@\S+[:~#\$]/.test(line)
+        const isCmd = /^\S+@\S+[:~#\$] /.test(line) || /^sudo /.test(line) || /^# /.test(line)
+        const isSeparator = line.startsWith('---') || line.startsWith('===') || line.startsWith('  PID')
+        return (
+          <div
+            key={i}
+            className={`px-3 py-[1px] ${
+              isPrompt
+                ? 'bg-zinc-200 dark:bg-zinc-800/60 text-green-600 dark:text-green-400'
+                : isSeparator
+                  ? 'bg-zinc-200/50 dark:bg-zinc-800/30 text-zinc-400 italic'
+                  : 'bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-100'
+            }`}
+          >
+            {line || '\u00A0'}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function TableRow({ row }: { row: string[] }) {
+  const [showResult, setShowResult] = useState(false)
+  const hasResult = row[3] !== undefined
+
+  return (
+    <>
+      <tr className="border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
+        <td className="p-3 font-mono text-xs text-zinc-800 dark:text-zinc-200">
+          <code>{row[0]}</code>
+        </td>
+        <td className="p-3 text-xs">{row[1]}</td>
+        <td className="p-3 text-xs text-zinc-500">{row[2]}</td>
+        <td className="p-2">
+          <div className="flex items-center gap-1">
+            {hasResult && (
+              <button
+                onClick={() => setShowResult(!showResult)}
+                className="p-1.5 rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-500 hover:text-green-600 hover:border-green-400 transition-colors"
+                title="Show example output"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              </button>
+            )}
+            <CopyButton text={row[0]} />
+          </div>
+        </td>
+      </tr>
+      {showResult && hasResult && (
+        <tr>
+          <td colSpan={4} className="p-0">
+            <div className="border-t-2 border-teal-400 dark:border-teal-500/60 mx-3" />
+            <div className="bg-zinc-100 dark:bg-zinc-900 text-xs font-mono leading-relaxed mx-3 mb-3 mt-1 rounded-lg overflow-hidden border border-zinc-300 dark:border-zinc-700 shadow-lg">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-zinc-300 dark:border-zinc-700 bg-zinc-200 dark:bg-zinc-800/60">
+                <span className="w-2 h-2 rounded-full bg-red-500" />
+                <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                <span className="w-2 h-2 rounded-full bg-green-500" />
+                <span className="text-zinc-400 dark:text-zinc-500 text-[10px] ml-2">terminal output</span>
+              </div>
+              {renderTerminalLines(row[3])}
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
   )
 }
 
