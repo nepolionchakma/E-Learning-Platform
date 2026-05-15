@@ -60,6 +60,7 @@ body {
 .topic-gradient-html { background: linear-gradient(135deg, #e44d26, #f16529); }
 .topic-gradient-css { background: linear-gradient(135deg, #264de4, #2965f1); }
 .topic-gradient-nodejs { background: linear-gradient(135deg, #339933, #026e00); }
+.topic-gradient-networking { background: linear-gradient(135deg, #0d6efd, #0dcaf0); }
 .topic-gradient-python { background: linear-gradient(135deg, #3776ab, #ffd43b); }
 .topic-gradient-java { background: linear-gradient(135deg, #ed8b00, #007396); }
 .topic-gradient-cpp { background: linear-gradient(135deg, #00599c, #004482); }

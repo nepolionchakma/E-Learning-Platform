@@ -1,0 +1,344 @@
+{
+  "title": "Networking",
+  "icon": "🌐",
+  "description": "Complete networking guide from fundamentals to advanced concepts",
+  "stages": [
+    {
+      "title": "Stage 1: Networking Fundamentals",
+      "commands": [
+        {
+          "name": "OSI Model (7 Layers)",
+          "rows": [
+            ["Layer 7: Application", "HTTP, HTTPS, FTP, SMTP, DNS", "User-facing protocols", "john@pc:~$ curl -I https://example.com\nHTTP/2 200\n(Application layer - HTTP)"],
+            ["Layer 6: Presentation", "SSL/TLS, Encryption, Compression", "Data format & encryption", "john@pc:~$ openssl s_client -connect example.com:443\n(Handles TLS encryption)"],
+            ["Layer 5: Session", "Session management, NetBIOS, RPC", "Establish/manage sessions", "john@pc:~$ ssh user@host\n(Session layer - SSH connection)"],
+            ["Layer 4: Transport", "TCP, UDP, Ports", "Reliable/unreliable delivery", "john@pc:~$ ss -tuln | grep :80\n(Transport - TCP/UDP ports)"],
+            ["Layer 3: Network", "IP, ICMP, Routing", "Packet forwarding & routing", "john@pc:~$ ip route\n(Network layer - IP routing)"],
+            ["Layer 2: Data Link", "Ethernet, MAC, ARP, Switch", "Frames & MAC addresses", "john@pc:~$ ip neigh\n(Data link - MAC addresses)"],
+            ["Layer 1: Physical", "Cables, Hubs, Fiber, Radio", "Raw bit transmission", "(Physical medium - copper/fiber/wireless)"]
+          ]
+        },
+        {
+          "name": "TCP/IP Model (4 Layers)",
+          "rows": [
+            ["Application Layer", "HTTP, DNS, FTP, SSH, SMTP", "Application protocols", "Combines OSI layers 5-7"],
+            ["Transport Layer", "TCP, UDP", "End-to-end communication", "Port numbers, segmentation"],
+            ["Internet Layer", "IP, ICMP, ARP", "Packet routing", "IP addressing, routing protocols"],
+            ["Network Access", "Ethernet, WiFi, PPP", "Physical transmission", "MAC addresses, framing"]
+          ]
+        },
+        {
+          "name": "Key Networking Concepts",
+          "rows": [
+            ["Bandwidth vs Latency", "Speed vs Delay", "Bandwidth=capacity, Latency=delay", "Bandwidth: 1 Gbps\nLatency: 12ms ping"],
+            ["Half vs Full Duplex", "Data flow direction", "Half=one way, Full=both ways", "Full duplex: phone call\nHalf duplex: walkie-talkie"],
+            ["Unicast vs Multicast vs Broadcast", "Delivery methods", "Uni=1, Multi=group, Broad=all", "Unicast: HTTP request\nBroadcast: ARP request"],
+            ["MSS vs MTU", "Packet sizes", "MTU=1500, MSS=1460", "ifconfig shows MTU\nping -M do -s 1472 tests MTU"]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 2: IP Addressing & Subnetting",
+      "commands": [
+        {
+          "name": "IPv4 Addressing",
+          "rows": [
+            ["192.168.1.1/24", "Example IP with CIDR", "/24 = 255.255.255.0 = 256 addresses", "Network: 192.168.1.0\nBroadcast: 192.168.1.255\nUsable: 192.168.1.1 - 192.168.1.254"],
+            ["10.0.0.1/8", "Class A private range", "10.0.0.0 - 10.255.255.255", "16,777,214 usable addresses\nCommon in enterprise networks"],
+            ["172.16.0.1/12", "Class B private range", "172.16.0.0 - 172.31.255.255", "1,048,574 usable addresses\nAWS default VPC range"],
+            ["192.168.0.1/16", "Class C private range", "192.168.0.0 - 192.168.255.255", "65,534 usable addresses\nHome router default"],
+            ["ip a", "Check own IP", "Show all interface IPs", "john@pc:~$ ip a\neth0: inet 192.168.1.100/24 brd 192.168.1.255"],
+            ["ip addr add 10.0.0.5/24 dev eth0", "Add temp IP", "Add IP to interface", "john@pc:~$ ip addr add 10.0.0.5/24 dev eth0\njohn@pc:~$ ip a show eth0\ninet 10.0.0.5/24 scope global eth0"]
+          ]
+        },
+        {
+          "name": "Subnetting",
+          "rows": [
+            ["/24 = 255.255.255.0 = 256 IPs", "Common subnet sizes", "/24 = 254 hosts", "Subnet mask: 255.255.255.0\nCIDR: /24"],
+            ["/16 = 255.255.0.0 = 65,536 IPs", "Large subnet", "/16 = 65,534 hosts", "B class subnet, large organization"],
+            ["/28 = 255.255.255.240 = 16 IPs", "Small subnet", "/28 = 14 hosts", "AWS VPC subnet size\nGood for small workloads"],
+            ["/30 = 255.255.255.252 = 4 IPs", "Point-to-point link", "/30 = 2 hosts", "Used for router-to-router links\nOnly 2 usable IPs"],
+            ["192.168.1.0/26", "Subnet example", "/26 = 64 IPs, 62 hosts", "Network: 192.168.1.0\nFirst: 192.168.1.1\nLast: 192.168.1.62\nBroadcast: 192.168.1.63"],
+            ["Subnet calculator: 2^(32-CIDR) = IPs", "Formula", "/24 = 2^8 = 256 IPs", "/26 = 2^6 = 64 IPs\n/28 = 2^4 = 16 IPs"]
+          ]
+        },
+        {
+          "name": "IPv6 Basics",
+          "rows": [
+            ["fe80::1", "IPv6 link-local", "Auto-configured, not routable", "fe80::/64 - link-local addresses\nEvery interface gets one"],
+            ["2001:db8::/32", "Documentation prefix", "Used in examples/docs", "Similar to 192.0.2.0/24 for IPv4 examples"],
+            ["ip -6 a", "Show IPv6 addresses", "List IPv6 configs", "john@pc:~$ ip -6 a\neth0: inet6 fe80::21a:2bff:fe3c:4d5e/64 scope link"]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 3: DNS (Domain Name System)",
+      "commands": [
+        {
+          "name": "DNS Records & Lookups",
+          "rows": [
+            ["A record: example.com -> 93.184.216.34", "Address record (IPv4)", "Maps domain to IP", "dig +short example.com\n93.184.216.34"],
+            ["AAAA record: -> 2606:2800:220::1", "Address record (IPv6)", "Maps domain to IPv6", "dig AAAA +short example.com\n2606:2800:220::1"],
+            ["CNAME: www -> example.com", "Canonical name (alias)", "Maps domain to another domain", "dig CNAME +short www.example.com\nexample.com"],
+            ["MX record: @ -> mail.example.com (priority 10)", "Mail exchange", "Routes email delivery", "dig MX +short gmail.com\n5 gmail-smtp-in.l.google.com."],
+            ["TXT: v=spf1 include:_spf.google.com ~all", "Text record", "SPF, DKIM, DMARC for email", "dig TXT +short example.com\n\"v=spf1 mx ~all\""],
+            ["NS: example.com -> ns1.example.com", "Name server", "Authoritative DNS servers", "dig NS +short example.com\nns1.example.com\nns2.example.com"],
+            ["PTR: 34.216.184.93 -> example.com", "Reverse lookup (PTR)", "IP to domain mapping", "dig -x 93.184.216.34 +short\nexample.com"],
+            ["SOA record", "Start of Authority", "Primary DNS server info", "dig SOA +short example.com\nns1.example.com admin.example.com 2026051401"]
+          ]
+        },
+        {
+          "name": "DNS Tools & Resolution",
+          "rows": [
+            ["dig example.com", "Detailed DNS query", "Full response from DNS server", "john@pc:~$ dig example.com\n;; QUESTION SECTION:\n;example.com.           IN  A\n;; ANSWER SECTION:\nexample.com.    3600    IN  A    93.184.216.34"],
+            ["dig +short example.com", "Just the IP", "Minimum output", "john@pc:~$ dig +short example.com\n93.184.216.34"],
+            ["nslookup example.com", "Simple DNS lookup", "Basic query tool", "john@pc:~$ nslookup example.com\nServer: 192.168.1.1\nAddress: 93.184.216.34"],
+            ["host example.com", "Quick lookup", "Simple, fast", "john@pc:~$ host example.com\nexample.com has address 93.184.216.34"],
+            ["dig @8.8.8.8 example.com", "Query specific DNS server", "Use Google DNS resolver", "john@pc:~$ dig @8.8.8.8 example.com\n(Query sent to Google DNS)"],
+            ["dig +trace example.com", "DNS resolution path", "Trace from root to authoritative", "john@pc:~$ dig +trace example.com\n(root) -> .com TLD -> example.com authoritative"]
+          ]
+        },
+        {
+          "name": "DNS Records & Resolution",
+          "rows": [
+            ["cat /etc/resolv.conf", "DNS resolver config", "Configured DNS servers", "john@pc:~$ cat /etc/resolv.conf\nnameserver 192.168.1.1\nnameserver 8.8.8.8"],
+            ["cat /etc/hosts", "Static host mapping", "Local overrides DNS", "john@pc:~$ cat /etc/hosts\n127.0.0.1   localhost\n192.168.1.100  dev-server.local"],
+            ["DNS propagation", "Time to update globally", "TTL determines propagation time", "dig example.com +ttlid\nexample.com. 3600 IN A ... (TTL=1 hour)"]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 4: HTTP & Web Protocols",
+      "commands": [
+        {
+          "name": "HTTP Methods & Status Codes",
+          "rows": [
+            ["GET /api/users HTTP/1.1", "Fetch resource", "Safe, idempotent, cached", "curl -X GET https://api.example.com/users"],
+            ["POST /api/users HTTP/1.1", "Create resource", "Not safe, not idempotent", "curl -X POST -d '{\"name\":\"John\"}' -H 'Content-Type: application/json' https://api.example.com/users"],
+            ["PUT /api/users/1 HTTP/1.1", "Update/replace resource", "Idempotent", "curl -X PUT -d '{\"name\":\"Jane\"}' https://api.example.com/users/1"],
+            ["PATCH /api/users/1 HTTP/1.1", "Partial update", "Modify specific fields", "curl -X PATCH -d '{\"email\":\"j@t.com\"}' https://api.example.com/users/1"],
+            ["DELETE /api/users/1 HTTP/1.1", "Delete resource", "Idempotent", "curl -X DELETE https://api.example.com/users/1"],
+            ["200 OK", "Success", "Request succeeded", "curl -I https://example.com\nHTTP/1.1 200 OK"],
+            ["201 Created", "Resource created", "POST success", "HTTP/1.1 201 Created\nLocation: /api/users/123"],
+            ["301 Moved Permanently", "Redirect (permanent)", "Resource moved", "curl -I http://example.com\nHTTP/1.1 301 Moved Permanently\nLocation: https://example.com"],
+            ["400 Bad Request", "Client error", "Invalid request", "HTTP/1.1 400 Bad Request\n{\"error\":\"Validation failed\"}"],
+            ["401 Unauthorized", "Authentication required", "Login needed", "curl -I https://api.example.com/private\nHTTP/1.1 401 Unauthorized"],
+            ["403 Forbidden", "No permission", "Authenticated but denied", "HTTP/1.1 403 Forbidden"],
+            ["404 Not Found", "Resource missing", "URI doesn't exist", "HTTP/1.1 404 Not Found"],
+            ["500 Internal Server Error", "Server error", "Generic server failure", "HTTP/1.1 500 Internal Server Error"],
+            ["502 Bad Gateway", "Upstream failed", "Proxy/load balancer error", "HTTP/1.1 502 Bad Gateway"],
+            ["503 Service Unavailable", "Temporary overload", "Server too busy/offline", "HTTP/1.1 503 Service Unavailable"],
+            ["504 Gateway Timeout", "Upstream timeout", "Proxy timed out", "HTTP/1.1 504 Gateway Timeout"]
+          ]
+        },
+        {
+          "name": "HTTP Headers",
+          "rows": [
+            ["curl -I https://example.com", "View response headers", "Shows server response headers", "john@pc:~$ curl -I https://example.com\nHTTP/2 200\ncontent-type: text/html\nserver: nginx\nset-cookie: session=abc123"],
+            ["curl -v https://example.com 2>&1 | grep -i '> '", "View request headers", "Show what browser sends", "john@pc:~$ curl -v https://example.com\n> GET / HTTP/2\n> Host: example.com\n> User-Agent: curl/8.0\n> Accept: */*"],
+            ["curl -H \"Authorization: Bearer token123\" https://api.example.com", "Send auth header", "Bearer token authentication", "curl -H \"Authorization: Bearer eyJhbGci...\" https://api.example.com"],
+            ["curl -H \"Content-Type: application/json\" -d '{\"key\":\"value\"}' https://api.example.com", "JSON content type", "Tell server request is JSON", "curl -X POST -H \"Content-Type: application/json\" -d '{\"name\":\"John\"}' https://api.example.com/users"],
+            ["Common headers", "Reference", "Standard HTTP headers", "Content-Type, Authorization, Accept, Cache-Control, Cookie, User-Agent, Referer, Origin, Host"]
+          ]
+        },
+        {
+          "name": "HTTPS & TLS",
+          "rows": [
+            ["openssl s_client -connect example.com:443 -servername example.com", "Inspect TLS certificate", "Check SSL cert details", "john@pc:~$ openssl s_client -connect example.com:443\nCertificate:\n  Subject: CN = example.com\n  Issuer: C = US, O = Let's Encrypt\n  Not Before: May 14 00:00:00 2026 GMT\n  Not After: Aug 12 00:00:00 2026 GMT"],
+            ["echo | openssl s_client -connect example.com:443 2>/dev/null | openssl x509 -text | grep \"Subject:\"", "Get certificate subject", "Extract subject line", "john@pc:~$ echo | openssl s_client -connect example.com:443 2>/dev/null | openssl x509 -text | grep \"Subject:\"\nSubject: CN = example.com"],
+            ["TLS handshake overview", "How HTTPS works", "1. Client Hello -> 2. Server Hello + Cert -> 3. Key Exchange -> 4. Secure Connection", "~2 round trips, ~100ms overhead"],
+            ["curl -k https://self-signed.local", "Skip cert verification", "For testing only", "curl -k https://self-signed-cert.local\n(WARNING: bypasses verification)"]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 5: Network Tools & Diagnostics",
+      "commands": [
+        {
+          "name": "ping & traceroute",
+          "rows": [
+            ["ping -c 4 google.com", "Test connectivity", "4 ICMP packets", "john@pc:~$ ping -c 4 google.com\nPING google.com (142.250.80.46) 56(84) bytes\n64 bytes: icmp_seq=1 ttl=116 time=12.3ms\n64 bytes: icmp_seq=2 ttl=116 time=11.8ms\n--- statistics ---\n4 packets transmitted, 4 received, 0% packet loss"],
+            ["ping -c 1 -W 2 example.com", "Single ping with timeout", "Exit if no response in 2s", "john@pc:~$ ping -c 1 -W 2 192.168.1.200\nFrom 192.168.1.1 icmp_seq=1 Destination Host Unreachable"],
+            ["traceroute google.com", "Trace network path", "Show every hop to destination", "john@pc:~$ traceroute google.com\ntraceroute to google.com (142.250.80.46)\n 1  192.168.1.1  1.2ms\n 2  10.0.0.1     3.5ms\n 3  72.14.237.4  15.2ms\n 4  142.250.80.46 12.8ms"],
+            ["traceroute -n google.com", "Trace without DNS", "Faster, IPs only", "john@pc:~$ traceroute -n google.com\n 1  192.168.1.1  1.2ms\n 2  10.0.0.1     3.5ms\n 3  72.14.237.4  15.2ms"],
+            ["mtr google.com", "Continuous trace + ping", "Combined tool, real-time", "john@pc:~$ mtr google.com\n(real-time host: Loss% Snt Last Avg Best)\n 1. 192.168.1.1    0.0%  10  1.2  1.5  0.8"]
+          ]
+        },
+        {
+          "name": "curl & wget",
+          "rows": [
+            ["curl -I https://example.com", "HTTP headers only", "Check server status", "john@pc:~$ curl -I https://example.com\nHTTP/2 200\nserver: nginx/1.24"],
+            ["curl -L http://bit.ly/abc123", "Follow redirects", "Follow 3xx redirect chain", "john@pc:~$ curl -L -o /dev/null -s -w \"%{http_code}\" http://bit.ly/abc123\n200"],
+            ["curl -o file.zip -O https://example.com/file.zip", "Download file", "Save with progress", "john@pc:~$ curl -O https://example.com/file.zip\n  % Total    % Received % Xferd  Average Speed\n100 1024k  100 1024k    0     0   500k      0"],
+            ["curl -w \"\\nConnect: %{time_connect}s\\nTTFB: %{time_starttransfer}s\\nTotal: %{time_total}s\\n\" -o /dev/null -s https://example.com", "Timing breakdown", "Measure network performance", "john@pc:~$ curl -w \"...\" -o /dev/null -s https://example.com\nConnect: 0.045s\nTTFB: 0.120s\nTotal: 0.350s"],
+            ["curl --max-time 10 https://example.com", "Request timeout", "Cancel after 10 seconds", "john@pc:~$ curl --max-time 5 https://slow-api.example.com\ncurl: (28) Operation timed out after 5000ms"],
+            ["curl -x http://proxy:8080 https://example.com", "Use HTTP proxy", "Route through proxy", "john@pc:~$ curl -x http://192.168.1.50:3128 https://example.com\n(output via proxy)"],
+            ["curl ifconfig.me", "Check public IP", "Your internet IP", "john@pc:~$ curl ifconfig.me\n203.0.113.42"],
+            ["wget -c https://example.com/large-file.iso", "Resume download", "Continue interrupted download", "john@pc:~$ wget -c https://example.com/large-file.iso\nResuming download... 50% received."],
+            ["wget --mirror -p --convert-links https://example.com", "Mirror website", "Download entire site offline", "john@pc:~$ wget --mirror -p --convert-links https://example.com\n(mirrors site for offline browsing)"]
+          ]
+        },
+        {
+          "name": "ss, netstat & nmap",
+          "rows": [
+            ["ss -tuln", "All listening ports", "TCP/UDP listening sockets", "john@pc:~$ ss -tuln\nNetid  State   Recv-Q  Send-Q  Local Address:Port\ntcp    LISTEN  0       128     0.0.0.0:22\ntcp    LISTEN  0       511     0.0.0.0:80\ntcp    LISTEN  0       128     0.0.0.0:443"],
+            ["ss -tulnp | grep nginx", "Port by process", "What's on this port?", "john@pc:~$ ss -tulnp | grep 80\ntcp LISTEN 0 511 0.0.0.0:80 users:((\"nginx\",pid=1234))"],
+            ["ss -tn state established", "Active connections", "Current TCP connections", "john@pc:~$ ss -tn state established\nRecv-Q Send-Q Local Address:Port   Peer Address:Port\n0      0      192.168.1.100:443    104.25.0.1:80"],
+            ["ss -s", "Socket statistics", "Summary of all connections", "john@pc:~$ ss -s\nTotal: 345 (kernel 0)\nTCP:   12 (established 3, closed 0, orphaned 0)\nUDP:   5"],
+            ["nmap -sT 192.168.1.1", "TCP port scan", "Scan common ports", "john@pc:~$ nmap -sT 192.168.1.1\nStarting Nmap 7.80\nPORT     STATE    SERVICE\n22/tcp   open     ssh\n80/tcp   open     http\n443/tcp  open     https\n8080/tcp closed  http-alt"],
+            ["nmap -sV 192.168.1.1", "Version detection", "Detect service versions", "john@pc:~$ nmap -sV 192.168.1.1\n22/tcp  open  ssh     OpenSSH 8.2p1\n80/tcp  open  http    nginx 1.24.0"],
+            ["nmap -sn 192.168.1.0/24", "Ping scan (host discovery)", "Find active hosts on network", "john@pc:~$ nmap -sn 192.168.1.0/24\nNmap done: 256 IP addresses (5 hosts up)"]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 6: Routing & Network Configuration",
+      "commands": [
+        {
+          "name": "Routing Table",
+          "rows": [
+            ["ip route", "Show routing table", "Default gateway + routes", "john@pc:~$ ip route\ndefault via 192.168.1.1 dev eth0\n192.168.1.0/24 dev eth0 proto kernel scope link src 192.168.1.100\n10.0.0.0/8 via 10.0.0.1 dev eth0"],
+            ["ip route get 8.8.8.8", "Test routing", "Which interface for IP?", "john@pc:~$ ip route get 8.8.8.8\n8.8.8.8 via 192.168.1.1 dev eth0 src 192.168.1.100 uid 1000"],
+            ["route -n", "Old routing table", "Legacy command", "john@pc:~$ route -n\nDestination     Gateway         Genmask         Flags Metric Ref\n0.0.0.0         192.168.1.1     0.0.0.0         UG    100    0 eth0\n192.168.1.0     0.0.0.0         255.255.255.0   U     100    0 eth0"],
+            ["ip route add 10.0.0.0/8 via 192.168.1.100 dev eth0", "Add static route", "Route to another network", "john@pc:~$ ip route add 10.0.0.0/8 via 192.168.1.100 dev eth0\njohn@pc:~$ ip route\n10.0.0.0/8 via 192.168.1.100 dev eth0"],
+            ["ip route del 10.0.0.0/8", "Delete route", "Remove static route", "john@pc:~$ ip route del 10.0.0.0/8\njohn@pc:~$ ip route\n(route removed)"]
+          ]
+        },
+        {
+          "name": "Interface Configuration",
+          "rows": [
+            ["ip link show eth0", "Interface status", "UP/DOWN, MAC, MTU", "john@pc:~$ ip link show eth0\n2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP\n    link/ether 00:1a:2b:3c:4d:5e brd ff:ff:ff:ff:ff:ff"],
+            ["ip link set eth0 up/down", "Toggle interface", "Bring up/down", "john@pc:~$ ip link set eth0 down\njohn@pc:~$ ip link set eth0 up\n(state changes)"],
+            ["ip -s link", "Interface statistics", "Packets, errors, drops", "john@pc:~$ ip -s link\neth0: RX: bytes  packets  errors  drop\n          1.5G    1.2M    0       0\n      TX: 500M    500K    0       0"],
+            ["ethtool eth0", "NIC driver info", "Speed, duplex, driver", "john@pc:~$ ethtool eth0\nSpeed: 1000Mb/s\nDuplex: Full\nPort: Twisted Pair\nLink detected: yes"]
+          ]
+        },
+        {
+          "name": "ARP & MAC",
+          "rows": [
+            ["ip neigh", "ARP cache", "IP to MAC mappings", "john@pc:~$ ip neigh\n192.168.1.1 dev eth0 lladdr 00:11:22:33:44:55 REACHABLE\n192.168.1.200 dev eth0 lladdr 66:77:88:99:aa:bb STALE"],
+            ["arp -n", "Old ARP table", "Legacy command", "john@pc:~$ arp -n\nAddress          HWtype  HWaddress           Flags Mask\n192.168.1.1      ether   00:11:22:33:44:55   C"],
+            ["arping 192.168.1.1", "Ping using ARP", "Layer 2 ping", "john@pc:~$ arping -c 3 192.168.1.1\nARPING 192.168.1.1\n60 bytes from 00:11:22:33:44:55 (192.168.1.1): index=0 time=1.2ms"]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 7: Firewall & Security",
+      "commands": [
+        {
+          "name": "UFW (Uncomplicated Firewall)",
+          "rows": [
+            ["sudo ufw status verbose", "Check firewall status", "Active/inactive + rules", "john@pc:~$ sudo ufw status verbose\nStatus: active\nLogging: on (low)\nDefault: deny (incoming), allow (outgoing)"],
+            ["sudo ufw allow 22/tcp", "Allow SSH", "Open port 22", "john@pc:~$ sudo ufw allow 22/tcp\nRule added\nRule added (v6)"],
+            ["sudo ufw allow 80,443/tcp", "Allow HTTP/HTTPS", "Open web ports", "john@pc:~$ sudo ufw allow 80,443/tcp\nRule added"],
+            ["sudo ufw deny 8080", "Block port", "Reject port 8080", "john@pc:~$ sudo ufw deny 8080\nRule added"],
+            ["sudo ufw allow from 192.168.1.0/24 to any port 22", "Restrict SSH to LAN", "SSH only from local subnet", "john@pc:~$ sudo ufw allow from 192.168.1.0/24 to any port 22\nRule added"],
+            ["sudo ufw delete deny 8080", "Remove rule", "Delete by rule number", "john@pc:~$ sudo ufw status numbered\n[1] 22/tcp ALLOW\n[2] 8080 DENY\njohn@pc:~$ sudo ufw delete 2\nDeleting:\nDeny 8080"],
+            ["sudo ufw logging on", "Enable logging", "Log blocked connections", "john@pc:~$ sudo ufw logging on\nLogging enabled"],
+            ["sudo ufw reset", "Reset to defaults", "Clear all rules", "john@pc:~$ sudo ufw reset\nResetting all rules... done"]
+          ]
+        },
+        {
+          "name": "iptables Basics",
+          "rows": [
+            ["sudo iptables -L -n -v", "List all rules", "Show current firewall chains", "john@pc:~$ sudo iptables -L -n -v\nChain INPUT (policy ACCEPT 0 packets, 0 bytes)\n pkts bytes target     prot opt in     out     source   destination\n  100  5000 ACCEPT     tcp  --  *      *       0.0.0.0/0 0.0.0.0/0 tcp dpt:22"],
+            ["sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT", "Allow SSH", "Add rule to accept SSH", "john@pc:~$ sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT\n(rule added)"],
+            ["sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT", "Allow HTTP", "Open port 80", "john@pc:~$ sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT"],
+            ["sudo iptables -P INPUT DROP", "Default deny incoming", "Drop all by default", "john@pc:~$ sudo iptables -P INPUT DROP\n(CAUTION: will block SSH if not allowed above)"],
+            ["sudo iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT", "Allow established", "Permit return traffic", "john@pc:~$ sudo iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT"],
+            ["sudo iptables-save > /etc/iptables/rules.v4", "Save iptables rules", "Persist across reboot", "john@pc:~$ sudo iptables-save > /etc/iptables/rules.v4\n(rules saved)"]
+          ]
+        },
+        {
+          "name": "Network Security Best Practices",
+          "rows": [
+            ["Disable root SSH login", "Security hardening", "Edit /etc/ssh/sshd_config", "PermitRootLogin no\n(prevents direct root SSH)"],
+            ["Change default SSH port", "Reduce bot attacks", "Port 2222 instead of 22", "Port 2222\n(then sudo ufw allow 2222)"],
+            ["Fail2Ban protection", "Brute force prevention", "Bans IP after failed attempts", "sudo apt install fail2ban\n(jails: sshd, nginx-http-auth)"],
+            ["Use VPN for remote access", "Encrypted tunnel", "WireGuard, OpenVPN", "WireGuard: fast, modern VPN\nOpenVPN: widely compatible"],
+            ["Regular security audits", "Check for vulnerabilities", "nmap, Lynis, OpenVAS", "nmap -sV --script vuln target"]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 8: Load Balancing & Proxies",
+      "commands": [
+        {
+          "name": "NGINX as Reverse Proxy",
+          "rows": [
+            ["# nginx reverse proxy config\\nserver {\\n  listen 80;\\n  server_name app.example.com;\\n  location / {\\n    proxy_pass http://localhost:3000;\\n    proxy_set_header Host $host;\\n    proxy_set_header X-Real-IP $remote_addr;\\n  }\\n}", "Reverse proxy config", "Forward requests to backend", "sudo nginx -t\nnginx: configuration test is successful\nsudo systemctl reload nginx"],
+            ["# Load balancing\\nupstream backend {\\n  server 10.0.0.1:3000 weight=3;\\n  server 10.0.0.2:3000 weight=2;\\n  server 10.0.0.3:3000 backup;\\n}\\nserver {\\n  listen 80;\\n  location / {\\n    proxy_pass http://backend;\\n  }\\n}", "Load balancer config", "Distribute traffic across servers", "Round-robin with weights\n10.0.0.1 gets 60%\n10.0.0.2 gets 40%\n10.0.0.3 is backup"]
+          ]
+        },
+        {
+          "name": "Load Balancing Concepts",
+          "rows": [
+            ["Round Robin", "Distributes evenly", "Each request goes to next server", "Simple, works for equal-capacity servers"],
+            ["Least Connections", "Smart distribution", "Send to server with fewest connections", "Good for varying request durations"],
+            ["IP Hash (Sticky sessions)", "Session persistence", "Same client goes to same server", "Useful for session state apps"],
+            ["Health checks", "Remove unhealthy servers", "Periodic pings to backend", "NGINX: health_check directive\nAWS: Target Group health checks"],
+            ["SSL Termination", "Offload SSL processing", "Proxy handles HTTPS, backend uses HTTP", "Reduces backend CPU load\nSimplifies cert management"]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 9: VPN & Tunneling",
+      "commands": [
+        {
+          "name": "SSH Tunneling",
+          "rows": [
+            ["ssh -L 8080:localhost:80 user@remote-host", "Local port forwarding", "Access remote service locally", "john@pc:~$ ssh -L 8080:localhost:80 user@remote-host\njohn@pc:~$ curl http://localhost:8080\n(accesses remote-host:80 via localhost:8080)"],
+            ["ssh -R 8080:localhost:3000 user@remote-host", "Remote port forwarding", "Expose local service remotely", "john@pc:~$ ssh -R 8080:localhost:3000 user@remote-host\n(remote-host:8080 forwards to localhost:3000)"],
+            ["ssh -D 1080 user@remote-host", "SOCKS proxy", "Proxy all traffic through SSH", "john@pc:~$ ssh -D 1080 user@remote-host\n(Browser config: SOCKS5 proxy localhost:1080)"],
+            ["ssh -J jump-user@jump-host user@target-host", "Jump host / bastion", "SSH through intermediate server", "john@pc:~$ ssh -J jump-user@jump-host user@target-host\n(connects to target via jump-host)"]
+          ]
+        },
+        {
+          "name": "WireGuard VPN",
+          "rows": [
+            ["# Server config (wg0.conf)\\n[Interface]\\nAddress = 10.0.0.1/24\\nListenPort = 51820\\nPrivateKey = server_private_key\\n\\n[Peer]\\nPublicKey = client_public_key\\nAllowedIPs = 10.0.0.2/32", "WireGuard server config", "VPN tunnel config", "sudo wg-quick up wg0\n(interface created)"],
+            ["# Client config\\n[Interface]\\nAddress = 10.0.0.2/24\\nPrivateKey = client_private_key\\n\\n[Peer]\\nPublicKey = server_public_key\\nEndpoint = server.com:51820\\nAllowedIPs = 10.0.0.0/24, 192.168.1.0/24", "WireGuard client config", "Connect to VPN server", "sudo wg-quick up wg0\n(connected to VPN)"],
+            ["sudo wg show", "Check WireGuard status", "Show tunnel stats", "john@pc:~$ sudo wg show\ninterface: wg0\n  public key: ...\npeer: ...\n  endpoint: 203.0.113.42:51820\n  allowed ips: 10.0.0.0/24\n  latest handshake: 1 minute ago\n  transfer: 1.2 GiB received, 500 MiB sent"]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 10: Network Troubleshooting",
+      "commands": [
+        {
+          "name": "Connectivity Issues",
+          "rows": [
+            ["ping 127.0.0.1", "Test local stack", "Loopback test (should always work)", "john@pc:~$ ping -c 1 127.0.0.1\n64 bytes from 127.0.0.1: icmp_seq=1 ttl=64 time=0.03ms\n(Local network stack OK)"],
+            ["ping 192.168.1.1", "Test local gateway", "Router reachable?", "john@pc:~$ ping -c 2 192.168.1.1\n64 bytes: time=1.2ms\n(Gateway reachable - LAN OK)"],
+            ["ping 8.8.8.8", "Test internet access", "External IP reachable?", "john@pc:~$ ping -c 2 8.8.8.8\n64 bytes: time=15ms\n(Internet OK - but DNS may still fail)"],
+            ["dig +short google.com", "Test DNS resolution", "Domain resolves?", "john@pc:~$ dig +short google.com\n142.250.80.46\n(DNS working)"],
+            ["curl -I https://google.com", "Test web access", "Full HTTP/HTTPS test", "john@pc:~$ curl -I https://google.com\nHTTP/2 200\n(Everything OK)"],
+            ["ip a", "Check interface status", "Is eth0 up? Has IP?", "john@pc:~$ ip a\neth0: state UP, inet 192.168.1.100/24\n(Interface is up with IP)"],
+            ["ss -tuln | grep :80", "Check if web server running", "Is port 80 open?", "john@pc:~$ ss -tuln | grep :80\ntcp LISTEN 0 511 0.0.0.0:80\n(Web server is listening)"]
+          ]
+        },
+        {
+          "name": "Common Network Errors",
+          "rows": [
+            ["Destination Host Unreachable", "No route to host", "Wrong subnet or down", "Check: ip route, ip a, cable connection"],
+            ["Connection Timed Out", "No response received", "Firewall or server down", "Check: ping, firewall rules, server status"],
+            ["Connection Refused", "Port not open", "Service not running or wrong port", "Check: ss -tuln, systemctl status, port number"],
+            ["Network is Unreachable", "No route at all", "Interface down or no gateway", "Check: ip link, ip route, network cable"],
+            ["DNS Resolution Failure", "Cannot resolve hostname", "DNS server unreachable or misconfigured", "Check: cat /etc/resolv.conf, dig, nslookup"],
+            ["Name or service not known", "DNS lookup failed", "Domain doesn't exist", "Check: typos, DNS records, dig +trace"],
+            ["TLS/SSL Errors", "Certificate issues", "Expired, self-signed, wrong host", "Check: openssl s_client, date, cert expiry"]
+          ]
+        }
+      ]
+    }
+  ]
+}

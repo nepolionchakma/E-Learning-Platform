@@ -104,6 +104,14 @@
     "bgColor": "from-green-600 to-green-800"
   },
   {
+    "slug": "networking",
+    "title": "Networking",
+    "description": "Complete networking guide. OSI model, TCP/IP, DNS, HTTP, subnetting, routing, firewalls, VPNs, and network tools.",
+    "gradientClass": "topic-gradient-networking",
+    "icon": "🌐",
+    "bgColor": "from-blue-600 to-teal-500"
+  },
+  {
     "slug": "python",
     "title": "Python",
     "description": "Versatile programming. Data structures, OOP, modules, file I/O, web frameworks, automation and scripting.",
