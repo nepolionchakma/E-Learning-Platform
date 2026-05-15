@@ -1,0 +1,499 @@
+{
+  "title": "Bash/Shell Scripting",
+  "icon": "âŒ¨ï¸",
+  "description": "Complete shell scripting reference: variables, control flow, functions, text processing, automation, and best practices",
+  "stages": [
+    {
+      "title": "Stage 1: Scripting Basics",
+      "commands": [
+        {
+          "name": "Script Structure & Shebang",
+          "rows": [
+            [
+              "#!/bin/bash\necho \"Hello\"",
+              "Basic script",
+              "Shebang + echo command",
+              "john@pc:~$ nano hello.sh\n#!/bin/bash\necho \"Hello World\"\njohn@pc:~$ bash hello.sh\nHello World"
+            ]
+          ]
+        },
+        {
+          "name": "Variables",
+          "rows": [
+            [
+              "name=\"John\"\necho \"Hello $name\"",
+              "Define and use",
+              "No spaces around =",
+              "john@pc:~$ nano var.sh\n#!/bin/bash\nname=\"John\"\necho \"Hello $name\"\njohn@pc:~$ bash var.sh\nHello John"
+            ],
+            [
+              "readonly PI=3.14\nPI=3.15",
+              "Readonly variable",
+              "Cannot be changed",
+              "john@pc:~$ readonly PI=3.14\njohn@pc:~$ PI=3.15\nbash: PI: readonly variable"
+            ],
+            [
+              "echo ${#name}",
+              "String length",
+              "Count characters",
+              "john@pc:~$ name=\"Hello\"\njohn@pc:~$ echo ${#name}\n5"
+            ]
+          ]
+        },
+        {
+          "name": "Special Variables",
+          "rows": [
+            [
+              "echo \"Script: $0, Args: $1 $2\"",
+              "Positional args",
+              "$0 = script path",
+              "john@pc:~$ nano args.sh\n#!/bin/bash\necho \"Script: $0\"\necho \"First arg: $1\"\necho \"All args: $@\"\necho \"Count: $#\"\njohn@pc:~$ bash args.sh hello world\nScript: args.sh\nFirst arg: hello\nAll args: hello world\nCount: 2"
+            ],
+            [
+              "ls /exists\necho \"Exit: $?\"",
+              "Exit code",
+              "0 = success",
+              "john@pc:~$ ls /\nbin  home  usr\njohn@pc:~$ echo \"Exit: $?\"\n0\njohn@pc:~$ ls /nonexist 2>/dev/null\necho \"Exit: $?\"\n2"
+            ],
+            [
+              "echo \"PID: $$\necho \"Bg PID: $!\"",
+              "Process IDs",
+              "Current + background PID",
+              "john@pc:~$ echo \"Current PID: $$\n12345\njohn@pc:~$ sleep 5 &\n[1] 12346\njohn@pc:~$ echo \"Background PID: $!\"\n12346"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 2: Quotes & Strings",
+      "commands": [
+        {
+          "name": "Quote Types",
+          "rows": [
+            [
+              "name=\"John\"\necho 'Hello $name'",
+              "Single quotes (literal)",
+              "No expansion",
+              "john@pc:~$ name=\"John\"\njohn@pc:~$ echo 'Hello $name'\nHello $name"
+            ],
+            [
+              "name=\"John\"\necho \"Hello $name\"",
+              "Double quotes (expand)",
+              "Variables expand",
+              "john@pc:~$ name=\"John\"\njohn@pc:~$ echo \"Hello $name\"\nHello John"
+            ],
+            [
+              "echo -e \"Line1\\nLine2\"",
+              "Escape sequences",
+              "-e enables \\n \\t",
+              "john@pc:~$ echo -e \"Line1\\nLine2\"\nLine1\nLine2"
+            ]
+          ]
+        },
+        {
+          "name": "String Manipulation",
+          "rows": [
+            [
+              "msg=\"Hello World\"\necho ${msg:0:5}",
+              "Substring",
+              "${var:start:len}",
+              "john@pc:~$ msg=\"Hello World\"\njohn@pc:~$ echo ${msg:0:5}\nHello"
+            ],
+            [
+              "file=\"photo.jpg\"\necho ${file%.*}",
+              "Remove suffix",
+              "Strip extension",
+              "john@pc:~$ file=\"photo.jpg\"\njohn@pc:~$ echo ${file%.*}\nphoto"
+            ],
+            [
+              "str=\"Hello World\"\necho ${str/World/There}",
+              "Replace first",
+              "Substitute 1st match",
+              "john@pc:~$ str=\"Hello World\"\njohn@pc:~$ echo ${str/World/There}\nHello There"
+            ],
+            [
+              "str=\"foo foo\"\necho ${str//foo/bar}",
+              "Replace all",
+              "Global substitution",
+              "john@pc:~$ str=\"foo foo\"\njohn@pc:~$ echo ${str//foo/bar}\nbar bar"
+            ],
+            [
+              "str=\"Hello\"\necho ${str^^}\necho ${str,,}",
+              "Change case",
+              "^^=upper ,,=lower",
+              "john@pc:~$ str=\"Hello\"\njohn@pc:~$ echo ${str^^}\nHELLO\njohn@pc:~$ echo ${str,,}\nhello"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 3: Arrays",
+      "commands": [
+        {
+          "name": "Indexed Arrays",
+          "rows": [
+            [
+              "names=(\"Nabil\" \"Minhaz\" \"Fazlul\" \"Yasin\")",
+              "Create and access",
+              "Index starts at 0",
+              "john@pc:~$ nano for-array.sh\n#!/bin/bash\n# Define an array\nnames=(\"Nabil\" \"Minhaz\" \"Fazlul\" \"Yasin\")\n\n# Loop through the array\nfor name in \"${names[@]}\"; do\n  echo \"Hello, $name!\"\ndone\njohn@pc:~$ bash for-array.sh\nHello, Nabil!\nHello, Minhaz!\nHello, Fazlul!\nHello, Yasin!"
+            ],
+            [
+              "echo ${#names[@]}",
+              "Array length",
+              "Element count",
+              "john@pc:~$ names=(\"a\" \"b\" \"c\")\njohn@pc:~$ echo ${#names[@]}\n3"
+            ],
+            [
+              "unset names[1]\necho ${names[@]}",
+              "Remove element",
+              "Delete by index",
+              "john@pc:~$ names=(\"a\" \"b\" \"c\")\njohn@pc:~$ unset names[1]\njohn@pc:~$ echo ${names[@]}\na c"
+            ],
+            [
+              "for f in \"${fruits[@]}\"; do echo \"$f\"; done",
+              "Loop through array",
+              "Iterate safely",
+              "john@pc:~$ fruits=(\"Apple\" \"Banana\" \"Cherry\")\njohn@pc:~$ for f in \"${fruits[@]}\"; do echo \"$f\"; done\nApple\nBanana\nCherry"
+            ]
+          ]
+        },
+        {
+          "name": "Associative Arrays (Bash 4+)",
+          "rows": [
+            [
+              "declare -A user\nuser[name]=\"John\"\nuser[age]=25\necho ${user[name]}",
+              "Key-value array",
+              "declare -A required",
+              "john@pc:~$ nano user.sh\n#!/bin/bash\ndeclare -A user\nuser[name]=\"John\"\nuser[age]=25\nuser[city]=\"NYC\"\necho \"Name: ${user[name]}\"\necho \"Age: ${user[age]}\"\necho \"City: ${user[city]}\"\njohn@pc:~$ bash user.sh\nName: John\nAge: 25\nCity: NYC"
+            ],
+            [
+              "echo ${!user[@]}",
+              "All keys",
+              "List keys",
+              "john@pc:~$ declare -A user\nuser[name]=\"John\" user[age]=25\njohn@pc:~$ echo ${!user[@]}\nname age"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 4: Arithmetic",
+      "commands": [
+        {
+          "name": "Arithmetic Operations",
+          "rows": [
+            [
+              "x=5 y=3\necho $((x + y))\necho $((x * y))",
+              "Basic arithmetic",
+              "$(( )) for math",
+              "john@pc:~$ nano math.sh\n#!/bin/bash\nx=5\ny=3\necho \"Sum: $((x + y))\"\necho \"Product: $((x * y))\"\necho \"Division: $((x / y))\"\necho \"Remainder: $((x % y))\"\njohn@pc:~$ bash math.sh\nSum: 8\nProduct: 15\nDivision: 1\nRemainder: 2"
+            ],
+            [
+              "echo \"scale=2; 10/3\" | bc",
+              "Floating point with bc",
+              "bc calculator for decimals",
+              "john@pc:~$ echo \"scale=2; 10/3\" | bc\n3.33"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 5: Conditionals",
+      "commands": [
+        {
+          "name": "if/elif/else",
+          "rows": [
+            [
+              "if [ \"$1\" = \"hello\" ]; then echo \"Hi\"; fi",
+              "Simple if",
+              "String equality",
+              "john@pc:~$ nano greet.sh\n#!/bin/bash\nif [ \"$1\" = \"hello\" ]; then\n  echo \"Hi there!\"\nfi\njohn@pc:~$ bash greet.sh hello\nHi there!"
+            ],
+            [
+              "if [ $age -ge 18 ]; then echo \"Adult\"; else echo \"Minor\"; fi",
+              "if/else",
+              "-ge = greater/equal",
+              "john@pc:~$ nano check-age.sh\n#!/bin/bash\nage=$1\nif [ $age -ge 18 ]; then\n  echo \"Adult ($age)\"\nelse\n  echo \"Minor ($age)\"\nfi\njohn@pc:~$ bash check-age.sh 20\nAdult (20)\njohn@pc:~$ bash check-age.sh 15\nMinor (15)"
+            ],
+            [
+              "if [ -f \"$1\" ]; then echo \"File\"; elif [ -d \"$1\" ]; then echo \"Dir\"; fi",
+              "File test",
+              "-f file, -d dir",
+              "john@pc:~$ nano check-file.sh\n#!/bin/bash\npath=\"$1\"\nif [ -f \"$path\" ]; then\n  echo \"File: $path\"\nelif [ -d \"$path\" ]; then\n  echo \"Directory: $path\"\nelse\n  echo \"Not found: $path\"\nfi\njohn@pc:~$ bash check-file.sh /etc/passwd\nFile: /etc/passwd\njohn@pc:~$ bash check-file.sh /etc\nDirectory: /etc"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 6: Loops",
+      "commands": [
+        {
+          "name": "for Loop",
+          "rows": [
+            [
+              "for name in \"Nabil\" \"Minhaz\" \"Fazlul\"; do echo \"Hello $name!\"; done",
+              "Loop over items",
+              "Iterate a list",
+              "john@pc:~$ nano for-list.sh\n#!/bin/bash\nfor name in \"Nabil\" \"Minhaz\" \"Fazlul\"; do\n  echo \"Hello $name!\"\ndone\njohn@pc:~$ bash for-list.sh\nHello Nabil!\nHello Minhaz!\nHello Fazlul!"
+            ],
+            [
+              "for i in {1..5}; do echo \"Number $i\"; done",
+              "Range expansion",
+              "{start..end}",
+              "john@pc:~$ nano for-range.sh\n#!/bin/bash\necho \"Counting to 5:\"\nfor i in {1..5}; do\n  echo \"Number $i\"\ndone\njohn@pc:~$ bash for-range.sh\nCounting to 5:\nNumber 1\nNumber 2\nNumber 3\nNumber 4\nNumber 5"
+            ],
+            [
+              "for (( i=1; i<=5; i++ )); do echo \"Count $i\"; done",
+              "C-style for",
+              "Init; condition; inc",
+              "john@pc:~$ nano for-cstyle.sh\n#!/bin/bash\nfor (( i=1; i<=5; i++ )); do\n  echo \"Count $i\"\ndone\njohn@pc:~$ bash for-cstyle.sh\nCount 1\nCount 2\nCount 3\nCount 4\nCount 5"
+            ],
+            [
+              "while IFS= read -r line; do echo \"$line\"; done < file.txt",
+              "Read file by line",
+              "Preserves whitespace",
+              "john@pc:~$ nano read-file.sh\n#!/bin/bash\nwhile IFS= read -r line; do\n  echo \"$line\"\ndone < \"$1\"\njohn@pc:~$ bash read-file.sh data.txt\nline 1 content\nline 2 content"
+            ],
+            [
+              "while [ $count -le 3 ]; do echo \"$count\"; ((count++)); done",
+              "while loop",
+              "Run while true",
+              "john@pc:~$ nano while-count.sh\n#!/bin/bash\ncount=1\nwhile [ $count -le 3 ]; do\n  echo \"Count: $count\"\n  ((count++))\ndone\njohn@pc:~$ bash while-count.sh\nCount: 1\nCount: 2\nCount: 3"
+            ],
+            [
+              "until [ $count -gt 3 ]; do echo \"$count\"; ((count++)); done",
+              "until loop",
+              "Run while false",
+              "john@pc:~$ nano until-count.sh\n#!/bin/bash\ncount=1\nuntil [ $count -gt 3 ]; do\n  echo \"Count: $count\"\n  ((count++))\ndone\njohn@pc:~$ bash until-count.sh\nCount: 1\nCount: 2\nCount: 3"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 7: Functions",
+      "commands": [
+        {
+          "name": "Function Basics",
+          "rows": [
+            [
+              "greet() { echo \"Hello $1!\"; }\ngreet \"World\"",
+              "Simple function",
+              "Define with () {}",
+              "john@pc:~$ nano func.sh\n#!/bin/bash\ngreet() {\n  echo \"Hello $1!\"\n}\ngreet \"World\"\njohn@pc:~$ bash func.sh\nHello World!"
+            ],
+            [
+              "add() { local sum=$(( $1 + $2 )); echo $sum; }\nresult=$(add 5 3)\necho $result",
+              "Return value",
+              "Capture with $()",
+              "john@pc:~$ nano add.sh\n#!/bin/bash\nadd() {\n  local sum=$(( $1 + $2 ))\n  echo $sum\n}\nresult=$(add 5 3)\necho \"Sum: $result\"\njohn@pc:~$ bash add.sh\nSum: 8"
+            ],
+            [
+              "func() { local var=\"local\"; }\nfunc\necho $var",
+              "Local scope",
+              "Local var not global",
+              "john@pc:~$ nano local.sh\n#!/bin/bash\nfunc() {\n  local var=\"local value\"\n  echo \"Inside: $var\"\n}\nfunc\necho \"Outside: $var\"\njohn@pc:~$ bash local.sh\nInside: local value\nOutside: "
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 8: Input & Output",
+      "commands": [
+        {
+          "name": "read & printf",
+          "rows": [
+            [
+              "read -p \"Name: \" name\necho \"Hello $name\"",
+              "Read with prompt",
+              "-p shows prompt",
+              "john@pc:~$ nano ask.sh\n#!/bin/bash\nread -p \"Enter your name: \" name\necho \"Hello $name!\"\njohn@pc:~$ bash ask.sh\nEnter your name: John\nHello John!"
+            ],
+            [
+              "printf \"Name: %s\\nAge: %d\\n\" \"John\" 25",
+              "Formatted output",
+              "%s=string, %d=int",
+              "john@pc:~$ printf \"Name: %s\\nAge: %d\\n\" \"John\" 25\nName: John\nAge: 25"
+            ],
+            [
+              "printf \"%-10s %s\\n\" \"Item\" \"Cost\"",
+              "Aligned columns",
+              "%-10s pads to 10",
+              "john@pc:~$ printf \"%-10s %s\\n\" \"Apples\" 50\nApples     50"
+            ],
+            [
+              "cat << EOF\nmulti-line\nEOF",
+              "Here-document",
+              "Multi-line stdin",
+              "john@pc:~$ cat << EOF\n> Hello\n> World\n> EOF\nHello\nWorld"
+            ],
+            [
+              "grep \"error\" <<< \"$log\"",
+              "Here-string",
+              "String as stdin",
+              "john@pc:~$ log=\"info: ok\\nerror: fail\"\njohn@pc:~$ grep \"error\" <<< \"$log\"\nerror: fail"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 9: Error Handling & Debugging",
+      "commands": [
+        {
+          "name": "Error Handling",
+          "rows": [
+            [
+              "set -euo pipefail",
+              "Strict mode",
+              "Exit on any error"
+            ],
+            [
+              "trap 'echo \"Error on line $LINENO\"' ERR",
+              "Error trap",
+              "Run on any error",
+              "john@pc:~$ nano trap-err.sh\n#!/bin/bash\ntrap 'echo \"Error on line $LINENO\"' ERR\nfalse\necho \"This wont run\"\njohn@pc:~$ bash trap-err.sh\nError on line 3"
+            ],
+            [
+              "trap cleanup EXIT",
+              "Exit trap",
+              "Runs on script exit",
+              "john@pc:~$ nano trap-exit.sh\n#!/bin/bash\ncleanup() { echo \"Cleaning up...\"; }\ntrap cleanup EXIT\necho \"Hello\"\njohn@pc:~$ bash trap-exit.sh\nHello\nCleaning up..."
+            ],
+            [
+              "trap 'echo \"Ctrl+C\"' INT",
+              "SIGINT trap",
+              "Handle Ctrl+C",
+              "john@pc:~$ nano trap-int.sh\n#!/bin/bash\ntrap 'echo \"You pressed Ctrl+C\"; exit 1' INT\necho \"Press Ctrl+C\"\nsleep 10\njohn@pc:~$ bash trap-int.sh\n^CYou pressed Ctrl+C"
+            ]
+          ]
+        },
+        {
+          "name": "Debugging",
+          "rows": [
+            [
+              "bash -x script.sh",
+              "Trace execution",
+              "Shows each command before run",
+              "john@pc:~$ bash -x hello.sh\n+ echo Hello World\nHello World"
+            ],
+            [
+              "bash -n script.sh",
+              "Syntax check",
+              "Check without running",
+              "john@pc:~$ bash -n hello.sh\n(no output = valid syntax)"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 10: Redirection & Text Processing",
+      "commands": [
+        {
+          "name": "Redirection",
+          "rows": [
+            [
+              "echo \"data\" > file.txt",
+              "Stdout (overwrite)",
+              "Create/truncate file",
+              "john@pc:~$ echo \"Hello\" > file.txt\njohn@pc:~$ cat file.txt\nHello"
+            ],
+            [
+              "echo \"data\" >> file.txt",
+              "Stdout (append)",
+              "Add to end",
+              "john@pc:~$ echo \"World\" >> file.txt\njohn@pc:~$ cat file.txt\nHello\nWorld"
+            ],
+            [
+              "ls /nonexist 2> err.log",
+              "Stderr only",
+              "Redirect errors to file",
+              "john@pc:~$ ls /nonexist 2> err.log\njohn@pc:~$ cat err.log\nls: cannot access '/nonexist': No such file or directory"
+            ],
+            [
+              "cmd > /dev/null 2>&1",
+              "Discard all output",
+              "Silent execution",
+              "john@pc:~$ ls /fake /real > /dev/null 2>&1\n(no output at all)"
+            ]
+          ]
+        },
+        {
+          "name": "grep / sed / awk / cut",
+          "rows": [
+            [
+              "grep -q \"error\" log.txt && echo \"Found\"",
+              "Quiet check",
+              "-q = exit code only",
+              "john@pc:~$ grep -q \"error\" log.txt && echo \"Found error\"\nFound error"
+            ],
+            [
+              "sed 's/old/new/g' file.txt",
+              "Replace all",
+              "Substitute globally",
+              "john@pc:~$ echo \"old old\" | sed 's/old/new/g'\nnew new"
+            ],
+            [
+              "sed -n '/START/,/END/p' file.txt",
+              "Range between patterns",
+              "Print lines between",
+              "john@pc:~$ sed -n '/START/,/END/p' log.txt\nSTART\ncontent\nEND"
+            ],
+            [
+              "awk '{print $1}' data.txt",
+              "First column",
+              "Space delimiter",
+              "john@pc:~$ echo \"Alice 25\" | awk '{print $1}'\nAlice"
+            ],
+            [
+              "awk -F: '{print $1}' /etc/passwd",
+              "Custom delimiter",
+              "-F = field separator",
+              "john@pc:~$ awk -F: '{print $1}' /etc/passwd\nroot\ndaemon\njohn"
+            ],
+            [
+              "echo \"a,b,c\" | tr ',' '\\n'",
+              "Translate delimiters",
+              "Replace char",
+              "john@pc:~$ echo \"a,b,c\" | tr ',' '\\n'\na\nb\nc"
+            ],
+            [
+              "cut -d: -f1 /etc/passwd",
+              "Cut field",
+              "-d delimiter -f field",
+              "john@pc:~$ cut -d: -f1 /etc/passwd\nroot\ndaemon\njohn"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 11: Real-World Scripts",
+      "commands": [
+        {
+          "name": "Argument Parsing (getopts)",
+          "rows": [
+            [
+              "while getopts \"f:o:v\" opt; do case $opt in f) file=$OPTARG;; o) output=$OPTARG;; v) verbose=true;; esac; done",
+              "Parse flags",
+              "-f value -o value -v flag",
+              "john@pc:~$ nano parser.sh\n#!/bin/bash\nwhile getopts \"f:o:v\" opt; do\n  case $opt in\n    f) file=\"$OPTARG\" ;;\n    o) output=\"$OPTARG\" ;;\n    v) verbose=true ;;\n  esac\ndone\necho \"file: $file\"\necho \"output: $output\"\necho \"verbose: ${verbose:-false}\"\njohn@pc:~$ bash parser.sh -f input.txt -o out.txt -v\nfile: input.txt\noutput: out.txt\nverbose: true"
+            ]
+          ]
+        },
+        {
+          "name": "Complete Backup Script",
+          "type": "codeblock",
+          "code": "#!/bin/bash\n# backup.sh - directory backup with retention\nset -euo pipefail\n\nBACKUP_DIR=\"/backups\"\nRETENTION_DAYS=7\n\nusage() { echo \"Usage: $0 [-d dir] [-r days] <source>\"; exit 1; }\n\nwhile getopts \"d:r:h\" opt; do\n  case $opt in\n    d) BACKUP_DIR=\"$OPTARG\" ;;\n    r) RETENTION_DAYS=\"$OPTARG\" ;;\n    h|?) usage ;;\n  esac\ndone\nshift $((OPTIND-1))\n\nSOURCE=\"${1:?Source required}\"\n[ ! -d \"$SOURCE\" ] && echo \"Error: not found\" >&2 && exit 1\n\nmkdir -p \"$BACKUP_DIR\"\nNAME=\"backup-$(basename \"$SOURCE\")-$(date +%Y%m%d_%H%M%S).tar.gz\"\n\ntar -czf \"$BACKUP_DIR/$NAME\" \"$SOURCE\" && {\n  echo \"Created: $BACKUP_DIR/$NAME\"\n  find \"$BACKUP_DIR\" -name \"*.tar.gz\" -mtime +$RETENTION_DAYS -delete\n  echo \"Cleaned older than $RETENTION_DAYS days\"\n} || { echo \"Backup failed\" >&2; exit 1; }"
+        }
+      ]
+    }
+  ]
+}

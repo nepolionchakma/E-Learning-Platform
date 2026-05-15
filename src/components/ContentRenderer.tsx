@@ -1,53 +1,65 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import Accordion from './Accordion'
-import CopyButton from './CopyButton'
-import site from '@/data/site.json'
+import { useState } from "react";
+import Accordion from "./Accordion";
+import CopyButton from "./CopyButton";
+import site from "@/data/site.json";
 
 interface CommandRow {
-  name: string
-  rows?: string[][]
-  type?: string
-  code?: string
+  name: string;
+  rows?: string[][];
+  type?: string;
+  code?: string;
 }
 
 interface Stage {
-  title: string
-  commands: CommandRow[]
+  title: string;
+  commands: CommandRow[];
 }
 
 interface SectionItem {
-  label?: string
-  code?: string
-  result?: string
+  label?: string;
+  code?: string;
+  result?: string;
 }
 
 interface Section {
-  title: string
-  type: string
-  items: SectionItem[]
+  title: string;
+  type: string;
+  items: SectionItem[];
 }
 
 interface TopicData {
-  title: string
-  icon: string
-  description: string
-  stages?: Stage[]
-  sections?: Section[]
+  title: string;
+  icon: string;
+  description: string;
+  stages?: Stage[];
+  sections?: Section[];
 }
 
-export default function ContentRenderer({ data, topic }: { data: TopicData; topic?: string }) {
-  if (data.stages) return renderStages(data.stages, topic || '')
-  if (data.sections) return renderSections(data.sections)
-  return null
+export default function ContentRenderer({
+  data,
+  topic,
+}: {
+  data: TopicData;
+  topic?: string;
+}) {
+  if (data.stages) return renderStages(data.stages, topic || "");
+  if (data.sections) return renderSections(data.sections);
+  return null;
 }
 
 function renderStages(stages: Stage[], topicSlug: string) {
   return (
     <div className="space-y-3">
       {stages.map((stage, si) => (
-        <Accordion key={si} title={stage.title} topicSlug={topicSlug} stageIndex={si} defaultOpen={false}>
+        <Accordion
+          key={si}
+          title={stage.title}
+          topicSlug={topicSlug}
+          stageIndex={si}
+          defaultOpen={false}
+        >
           <div className="space-y-5">
             {stage.commands.map((cmd, ci) => (
               <div key={ci}>
@@ -55,21 +67,29 @@ function renderStages(stages: Stage[], topicSlug: string) {
                   <span className="w-1 h-4 bg-orange-500 rounded-full inline-block" />
                   {cmd.name}
                 </h4>
-                {cmd.type === 'codeblock' ? (
+                {cmd.type === "codeblock" ? (
                   <div className="relative group">
                     <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <CopyButton text={cmd.code || ''} />
+                      <CopyButton text={cmd.code || ""} />
                     </div>
-                    <pre className="text-sm bg-zinc-900 text-zinc-100 p-4 rounded-lg overflow-x-auto border border-zinc-700">{cmd.code}</pre>
+                    <pre className="text-sm bg-zinc-900 text-zinc-100 p-4 rounded-lg overflow-x-auto border border-zinc-700">
+                      {cmd.code}
+                    </pre>
                   </div>
                 ) : (
                   <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
                     <table className="w-full text-sm border-collapse">
                       <thead>
                         <tr className="bg-zinc-100 dark:bg-zinc-800">
-                          <th className="p-3 text-left font-semibold text-zinc-700 dark:text-zinc-300 border-b border-zinc-200 dark:border-zinc-700">Command</th>
-                          <th className="p-3 text-left font-semibold text-zinc-700 dark:text-zinc-300 border-b border-zinc-200 dark:border-zinc-700">Scenario</th>
-                          <th className="p-3 text-left font-semibold text-zinc-700 dark:text-zinc-300 border-b border-zinc-200 dark:border-zinc-700">Explanation</th>
+                          <th className="p-3 text-left font-semibold text-zinc-700 dark:text-zinc-300 border-b border-zinc-200 dark:border-zinc-700">
+                            Command
+                          </th>
+                          <th className="p-3 text-left font-semibold text-zinc-700 dark:text-zinc-300 border-b border-zinc-200 dark:border-zinc-700">
+                            Scenario
+                          </th>
+                          <th className="p-3 text-left font-semibold text-zinc-700 dark:text-zinc-300 border-b border-zinc-200 dark:border-zinc-700">
+                            Explanation
+                          </th>
                           <th className="p-3 w-24 border-b border-zinc-200 dark:border-zinc-700" />
                         </tr>
                       </thead>
@@ -88,39 +108,166 @@ function renderStages(stages: Stage[], topicSlug: string) {
       ))}
       <ResourcesSection />
     </div>
-  )
+  );
 }
 
-function renderTerminalLines(text: string) {
-  const lines = text.split('\n')
+function SectionBlock({
+  lines,
+  bg,
+  textColor,
+  copyContent,
+}: {
+  lines: string[];
+  bg: string;
+  textColor: string;
+  copyContent: string;
+}) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(copyContent)
+    } catch {
+      const ta = document.createElement('textarea')
+      ta.value = copyContent
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand('copy')
+      document.body.removeChild(ta)
+    }
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
+
+  return (
+    <div className="group relative">
+      <div className={`px-3 py-1 ${bg} ${textColor} whitespace-pre-wrap`}>
+        {lines.map((l, i) => (
+          <div key={i}>{l || "\u00A0"}</div>
+        ))}
+      </div>
+      <button
+        onClick={handleCopy}
+        className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 text-zinc-500 hover:text-indigo-600 hover:border-indigo-400 shadow-sm"
+        title="Copy this block"
+      >
+        {copied ? (
+          <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+          </svg>
+        ) : (
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+        )}
+      </button>
+    </div>
+  );
+}
+
+function stripPrompt(line: string): string {
+  return line.replace(/^\S+@\S+[:~#\$] /, "").trim();
+}
+
+function renderTerminalSections(text: string) {
+  const lines = text.split("\n");
+  const cmdLines: string[] = [];
+  const contentLines: string[] = [];
+  const execLines: string[] = [];
+  const outLines: string[] = [];
+  let cmdCopy = "";
+  let contentCopy = "";
+  let execCopy = "";
+  let outCopy = "";
+
+  let section: "cmd" | "code" | "exec" | "out" = "cmd";
+
+  for (const line of lines) {
+    const isPrompt = /^\S+@\S+[:~#\$]/.test(line);
+
+    if (section === "cmd") {
+      cmdLines.push(line);
+      cmdCopy += stripPrompt(line) + "\n";
+      if (cmdLines.length === 1 && line.includes("nano ")) {
+        section = "code";
+      } else if (!line.includes("nano ")) {
+        section = "code";
+      }
+      continue;
+    }
+
+    if (section === "code") {
+      if (
+        isPrompt &&
+        (line.includes(" bash ") || line.includes("./") || line.includes("sh "))
+      ) {
+        execLines.push(line);
+        execCopy += stripPrompt(line) + "\n";
+        section = "out";
+        continue;
+      }
+      contentLines.push(line);
+      if (!line.startsWith("#!/")) contentCopy += line + "\n";
+      continue;
+    }
+
+    if (section === "out") {
+      if (isPrompt) {
+        execLines.push(line);
+        execCopy += stripPrompt(line) + "\n";
+      } else {
+        outLines.push(line);
+        outCopy += line + "\n";
+      }
+    }
+  }
+
+  cmdCopy = cmdCopy.trim();
+  contentCopy = contentCopy.trim();
+  execCopy = execCopy.trim();
+  outCopy = outCopy.trim();
+
   return (
     <div className="space-y-0">
-      {lines.map((line, i) => {
-        const isPrompt = /^\S+@\S+[:~#\$]/.test(line)
-        const isCmd = /^\S+@\S+[:~#\$] /.test(line) || /^sudo /.test(line) || /^# /.test(line)
-        const isSeparator = line.startsWith('---') || line.startsWith('===') || line.startsWith('  PID')
-        return (
-          <div
-            key={i}
-            className={`px-3 py-[1px] ${
-              isPrompt
-                ? 'bg-zinc-200 dark:bg-zinc-800/60 text-green-600 dark:text-green-400'
-                : isSeparator
-                  ? 'bg-zinc-200/50 dark:bg-zinc-800/30 text-zinc-400 italic'
-                  : 'bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-100'
-            }`}
-          >
-            {line || '\u00A0'}
-          </div>
-        )
-      })}
+      {cmdLines.length > 0 && (
+        <SectionBlock
+          lines={cmdLines}
+          bg="bg-zinc-200 dark:bg-zinc-800/60"
+          textColor="text-green-600 dark:text-green-400"
+          copyContent={cmdCopy}
+        />
+      )}
+      {contentLines.length > 0 && (
+        <SectionBlock
+          lines={contentLines}
+          bg="bg-zinc-50 dark:bg-zinc-900"
+          textColor="text-zinc-700 dark:text-zinc-100"
+          copyContent={contentCopy}
+        />
+      )}
+      {execLines.length > 0 && (
+        <SectionBlock
+          lines={execLines}
+          bg="bg-zinc-200 dark:bg-zinc-800/60"
+          textColor="text-green-600 dark:text-green-400"
+          copyContent={execCopy}
+        />
+      )}
+      {outLines.length > 0 && (
+        <SectionBlock
+          lines={outLines}
+          bg="bg-zinc-50 dark:bg-zinc-900"
+          textColor="text-zinc-500 dark:text-zinc-400"
+          copyContent={outCopy}
+        />
+      )}
     </div>
-  )
+  );
 }
 
 function TableRow({ row }: { row: string[] }) {
-  const [showResult, setShowResult] = useState(false)
-  const hasResult = row[3] !== undefined
+  const [showResult, setShowResult] = useState(false);
+  const hasResult = row[3] !== undefined;
 
   return (
     <>
@@ -138,9 +285,24 @@ function TableRow({ row }: { row: string[] }) {
                 className="p-1.5 rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-500 hover:text-green-600 hover:border-green-400 transition-colors"
                 title="Show example output"
               >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                <svg
+                  className="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                  />
                 </svg>
               </button>
             )}
@@ -157,24 +319,31 @@ function TableRow({ row }: { row: string[] }) {
                 <span className="w-2 h-2 rounded-full bg-red-500" />
                 <span className="w-2 h-2 rounded-full bg-yellow-500" />
                 <span className="w-2 h-2 rounded-full bg-green-500" />
-                <span className="text-zinc-400 dark:text-zinc-500 text-[10px] ml-2">terminal output</span>
+                <span className="text-zinc-400 dark:text-zinc-500 text-[10px] ml-2">
+                  terminal output
+                </span>
               </div>
-              {renderTerminalLines(row[3])}
+              {renderTerminalSections(row[3])}
             </div>
           </td>
         </tr>
       )}
     </>
-  )
+  );
 }
 
 function renderSections(sections: Section[]) {
   return (
     <div className="space-y-6">
       {sections.map((section, si) => (
-        <div key={si} className="rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden">
+        <div
+          key={si}
+          className="rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden"
+        >
           <div className="px-5 py-3 bg-zinc-50 dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700">
-            <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">{section.title}</h3>
+            <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">
+              {section.title}
+            </h3>
           </div>
           <div className="px-5 py-4 bg-white dark:bg-zinc-900 space-y-4">
             {section.items.map((item, ii) => (
@@ -189,7 +358,9 @@ function renderSections(sections: Section[]) {
                     <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
                       <CopyButton text={item.code} />
                     </div>
-                    <pre className="text-sm bg-zinc-900 text-zinc-100 p-4 rounded-lg overflow-x-auto border border-zinc-700 leading-relaxed">{item.code}</pre>
+                    <pre className="text-sm bg-zinc-900 text-zinc-100 p-4 rounded-lg overflow-x-auto border border-zinc-700 leading-relaxed">
+                      {item.code}
+                    </pre>
                   </div>
                 )}
               </div>
@@ -199,30 +370,36 @@ function renderSections(sections: Section[]) {
       ))}
       <ResourcesSection />
     </div>
-  )
+  );
 }
 
 function ResourcesSection() {
-  const r = site.resources
+  const r = site.resources;
   return (
     <div className="rounded-xl border border-orange-200 dark:border-orange-800 p-5 bg-orange-50 dark:bg-zinc-800">
-      <h3 className="font-bold text-orange-600 dark:text-orange-400 mb-3">{r.heading}</h3>
+      <h3 className="font-bold text-orange-600 dark:text-orange-400 mb-3">
+        {r.heading}
+      </h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-zinc-600 dark:text-zinc-300">
         {r.items.map((item, i) => (
           <div key={i}>
             <p className="font-medium mb-1">{item.title}</p>
-            {item.type === 'ordered' ? (
+            {item.type === "ordered" ? (
               <ol className="space-y-1 list-decimal list-inside">
-                {item.entries.map((e, j) => <li key={j}>{e}</li>)}
+                {item.entries.map((e, j) => (
+                  <li key={j}>{e}</li>
+                ))}
               </ol>
             ) : (
               <ul className="space-y-1 list-disc list-inside">
-                {item.entries.map((e, j) => <li key={j}>{e}</li>)}
+                {item.entries.map((e, j) => (
+                  <li key={j}>{e}</li>
+                ))}
               </ul>
             )}
           </div>
         ))}
       </div>
     </div>
-  )
+  );
 }
