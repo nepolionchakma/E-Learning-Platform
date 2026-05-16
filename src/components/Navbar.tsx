@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import topics from "@/data/topics.json";
 import ThemeToggle from "./ThemeToggle";
+import SearchBar from "./SearchBar";
 
 const navLinks = [
   { href: "/quizzes", label: "Quizzes", icon: "🧠" },
@@ -132,6 +133,10 @@ export default function Navbar() {
                 <span className="hidden lg:inline">{link.label}</span>
               </Link>
             ))}
+          </div>
+
+          <div className="hidden lg:block w-48 xl:w-64">
+            <SearchBar wide />
           </div>
 
           <div className="flex items-center gap-1">

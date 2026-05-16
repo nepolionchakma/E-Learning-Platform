@@ -17,7 +17,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "E-Learning Platform - Master Programming & Tech",
-  description: "Learn JavaScript, TypeScript, React, Linux, DevOps, Database, Machine Learning and more",
+  description:
+    "Learn JavaScript, TypeScript, React, Linux, DevOps, Database, Machine Learning and more",
 };
 
 export default function RootLayout({
@@ -26,10 +27,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} antialiased`} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      suppressHydrationWarning
+    >
       <head>
-        <script dangerouslySetInnerHTML={{
-          __html: `
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
             (function() {
               try {
                 var theme = localStorage.getItem('theme');
@@ -38,8 +44,10 @@ export default function RootLayout({
                 }
               } catch(e) {}
             })();
-          `
-        }} />
+          `,
+          }}
+        />
+
       </head>
       <body className="min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950">
         <ToastProvider>
@@ -48,7 +56,12 @@ export default function RootLayout({
         </ToastProvider>
         <footer className="border-t border-zinc-200 dark:border-zinc-800 py-6 text-center text-sm text-zinc-400">
           &copy; {new Date().getFullYear()} {site.footer.text}
-          <a href={site.footer.linkUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-zinc-500 dark:text-zinc-300 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors underline underline-offset-2">
+          <a
+            href={site.footer.linkUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-zinc-500 dark:text-zinc-300 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors underline underline-offset-2"
+          >
             {site.footer.linkText}
           </a>
         </footer>
