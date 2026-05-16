@@ -7,30 +7,45 @@ import topics from "@/data/topics.json";
 import ThemeToggle from "./ThemeToggle";
 import SearchBar from "./SearchBar";
 
-const navLinks = [
+const practiceLinks = [
   { href: "/quizzes", label: "Quizzes", icon: "🧠" },
   { href: "/exercises", label: "Exercises", icon: "💻" },
   { href: "/bootcamp", label: "Bootcamp", icon: "🎓" },
+];
+
+const navLinks = [
+  { href: "/blogs", label: "Blogs", icon: "📝" },
   { href: "/contact", label: "Contact", icon: "📬" },
 ];
 
 export default function Navbar() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [topicsOpen, setTopicsOpen] = useState(false);
+  const [practiceOpen, setPracticeOpen] = useState(false);
+  const topicsRef = useRef<HTMLDivElement>(null);
+  const practiceRef = useRef<HTMLDivElement>(null);
+  const topicsTimer = useRef<ReturnType<typeof setTimeout>>(null);
+  const practiceTimer = useRef<ReturnType<typeof setTimeout>>(null);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
+      if (topicsRef.current && !topicsRef.current.contains(e.target as Node)) {
+        setTopicsOpen(false);
+      }
       if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node)
+        practiceRef.current &&
+        !practiceRef.current.contains(e.target as Node)
       ) {
-        setDropdownOpen(false);
+        setPracticeOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      if (topicsTimer.current) clearTimeout(topicsTimer.current);
+      if (practiceTimer.current) clearTimeout(practiceTimer.current);
+    };
   }, []);
 
   const isActive = (href: string) => {
@@ -39,6 +54,7 @@ export default function Navbar() {
   };
 
   const activeTopic = topics.find((t) => pathname === `/${t.slug}`);
+  const activePractice = practiceLinks.find((l) => pathname.startsWith(l.href));
 
   return (
     <nav className="sticky top-0 z-50 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800">
@@ -62,10 +78,19 @@ export default function Navbar() {
               Home
             </Link>
 
-            <div ref={dropdownRef} className="relative">
+            <div ref={topicsRef} className="relative">
               <button
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-                onMouseEnter={() => setDropdownOpen(true)}
+                onClick={() => setTopicsOpen(!topicsOpen)}
+                onMouseEnter={() => {
+                  if (topicsTimer.current) clearTimeout(topicsTimer.current);
+                  setTopicsOpen(true);
+                }}
+                onMouseLeave={() => {
+                  topicsTimer.current = setTimeout(
+                    () => setTopicsOpen(false),
+                    150,
+                  );
+                }}
                 className={`flex items-center gap-1 px-2.5 xl:px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
                   activeTopic
                     ? "bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100"
@@ -74,7 +99,7 @@ export default function Navbar() {
               >
                 {activeTopic ? activeTopic.title : "Topics"}
                 <svg
-                  className={`w-4 h-4 transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""}`}
+                  className={`w-4 h-4 transition-transform duration-200 ${topicsOpen ? "rotate-180" : ""}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -88,10 +113,13 @@ export default function Navbar() {
                 </svg>
               </button>
 
-              {dropdownOpen && (
+              {topicsOpen && (
                 <div
-                  onMouseLeave={() => setDropdownOpen(false)}
-                  className="fixed top-16 left-1/2 -translate-x-1/2 w-[80vw] max-w-4xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-lg z-50 overflow-hidden"
+                  onMouseEnter={() => {
+                    if (topicsTimer.current) clearTimeout(topicsTimer.current);
+                  }}
+                  onMouseLeave={() => setTopicsOpen(false)}
+                  className="fixed top-full left-1/2 -translate-x-1/2 w-[80vw] max-w-4xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-lg z-50 overflow-hidden"
                 >
                   <div className="p-2 grid grid-cols-10 gap-1">
                     {topics.map((t) => {
@@ -100,7 +128,7 @@ export default function Navbar() {
                         <Link
                           key={t.slug}
                           href={`/${t.slug}`}
-                          onClick={() => setDropdownOpen(false)}
+                          onClick={() => setTopicsOpen(false)}
                           className={`flex flex-col items-center gap-1 px-2 py-3 rounded-lg text-xs font-medium transition-colors ${
                             topicActive
                               ? "bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100"
@@ -115,6 +143,70 @@ export default function Navbar() {
                       );
                     })}
                   </div>
+                </div>
+              )}
+            </div>
+
+            <div ref={practiceRef} className="relative">
+              <button
+                onClick={() => setPracticeOpen(!practiceOpen)}
+                onMouseEnter={() => {
+                  if (practiceTimer.current)
+                    clearTimeout(practiceTimer.current);
+                  setPracticeOpen(true);
+                }}
+                onMouseLeave={() => {
+                  practiceTimer.current = setTimeout(
+                    () => setPracticeOpen(false),
+                    150,
+                  );
+                }}
+                className={`flex items-center gap-1 px-2.5 xl:px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                  activePractice
+                    ? "bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100"
+                    : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                }`}
+              >
+                {activePractice ? activePractice.label : "Practice"}
+                <svg
+                  className={`w-4 h-4 transition-transform duration-200 ${practiceOpen ? "rotate-180" : ""}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+
+              {practiceOpen && (
+                <div
+                  onMouseEnter={() => {
+                    if (practiceTimer.current)
+                      clearTimeout(practiceTimer.current);
+                  }}
+                  onMouseLeave={() => setPracticeOpen(false)}
+                  className="absolute top-full left-0 mt-3.5 w-48 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-lg z-50 overflow-hidden"
+                >
+                  {practiceLinks.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setPracticeOpen(false)}
+                      className={`flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${
+                        isActive(link.href)
+                          ? "bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100"
+                          : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      }`}
+                    >
+                      <span>{link.icon}</span>
+                      <span>{link.label}</span>
+                    </Link>
+                  ))}
                 </div>
               )}
             </div>
@@ -186,6 +278,27 @@ export default function Navbar() {
               >
                 🏠 Home
               </Link>
+
+              <div className="border-t border-zinc-100 dark:border-zinc-800 my-1" />
+              <p className="px-3 py-1 text-xs font-medium text-zinc-400 uppercase tracking-wide">
+                Practice
+              </p>
+
+              {practiceLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMenuOpen(false)}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    isActive(link.href)
+                      ? "bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100"
+                      : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                  }`}
+                >
+                  <span>{link.icon}</span>
+                  <span>{link.label}</span>
+                </Link>
+              ))}
 
               <div className="border-t border-zinc-100 dark:border-zinc-800 my-1" />
 
