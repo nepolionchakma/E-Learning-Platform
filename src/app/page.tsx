@@ -1,17 +1,21 @@
 import TopicCard from "@/components/TopicCard";
 import topics from "@/data/topics.json";
 import site from "@/data/site.json";
+import SearchBar from "@/components/SearchBar";
 
 export default function Home() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="text-center mb-16">
+      <div className="text-center mb-8">
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-4">
           <span className="gradient-text">{site.hero.title}</span>
         </h1>
-        <p className="max-w-2xl mx-auto text-lg text-zinc-500 dark:text-zinc-400">
+        <p className="max-w-2xl mx-auto text-lg text-zinc-500 dark:text-zinc-400 mb-8">
           {site.hero.subtitle}
         </p>
+        <div className="max-w-xl mx-auto">
+          <SearchBar />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
