@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { search, type SearchEntry } from "@/lib/searchData"
 
-export default function SearchBar() {
+export default function SearchBar({ wide }: { wide?: boolean }) {
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<SearchEntry[]>([])
   const [focused, setFocused] = useState(false)
@@ -126,7 +126,11 @@ export default function SearchBar() {
       </div>
 
       {focused && query && (
-        <div className="absolute top-full mt-2 left-0 right-0 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-xl z-50 max-h-96 overflow-y-auto">
+        <div className={`bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-xl max-h-96 overflow-y-auto ${
+          wide
+            ? "fixed left-1/2 -translate-x-1/2 top-16 w-[45vw] max-w-[50vw] min-w-[400px] z-[60]"
+            : "absolute top-full mt-2 left-0 right-0 z-[60]"
+        }`}>
           {groupKeys.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-zinc-400 dark:text-zinc-500">
               <svg className="w-10 h-10 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
