@@ -1,1 +1,9 @@
-[]
+[
+  {
+    "slug": "iptables-tutorial",
+    "title": "Complete iptables Tutorial: Beginner to Advanced",
+    "content": "Master the Linux firewall from basics to advanced configurations. Learn to protect your server with practical, hands-on examples including installation, rule management, NAT, port forwarding, and security best practices.",
+    "author": "E-Learning Platform",
+    "date": "2026-05-17"
+  }
+]
