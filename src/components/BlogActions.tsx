@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 interface BlogActionsProps {
   slug: string
@@ -15,14 +15,10 @@ export default function BlogActions({ slug, title }: BlogActionsProps) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchEngagement()
-    checkLiked()
-  }, [slug])
-
-  const checkLiked = () => {
     const stored = localStorage.getItem(`blog-liked-${slug}`)
     setLiked(stored === 'true')
-  }
+    fetchEngagement()
+  }, [slug])
 
   const fetchEngagement = async () => {
     try {
@@ -39,25 +35,28 @@ export default function BlogActions({ slug, title }: BlogActionsProps) {
     }
   }
 
-  const handleLike = async () => {
-    try {
-      const action = liked ? 'unlike' : 'like'
-      const res = await fetch('/api/engagement', {
+  const handleLike = useCallback(async () => {
+    setLiked((prevLiked) => {
+      const newLiked = !prevLiked
+      localStorage.setItem(`blog-liked-${slug}`, String(newLiked))
+
+      const action = newLiked ? 'like' : 'unlike'
+      fetch('/api/engagement', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ slug, action }),
       })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.likes !== undefined) {
+            setLikeCount(data.likes)
+          }
+        })
+        .catch((err) => console.error('Failed to update like:', err))
 
-      if (res.ok) {
-        const data = await res.json()
-        setLikeCount(data.likes)
-        setLiked(!liked)
-        localStorage.setItem(`blog-liked-${slug}`, String(!liked))
-      }
-    } catch {
-      console.error('Failed to update like')
-    }
-  }
+      return newLiked
+    })
+  }, [slug])
 
   const handleShare = async () => {
     const url = window.location.href
@@ -94,7 +93,9 @@ export default function BlogActions({ slug, title }: BlogActionsProps) {
 
       if (res.ok) {
         const data = await res.json()
-        setShareCount(data.shares)
+        if (data.shares !== undefined) {
+          setShareCount(data.shares)
+        }
       }
     } catch {
       console.error('Failed to update share')

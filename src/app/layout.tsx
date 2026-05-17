@@ -30,7 +30,7 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      suppressHydrationWarning
+      suppressHydrationWarning // TODO: Remove this when we have a better solution (Grammarly browser extension)
     >
       <head>
         <script
@@ -47,9 +47,11 @@ export default function RootLayout({
           `,
           }}
         />
-
       </head>
-      <body className="min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950">
+      <body
+        className="min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950"
+        suppressHydrationWarning // TODO: Remove this when we have a better solution (Grammarly browser extension)
+      >
         <ToastProvider>
           <Navbar />
           <main className="flex-1">{children}</main>

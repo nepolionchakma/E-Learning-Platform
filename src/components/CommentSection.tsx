@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Dialog from '@/components/Dialog'
 
 interface CommentNode {
   id: string
@@ -68,7 +69,7 @@ function ReplyForm({
   }
 
   return (
-    <div className="mt-3 ml-4 pl-4 border-l-2 border-indigo-200 dark:border-indigo-800">
+    <div className="mt-3 ml-3 sm:ml-4 pl-3 sm:pl-4 border-l-2 border-indigo-200 dark:border-indigo-800">
       <div className="mb-2">
         <input
           type="text"
@@ -116,14 +117,14 @@ function CommentItem({
   slug: string
   comment: CommentNode
   depth?: number
-  onDelete: () => void
+  onDelete: (id: string) => void
 }) {
   const [showReply, setShowReply] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
 
   const maxDepth = 5
   const canReply = depth < maxDepth
-  const indent = Math.min(depth, maxDepth)
 
   const formatDate = (isoDate: string) => {
     return new Date(isoDate).toLocaleDateString('en-US', {
@@ -135,85 +136,109 @@ function CommentItem({
     })
   }
 
+  const handleDeleteClick = () => {
+    setDeleteTarget(comment.id)
+  }
+
+  const handleDeleteConfirm = () => {
+    if (deleteTarget) {
+      onDelete(deleteTarget)
+      setDeleteTarget(null)
+    }
+  }
+
   return (
-    <div className={`${depth > 0 ? 'ml-4 pl-4 border-l-2 border-zinc-200 dark:border-zinc-700' : ''}`}>
-      <div className={`${depth > 0 ? 'py-3' : 'p-4 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900'}`}>
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm">{comment.name}</span>
-            <span className="text-xs text-zinc-400">{formatDate(comment.date)}</span>
-            {depth > 0 && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
-                reply
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-1">
-            {comment.replies.length > 0 && (
-              <button
-                onClick={() => setCollapsed(!collapsed)}
-                className="cursor-pointer p-1 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
-                title={collapsed ? 'Expand replies' : 'Collapse replies'}
-              >
-                <svg
-                  className={`w-4 h-4 transition-transform ${collapsed ? '-rotate-90' : 'rotate-0'}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+    <>
+      <div className={`${depth > 0 ? 'ml-3 sm:ml-4 pl-3 sm:pl-4 border-l-2 border-zinc-200 dark:border-zinc-700' : ''}`}>
+        <div className={`${depth > 0 ? 'py-3' : 'p-3 sm:p-4 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900'}`}>
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0 flex-wrap">
+              <span className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm truncate">{comment.name}</span>
+              <span className="text-xs text-zinc-400 whitespace-nowrap">{formatDate(comment.date)}</span>
+              {depth > 0 && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 whitespace-nowrap">
+                  reply
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1 flex-shrink-0">
+              {comment.replies.length > 0 && (
+                <button
+                  onClick={() => setCollapsed(!collapsed)}
+                  className="cursor-pointer p-1 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+                  title={collapsed ? 'Expand replies' : 'Collapse replies'}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <svg
+                    className={`w-4 h-4 transition-transform ${collapsed ? '-rotate-90' : 'rotate-0'}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+              )}
+              <button
+                onClick={handleDeleteClick}
+                className="cursor-pointer p-1 rounded-md text-zinc-400 hover:text-red-500 transition-colors"
+                title="Delete"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
-            )}
-            <button
-              onClick={onDelete}
-              className="cursor-pointer p-1 rounded-md text-zinc-400 hover:text-red-500 transition-colors"
-              title="Delete"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+            </div>
           </div>
+          <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed break-words">{comment.text}</p>
+
+          {canReply && (
+            <button
+              onClick={() => setShowReply(!showReply)}
+              className="cursor-pointer mt-2 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors"
+            >
+              {showReply ? 'Cancel' : 'Reply'}
+            </button>
+          )}
+
+          {showReply && (
+            <ReplyForm
+              slug={slug}
+              parentId={comment.id}
+              onReplyPosted={() => {
+                setShowReply(false)
+                onDelete(comment.id)
+              }}
+              onCancel={() => setShowReply(false)}
+            />
+          )}
         </div>
-        <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">{comment.text}</p>
 
-        {canReply && (
-          <button
-            onClick={() => setShowReply(!showReply)}
-            className="cursor-pointer mt-2 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors"
-          >
-            {showReply ? 'Cancel' : 'Reply'}
-          </button>
-        )}
-
-        {showReply && (
-          <ReplyForm
-            slug={slug}
-            parentId={comment.id}
-            onReplyPosted={() => {
-              setShowReply(false)
-              onDelete()
-            }}
-            onCancel={() => setShowReply(false)}
-          />
+        {!collapsed && comment.replies.length > 0 && (
+          <div className="mt-2 space-y-2">
+            {comment.replies.map((reply) => (
+              <CommentItem
+                key={reply.id}
+                slug={slug}
+                comment={reply}
+                depth={depth + 1}
+                onDelete={onDelete}
+              />
+            ))}
+          </div>
         )}
       </div>
 
-      {!collapsed && comment.replies.length > 0 && (
-        <div className="mt-2 space-y-2">
-          {comment.replies.map((reply) => (
-            <CommentItem
-              key={reply.id}
-              slug={slug}
-              comment={reply}
-              depth={depth + 1}
-              onDelete={onDelete}
-            />
-          ))}
-        </div>
-      )}
-    </div>
+      <Dialog
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        title="Delete Comment"
+        description="Are you sure you want to delete this comment? This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={handleDeleteConfirm}
+        variant="danger"
+      />
+    </>
   )
 }
 
@@ -291,11 +316,11 @@ export default function CommentSection({ slug }: CommentSectionProps) {
 
   return (
     <div className="mt-10 pt-8 border-t border-zinc-200 dark:border-zinc-700">
-      <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-6">
+      <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-6">
         Comments ({totalComments})
       </h2>
 
-      <form onSubmit={handleSubmit} className="mb-8 p-5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900">
+      <form onSubmit={handleSubmit} className="mb-8 p-4 sm:p-5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900">
         <div className="mb-4">
           <label htmlFor="comment-name" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
             Name
@@ -349,7 +374,7 @@ export default function CommentSection({ slug }: CommentSectionProps) {
               key={comment.id}
               slug={slug}
               comment={comment}
-              onDelete={fetchComments}
+              onDelete={handleDelete}
             />
           ))}
         </div>
