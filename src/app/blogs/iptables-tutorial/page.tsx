@@ -114,13 +114,13 @@ function TerminalBlock({ command, output, explanation }: TerminalItem) {
   };
 
   return (
-    <div className="my-4 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-700 shadow-lg">
-      <div className="flex items-center justify-between px-4 py-2 bg-zinc-200 dark:bg-zinc-800/60 border-b border-zinc-300 dark:border-zinc-700">
+    <div className="my-3 sm:my-4 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-700 shadow-lg">
+      <div className="flex items-center justify-between px-3 sm:px-4 py-2 bg-zinc-200 dark:bg-zinc-800/60 border-b border-zinc-300 dark:border-zinc-700">
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
           <span className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
           <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
-          <span className="text-zinc-500 dark:text-zinc-400 text-xs ml-2 font-mono">
+          <span className="text-zinc-500 dark:text-zinc-400 text-[10px] sm:text-xs ml-2 font-mono">
             terminal
           </span>
         </div>
@@ -132,19 +132,19 @@ function TerminalBlock({ command, output, explanation }: TerminalItem) {
           <CopyIcon copied={copied} />
         </button>
       </div>
-      <div className="bg-zinc-900 p-4 font-mono text-sm">
+      <div className="bg-zinc-900 p-3 sm:p-4 font-mono text-xs sm:text-sm">
         <div className="flex items-start gap-2">
-          <span className="text-green-400 select-none">$</span>
+          <span className="text-green-400 select-none flex-shrink-0">$</span>
           <code className="text-zinc-100 flex-1 break-all">{command}</code>
         </div>
         {output && (
-          <div className="mt-3 pt-3 border-t border-zinc-700 text-zinc-400 whitespace-pre-wrap">
+          <div className="mt-3 pt-3 border-t border-zinc-700 text-zinc-400 whitespace-pre-wrap text-xs sm:text-sm overflow-x-auto">
             {output}
           </div>
         )}
       </div>
       {explanation && (
-        <div className="px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border-t border-blue-200 dark:border-blue-800 text-sm text-zinc-700 dark:text-zinc-300">
+        <div className="px-3 sm:px-4 py-2 sm:py-3 bg-blue-50 dark:bg-blue-900/20 border-t border-blue-200 dark:border-blue-800 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300">
           {explanation}
         </div>
       )}
@@ -173,7 +173,9 @@ function InfoBox({
   };
 
   return (
-    <div className={`my-4 p-4 rounded-lg border ${styles[type]}`}>
+    <div
+      className={`my-3 sm:my-4 p-3 sm:p-4 rounded-lg border ${styles[type]} text-sm sm:text-base`}
+    >
       <span className="mr-2">{icons[type]}</span>
       {children}
     </div>
@@ -190,14 +192,14 @@ function DataTable({
   monoCols?: number[];
 }) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-700 my-4">
-      <table className="w-full text-sm">
+    <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-700 my-3 sm:my-4">
+      <table className="w-full text-xs sm:text-sm min-w-[500px]">
         <thead>
           <tr className="bg-zinc-100 dark:bg-zinc-800">
             {headers.map((h, i) => (
               <th
                 key={i}
-                className="p-3 text-left font-semibold text-zinc-700 dark:text-zinc-300"
+                className="p-2 sm:p-3 text-left font-semibold text-zinc-700 dark:text-zinc-300 whitespace-nowrap"
               >
                 {h}
               </th>
@@ -213,7 +215,7 @@ function DataTable({
               {row.map((cell, ci) => (
                 <td
                   key={ci}
-                  className={`p-3 ${monoCols.includes(ci) ? "font-mono text-xs" : ""}`}
+                  className={`p-2 sm:p-3 ${monoCols.includes(ci) ? "font-mono text-[10px] sm:text-xs" : ""}`}
                 >
                   {monoCols.includes(ci) && ci === 0 && (
                     <span className="text-green-600 dark:text-green-400 font-semibold">
@@ -233,41 +235,43 @@ function DataTable({
 
 function SectionRenderer({ section }: { section: Section }) {
   return (
-    <section id={section.id} className="mb-12 scroll-mt-24">
-      <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-4">
+    <section id={section.id} className="mb-8 sm:mb-12 scroll-mt-24">
+      <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-3 sm:mb-4">
         {section.title}
       </h2>
 
       {section.content?.map((p, i) => (
-        <p key={i} className="mb-4">
+        <p key={i} className="mb-3 sm:mb-4 text-sm sm:text-base">
           {p}
         </p>
       ))}
 
       {section.cards && (
-        <div className="grid gap-4 md:grid-cols-2 mb-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 mb-3 sm:mb-4">
           {section.cards.map((card, i) => (
             <div
               key={i}
-              className="p-4 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+              className="p-3 sm:p-4 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
             >
-              <h4 className="font-semibold text-zinc-900 dark:text-zinc-100 mb-1">
+              <h4 className="font-semibold text-zinc-900 dark:text-zinc-100 mb-1 text-sm sm:text-base">
                 {card.title}
               </h4>
-              <p className="text-sm">{card.desc}</p>
+              <p className="text-xs sm:text-sm">{card.desc}</p>
             </div>
           ))}
         </div>
       )}
 
       {section.packetFlow && (
-        <div className="p-4 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 mb-4">
-          <h4 className="font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
+        <div className="p-3 sm:p-4 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 mb-3 sm:mb-4">
+          <h4 className="font-semibold text-zinc-900 dark:text-zinc-100 mb-2 text-sm sm:text-base">
             Packet Flow
           </h4>
-          <div className="text-sm space-y-1 font-mono">
+          <div className="text-xs sm:text-sm space-y-1 font-mono overflow-x-auto">
             {section.packetFlow.map((line, i) => (
-              <p key={i}>{line}</p>
+              <p key={i} className="whitespace-nowrap">
+                {line}
+              </p>
             ))}
           </div>
         </div>
@@ -311,11 +315,13 @@ function SectionRenderer({ section }: { section: Section }) {
       {section.subsections?.map((sub, si) => (
         <div key={si}>
           {sub.title && (
-            <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-3 mt-6">
+            <h3 className="text-base sm:text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2 sm:mb-3 mt-4 sm:mt-6">
               {sub.title}
             </h3>
           )}
-          {sub.content && <p className="mb-3">{sub.content}</p>}
+          {sub.content && (
+            <p className="mb-2 sm:mb-3 text-sm sm:text-base">{sub.content}</p>
+          )}
           {sub.terminals?.map((t, ti) => (
             <TerminalBlock
               key={ti}
@@ -324,7 +330,11 @@ function SectionRenderer({ section }: { section: Section }) {
               explanation={t.explanation}
             />
           ))}
-          {sub.contentAfter && <p className="mb-3 mt-4">{sub.contentAfter}</p>}
+          {sub.contentAfter && (
+            <p className="mb-2 sm:mb-3 mt-3 sm:mt-4 text-sm sm:text-base">
+              {sub.contentAfter}
+            </p>
+          )}
           {sub.terminalsAfter?.map((t, ti) => (
             <TerminalBlock
               key={ti}
@@ -334,7 +344,7 @@ function SectionRenderer({ section }: { section: Section }) {
             />
           ))}
           {sub.steps && (
-            <ol className="list-decimal list-inside space-y-2 mb-4">
+            <ol className="list-decimal list-inside space-y-1 sm:space-y-2 mb-3 sm:mb-4 text-sm sm:text-base">
               {sub.steps.map((step, sti) => (
                 <li key={sti}>{step}</li>
               ))}
@@ -395,7 +405,7 @@ export default function IptablesTutorialPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-6">
       <Link
         href="/blogs"
         className="cursor-pointer inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 mb-6 transition-colors"
@@ -416,21 +426,21 @@ export default function IptablesTutorialPage() {
         Back to Blogs
       </Link>
 
-      <div className="mb-10">
-        <div className="mb-6 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-700">
+      <div className="mb-8 sm:mb-10">
+        <div className="mb-4 sm:mb-6 rounded-xl sm:rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-700">
           <img
             src="/images/iptables-hero.svg"
             alt="iptables Linux firewall illustration showing INPUT, OUTPUT, and FORWARD chains with packet filtering"
             className="w-full h-auto"
           />
         </div>
-        <h1 className="text-3xl sm:text-4xl font-bold text-zinc-900 dark:text-zinc-100">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-zinc-900 dark:text-zinc-100 leading-tight">
           {data.title}
         </h1>
-        <p className="text-zinc-500 mt-3 text-base sm:text-lg">
+        <p className="text-zinc-500 mt-2 sm:mt-3 text-sm sm:text-base lg:text-lg">
           {data.description}
         </p>
-        <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-4 text-sm text-zinc-400">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-3 sm:mt-4 text-xs sm:text-sm text-zinc-400">
           <span>By {data.author}</span>
           <span>·</span>
           <span>{data.date}</span>
@@ -439,37 +449,13 @@ export default function IptablesTutorialPage() {
         </div>
       </div>
 
-      <div className="flex gap-8">
-        {/* Left Sidebar - Table of Contents */}
-        <aside className="hidden lg:block w-64 flex-shrink-0">
-          <div className="sticky top-24 max-h-[calc(100vh-8rem)] overflow-y-auto">
-            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide mb-3">
-              Table of Contents
-            </h3>
-            <nav className="space-y-1 border-l-2 border-zinc-200 dark:border-zinc-700">
-              {data.sections.map((section) => (
-                <button
-                  key={section.id}
-                  onClick={() => scrollTo(section.id)}
-                  className={`cursor-pointer block w-full text-left pl-4 py-1.5 text-sm border-l-2 -ml-[2px] transition-colors ${
-                    activeSection === section.id
-                      ? "border-indigo-500 text-indigo-600 dark:text-indigo-400 font-medium"
-                      : "border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
-                  }`}
-                >
-                  {section.title}
-                </button>
-              ))}
-            </nav>
-          </div>
-        </aside>
-
-        {/* Mobile TOC Toggle */}
-        <div className="lg:hidden w-full mb-6">
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 text-sm font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-          >
+      {/* Mobile TOC Toggle */}
+      <div className="lg:hidden mb-6">
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="cursor-pointer w-full flex items-center justify-between px-4 py-3 rounded-lg border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 text-sm font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+        >
+          <span className="flex items-center gap-2">
             <svg
               className="w-4 h-4"
               fill="none"
@@ -484,25 +470,64 @@ export default function IptablesTutorialPage() {
               />
             </svg>
             Table of Contents
-          </button>
-          {mobileMenuOpen && (
-            <div className="mt-3 p-4 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 space-y-1 max-h-80 overflow-y-auto">
+          </span>
+          <svg
+            className={`w-4 h-4 transition-transform ${mobileMenuOpen ? "rotate-180" : ""}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </button>
+        {mobileMenuOpen && (
+          <div className="mt-2 p-4 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 space-y-1 max-h-72 overflow-y-auto">
+            {data.sections.map((section) => (
+              <button
+                key={section.id}
+                onClick={() => scrollTo(section.id)}
+                className={`cursor-pointer block w-full text-left py-1.5 text-sm transition-colors ${
+                  activeSection === section.id
+                    ? "text-indigo-600 dark:text-indigo-400 font-medium"
+                    : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                }`}
+              >
+                {section.title}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="flex gap-6 lg:gap-8">
+        {/* Left Sidebar - Table of Contents */}
+        <aside className="hidden lg:block w-56 xl:w-64 flex-shrink-0">
+          <div className="sticky top-24 max-h-[calc(100vh-8rem)] overflow-y-auto">
+            <h3 className="text-xs sm:text-sm font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide mb-3">
+              Table of Contents
+            </h3>
+            <nav className="space-y-0.5 sm:space-y-1 border-l-2 border-zinc-200 dark:border-zinc-700">
               {data.sections.map((section) => (
                 <button
                   key={section.id}
                   onClick={() => scrollTo(section.id)}
-                  className={`cursor-pointer block w-full text-left py-1.5 text-sm transition-colors ${
+                  className={`cursor-pointer block w-full text-left pl-3 sm:pl-4 py-1 sm:py-1.5 text-xs sm:text-sm border-l-2 -ml-[2px] transition-colors ${
                     activeSection === section.id
-                      ? "text-indigo-600 dark:text-indigo-400 font-medium"
-                      : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                      ? "border-indigo-500 text-indigo-600 dark:text-indigo-400 font-medium"
+                      : "border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
                   }`}
                 >
                   {section.title}
                 </button>
               ))}
-            </div>
-          )}
-        </div>
+            </nav>
+          </div>
+        </aside>
 
         {/* Main Content */}
         <article className="flex-1 min-w-0 text-zinc-700 dark:text-zinc-300 leading-relaxed">
