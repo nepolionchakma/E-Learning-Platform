@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { promises as fs } from 'fs'
 import path from 'path'
+import BlogActions from '@/components/BlogActions'
+import CommentSection from '@/components/CommentSection'
 
 interface Blog {
   slug: string
@@ -58,6 +60,8 @@ export default async function BlogPage({
         <div className="mt-8 text-zinc-700 dark:text-zinc-300 leading-relaxed whitespace-pre-wrap">
           {blog.content}
         </div>
+        <BlogActions slug={blog.slug} title={blog.title} />
+        <CommentSection slug={blog.slug} />
       </article>
     </div>
   )
