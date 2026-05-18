@@ -4,7 +4,7 @@
   "description": "Master the Linux firewall from basics to advanced configurations. Learn to protect your server with practical, hands-on examples.",
   "author": "E-Learning Platform",
   "date": "2026-05-17",
-  "readTime": "25 min read",
+  "readTime": "35 min read",
   "sections": [
     {
       "id": "introduction",
@@ -33,36 +33,48 @@
       ]
     },
     {
-      "id": "how-it-works",
-      "title": "How iptables Works",
+      "id": "understanding-chains",
+      "title": "Understanding Chains & Defense in Depth",
       "content": [
-        "When a packet arrives at your system, the kernel sends it through iptables. The packet travels through tables and chains in a specific order:"
+        "iptables uses three built-in chains in the default filter table to manage network traffic based on its direction and destination relative to your system."
       ],
-      "packetFlow": [
-        "1. Packet arrives → PREROUTING chain (raw, mangle, nat tables)",
-        "2. Routing decision: Is this packet for this machine?",
-        "3a. Yes → INPUT chain (mangle, filter tables) → Local process",
-        "3b. No → FORWARD chain (mangle, filter tables) → POSTROUTING → Out",
-        "4. Local process sends packet → OUTPUT chain → POSTROUTING → Out"
-      ],
-      "tables": {
-        "headers": ["Table", "Purpose", "Chains"],
-        "rows": [
-          ["filter", "Default packet filtering (most commonly used)", "INPUT, FORWARD, OUTPUT"],
-          ["nat", "Network Address Translation for routing packets", "PREROUTING, POSTROUTING, OUTPUT"],
-          ["mangle", "Modifies IP header properties (TTL, TOS, etc.)", "All five chains"],
-          ["raw", "Exempts packets from connection tracking", "PREROUTING, OUTPUT"]
-        ]
+      "image": {
+        "src": "/images/iptables-packet-flow.svg",
+        "alt": "iptables packet flow diagram showing how packets travel through INPUT, FORWARD, and OUTPUT chains with routing decision"
       },
-      "targets": {
-        "headers": ["Target", "What It Does"],
-        "rows": [
-          ["ACCEPT", "Allows the packet through"],
-          ["DROP", "Silently discards the packet (sender gets no response)"],
-          ["REJECT", "Discards the packet and sends an error back to sender"],
-          ["LOG", "Records packet info to syslog (then continues to next rule)"],
-          ["MASQUERADE", "Changes source IP for dynamically assigned addresses (NAT)"]
-        ]
+      "subsections": [
+        {
+          "title": "INPUT Chain — Your Front Door",
+          "content": "Think of INPUT as your front door — it controls everything coming into your system from the outside. Every packet that arrives must pass through this chain before reaching your services. Whether it is a visitor connecting to your website, an admin SSH-ing in, or an API request hitting your server, the INPUT chain decides who gets in and who gets turned away."
+        },
+        {
+          "title": "OUTPUT Chain — Your Mailbox",
+          "content": "Think of OUTPUT as your mailbox — it controls everything your system sends out. When your server responds to visitors, sends emails, downloads updates, or calls external APIs, the packet passes through the OUTPUT chain. This chain is your defense against data theft: even if an attacker compromises a service, strict OUTPUT rules can stop them from exfiltrating your data or downloading malware."
+        },
+        {
+          "title": "FORWARD Chain — Your Bridge",
+          "content": "Think of FORWARD as a bridge between two networks — it controls traffic that passes through your system without being destined for it or originating from it. This chain is only active when your machine acts as a router, gateway, or firewall between two networks (e.g., connecting a private office network to the internet). For most servers, FORWARD can be set to DROP since they do not route traffic."
+        },
+        {
+          "title": "Defense in Depth: Why Rules for Each Chain Matter",
+          "content": "Using specific rules for each chain implements a security strategy called Defense in Depth. Think of it like securing a building: you lock the front door (INPUT), you monitor what leaves through the exits (OUTPUT), and you block any tunnels between buildings (FORWARD). By controlling every direction of traffic, you prevent a single security failure from compromising your entire system."
+        },
+        {
+          "title": "Why Write INPUT Rules?",
+          "content": "Think of this as installing a lock on your front door and a peephole. INPUT rules block attackers from scanning your ports or forcing their way into your services. They also let you restrict sensitive services (like SSH) to only trusted IP addresses — so even if someone guesses your SSH port, they cannot reach it unless they are connecting from your office."
+        },
+        {
+          "title": "Why Write OUTPUT Rules?",
+          "content": "Think of this as having a security guard at every exit checking what leaves the building. If an attacker compromises your web server, strict OUTPUT rules prevent them from downloading hacking tools or uploading your stolen data to their servers. These rules also stop malware from turning your VM into a bot that attacks other computers."
+        },
+        {
+          "title": "Why Write FORWARD Rules?",
+          "content": "Think of this as blocking unauthorized tunnels between buildings on your property. If your VM has multiple network cards, dropping FORWARD traffic ensures outsiders cannot use your VM as a bridge to sneak into your private internal network — like an attacker using a compromised public server to reach your internal database server."
+        }
+      ],
+      "infoBox": {
+        "type": "tip",
+        "content": "Best Practice: The \"Default Drop\" Strategy — The safest way to configure iptables is to lock all doors by default, then open only what you need. Set INPUT, OUTPUT, and FORWARD to DROP, then create explicit ACCEPT rules only for trusted services (like SSH, HTTP, and DNS)."
       }
     },
     {
@@ -99,6 +111,79 @@
           ]
         }
       ]
+    },
+    {
+      "id": "systemd-management",
+      "title": "Managing iptables with systemd",
+      "content": [
+        "Modern Linux distributions use systemd to manage services, including iptables. You can control the iptables service just like any other systemd service."
+      ],
+      "subsections": [
+        {
+          "title": "Check iptables Service Status",
+          "terminals": [
+            {
+              "command": "sudo systemctl status iptables",
+              "output": "● iptables.service - iptables IPv4 firewall management\n   Loaded: loaded (/usr/lib/systemd/system/iptables.service; enabled; vendor preset: disabled)\n   Active: active (exited) since Mon 2026-05-18 10:30:00 UTC",
+              "explanation": "Shows whether the iptables service is active and enabled. 'active (exited)' is normal — iptables applies rules at boot and exits."
+            }
+          ]
+        },
+        {
+          "title": "Start iptables Service",
+          "terminals": [
+            {
+              "command": "sudo systemctl start iptables",
+              "explanation": "Starts the iptables service and applies the saved rules immediately."
+            }
+          ]
+        },
+        {
+          "title": "Enable iptables on Boot",
+          "terminals": [
+            {
+              "command": "sudo systemctl enable iptables",
+              "explanation": "Configures iptables to start automatically on system boot. Without this, your firewall rules won't be restored after a reboot."
+            }
+          ]
+        },
+        {
+          "title": "Save Rules Using systemd Integration",
+          "content": "After making changes, save your rules to persist them across reboots. The iptables-save command combined with tee writes rules to the system configuration file:",
+          "terminals": [
+            {
+              "command": "sudo iptables-save | sudo tee /etc/iptables/rules.v4",
+              "explanation": "iptables-save exports all current rules to stdout. tee writes the output to /etc/iptables/rules.v4 while also showing it on screen. Use sudo because both reading iptables and writing to /etc require root."
+            }
+          ],
+          "infoBox": {
+            "type": "tip",
+            "content": "On Debian/Ubuntu, you can also use: sudo netfilter-persistent save. On RHEL/CentOS: sudo service iptables save. Both achieve the same result."
+          }
+        },
+        {
+          "title": "Restart iptables (Reload Rules)",
+          "terminals": [
+            {
+              "command": "sudo systemctl restart iptables",
+              "explanation": "Restarts the service and reloads all rules from the saved configuration file."
+            }
+          ]
+        },
+        {
+          "title": "Stop iptables (Disable Firewall Temporarily)",
+          "terminals": [
+            {
+              "command": "sudo systemctl stop iptables",
+              "explanation": "Stops the iptables service and flushes all rules. Only use this for debugging — never leave a production server without a firewall."
+            }
+          ]
+        }
+      ],
+      "infoBox": {
+        "type": "warning",
+        "content": "On some distributions (especially Debian/Ubuntu), the iptables systemd service may not be installed by default. Use the iptables-persistent package or netfilter-persistent instead. Check with: sudo systemctl list-unit-files | grep iptables"
+      }
     },
     {
       "id": "syntax",
@@ -696,6 +781,97 @@
           ]
         }
       ]
+    },
+    {
+      "id": "iptables-docker",
+      "title": "iptables & Docker",
+      "content": [
+        "Docker automatically manages iptables rules on your host. When you publish container ports, Docker creates iptables rules to route traffic to containers. Understanding this interaction is crucial to avoid conflicts.",
+        "Docker adds rules to the DOCKER chain (user-defined chain) and the FORWARD chain. If you set restrictive default policies, containers may lose network connectivity."
+      ],
+      "subsections": [
+        {
+          "title": "How Docker Modifies iptables",
+          "content": "When Docker starts, it creates:\n  - A DOCKER chain in the filter table\n  - A DOCKER chain in the nat table\n  - FORWARD rules allowing inter-container traffic\n  - DNAT rules for published ports (e.g., -p 80:80)\n\nDocker's rules are added before your custom rules. If you flush iptables with -F, you break Docker networking until you restart the Docker daemon."
+        },
+        {
+          "title": "Docker & Restrictive Firewalls",
+          "content": "If you set FORWARD to DROP, Docker containers will lose internet access because forwarded packets are dropped. You must explicitly allow Docker's forwarded traffic:",
+          "terminals": [
+            { "command": "sudo iptables -A FORWARD -i docker0 -j ACCEPT", "explanation": "Allows forwarding from the Docker bridge interface." },
+            { "command": "sudo iptables -A FORWARD -o docker0 -j ACCEPT", "explanation": "Allows forwarding to the Docker bridge interface." },
+            { "command": "sudo iptables -A FORWARD -i docker0 -o docker0 -j ACCEPT", "explanation": "Allows inter-container communication on the Docker bridge." }
+          ]
+        },
+        {
+          "title": "Check Docker iptables Rules",
+          "terminals": [
+            { "command": "sudo iptables -L DOCKER", "output": "Chain DOCKER (1 references)\ntarget     prot opt source               destination\nACCEPT     tcp  --  anywhere             anywhere             tcp dpt:80", "explanation": "Shows Docker's custom chain. Each published port appears as an ACCEPT rule." },
+            { "command": "sudo iptables -t nat -L DOCKER", "explanation": "Shows Docker's NAT rules for port forwarding to containers." }
+          ]
+        },
+        {
+          "title": "Restart Docker After Flushing",
+          "terminals": [
+            { "command": "sudo systemctl restart docker", "explanation": "Restart Docker to recreate all iptables rules if you accidentally flushed them." }
+          ]
+        }
+      ],
+      "infoBox": {
+        "type": "warning",
+        "content": "Important: Never run iptables -F (flush) on a server running Docker containers without understanding the consequences. You will immediately lose connectivity to all running containers. Always restart Docker after flushing rules."
+      }
+    },
+    {
+      "id": "testing-firewall",
+      "title": "Testing Your Firewall",
+      "content": [
+        "After configuring your firewall, you must verify that it works as expected. Testing ensures your rules are correct and you haven't accidentally left gaps in your defense."
+      ],
+      "subsections": [
+        {
+          "title": "Quick Connectivity Check",
+          "content": "Use curl or wget from another machine to test if ports are accessible. From a remote system:",
+          "terminals": [
+            { "command": "curl -v http://your-server-ip:80", "explanation": "If the connection succeeds, port 80 is open. If it hangs or times out, the port is blocked by your firewall." },
+            { "command": "curl -v https://your-server-ip:443", "explanation": "Test HTTPS. If your web server is running but this fails, check port 443 in your iptables rules." }
+          ]
+        },
+        {
+          "title": "Port Scanning with nmap",
+          "content": "nmap is the standard tool for firewall testing. Install it on a separate machine and scan your server:",
+          "terminals": [
+            { "command": "sudo nmap -sS your-server-ip", "output": "Starting Nmap 7.80 ( https://nmap.org )\nNmap scan report for your-server-ip\nPORT     STATE    SERVICE\n22/tcp   open     ssh\n80/tcp   open     http\n443/tcp  open     https\n3306/tcp filtered mysql\n\nNmap done: 1 IP address (1 host up) scanned in 2.34 seconds", "explanation": "open means the port is accessible. filtered means a firewall is blocking it (DROP). closed means no service is listening (REJECT)." },
+            { "command": "sudo nmap -sU your-server-ip", "explanation": "UDP scan. UDP scanning is slower but essential for finding open UDP services like DNS (port 53)." }
+          ]
+        },
+        {
+          "title": "Test from the Server Itself",
+          "terminals": [
+            { "command": "sudo iptables -L -v", "explanation": "Check packet counters. If a rule has matched packets, you'll see non-zero counts in the pkts column." },
+            { "command": "watch -n 1 'sudo iptables -L -v'", "explanation": "Watch counters in real-time. Run a test from another machine and watch the counters increment. If the counter on an ACCEPT rule doesn't increase, your traffic is matching a different rule." }
+          ]
+        },
+        {
+          "title": "Simulate a Port Scan",
+          "content": "Use nmap to simulate an attacker scanning your ports. This helps identify unexpected open ports:",
+          "terminals": [
+            { "command": "sudo nmap -sS -p- your-server-ip", "explanation": "Scans all 65535 TCP ports. This takes time but reveals every open port on your server." },
+            { "command": "sudo nmap -sV your-server-ip", "explanation": "Version detection. Identifies the software and version running on each open port." }
+          ]
+        },
+        {
+          "title": "Check Logs for Blocked Traffic",
+          "terminals": [
+            { "command": "sudo dmesg | grep \"iptables\" | tail -20", "explanation": "Shows the last 20 iptables log entries. If you set up LOG rules (see the Logging section), you can see exactly which packets are being dropped." },
+            { "command": "sudo grep \"Dropped\" /var/log/syslog | tail -20", "explanation": "Alternative log check using syslog. Replace \"Dropped\" with your LOG prefix." }
+          ]
+        }
+      ],
+      "infoBox": {
+        "type": "tip",
+        "content": "Always test from both inside and outside your network. A rule that works for local traffic may not work for external traffic. Use a mobile hotspot or a cloud VM as your external testing point."
+      }
     },
     {
       "id": "troubleshooting",

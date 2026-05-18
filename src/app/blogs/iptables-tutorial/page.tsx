@@ -23,6 +23,11 @@ interface Subsection {
   steps?: string[];
 }
 
+interface SectionImage {
+  src: string;
+  alt: string;
+}
+
 interface InfoBox {
   type: string;
   content: string;
@@ -44,6 +49,7 @@ interface Section {
   content?: string[];
   infoBox?: InfoBox;
   cards?: Card[];
+  image?: SectionImage;
   packetFlow?: string[];
   tables?: DataTable;
   targets?: DataTable;
@@ -182,18 +188,13 @@ function SectionRenderer({ section }: { section: Section }) {
         </div>
       )}
 
-      {section.packetFlow && (
-        <div className="p-3 sm:p-4 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 mb-3 sm:mb-4">
-          <h4 className="font-semibold text-zinc-900 dark:text-zinc-100 mb-2 text-sm sm:text-base">
-            Packet Flow
-          </h4>
-          <div className="text-xs sm:text-sm space-y-1 font-mono overflow-x-auto">
-            {section.packetFlow.map((line, i) => (
-              <p key={i} className="whitespace-nowrap">
-                {line}
-              </p>
-            ))}
-          </div>
+      {section.image && (
+        <div className="mb-4 sm:mb-6 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-700">
+          <img
+            src={section.image.src}
+            alt={section.image.alt}
+            className="w-full h-auto"
+          />
         </div>
       )}
 
