@@ -6,4 +6,12 @@
     "author": "E-Learning Platform",
     "date": "2026-05-17"
   }
+  ,
+  {
+    "slug": "firewalls",
+    "title": "Practical Linux Firewalls: iptables, nftables, UFW & firewalld",
+    "content": "A concise practical guide to Linux firewall tools with commands and example outputs. Covers iptables, nftables, ufw, and firewalld plus best practices.",
+    "author": "E-Learning Platform",
+    "date": "2026-05-18"
+  }
 ]
