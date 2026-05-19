@@ -5,5 +5,19 @@
     "content": "Master the Linux firewall from basics to advanced configurations. Learn to protect your server with practical, hands-on examples including installation, rule management, NAT, port forwarding, and security best practices.",
     "author": "E-Learning Platform",
     "date": "2026-05-17"
+  },
+  {
+    "slug": "firewalls",
+    "title": "Practical Linux Firewalls: iptables, nftables, UFW & firewalld",
+    "content": "A concise practical guide to Linux firewall tools with commands and example outputs. Covers iptables, nftables, ufw, and firewalld plus best practices.",
+    "author": "E-Learning Platform",
+    "date": "2026-05-18"
+  },
+  {
+    "slug": "react-postgresql-deployment",
+    "title": "Complete Guide: Hosting React + PostgreSQL on Local VMs with Internet Access",
+    "content": "Learn to deploy a full-stack React application with PostgreSQL database on local VMs using VirtualBox, configure firewalls, setup SSH tunnels, port forwarding with TP-Link Deco router, and expose your app to the internet securely with HTTPS.",
+    "author": "E-Learning Platform",
+    "date": "2026-05-19"
   }
 ]

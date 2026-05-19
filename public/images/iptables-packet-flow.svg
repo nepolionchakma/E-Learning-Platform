@@ -1,0 +1,146 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 700" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="800" y2="700" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0f172a"/>
+      <stop offset="1" stop-color="#1e1b4b"/>
+    </linearGradient>
+    <linearGradient id="inputGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#ef4444"/>
+      <stop offset="1" stop-color="#dc2626"/>
+    </linearGradient>
+    <linearGradient id="forwardGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#06b6d4"/>
+      <stop offset="1" stop-color="#0891b2"/>
+    </linearGradient>
+    <linearGradient id="outputGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#8b5cf6"/>
+      <stop offset="1" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="processGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#22c55e"/>
+      <stop offset="1" stop-color="#16a34a"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="boxShadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="700" fill="url(#bg)" rx="12"/>
+
+  <!-- Title -->
+  <text x="400" y="38" fill="#ffffff" font-family="system-ui, sans-serif" font-size="22" font-weight="bold" text-anchor="middle" letter-spacing="1">iptables Packet Flow</text>
+  <text x="400" y="58" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12" text-anchor="middle">How network packets travel through the filter table chains</text>
+
+  <!-- Incoming Packet -->
+  <rect x="325" y="76" width="150" height="40" rx="20" fill="#334155" stroke="#64748b" stroke-width="1.5" filter="url(#boxShadow)"/>
+  <text x="400" y="101" fill="#f1f5f9" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" text-anchor="middle">📥 Incoming Packet</text>
+
+  <!-- Arrow from Incoming Packet to Decision -->
+  <line x1="400" y1="116" x2="400" y2="148" stroke="#64748b" stroke-width="2"/>
+  <polygon points="400,152 394,142 406,142" fill="#64748b"/>
+
+  <!-- Decision Diamond: Is it for this VM? -->
+  <polygon points="400,152 520,200 400,248 280,200" fill="#1e293b" stroke="#f59e0b" stroke-width="2" filter="url(#boxShadow)"/>
+  <text x="400" y="196" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Is it for</text>
+  <text x="400" y="212" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">this VM?</text>
+
+  <!-- YES label (left arrow) -->
+  <text x="345" y="178" fill="#22c55e" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">YES</text>
+  <line x1="280" y1="200" x2="160" y2="200" stroke="#22c55e" stroke-width="2"/>
+  <polygon points="156,200 166,194 166,206" fill="#22c55e"/>
+
+  <!-- NO label (right arrow) -->
+  <text x="455" y="178" fill="#06b6d4" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">NO</text>
+  <line x1="520" y1="200" x2="640" y2="200" stroke="#06b6d4" stroke-width="2"/>
+  <polygon points="644,200 634,194 634,206" fill="#06b6d4"/>
+
+  <!-- INPUT Chain Box -->
+  <rect x="60" y="180" width="100" height="40" rx="8" fill="#450a0a" stroke="#ef4444" stroke-width="1.5" filter="url(#boxShadow)"/>
+  <text x="110" y="205" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">INPUT Chain</text>
+
+  <!-- FORWARD Chain Box -->
+  <rect x="640" y="180" width="100" height="40" rx="8" fill="#0c4a6e" stroke="#06b6d4" stroke-width="1.5" filter="url(#boxShadow)"/>
+  <text x="690" y="205" fill="#67e8f9" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">FORWARD Chain</text>
+
+  <!-- Arrow from INPUT down to Processed -->
+  <line x1="110" y1="220" x2="110" y2="290" stroke="#ef4444" stroke-width="2"/>
+  <polygon points="110,294 104,284 116,284" fill="#ef4444"/>
+
+  <!-- Arrow from FORWARD down -->
+  <line x1="690" y1="220" x2="690" y2="290" stroke="#06b6d4" stroke-width="2"/>
+  <polygon points="690,294 684,284 696,284" fill="#06b6d4"/>
+
+  <!-- Processed box (under INPUT) -->
+  <rect x="60" y="294" width="100" height="36" rx="8" fill="#052e16" stroke="#22c55e" stroke-width="1.5" filter="url(#boxShadow)"/>
+  <text x="110" y="316" fill="#86efac" font-family="system-ui, sans-serif" font-size="12" font-weight="500" text-anchor="middle">Processed</text>
+
+  <!-- Routed out box (under FORWARD) -->
+  <rect x="640" y="294" width="100" height="36" rx="8" fill="#0c4a6e" stroke="#06b6d4" stroke-width="1.5" filter="url(#boxShadow)"/>
+  <text x="690" y="316" fill="#67e8f9" font-family="system-ui, sans-serif" font-size="12" font-weight="500" text-anchor="middle">Routed Out</text>
+
+  <!-- Arrow from Processed to VM Processes -->
+  <line x1="110" y1="330" x2="110" y2="370" stroke="#22c55e" stroke-width="2"/>
+  <line x1="110" y1="370" x2="400" y2="370" stroke="#22c55e" stroke-width="2"/>
+  <line x1="400" y1="370" x2="400" y2="400" stroke="#22c55e" stroke-width="2"/>
+  <polygon points="400,404 394,394 406,394" fill="#22c55e"/>
+
+  <!-- VM Processes -->
+  <rect x="310" y="404" width="180" height="46" rx="23" fill="#052e16" stroke="#22c55e" stroke-width="2" filter="url(#boxShadow)"/>
+  <circle cx="340" cy="427" r="12" fill="#22c55e" opacity="0.2"/>
+  <text x="340" y="432" fill="#86efac" font-family="system-ui, sans-serif" font-size="14" text-anchor="middle">🖥</text>
+  <text x="365" y="425" fill="#f0fdf4" font-family="system-ui, sans-serif" font-size="13" font-weight="bold">VM Processes</text>
+  <text x="365" y="441" fill="#86efac" font-family="system-ui, sans-serif" font-size="10">(Services / Apps / Daemons)</text>
+
+  <!-- Arrow from VM Processes to Generates reply -->
+  <line x1="400" y1="450" x2="400" y2="480" stroke="#22c55e" stroke-width="2"/>
+  <polygon points="400,484 394,474 406,474" fill="#22c55e"/>
+
+  <!-- Generates Reply -->
+  <rect x="310" y="484" width="180" height="34" rx="17" fill="#4c1d95" stroke="#8b5cf6" stroke-width="1.5" filter="url(#boxShadow)"/>
+  <text x="400" y="505" fill="#c4b5fd" font-family="system-ui, sans-serif" font-size="12" font-weight="500" text-anchor="middle">Generates Reply</text>
+
+  <!-- Arrow from Generates reply to OUTPUT -->
+  <line x1="400" y1="518" x2="400" y2="548" stroke="#8b5cf6" stroke-width="2"/>
+  <polygon points="400,552 394,542 406,542" fill="#8b5cf6"/>
+
+  <!-- OUTPUT Chain Box -->
+  <rect x="325" y="552" width="150" height="40" rx="8" fill="#3b0764" stroke="#8b5cf6" stroke-width="1.5" filter="url(#boxShadow)"/>
+  <text x="400" y="577" fill="#c4b5fd" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">OUTPUT Chain</text>
+
+  <!-- Arrow from OUTPUT out -->
+  <line x1="400" y1="592" x2="400" y2="640" stroke="#8b5cf6" stroke-width="2"/>
+  <polygon points="400,644 394,634 406,634" fill="#8b5cf6"/>
+
+  <!-- Leaves System -->
+  <rect x="340" y="644" width="120" height="34" rx="17" fill="#334155" stroke="#64748b" stroke-width="1.5" filter="url(#boxShadow)"/>
+  <text x="400" y="665" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="12" font-weight="500" text-anchor="middle">📤 Leaves System</text>
+
+  <!-- Arrow from Routed out -->
+  <line x1="690" y1="330" x2="690" y2="620" stroke="#06b6d4" stroke-width="2"/>
+  <line x1="690" y1="620" x2="400" y2="620" stroke="#06b6d4" stroke-width="2" stroke-dasharray="6 4"/>
+  <line x1="400" y1="620" x2="400" y2="640" stroke="#06b6d4" stroke-width="2"/>
+  <polygon points="400,644 394,634 406,634" fill="#06b6d4"/>
+
+  <!-- Chain Labels on the left side -->
+  <text x="30" y="370" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="10" transform="rotate(-90, 30, 370)">Incoming Traffic Path</text>
+  <text x="770" y="370" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="10" transform="rotate(90, 770, 370)">Forwarded Traffic Path</text>
+
+  <!-- Legend -->
+  <g transform="translate(20, 648)">
+    <rect x="0" y="0" width="180" height="40" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+    <rect x="8" y="8" width="10" height="10" rx="2" fill="#ef4444"/>
+    <text x="22" y="17" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="10">INPUT — Destined for this VM</text>
+    <rect x="8" y="24" width="10" height="10" rx="2" fill="#06b6d4"/>
+    <text x="22" y="33" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="10">FORWARD — Passing through</text>
+    <rect x="100" y="8" width="10" height="10" rx="2" fill="#8b5cf6"/>
+    <text x="114" y="17" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="10">OUTPUT — Leaving this VM</text>
+  </g>
+</svg>

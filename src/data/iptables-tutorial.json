@@ -4,7 +4,7 @@
   "description": "Master the Linux firewall from basics to advanced configurations. Learn to protect your server with practical, hands-on examples.",
   "author": "E-Learning Platform",
   "date": "2026-05-17",
-  "readTime": "25 min read",
+  "readTime": "35 min read",
   "sections": [
     {
       "id": "introduction",
@@ -26,43 +26,67 @@
         "Think of iptables as a security checkpoint at an airport. Every packet (traveler) goes through a series of checks (rules). Based on those checks, the packet is either allowed through, sent away, or flagged for inspection."
       ],
       "cards": [
-        { "title": "Tables", "desc": "Groups of rules for specific purposes (filter, nat, mangle, raw)" },
-        { "title": "Chains", "desc": "Ordered lists of rules (INPUT, OUTPUT, FORWARD, PREROUTING, POSTROUTING)" },
-        { "title": "Rules", "desc": "Conditions that packets must match (IP, port, protocol, interface)" },
-        { "title": "Targets", "desc": "Actions taken when a rule matches (ACCEPT, DROP, REJECT, LOG)" }
+        {
+          "title": "Tables",
+          "desc": "Groups of rules for specific purposes (filter, nat, mangle, raw)"
+        },
+        {
+          "title": "Chains",
+          "desc": "Ordered lists of rules (INPUT, OUTPUT, FORWARD, PREROUTING, POSTROUTING)"
+        },
+        {
+          "title": "Rules",
+          "desc": "Conditions that packets must match (IP, port, protocol, interface)"
+        },
+        {
+          "title": "Targets",
+          "desc": "Actions taken when a rule matches (ACCEPT, DROP, REJECT, LOG)"
+        }
       ]
     },
     {
-      "id": "how-it-works",
-      "title": "How iptables Works",
+      "id": "understanding-chains",
+      "title": "Understanding Chains & Defense in Depth",
       "content": [
-        "When a packet arrives at your system, the kernel sends it through iptables. The packet travels through tables and chains in a specific order:"
+        "iptables uses three built-in chains in the default filter table to manage network traffic based on its direction and destination relative to your system."
       ],
-      "packetFlow": [
-        "1. Packet arrives → PREROUTING chain (raw, mangle, nat tables)",
-        "2. Routing decision: Is this packet for this machine?",
-        "3a. Yes → INPUT chain (mangle, filter tables) → Local process",
-        "3b. No → FORWARD chain (mangle, filter tables) → POSTROUTING → Out",
-        "4. Local process sends packet → OUTPUT chain → POSTROUTING → Out"
-      ],
-      "tables": {
-        "headers": ["Table", "Purpose", "Chains"],
-        "rows": [
-          ["filter", "Default packet filtering (most commonly used)", "INPUT, FORWARD, OUTPUT"],
-          ["nat", "Network Address Translation for routing packets", "PREROUTING, POSTROUTING, OUTPUT"],
-          ["mangle", "Modifies IP header properties (TTL, TOS, etc.)", "All five chains"],
-          ["raw", "Exempts packets from connection tracking", "PREROUTING, OUTPUT"]
-        ]
+      "image": {
+        "src": "/images/iptables-packet-flow.svg",
+        "alt": "iptables packet flow diagram showing how packets travel through INPUT, FORWARD, and OUTPUT chains with routing decision"
       },
-      "targets": {
-        "headers": ["Target", "What It Does"],
-        "rows": [
-          ["ACCEPT", "Allows the packet through"],
-          ["DROP", "Silently discards the packet (sender gets no response)"],
-          ["REJECT", "Discards the packet and sends an error back to sender"],
-          ["LOG", "Records packet info to syslog (then continues to next rule)"],
-          ["MASQUERADE", "Changes source IP for dynamically assigned addresses (NAT)"]
-        ]
+      "subsections": [
+        {
+          "title": "INPUT Chain — Your Front Door",
+          "content": "Think of INPUT as your front door — it controls everything coming into your system from the outside. Every packet that arrives must pass through this chain before reaching your services. Whether it is a visitor connecting to your website, an admin SSH-ing in, or an API request hitting your server, the INPUT chain decides who gets in and who gets turned away."
+        },
+        {
+          "title": "OUTPUT Chain — Your Mailbox",
+          "content": "Think of OUTPUT as your mailbox — it controls everything your system sends out. When your server responds to visitors, sends emails, downloads updates, or calls external APIs, the packet passes through the OUTPUT chain. This chain is your defense against data theft: even if an attacker compromises a service, strict OUTPUT rules can stop them from exfiltrating your data or downloading malware."
+        },
+        {
+          "title": "FORWARD Chain — Your Bridge",
+          "content": "Think of FORWARD as a bridge between two networks — it controls traffic that passes through your system without being destined for it or originating from it. This chain is only active when your machine acts as a router, gateway, or firewall between two networks (e.g., connecting a private office network to the internet). For most servers, FORWARD can be set to DROP since they do not route traffic."
+        },
+        {
+          "title": "Defense in Depth: Why Rules for Each Chain Matter",
+          "content": "Using specific rules for each chain implements a security strategy called Defense in Depth. Think of it like securing a building: you lock the front door (INPUT), you monitor what leaves through the exits (OUTPUT), and you block any tunnels between buildings (FORWARD). By controlling every direction of traffic, you prevent a single security failure from compromising your entire system."
+        },
+        {
+          "title": "Why Write INPUT Rules?",
+          "content": "Think of this as installing a lock on your front door and a peephole. INPUT rules block attackers from scanning your ports or forcing their way into your services. They also let you restrict sensitive services (like SSH) to only trusted IP addresses — so even if someone guesses your SSH port, they cannot reach it unless they are connecting from your office."
+        },
+        {
+          "title": "Why Write OUTPUT Rules?",
+          "content": "Think of this as having a security guard at every exit checking what leaves the building. If an attacker compromises your web server, strict OUTPUT rules prevent them from downloading hacking tools or uploading your stolen data to their servers. These rules also stop malware from turning your VM into a bot that attacks other computers."
+        },
+        {
+          "title": "Why Write FORWARD Rules?",
+          "content": "Think of this as blocking unauthorized tunnels between buildings on your property. If your VM has multiple network cards, dropping FORWARD traffic ensures outsiders cannot use your VM as a bridge to sneak into your private internal network — like an attacker using a compromised public server to reach your internal database server."
+        }
+      ],
+      "infoBox": {
+        "type": "tip",
+        "content": "Best Practice: The \"Default Drop\" Strategy — The safest way to configure iptables is to lock all doors by default, then open only what you need. Set INPUT, OUTPUT, and FORWARD to DROP, then create explicit ACCEPT rules only for trusted services (like SSH, HTTP, and DNS)."
       }
     },
     {
@@ -85,20 +109,108 @@
         {
           "title": "Install on Debian/Ubuntu",
           "terminals": [
-            { "command": "sudo apt install iptables", "explanation": "Installs iptables using the APT package manager." },
-            { "command": "sudo apt install iptables-persistent", "explanation": "This package saves your rules so they survive a reboot. During installation, it will ask whether to save current IPv4 and IPv6 rules — say Yes." },
-            { "command": "sudo systemctl enable netfilter-persistent", "explanation": "Enables the service to automatically restore rules on boot." }
+            {
+              "command": "sudo apt install iptables",
+              "explanation": "Installs iptables using the APT package manager."
+            },
+            {
+              "command": "sudo apt install iptables-persistent",
+              "explanation": "This package saves your rules so they survive a reboot. During installation, it will ask whether to save current IPv4 and IPv6 rules — say Yes."
+            },
+            {
+              "command": "sudo systemctl enable netfilter-persistent",
+              "explanation": "Enables the service to automatically restore rules on boot."
+            }
           ]
         },
         {
           "title": "Install on RHEL/CentOS/Rocky",
           "terminals": [
-            { "command": "sudo yum install iptables" },
-            { "command": "sudo yum install iptables-services" },
-            { "command": "sudo systemctl enable iptables" }
+            {
+              "command": "sudo yum install iptables"
+            },
+            {
+              "command": "sudo yum install iptables-services"
+            },
+            {
+              "command": "sudo systemctl enable iptables"
+            }
           ]
         }
       ]
+    },
+    {
+      "id": "systemd-management",
+      "title": "Managing iptables with systemd",
+      "content": [
+        "Modern Linux distributions use systemd to manage services, including iptables. You can control the iptables service just like any other systemd service."
+      ],
+      "subsections": [
+        {
+          "title": "Check iptables Service Status",
+          "terminals": [
+            {
+              "command": "sudo systemctl status iptables",
+              "output": "● iptables.service - iptables IPv4 firewall management\n   Loaded: loaded (/usr/lib/systemd/system/iptables.service; enabled; vendor preset: disabled)\n   Active: active (exited) since Mon 2026-05-18 10:30:00 UTC",
+              "explanation": "Shows whether the iptables service is active and enabled. 'active (exited)' is normal — iptables applies rules at boot and exits."
+            }
+          ]
+        },
+        {
+          "title": "Start iptables Service",
+          "terminals": [
+            {
+              "command": "sudo systemctl start iptables",
+              "explanation": "Starts the iptables service and applies the saved rules immediately."
+            }
+          ]
+        },
+        {
+          "title": "Enable iptables on Boot",
+          "terminals": [
+            {
+              "command": "sudo systemctl enable iptables",
+              "explanation": "Configures iptables to start automatically on system boot. Without this, your firewall rules won't be restored after a reboot."
+            }
+          ]
+        },
+        {
+          "title": "Save Rules Using systemd Integration",
+          "content": "After making changes, save your rules to persist them across reboots. The iptables-save command combined with tee writes rules to the system configuration file:",
+          "terminals": [
+            {
+              "command": "sudo iptables-save | sudo tee /etc/iptables/rules.v4",
+              "explanation": "iptables-save exports all current rules to stdout. tee writes the output to /etc/iptables/rules.v4 while also showing it on screen. Use sudo because both reading iptables and writing to /etc require root."
+            }
+          ],
+          "infoBox": {
+            "type": "tip",
+            "content": "On Debian/Ubuntu, you can also use: sudo netfilter-persistent save. On RHEL/CentOS: sudo service iptables save. Both achieve the same result."
+          }
+        },
+        {
+          "title": "Restart iptables (Reload Rules)",
+          "terminals": [
+            {
+              "command": "sudo systemctl restart iptables",
+              "explanation": "Restarts the service and reloads all rules from the saved configuration file."
+            }
+          ]
+        },
+        {
+          "title": "Stop iptables (Disable Firewall Temporarily)",
+          "terminals": [
+            {
+              "command": "sudo systemctl stop iptables",
+              "explanation": "Stops the iptables service and flushes all rules. Only use this for debugging — never leave a production server without a firewall."
+            }
+          ]
+        }
+      ],
+      "infoBox": {
+        "type": "warning",
+        "content": "On some distributions (especially Debian/Ubuntu), the iptables systemd service may not be installed by default. Use the iptables-persistent package or netfilter-persistent instead. Check with: sudo systemctl list-unit-files | grep iptables"
+      }
     },
     {
       "id": "syntax",
@@ -111,29 +223,91 @@
         "explanation": "This is the universal formula. Let's break down each part."
       },
       "optionsTable": {
-        "headers": ["Option", "Description"],
+        "headers": [
+          "Option",
+          "Description"
+        ],
         "rows": [
-          ["-A (append)", "Add a rule to the end of a chain"],
-          ["-I (insert)", "Insert a rule at a specific position (default: top)"],
-          ["-D (delete)", "Remove a rule from a chain"],
-          ["-L (list)", "Show all rules in a chain"],
-          ["-F (flush)", "Remove all rules from a chain"],
-          ["-P (policy)", "Set the default policy for a chain"],
-          ["-C (check)", "Check if a rule exists"],
-          ["-N (new-chain)", "Create a new custom chain"],
-          ["-v (verbose)", "Show detailed output (packet/byte counters)"]
+          [
+            "-A (append)",
+            "Add a rule to the end of a chain"
+          ],
+          [
+            "-I (insert)",
+            "Insert a rule at a specific position (default: top)"
+          ],
+          [
+            "-D (delete)",
+            "Remove a rule from a chain"
+          ],
+          [
+            "-L (list)",
+            "Show all rules in a chain"
+          ],
+          [
+            "-F (flush)",
+            "Remove all rules from a chain"
+          ],
+          [
+            "-P (policy)",
+            "Set the default policy for a chain"
+          ],
+          [
+            "-C (check)",
+            "Check if a rule exists"
+          ],
+          [
+            "-N (new-chain)",
+            "Create a new custom chain"
+          ],
+          [
+            "-v (verbose)",
+            "Show detailed output (packet/byte counters)"
+          ]
         ]
       },
       "criteriaTable": {
-        "headers": ["Flag", "Purpose", "Example"],
+        "headers": [
+          "Flag",
+          "Purpose",
+          "Example"
+        ],
         "rows": [
-          ["-p", "Protocol (tcp, udp, icmp)", "-p tcp"],
-          ["--dport", "Destination port", "--dport 80"],
-          ["--sport", "Source port", "--sport 443"],
-          ["-s", "Source IP address", "-s 192.168.1.100"],
-          ["-d", "Destination IP address", "-d 10.0.0.1"],
-          ["-i", "Input interface", "-i eth0"],
-          ["-o", "Output interface", "-o eth1"]
+          [
+            "-p",
+            "Protocol (tcp, udp, icmp)",
+            "-p tcp"
+          ],
+          [
+            "--dport",
+            "Destination port",
+            "--dport 80"
+          ],
+          [
+            "--sport",
+            "Source port",
+            "--sport 443"
+          ],
+          [
+            "-s",
+            "Source IP address",
+            "-s 192.168.1.100"
+          ],
+          [
+            "-d",
+            "Destination IP address",
+            "-d 10.0.0.1"
+          ],
+          [
+            "-i",
+            "Input interface",
+            "-i eth0"
+          ],
+          [
+            "-o",
+            "Output interface",
+            "-o eth1"
+          ]
         ]
       }
     },
@@ -196,8 +370,14 @@
         {
           "title": "Allow loopback",
           "terminals": [
-            { "command": "sudo iptables -A INPUT -i lo -j ACCEPT", "explanation": "Allows all incoming traffic on the loopback interface. The -i lo flag matches packets coming from the lo interface." },
-            { "command": "sudo iptables -A OUTPUT -o lo -j ACCEPT", "explanation": "Allows all outgoing traffic on the loopback interface." }
+            {
+              "command": "sudo iptables -A INPUT -i lo -j ACCEPT",
+              "explanation": "Allows all incoming traffic on the loopback interface. The -i lo flag matches packets coming from the lo interface."
+            },
+            {
+              "command": "sudo iptables -A OUTPUT -o lo -j ACCEPT",
+              "explanation": "Allows all outgoing traffic on the loopback interface."
+            }
           ]
         }
       ],
@@ -216,31 +396,46 @@
         {
           "title": "Allow HTTP (Web Traffic - Port 80)",
           "terminals": [
-            { "command": "sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT", "explanation": "-p tcp specifies the TCP protocol. --dport 80 matches packets destined for port 80. -j ACCEPT allows them through." }
+            {
+              "command": "sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT",
+              "explanation": "-p tcp specifies the TCP protocol. --dport 80 matches packets destined for port 80. -j ACCEPT allows them through."
+            }
           ]
         },
         {
           "title": "Allow HTTPS (Secure Web - Port 443)",
           "terminals": [
-            { "command": "sudo iptables -A INPUT -p tcp --dport 443 -j ACCEPT", "explanation": "Same as HTTP but for encrypted HTTPS traffic on port 443." }
+            {
+              "command": "sudo iptables -A INPUT -p tcp --dport 443 -j ACCEPT",
+              "explanation": "Same as HTTP but for encrypted HTTPS traffic on port 443."
+            }
           ]
         },
         {
           "title": "Allow SSH (Remote Access - Port 22)",
           "terminals": [
-            { "command": "sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT", "explanation": "Critical for remote server management. Add this BEFORE setting restrictive default policies!" }
+            {
+              "command": "sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT",
+              "explanation": "Critical for remote server management. Add this BEFORE setting restrictive default policies!"
+            }
           ]
         },
         {
           "title": "Allow Both HTTP and HTTPS Together",
           "terminals": [
-            { "command": "sudo iptables -A INPUT -p tcp -m multiport --dports 80,443 -j ACCEPT", "explanation": "The multiport module lets you match multiple ports in a single rule, keeping your ruleset cleaner." }
+            {
+              "command": "sudo iptables -A INPUT -p tcp -m multiport --dports 80,443 -j ACCEPT",
+              "explanation": "The multiport module lets you match multiple ports in a single rule, keeping your ruleset cleaner."
+            }
           ]
         },
         {
           "title": "Allow Established Connections",
           "terminals": [
-            { "command": "sudo iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT", "explanation": "This is crucial! It allows return traffic for connections your server initiated. Without this, your server can send requests but never receive responses." }
+            {
+              "command": "sudo iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT",
+              "explanation": "This is crucial! It allows return traffic for connections your server initiated. Without this, your server can send requests but never receive responses."
+            }
           ]
         }
       ],
@@ -259,32 +454,50 @@
         {
           "title": "Accept from a Specific IP",
           "terminals": [
-            { "command": "sudo iptables -A INPUT -s 192.168.1.100 -j ACCEPT", "explanation": "The -s flag specifies the source IP. All packets from 192.168.1.100 will be accepted." }
+            {
+              "command": "sudo iptables -A INPUT -s 192.168.1.100 -j ACCEPT",
+              "explanation": "The -s flag specifies the source IP. All packets from 192.168.1.100 will be accepted."
+            }
           ]
         },
         {
           "title": "Block a Specific IP",
           "terminals": [
-            { "command": "sudo iptables -A INPUT -s 203.0.113.51 -j DROP", "explanation": "DROP silently discards packets — the sender gets no response and will eventually time out." },
-            { "command": "sudo iptables -A INPUT -s 203.0.113.51 -j REJECT", "explanation": "REJECT sends back a 'connection refused' error, so the sender knows immediately that the connection was denied." }
+            {
+              "command": "sudo iptables -A INPUT -s 203.0.113.51 -j DROP",
+              "explanation": "DROP silently discards packets — the sender gets no response and will eventually time out."
+            },
+            {
+              "command": "sudo iptables -A INPUT -s 203.0.113.51 -j REJECT",
+              "explanation": "REJECT sends back a 'connection refused' error, so the sender knows immediately that the connection was denied."
+            }
           ]
         },
         {
           "title": "Block an IP Range (Subnet)",
           "terminals": [
-            { "command": "sudo iptables -A INPUT -s 203.0.113.0/24 -j DROP", "explanation": "The /24 CIDR notation blocks the entire range from 203.0.113.0 to 203.0.113.255 (256 addresses)." }
+            {
+              "command": "sudo iptables -A INPUT -s 203.0.113.0/24 -j DROP",
+              "explanation": "The /24 CIDR notation blocks the entire range from 203.0.113.0 to 203.0.113.255 (256 addresses)."
+            }
           ]
         },
         {
           "title": "Allow SSH Only from a Specific IP",
           "terminals": [
-            { "command": "sudo iptables -A INPUT -p tcp -s 192.168.1.50 --dport 22 -j ACCEPT", "explanation": "This is a security best practice — restrict SSH access to only your trusted IP address." }
+            {
+              "command": "sudo iptables -A INPUT -p tcp -s 192.168.1.50 --dport 22 -j ACCEPT",
+              "explanation": "This is a security best practice — restrict SSH access to only your trusted IP address."
+            }
           ]
         },
         {
           "title": "Block Traffic to a Specific Interface",
           "terminals": [
-            { "command": "sudo iptables -A INPUT -i eth0 -s 203.0.113.51 -j DROP", "explanation": "Blocks traffic from 203.0.113.51 only when it arrives on the eth0 interface." }
+            {
+              "command": "sudo iptables -A INPUT -i eth0 -s 203.0.113.51 -j DROP",
+              "explanation": "Blocks traffic from 203.0.113.51 only when it arrives on the eth0 interface."
+            }
           ]
         }
       ]
@@ -299,15 +512,28 @@
         {
           "title": "Add logging rule",
           "terminals": [
-            { "command": "sudo iptables -A INPUT -j LOG --log-prefix \"Dropped: \"", "explanation": "The LOG target records packet information to syslog. The --log-prefix adds a custom tag to make log entries easy to find." },
-            { "command": "sudo iptables -A INPUT -j DROP", "explanation": "After logging, drop the packet. Note: LOG doesn't stop processing — the packet continues to the next rule." }
+            {
+              "command": "sudo iptables -A INPUT -j LOG --log-prefix \"Dropped: \"",
+              "explanation": "The LOG target records packet information to syslog. The --log-prefix adds a custom tag to make log entries easy to find."
+            },
+            {
+              "command": "sudo iptables -A INPUT -j DROP",
+              "explanation": "After logging, drop the packet. Note: LOG doesn't stop processing — the packet continues to the next rule."
+            }
           ]
         },
         {
           "title": "View the Logs",
           "terminals": [
-            { "command": "sudo dmesg | grep \"Dropped\"", "output": "[  234.567890] Dropped: IN=eth0 OUT= MAC=... SRC=203.0.113.51 DST=192.168.1.10 ... PROTO=TCP SPT=12345 DPT=22", "explanation": "dmesg shows kernel messages. grep filters for our custom prefix." },
-            { "command": "sudo tail -f /var/log/syslog | grep \"Dropped\"", "explanation": "Alternative: watch syslog in real-time for dropped packets. Use Ctrl+C to stop." }
+            {
+              "command": "sudo dmesg | grep \"Dropped\"",
+              "output": "[  234.567890] Dropped: IN=eth0 OUT= MAC=... SRC=203.0.113.51 DST=192.168.1.10 ... PROTO=TCP SPT=12345 DPT=22",
+              "explanation": "dmesg shows kernel messages. grep filters for our custom prefix."
+            },
+            {
+              "command": "sudo tail -f /var/log/syslog | grep \"Dropped\"",
+              "explanation": "Alternative: watch syslog in real-time for dropped packets. Use Ctrl+C to stop."
+            }
           ]
         }
       ],
@@ -499,21 +725,36 @@
           ],
           "contentAfter": "Then delete the rule you want (e.g., rule 4):",
           "terminalsAfter": [
-            { "command": "sudo iptables -D INPUT 4", "explanation": "-D INPUT 4 deletes rule number 4 from the INPUT chain. The remaining rules shift up automatically." }
+            {
+              "command": "sudo iptables -D INPUT 4",
+              "explanation": "-D INPUT 4 deletes rule number 4 from the INPUT chain. The remaining rules shift up automatically."
+            }
           ]
         },
         {
           "title": "Delete by Specification",
           "terminals": [
-            { "command": "sudo iptables -D INPUT -s 203.0.113.51 -j DROP", "explanation": "This deletes the exact rule that drops traffic from 203.0.113.51. You must specify the rule exactly as it was created." }
+            {
+              "command": "sudo iptables -D INPUT -s 203.0.113.51 -j DROP",
+              "explanation": "This deletes the exact rule that drops traffic from 203.0.113.51. You must specify the rule exactly as it was created."
+            }
           ]
         },
         {
           "title": "Flush All Rules (Start Fresh)",
           "terminals": [
-            { "command": "sudo iptables -F", "explanation": "Removes ALL rules from all chains. Your default policies (ACCEPT/DROP) remain unchanged." },
-            { "command": "sudo iptables -X", "explanation": "Deletes all user-defined (custom) chains. Use this after -F to completely reset." },
-            { "command": "sudo iptables -P INPUT ACCEPT && sudo iptables -P FORWARD ACCEPT && sudo iptables -P OUTPUT ACCEPT", "explanation": "Resets all default policies to ACCEPT. Combined with -F and -X, this gives you a completely clean slate." }
+            {
+              "command": "sudo iptables -F",
+              "explanation": "Removes ALL rules from all chains. Your default policies (ACCEPT/DROP) remain unchanged."
+            },
+            {
+              "command": "sudo iptables -X",
+              "explanation": "Deletes all user-defined (custom) chains. Use this after -F to completely reset."
+            },
+            {
+              "command": "sudo iptables -P INPUT ACCEPT && sudo iptables -P FORWARD ACCEPT && sudo iptables -P OUTPUT ACCEPT",
+              "explanation": "Resets all default policies to ACCEPT. Combined with -F and -X, this gives you a completely clean slate."
+            }
           ]
         }
       ],
@@ -536,25 +777,34 @@
         {
           "title": "Step 1: Allow Loopback",
           "terminals": [
-            { "command": "sudo iptables -A INPUT -i lo -j ACCEPT" }
+            {
+              "command": "sudo iptables -A INPUT -i lo -j ACCEPT"
+            }
           ]
         },
         {
           "title": "Step 2: Allow Established Connections",
           "terminals": [
-            { "command": "sudo iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT" }
+            {
+              "command": "sudo iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT"
+            }
           ]
         },
         {
           "title": "Step 3: Allow SSH",
           "terminals": [
-            { "command": "sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT" }
+            {
+              "command": "sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT"
+            }
           ]
         },
         {
           "title": "Step 4: Set Default Policy to DROP",
           "terminals": [
-            { "command": "sudo iptables -P INPUT DROP", "explanation": "Now any incoming packet that doesn't match one of the rules above will be dropped. SSH still works because we added that rule first." }
+            {
+              "command": "sudo iptables -P INPUT DROP",
+              "explanation": "Now any incoming packet that doesn't match one of the rules above will be dropped. SSH still works because we added that rule first."
+            }
           ]
         },
         {
@@ -570,8 +820,12 @@
         {
           "title": "Add More Services as Needed",
           "terminals": [
-            { "command": "sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT" },
-            { "command": "sudo iptables -A INPUT -p tcp --dport 443 -j ACCEPT" }
+            {
+              "command": "sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT"
+            },
+            {
+              "command": "sudo iptables -A INPUT -p tcp --dport 443 -j ACCEPT"
+            }
           ]
         }
       ]
@@ -586,20 +840,32 @@
         {
           "title": "On Debian/Ubuntu",
           "terminals": [
-            { "command": "sudo netfilter-persistent save", "explanation": "Saves current rules to /etc/iptables/rules.v4. Rules will be automatically restored on boot." }
+            {
+              "command": "sudo netfilter-persistent save",
+              "explanation": "Saves current rules to /etc/iptables/rules.v4. Rules will be automatically restored on boot."
+            }
           ]
         },
         {
           "title": "On RHEL/CentOS/Rocky",
           "terminals": [
-            { "command": "sudo service iptables save", "explanation": "Saves rules to /etc/sysconfig/iptables." }
+            {
+              "command": "sudo service iptables save",
+              "explanation": "Saves rules to /etc/sysconfig/iptables."
+            }
           ]
         },
         {
           "title": "Manual Save/Restore",
           "terminals": [
-            { "command": "sudo iptables-save > /etc/iptables/rules.v4", "explanation": "Exports all current rules to a file. You can name and place this file anywhere." },
-            { "command": "sudo iptables-restore < /etc/iptables/rules.v4", "explanation": "Restores rules from a saved file. Useful for applying backup configurations." }
+            {
+              "command": "sudo iptables-save > /etc/iptables/rules.v4",
+              "explanation": "Exports all current rules to a file. You can name and place this file anywhere."
+            },
+            {
+              "command": "sudo iptables-restore < /etc/iptables/rules.v4",
+              "explanation": "Restores rules from a saved file. Useful for applying backup configurations."
+            }
           ]
         }
       ],
@@ -619,31 +885,46 @@
           "title": "Enable IP Forwarding",
           "content": "Before NAT works, the kernel must be allowed to forward packets:",
           "terminals": [
-            { "command": "sudo sysctl -w net.ipv4.ip_forward=1", "output": "net.ipv4.ip_forward = 1", "explanation": "Enables IP forwarding immediately. To make it permanent, add net.ipv4.ip_forward=1 to /etc/sysctl.conf" }
+            {
+              "command": "sudo sysctl -w net.ipv4.ip_forward=1",
+              "output": "net.ipv4.ip_forward = 1",
+              "explanation": "Enables IP forwarding immediately. To make it permanent, add net.ipv4.ip_forward=1 to /etc/sysctl.conf"
+            }
           ]
         },
         {
           "title": "MASQUERADE (Share Internet Connection)",
           "content": "Allow devices on a private network to access the internet through your server:",
           "terminals": [
-            { "command": "sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE", "explanation": "-t nat uses the NAT table. POSTROUTING modifies packets after routing. MASQUERADE replaces the source IP with the server's external IP." }
+            {
+              "command": "sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE",
+              "explanation": "-t nat uses the NAT table. POSTROUTING modifies packets after routing. MASQUERADE replaces the source IP with the server's external IP."
+            }
           ]
         },
         {
           "title": "Port Forwarding (DNAT)",
           "content": "Forward incoming traffic on port 80 to an internal server at 10.0.0.5:",
           "terminals": [
-            { "command": "sudo iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j DNAT --to-destination 10.0.0.5:80", "explanation": "PREROUTING modifies packets before routing. DNAT changes the destination address to 10.0.0.5." }
+            {
+              "command": "sudo iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j DNAT --to-destination 10.0.0.5:80",
+              "explanation": "PREROUTING modifies packets before routing. DNAT changes the destination address to 10.0.0.5."
+            }
           ],
           "contentAfter": "Allow the forwarded traffic through the filter table:",
           "terminalsAfter": [
-            { "command": "sudo iptables -A FORWARD -p tcp -d 10.0.0.5 --dport 80 -j ACCEPT" }
+            {
+              "command": "sudo iptables -A FORWARD -p tcp -d 10.0.0.5 --dport 80 -j ACCEPT"
+            }
           ]
         },
         {
           "title": "Verify NAT Rules",
           "terminals": [
-            { "command": "sudo iptables -t nat -L -n -v", "explanation": "Shows all NAT table rules with verbose output. The -n flag prevents DNS lookups for faster display." }
+            {
+              "command": "sudo iptables -t nat -L -n -v",
+              "explanation": "Shows all NAT table rules with verbose output. The -n flag prevents DNS lookups for faster display."
+            }
           ]
         }
       ]
@@ -656,46 +937,217 @@
           "title": "Rate Limiting (Prevent Brute Force)",
           "content": "Limit SSH connection attempts to prevent brute force attacks:",
           "terminals": [
-            { "command": "sudo iptables -A INPUT -p tcp --dport 22 -m conntrack --ctstate NEW -m recent --set --name SSH" },
-            { "command": "sudo iptables -A INPUT -p tcp --dport 22 -m conntrack --ctstate NEW -m recent --update --seconds 60 --hitcount 4 --name SSH -j DROP", "explanation": "Drops new SSH connections if the same IP has made more than 4 attempts in 60 seconds." }
+            {
+              "command": "sudo iptables -A INPUT -p tcp --dport 22 -m conntrack --ctstate NEW -m recent --set --name SSH"
+            },
+            {
+              "command": "sudo iptables -A INPUT -p tcp --dport 22 -m conntrack --ctstate NEW -m recent --update --seconds 60 --hitcount 4 --name SSH -j DROP",
+              "explanation": "Drops new SSH connections if the same IP has made more than 4 attempts in 60 seconds."
+            }
           ]
         },
         {
           "title": "Limiting Connections per IP",
           "terminals": [
-            { "command": "sudo iptables -A INPUT -p tcp --syn --dport 80 -m connlimit --connlimit-above 20 -j DROP", "explanation": "Drops connections from any IP that has more than 20 simultaneous connections to port 80. Protects against DDoS." }
+            {
+              "command": "sudo iptables -A INPUT -p tcp --syn --dport 80 -m connlimit --connlimit-above 20 -j DROP",
+              "explanation": "Drops connections from any IP that has more than 20 simultaneous connections to port 80. Protects against DDoS."
+            }
           ]
         },
         {
           "title": "Blocking Invalid Packets",
           "terminals": [
-            { "command": "sudo iptables -A INPUT -m conntrack --ctstate INVALID -j DROP", "explanation": "Drops packets that don't belong to any known connection. These are often malformed or malicious." }
+            {
+              "command": "sudo iptables -A INPUT -m conntrack --ctstate INVALID -j DROP",
+              "explanation": "Drops packets that don't belong to any known connection. These are often malformed or malicious."
+            }
           ]
         },
         {
           "title": "ICMP (Ping) Control",
           "terminals": [
-            { "command": "sudo iptables -A INPUT -p icmp --icmp-type echo-request -j ACCEPT", "explanation": "Allows ping requests. You can also rate-limit ping:" },
-            { "command": "sudo iptables -A INPUT -p icmp --icmp-type echo-request -m limit --limit 1/s --limit-burst 4 -j ACCEPT", "explanation": "Allows ping at 1 packet per second with a burst of 4. Excess pings are dropped." }
+            {
+              "command": "sudo iptables -A INPUT -p icmp --icmp-type echo-request -j ACCEPT",
+              "explanation": "Allows ping requests. You can also rate-limit ping:"
+            },
+            {
+              "command": "sudo iptables -A INPUT -p icmp --icmp-type echo-request -m limit --limit 1/s --limit-burst 4 -j ACCEPT",
+              "explanation": "Allows ping at 1 packet per second with a burst of 4. Excess pings are dropped."
+            }
           ]
         },
         {
           "title": "Custom Chains",
           "content": "Create your own chains to organize complex rulesets:",
           "terminals": [
-            { "command": "sudo iptables -N WEB_SERVICES", "explanation": "Creates a new chain called WEB_SERVICES." },
-            { "command": "sudo iptables -A WEB_SERVICES -p tcp --dport 80 -j ACCEPT" },
-            { "command": "sudo iptables -A WEB_SERVICES -p tcp --dport 443 -j ACCEPT" },
-            { "command": "sudo iptables -A INPUT -j WEB_SERVICES", "explanation": "Jumps to the WEB_SERVICES chain from INPUT. This keeps your main chain clean and organized." }
+            {
+              "command": "sudo iptables -N WEB_SERVICES",
+              "explanation": "Creates a new chain called WEB_SERVICES."
+            },
+            {
+              "command": "sudo iptables -A WEB_SERVICES -p tcp --dport 80 -j ACCEPT"
+            },
+            {
+              "command": "sudo iptables -A WEB_SERVICES -p tcp --dport 443 -j ACCEPT"
+            },
+            {
+              "command": "sudo iptables -A INPUT -j WEB_SERVICES",
+              "explanation": "Jumps to the WEB_SERVICES chain from INPUT. This keeps your main chain clean and organized."
+            }
           ]
         },
         {
           "title": "Blocking Outgoing SMTP (Prevent Spam)",
           "terminals": [
-            { "command": "sudo iptables -A OUTPUT -p tcp --dport 25 -j REJECT", "explanation": "If your server shouldn't send email, block outgoing SMTP to prevent it from being used as a spam relay." }
+            {
+              "command": "sudo iptables -A OUTPUT -p tcp --dport 25 -j REJECT",
+              "explanation": "If your server shouldn't send email, block outgoing SMTP to prevent it from being used as a spam relay."
+            }
           ]
         }
       ]
+    },
+    {
+      "id": "iptables-docker",
+      "title": "iptables & Docker",
+      "content": [
+        "Docker automatically manages iptables rules on your host. When you publish container ports, Docker creates iptables rules to route traffic to containers. Understanding this interaction is crucial to avoid conflicts.",
+        "Docker adds rules to the DOCKER chain (user-defined chain) and the FORWARD chain. If you set restrictive default policies, containers may lose network connectivity."
+      ],
+      "subsections": [
+        {
+          "title": "How Docker Modifies iptables",
+          "content": "When Docker starts, it creates:\n  - A DOCKER chain in the filter table\n  - A DOCKER chain in the nat table\n  - FORWARD rules allowing inter-container traffic\n  - DNAT rules for published ports (e.g., -p 80:80)\n\nDocker's rules are added before your custom rules. If you flush iptables with -F, you break Docker networking until you restart the Docker daemon."
+        },
+        {
+          "title": "Docker & Restrictive Firewalls",
+          "content": "If you set FORWARD to DROP, Docker containers will lose internet access because forwarded packets are dropped. You must explicitly allow Docker's forwarded traffic:",
+          "terminals": [
+            {
+              "command": "sudo iptables -A FORWARD -i docker0 -j ACCEPT",
+              "explanation": "Allows forwarding from the Docker bridge interface."
+            },
+            {
+              "command": "sudo iptables -A FORWARD -o docker0 -j ACCEPT",
+              "explanation": "Allows forwarding to the Docker bridge interface."
+            },
+            {
+              "command": "sudo iptables -A FORWARD -i docker0 -o docker0 -j ACCEPT",
+              "explanation": "Allows inter-container communication on the Docker bridge."
+            }
+          ]
+        },
+        {
+          "title": "Check Docker iptables Rules",
+          "terminals": [
+            {
+              "command": "sudo iptables -L DOCKER",
+              "output": "Chain DOCKER (1 references)\ntarget     prot opt source               destination\nACCEPT     tcp  --  anywhere             anywhere             tcp dpt:80",
+              "explanation": "Shows Docker's custom chain. Each published port appears as an ACCEPT rule."
+            },
+            {
+              "command": "sudo iptables -t nat -L DOCKER",
+              "explanation": "Shows Docker's NAT rules for port forwarding to containers."
+            }
+          ]
+        },
+        {
+          "title": "Restart Docker After Flushing",
+          "terminals": [
+            {
+              "command": "sudo systemctl restart docker",
+              "explanation": "Restart Docker to recreate all iptables rules if you accidentally flushed them."
+            }
+          ]
+        }
+      ],
+      "infoBox": {
+        "type": "warning",
+        "content": "Important: Never run iptables -F (flush) on a server running Docker containers without understanding the consequences. You will immediately lose connectivity to all running containers. Always restart Docker after flushing rules."
+      }
+    },
+    {
+      "id": "testing-firewall",
+      "title": "Testing Your Firewall",
+      "content": [
+        "After configuring your firewall, you must verify that it works as expected. Testing ensures your rules are correct and you haven't accidentally left gaps in your defense."
+      ],
+      "subsections": [
+        {
+          "title": "Quick Connectivity Check",
+          "content": "Use curl or wget from another machine to test if ports are accessible. From a remote system:",
+          "terminals": [
+            {
+              "command": "curl -v http://your-server-ip:80",
+              "explanation": "If the connection succeeds, port 80 is open. If it hangs or times out, the port is blocked by your firewall."
+            },
+            {
+              "command": "curl -v https://your-server-ip:443",
+              "explanation": "Test HTTPS. If your web server is running but this fails, check port 443 in your iptables rules."
+            }
+          ]
+        },
+        {
+          "title": "Port Scanning with nmap",
+          "content": "nmap is the standard tool for firewall testing. Install it on a separate machine and scan your server:",
+          "terminals": [
+            {
+              "command": "sudo nmap -sS your-server-ip",
+              "output": "Starting Nmap 7.80 ( https://nmap.org )\nNmap scan report for your-server-ip\nPORT     STATE    SERVICE\n22/tcp   open     ssh\n80/tcp   open     http\n443/tcp  open     https\n3306/tcp filtered mysql\n\nNmap done: 1 IP address (1 host up) scanned in 2.34 seconds",
+              "explanation": "open means the port is accessible. filtered means a firewall is blocking it (DROP). closed means no service is listening (REJECT)."
+            },
+            {
+              "command": "sudo nmap -sU your-server-ip",
+              "explanation": "UDP scan. UDP scanning is slower but essential for finding open UDP services like DNS (port 53)."
+            }
+          ]
+        },
+        {
+          "title": "Test from the Server Itself",
+          "terminals": [
+            {
+              "command": "sudo iptables -L -v",
+              "explanation": "Check packet counters. If a rule has matched packets, you'll see non-zero counts in the pkts column."
+            },
+            {
+              "command": "watch -n 1 'sudo iptables -L -v'",
+              "explanation": "Watch counters in real-time. Run a test from another machine and watch the counters increment. If the counter on an ACCEPT rule doesn't increase, your traffic is matching a different rule."
+            }
+          ]
+        },
+        {
+          "title": "Simulate a Port Scan",
+          "content": "Use nmap to simulate an attacker scanning your ports. This helps identify unexpected open ports:",
+          "terminals": [
+            {
+              "command": "sudo nmap -sS -p- your-server-ip",
+              "explanation": "Scans all 65535 TCP ports. This takes time but reveals every open port on your server."
+            },
+            {
+              "command": "sudo nmap -sV your-server-ip",
+              "explanation": "Version detection. Identifies the software and version running on each open port."
+            }
+          ]
+        },
+        {
+          "title": "Check Logs for Blocked Traffic",
+          "terminals": [
+            {
+              "command": "sudo dmesg | grep \"iptables\" | tail -20",
+              "explanation": "Shows the last 20 iptables log entries. If you set up LOG rules (see the Logging section), you can see exactly which packets are being dropped."
+            },
+            {
+              "command": "sudo grep \"Dropped\" /var/log/syslog | tail -20",
+              "explanation": "Alternative log check using syslog. Replace \"Dropped\" with your LOG prefix."
+            }
+          ]
+        }
+      ],
+      "infoBox": {
+        "type": "tip",
+        "content": "Always test from both inside and outside your network. A rule that works for local traffic may not work for external traffic. Use a mobile hotspot or a cloud VM as your external testing point."
+      }
     },
     {
       "id": "troubleshooting",
@@ -705,19 +1157,28 @@
           "title": "Rule Order Matters",
           "content": "iptables evaluates rules from top to bottom. The first matching rule wins. A broad DROP rule placed too early can block traffic before a specific allow rule is ever reached.",
           "terminals": [
-            { "command": "sudo iptables -L INPUT --line-numbers -v", "explanation": "Always check rule order when something isn't working as expected." }
+            {
+              "command": "sudo iptables -L INPUT --line-numbers -v",
+              "explanation": "Always check rule order when something isn't working as expected."
+            }
           ]
         },
         {
           "title": "Insert Rules at a Specific Position",
           "terminals": [
-            { "command": "sudo iptables -I INPUT 2 -p tcp --dport 8080 -j ACCEPT", "explanation": "-I INPUT 2 inserts the rule at position 2, pushing existing rules down. Use this when you need a rule to be evaluated before others." }
+            {
+              "command": "sudo iptables -I INPUT 2 -p tcp --dport 8080 -j ACCEPT",
+              "explanation": "-I INPUT 2 inserts the rule at position 2, pushing existing rules down. Use this when you need a rule to be evaluated before others."
+            }
           ]
         },
         {
           "title": "Check if a Rule Exists",
           "terminals": [
-            { "command": "sudo iptables -C INPUT -s 203.0.113.51 -j DROP", "explanation": "Returns exit code 0 if the rule exists, 1 if it doesn't. Useful in scripts." }
+            {
+              "command": "sudo iptables -C INPUT -s 203.0.113.51 -j DROP",
+              "explanation": "Returns exit code 0 if the rule exists, 1 if it doesn't. Useful in scripts."
+            }
           ]
         },
         {
@@ -740,20 +1201,59 @@
       "id": "summary",
       "title": "Quick Reference Summary",
       "summaryTable": {
-        "headers": ["Task", "Command"],
+        "headers": [
+          "Task",
+          "Command"
+        ],
         "rows": [
-          ["List all rules", "sudo iptables -L -v"],
-          ["List with line numbers", "sudo iptables -L --line-numbers"],
-          ["Show rules in command format", "sudo iptables -S"],
-          ["Allow port", "sudo iptables -A INPUT -p tcp --dport PORT -j ACCEPT"],
-          ["Block IP", "sudo iptables -A INPUT -s IP -j DROP"],
-          ["Allow loopback", "sudo iptables -A INPUT -i lo -j ACCEPT"],
-          ["Allow established", "sudo iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT"],
-          ["Delete rule by number", "sudo iptables -D CHAIN NUMBER"],
-          ["Flush all rules", "sudo iptables -F"],
-          ["Set default policy", "sudo iptables -P CHAIN DROP"],
-          ["Save rules (Debian)", "sudo netfilter-persistent save"],
-          ["Save rules (RHEL)", "sudo service iptables save"]
+          [
+            "List all rules",
+            "sudo iptables -L -v"
+          ],
+          [
+            "List with line numbers",
+            "sudo iptables -L --line-numbers"
+          ],
+          [
+            "Show rules in command format",
+            "sudo iptables -S"
+          ],
+          [
+            "Allow port",
+            "sudo iptables -A INPUT -p tcp --dport PORT -j ACCEPT"
+          ],
+          [
+            "Block IP",
+            "sudo iptables -A INPUT -s IP -j DROP"
+          ],
+          [
+            "Allow loopback",
+            "sudo iptables -A INPUT -i lo -j ACCEPT"
+          ],
+          [
+            "Allow established",
+            "sudo iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT"
+          ],
+          [
+            "Delete rule by number",
+            "sudo iptables -D CHAIN NUMBER"
+          ],
+          [
+            "Flush all rules",
+            "sudo iptables -F"
+          ],
+          [
+            "Set default policy",
+            "sudo iptables -P CHAIN DROP"
+          ],
+          [
+            "Save rules (Debian)",
+            "sudo netfilter-persistent save"
+          ],
+          [
+            "Save rules (RHEL)",
+            "sudo service iptables save"
+          ]
         ]
       },
       "infoBox": {
@@ -761,5 +1261,7 @@
         "content": "Remember: Always test your firewall rules in a non-production environment first. Keep a second SSH session open when making changes to remote servers so you don't lock yourself out."
       }
     }
-  ]
+  ],
+  "heroImage": "/images/iptables-hero.svg",
+  "heroAlt": "iptables Linux firewall illustration showing INPUT, OUTPUT, and FORWARD chains with packet filtering"
 }

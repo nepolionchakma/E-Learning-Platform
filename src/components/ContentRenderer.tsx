@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Accordion from "./Accordion";
 import CopyButton from "./CopyButton";
+import TerminalBlock from "@/components/TerminalBlock";
 import site from "@/data/site.json";
 
 interface CommandRow {
@@ -338,16 +339,45 @@ function renderSections(sections: Section[]) {
                     {item.label}
                   </p>
                 )}
-                {item.code && (
-                  <div className="relative group">
-                    <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <CopyButton text={item.code} />
-                    </div>
-                    <pre className="text-sm bg-zinc-900 text-zinc-100 p-4 rounded-lg overflow-x-auto border border-zinc-700 leading-relaxed">
-                      {item.code}
-                    </pre>
-                  </div>
-                )}
+                 {item.code && (
+                   <div className="space-y-2">
+                     {/* Parse item.code into prompt/command blocks and render via TerminalBlock */}
+                     {(() => {
+                       const lines = item.code.split(/\r?\n/);
+                       const promptRe = /^\s*\S+@\S+[,:~#\$]\s*(.*)$/;
+                       const blocks: { command: string; output?: string; explanation?: string }[] = [];
+                       let current: { command: string; outputLines: string[] } | null = null;
+                       for (const line of lines) {
+                         const m = line.match(promptRe);
+                         if (m) {
+                           if (current) {
+                             blocks.push({ command: current.command, output: current.outputLines.join('\n').trim() });
+                           }
+                           current = { command: m[1] || '', outputLines: [] };
+                         } else {
+                           if (current) {
+                             current.outputLines.push(line);
+                           } else {
+                             // No prompt yet: treat whole line as a command (if first)
+                             if (blocks.length === 0) {
+                               blocks.push({ command: line });
+                             } else {
+                               // Append to last block's output
+                               const last = blocks[blocks.length - 1];
+                               last.output = (last.output ? last.output + '\n' : '') + line;
+                             }
+                           }
+                         }
+                       }
+                       if (current) {
+                         blocks.push({ command: current.command, output: current.outputLines.join('\n').trim() });
+                       }
+                       return blocks.map((b, idx) => (
+                         <TerminalBlock key={idx} command={b.command} output={b.output} explanation={b.explanation} />
+                       ));
+                     })()}
+                   </div>
+                 )}
               </div>
             ))}
           </div>

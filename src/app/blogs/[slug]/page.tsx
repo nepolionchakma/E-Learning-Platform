@@ -1,11 +1,9 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { promises as fs } from 'fs'
 import path from 'path'
-import BlogActions from '@/components/BlogActions'
-import CommentSection from '@/components/CommentSection'
+import BlogPostLayout from '@/components/BlogPostLayout'
 
-interface Blog {
+interface BlogMeta {
   slug: string
   title: string
   content: string
@@ -13,7 +11,7 @@ interface Blog {
   date: string
 }
 
-async function getBlogs(): Promise<Blog[]> {
+async function getBlogs(): Promise<BlogMeta[]> {
   try {
     const raw = await fs.readFile(
       path.join(process.cwd(), 'src', 'data', 'blogs.json'),
@@ -22,6 +20,16 @@ async function getBlogs(): Promise<Blog[]> {
     return JSON.parse(raw)
   } catch {
     return []
+  }
+}
+
+async function getBlogData(slug: string) {
+  try {
+    const filePath = path.join(process.cwd(), 'src', 'data', `${slug}.json`)
+    const raw = await fs.readFile(filePath, 'utf-8')
+    return JSON.parse(raw)
+  } catch {
+    return null
   }
 }
 
@@ -35,6 +43,19 @@ export default async function BlogPage({
   const blog = blogs.find((b) => b.slug === slug)
 
   if (!blog) notFound()
+
+  // Try to load structured data for the blog post
+  const blogData = await getBlogData(slug)
+
+  // If structured data exists, use the advanced layout
+  if (blogData && blogData.sections) {
+    return <BlogPostLayout data={blogData} slug={slug} />
+  }
+
+  // Fallback: render basic blog layout
+  const { default: Link } = await import('next/link')
+  const { default: BlogActions } = await import('@/components/BlogActions')
+  const { default: CommentSection } = await import('@/components/CommentSection')
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

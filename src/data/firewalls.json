@@ -1,0 +1,134 @@
+{
+  "title": "Practical Linux Firewalls: iptables, nftables, UFW & firewalld",
+  "icon": "🛡️",
+  "description": "A concise practical guide to Linux firewall tools with commands and example outputs. Covers iptables, nftables, ufw, and firewalld plus best practices.",
+  "author": "E-Learning Platform",
+  "date": "2026-05-18",
+  "readTime": "12 min read",
+  "sections": [
+    {
+      "id": "check-installed-tools",
+      "title": "Check Installed Tools",
+      "type": "terminal",
+      "items": [
+        {
+          "label": "iptables version",
+          "code": "user@server:~$ iptables --version\niptables v1.8.9 (nf_tables)\n"
+        },
+        {
+          "label": "nftables version",
+          "code": "user@server:~$ nft --version\nnftables v0.9.8 (nf_tables)\n"
+        },
+        {
+          "label": "UFW status (Ubuntu)",
+          "code": "user@server:~$ sudo ufw status\nStatus: inactive\n"
+        },
+        {
+          "label": "firewalld state (RHEL/CentOS)",
+          "code": "user@server:~$ sudo firewall-cmd --state\nrunning\n"
+        }
+      ]
+    },
+    {
+      "id": "list-current-rules",
+      "title": "List Current Rules",
+      "type": "terminal",
+      "items": [
+        {
+          "label": "iptables (filter table, non-verbose)",
+          "code": "user@server:~$ sudo iptables -L\nChain INPUT (policy ACCEPT)\ntarget     prot opt source               destination\n\nChain FORWARD (policy ACCEPT)\ntarget     prot opt source               destination\n\nChain OUTPUT (policy ACCEPT)\ntarget     prot opt source               destination\n"
+        },
+        {
+          "label": "iptables (verbose)",
+          "code": "user@server:~$ sudo iptables -L -v\nChain INPUT (policy ACCEPT 0 packets, 0 bytes)\n pkts bytes target     prot opt in     out     source               destination\n  1234  123K ACCEPT     all  --  lo     any     anywhere             anywhere\n   567 45678 ACCEPT     tcp  --  any    any     anywhere             anywhere             tcp dpt:ssh\n"
+        },
+        {
+          "label": "nftables (ruleset)",
+          "code": "user@server:~$ sudo nft list ruleset\ntable inet filter {\n  chain input {\n    type filter hook input priority 0; policy accept;\n    ct state established,related accept\n    iif \"lo\" accept\n    tcp dport ssh accept\n  }\n}\n"
+        },
+        {
+          "label": "firewalld (list active config)",
+          "code": "user@server:~$ sudo firewall-cmd --list-all\npublic (active)\n  target: default\n  services: ssh dhcpv6-client\n  ports: 80/tcp 443/tcp\n"
+        },
+        {
+          "label": "UFW (status verbose)",
+          "code": "user@server:~$ sudo ufw status verbose\nStatus: active\nLogging: on (low)\nTo                         Action      From\n--                         ------      ----\n22/tcp                     ALLOW       Anywhere\n80/tcp                     ALLOW       Anywhere\n"
+        }
+      ]
+    },
+    {
+      "id": "common-tasks-allow-block",
+      "title": "Common Tasks (Allow/Block)",
+      "type": "terminal",
+      "items": [
+        {
+          "label": "Allow SSH (iptables)",
+          "code": "user@server:~$ sudo iptables -A INPUT -p tcp --dport 22 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT\n"
+        },
+        {
+          "label": "Allow SSH (ufw)",
+          "code": "user@server:~$ sudo ufw allow 22/tcp\nRules updated\n"
+        },
+        {
+          "label": "Allow HTTP & HTTPS (firewall-cmd)",
+          "code": "user@server:~$ sudo firewall-cmd --permanent --add-service=http\nsuccess\nuser@server:~$ sudo firewall-cmd --permanent --add-service=https\nsuccess\nuser@server:~$ sudo firewall-cmd --reload\nsuccess\n"
+        },
+        {
+          "label": "Allow port with nftables",
+          "code": "user@server:~$ sudo nft add rule inet filter input tcp dport 80 accept\n"
+        },
+        {
+          "label": "Drop a hostile IP (iptables)",
+          "code": "user@server:~$ sudo iptables -A INPUT -s 203.0.113.51 -j DROP\n"
+        }
+      ]
+    },
+    {
+      "id": "nat-forwarding-example",
+      "title": "NAT & Forwarding (Example)",
+      "type": "terminal",
+      "items": [
+        {
+          "label": "Enable IP forwarding",
+          "code": "user@server:~$ sudo sysctl -w net.ipv4.ip_forward=1\nnet.ipv4.ip_forward = 1\n"
+        },
+        {
+          "label": "MASQUERADE (iptables NAT)",
+          "code": "user@server:~$ sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE\n"
+        }
+      ]
+    },
+    {
+      "id": "save-and-restore",
+      "title": "Save and Restore",
+      "type": "terminal",
+      "items": [
+        {
+          "label": "Save (Debian/Ubuntu)",
+          "code": "user@server:~$ sudo netfilter-persistent save\nSaving firewall rules to /etc/iptables/rules.v4\n"
+        },
+        {
+          "label": "Save with iptables-save",
+          "code": "user@server:~$ sudo iptables-save > /etc/iptables/rules.v4\nuser@server:~$ sudo iptables-restore < /etc/iptables/rules.v4\n"
+        }
+      ]
+    },
+    {
+      "id": "quick-reference",
+      "title": "Quick Reference",
+      "type": "terminal",
+      "items": [
+        {
+          "label": "List rules (iptables)",
+          "code": "user@server:~$ sudo iptables -L -v\n"
+        },
+        {
+          "label": "Show ruleset (nft)",
+          "code": "user@server:~$ sudo nft list ruleset\n"
+        }
+      ]
+    }
+  ],
+  "heroImage": "/images/firewalls-hero.svg",
+  "heroAlt": "Linux firewall tools: iptables, nftables, UFW, and firewalld surrounding a central firewall shield"
+}

@@ -1,0 +1,155 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="400" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0f172a"/>
+      <stop offset="1" stop-color="#1c1917"/>
+    </linearGradient>
+    <linearGradient id="fireGrad" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#ef4444"/>
+      <stop offset="0.5" stop-color="#f97316"/>
+      <stop offset="1" stop-color="#eab308"/>
+    </linearGradient>
+    <linearGradient id="shieldGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#6366f1"/>
+      <stop offset="1" stop-color="#4f46e5"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="shadowBox">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#ef4444" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="400" fill="url(#bg)"/>
+
+  <!-- Grid pattern -->
+  <g stroke="#ffffff" stroke-opacity="0.02" stroke-width="1">
+    <line x1="0" y1="50" x2="1200" y2="50"/>
+    <line x1="0" y1="100" x2="1200" y2="100"/>
+    <line x1="0" y1="150" x2="1200" y2="150"/>
+    <line x1="0" y1="200" x2="1200" y2="200"/>
+    <line x1="0" y1="250" x2="1200" y2="250"/>
+    <line x1="0" y1="300" x2="1200" y2="300"/>
+    <line x1="0" y1="350" x2="1200" y2="350"/>
+    <line x1="100" y1="0" x2="100" y2="400"/>
+    <line x1="200" y1="0" x2="200" y2="400"/>
+    <line x1="300" y1="0" x2="300" y2="400"/>
+    <line x1="400" y1="0" x2="400" y2="400"/>
+    <line x1="500" y1="0" x2="500" y2="400"/>
+    <line x1="600" y1="0" x2="600" y2="400"/>
+    <line x1="700" y1="0" x2="700" y2="400"/>
+    <line x1="800" y1="0" x2="800" y2="400"/>
+    <line x1="900" y1="0" x2="900" y2="400"/>
+    <line x1="1000" y1="0" x2="1000" y2="400"/>
+    <line x1="1100" y1="0" x2="1100" y2="400"/>
+  </g>
+
+  <!-- ===== CENTER: Large Shield ===== -->
+  <g transform="translate(600, 200)" filter="url(#softGlow)">
+    <!-- Outer shield glow -->
+    <path d="M0 -120 L130 -60 L130 40 C130 120 60 170 0 190 C-60 170 -130 120 -130 40 L-130 -60 Z" fill="#6366f1" opacity="0.08"/>
+    <!-- Main shield -->
+    <path d="M0 -110 L120 -50 L120 35 C120 110 55 160 0 175 C-55 160 -120 110 -120 35 L-120 -50 Z" fill="url(#shieldGrad)" opacity="0.15" stroke="#6366f1" stroke-width="1.5"/>
+    <!-- Flame inside shield -->
+    <path d="M0 -70 C-15 -40 -35 -10 -35 15 C-35 40 -18 55 0 55 C18 55 35 40 35 15 C35 -10 15 -40 0 -70Z" fill="url(#fireGrad)" filter="url(#glow)"/>
+    <path d="M0 -50 C-8 -30 -20 -5 -20 10 C-20 28 -10 38 0 38 C10 38 20 28 20 10 C20 -5 8 -30 0 -50Z" fill="#fef08a" opacity="0.9"/>
+  </g>
+
+  <!-- ===== FLOATING TOOL ICONS ===== -->
+
+  <!-- iptables (left top) -->
+  <g transform="translate(180, 100)">
+    <rect x="0" y="0" width="160" height="50" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1" filter="url(#shadowBox)"/>
+    <text x="80" y="22" fill="#ef4444" font-family="monospace" font-size="14" font-weight="bold" text-anchor="middle">iptables</text>
+    <text x="80" y="38" fill="#9ca3af" font-family="monospace" font-size="10" text-anchor="middle">v1.8.9 (nf_tables)</text>
+  </g>
+
+  <!-- nftables (right top) -->
+  <g transform="translate(860, 100)">
+    <rect x="0" y="0" width="160" height="50" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1" filter="url(#shadowBox)"/>
+    <text x="80" y="22" fill="#f59e0b" font-family="monospace" font-size="14" font-weight="bold" text-anchor="middle">nftables</text>
+    <text x="80" y="38" fill="#9ca3af" font-family="monospace" font-size="10" text-anchor="middle">v0.9.8</text>
+  </g>
+
+  <!-- UFW (left bottom) -->
+  <g transform="translate(180, 240)">
+    <rect x="0" y="0" width="160" height="50" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1" filter="url(#shadowBox)"/>
+    <text x="80" y="22" fill="#10b981" font-family="monospace" font-size="14" font-weight="bold" text-anchor="middle">ufw</text>
+    <text x="80" y="38" fill="#9ca3af" font-family="monospace" font-size="10" text-anchor="middle">Status: active</text>
+  </g>
+
+  <!-- firewalld (right bottom) -->
+  <g transform="translate(860, 240)">
+    <rect x="0" y="0" width="160" height="50" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1" filter="url(#shadowBox)"/>
+    <text x="80" y="22" fill="#06b6d4" font-family="monospace" font-size="14" font-weight="bold" text-anchor="middle">firewalld</text>
+    <text x="80" y="38" fill="#9ca3af" font-family="monospace" font-size="10" text-anchor="middle">State: running</text>
+  </g>
+
+  <!-- ===== ARROWS FROM TOOLS TO SHIELD ===== -->
+
+  <!-- iptables → shield -->
+  <g opacity="0.5">
+    <path d="M340 125 L470 150" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="5 3"/>
+    <polygon points="470,150 460,144 462,157" fill="#ef4444"/>
+  </g>
+
+  <!-- nftables → shield -->
+  <g opacity="0.5">
+    <path d="M860 125 L730 150" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5 3"/>
+    <polygon points="730,150 740,144 738,157" fill="#f59e0b"/>
+  </g>
+
+  <!-- ufw → shield -->
+  <g opacity="0.5">
+    <path d="M340 265 L470 240" stroke="#10b981" stroke-width="1.5" stroke-dasharray="5 3"/>
+    <polygon points="470,240 460,234 462,247" fill="#10b981"/>
+  </g>
+
+  <!-- firewalld → shield -->
+  <g opacity="0.5">
+    <path d="M860 265 L730 240" stroke="#06b6d4" stroke-width="1.5" stroke-dasharray="5 3"/>
+    <polygon points="730,240 740,234 738,247" fill="#06b6d4"/>
+  </g>
+
+  <!-- ===== BADGES ===== -->
+  <g transform="translate(340, 85)">
+    <rect x="0" y="0" width="70" height="18" rx="3" fill="#ef4444" fill-opacity="0.12" stroke="#ef4444" stroke-width="0.5"/>
+    <text x="35" y="13" fill="#ef4444" font-family="monospace" font-size="9" text-anchor="middle">Filter Table</text>
+  </g>
+  <g transform="translate(790, 85)">
+    <rect x="0" y="0" width="70" height="18" rx="3" fill="#f59e0b" fill-opacity="0.12" stroke="#f59e0b" stroke-width="0.5"/>
+    <text x="35" y="13" fill="#f59e0b" font-family="monospace" font-size="9" text-anchor="middle">Ruleset</text>
+  </g>
+  <g transform="translate(340, 295)">
+    <rect x="0" y="0" width="55" height="18" rx="3" fill="#10b981" fill-opacity="0.12" stroke="#10b981" stroke-width="0.5"/>
+    <text x="27" y="13" fill="#10b981" font-family="monospace" font-size="9" text-anchor="middle">Simple</text>
+  </g>
+  <g transform="translate(805, 295)">
+    <rect x="0" y="0" width="55" height="18" rx="3" fill="#06b6d4" fill-opacity="0.12" stroke="#06b6d4" stroke-width="0.5"/>
+    <text x="27" y="13" fill="#06b6d4" font-family="monospace" font-size="9" text-anchor="middle">Zones</text>
+  </g>
+
+  <!-- ===== SAVE badge ===== -->
+  <g transform="translate(540, 60)">
+    <rect x="0" y="0" width="120" height="20" rx="10" fill="#6366f1" fill-opacity="0.15" stroke="#6366f1" stroke-width="0.5"/>
+    <text x="60" y="14" fill="#818cf8" font-family="monospace" font-size="10" text-anchor="middle">iptables-persistent</text>
+  </g>
+
+  <!-- ===== Title section ===== -->
+  <text x="600" y="345" fill="#ffffff" font-family="system-ui, sans-serif" font-size="22" font-weight="bold" text-anchor="middle" letter-spacing="1">Linux Firewall Tools</text>
+  <text x="600" y="370" fill="#f97316" font-family="system-ui, sans-serif" font-size="13" text-anchor="middle" opacity="0.9">iptables • nftables • UFW • firewalld</text>
+  <text x="600" y="388" fill="#6366f1" font-family="monospace" font-size="10" text-anchor="middle">Practical Guide with Commands • Examples • Best Practices</text>
+</svg>
