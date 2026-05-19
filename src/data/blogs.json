@@ -26,5 +26,19 @@
     "content": "A comprehensive guide to building a production-grade PostgreSQL HA cluster using Patroni for automatic failover, ETCD for distributed consensus, and HAProxy for load balancing. Covers architecture, installation, configuration, monitoring, backup/recovery with pgBackRest, and multi-cluster setups on different ports.",
     "author": "E-Learning Platform",
     "date": "2026-05-19"
+  },
+  {
+    "slug": "nginx-setup",
+    "title": "NGINX Setup & Configuration: The Complete A–Z Guide",
+    "content": "A comprehensive end-to-end guide to NGINX covering installation, configuration, reverse proxying, load balancing, SSL/TLS with Let's Encrypt, HTTP/2 & HTTP/3, caching, rate limiting, access control, URL rewriting, security headers, WebSocket proxying, monitoring with stub_status, Docker deployment, performance tuning, benchmarking, troubleshooting, and production best practices.",
+    "author": "E-Learning Platform",
+    "date": "2026-05-19"
+  },
+  {
+    "slug": "networking-for-devops",
+    "title": "Networking for DevOps: The Complete A–Z Guide",
+    "content": "A comprehensive end-to-end guide to networking for DevOps engineers. Covers OSI model, TCP/IP, DNS, HTTP/HTTPS, load balancing, container networking (Docker & Kubernetes), cloud VPC design, troubleshooting tools, monitoring, infrastructure as code, automation, security, and production best practices.",
+    "author": "E-Learning Platform",
+    "date": "2026-05-19"
   }
 ]
