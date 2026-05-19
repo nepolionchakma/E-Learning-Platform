@@ -7,6 +7,7 @@
   "readTime": "12 min read",
   "sections": [
     {
+      "id": "check-installed-tools",
       "title": "Check Installed Tools",
       "type": "terminal",
       "items": [
@@ -29,6 +30,7 @@
       ]
     },
     {
+      "id": "list-current-rules",
       "title": "List Current Rules",
       "type": "terminal",
       "items": [
@@ -55,6 +57,7 @@
       ]
     },
     {
+      "id": "common-tasks-allow-block",
       "title": "Common Tasks (Allow/Block)",
       "type": "terminal",
       "items": [
@@ -81,6 +84,7 @@
       ]
     },
     {
+      "id": "nat-forwarding-example",
       "title": "NAT & Forwarding (Example)",
       "type": "terminal",
       "items": [
@@ -95,6 +99,7 @@
       ]
     },
     {
+      "id": "save-and-restore",
       "title": "Save and Restore",
       "type": "terminal",
       "items": [
@@ -109,6 +114,7 @@
       ]
     },
     {
+      "id": "quick-reference",
       "title": "Quick Reference",
       "type": "terminal",
       "items": [
@@ -122,5 +128,7 @@
         }
       ]
     }
-  ]
+  ],
+  "heroImage": "/images/firewalls-hero.svg",
+  "heroAlt": "Linux firewall tools: iptables, nftables, UFW, and firewalld surrounding a central firewall shield"
 }
