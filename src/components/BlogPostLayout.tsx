@@ -271,6 +271,7 @@ function SectionRenderer({ section }: { section: Section }) {
 export default function BlogPostLayout({ data, slug, heroColor = "from-indigo-500 via-purple-500 to-pink-500" }: BlogPostLayoutProps) {
   const [activeSection, setActiveSection] = useState(data.sections[0]?.id || "");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [heroError, setHeroError] = useState(false);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -291,7 +292,8 @@ export default function BlogPostLayout({ data, slug, heroColor = "from-indigo-50
   const scrollTo = (id: string) => {
     const el = document.getElementById(id);
     if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      const y = el.getBoundingClientRect().top + window.scrollY - 96;
+      window.scrollTo({ top: y, behavior: "smooth" });
       setMobileMenuOpen(false);
     }
   };
@@ -310,9 +312,9 @@ export default function BlogPostLayout({ data, slug, heroColor = "from-indigo-50
 
       {/* Hero Section */}
       <div className="mb-8 sm:mb-10">
-        {data.heroImage ? (
+        {data.heroImage && !heroError ? (
           <div className="mb-4 sm:mb-6 rounded-xl sm:rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-700">
-            <img src={data.heroImage} alt={data.heroAlt || data.title} className="w-full h-auto" />
+            <img src={data.heroImage} alt={data.heroAlt || data.title} className="w-full h-auto" onError={() => setHeroError(true)} />
           </div>
         ) : (
           <div className={`mb-4 sm:mb-6 rounded-xl sm:rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-gradient-to-br ${heroColor} p-12 sm:p-16`}>

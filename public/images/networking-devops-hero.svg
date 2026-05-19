@@ -1,0 +1,173 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 450" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="450" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0a0a1a"/>
+      <stop offset="1" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="tcp" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#3b82f6"/>
+      <stop offset="1" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="dns" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#8b5cf6"/>
+      <stop offset="1" stop-color="#6d28d9"/>
+    </linearGradient>
+    <linearGradient id="http" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#10b981"/>
+      <stop offset="1" stop-color="#047857"/>
+    </linearGradient>
+    <linearGradient id="cloud" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#06b6d4"/>
+      <stop offset="1" stop-color="#0891b2"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="450" fill="url(#bg)"/>
+
+  <!-- Subtle grid -->
+  <g stroke="#ffffff" stroke-opacity="0.02" stroke-width="1">
+    <line x1="0" y1="60" x2="1200" y2="60"/><line x1="0" y1="120" x2="1200" y2="120"/>
+    <line x1="0" y1="180" x2="1200" y2="180"/><line x1="0" y1="240" x2="1200" y2="240"/>
+    <line x1="0" y1="300" x2="1200" y2="300"/><line x1="0" y1="360" x2="1200" y2="360"/>
+    <line x1="0" y1="420" x2="1200" y2="420"/>
+    <line x1="200" y1="0" x2="200" y2="450"/><line x1="400" y1="0" x2="400" y2="450"/>
+    <line x1="600" y1="0" x2="600" y2="450"/><line x1="800" y1="0" x2="800" y2="450"/>
+    <line x1="1000" y1="0" x2="1000" y2="450"/>
+  </g>
+
+  <!-- ===== OSI MODEL STACK (left) ===== -->
+  <g transform="translate(30, 55)">
+    <text x="0" y="-5" fill="#ffffff" font-family="system-ui, sans-serif" font-size="11" font-weight="bold">OSI MODEL</text>
+    <rect x="0" y="0" width="155" height="28" rx="4" fill="#1a2332" stroke="#3b82f6" stroke-width="0.5"/>
+    <text x="10" y="19" fill="#60a5fa" font-family="monospace" font-size="8">L7 Application</text>
+    <text x="100" y="19" fill="#9ca3af" font-family="monospace" font-size="7">HTTP, DNS</text>
+
+    <rect x="0" y="32" width="155" height="24" rx="4" fill="#1a2332" stroke="#3b82f6" stroke-width="0.5"/>
+    <text x="10" y="48" fill="#60a5fa" font-family="monospace" font-size="8">L6 Presentation</text>
+    <text x="100" y="48" fill="#9ca3af" font-family="monospace" font-size="7">TLS/SSL</text>
+
+    <rect x="0" y="60" width="155" height="22" rx="4" fill="#1a2332" stroke="#3b82f6" stroke-width="0.5"/>
+    <text x="10" y="75" fill="#60a5fa" font-family="monospace" font-size="8">L5 Session</text>
+    <text x="100" y="75" fill="#9ca3af" font-family="monospace" font-size="7">Sockets</text>
+
+    <rect x="0" y="86" width="155" height="26" rx="4" fill="#1a2332" stroke="#06b6d4" stroke-width="0.5"/>
+    <text x="10" y="103" fill="#22d3ee" font-family="monospace" font-size="8">L4 Transport</text>
+    <text x="100" y="103" fill="#9ca3af" font-family="monospace" font-size="7">TCP, UDP</text>
+
+    <rect x="0" y="116" width="155" height="26" rx="4" fill="#1a2332" stroke="#8b5cf6" stroke-width="0.5"/>
+    <text x="10" y="133" fill="#a78bfa" font-family="monospace" font-size="8">L3 Network</text>
+    <text x="100" y="133" fill="#9ca3af" font-family="monospace" font-size="7">IP, ICMP</text>
+
+    <rect x="0" y="146" width="155" height="24" rx="4" fill="#1a2332" stroke="#10b981" stroke-width="0.5"/>
+    <text x="10" y="162" fill="#34d399" font-family="monospace" font-size="8">L2 Data Link</text>
+    <text x="100" y="162" fill="#9ca3af" font-family="monospace" font-size="7">Ethernet</text>
+
+    <rect x="0" y="174" width="155" height="22" rx="4" fill="#1a2332" stroke="#f59e0b" stroke-width="0.5"/>
+    <text x="10" y="189" fill="#fbbf24" font-family="monospace" font-size="8">L1 Physical</text>
+    <text x="100" y="189" fill="#9ca3af" font-family="monospace" font-size="7">Cables</text>
+  </g>
+
+  <!-- ===== CENTRAL: Network flow between servers ===== -->
+  <!-- Left server -->
+  <rect x="230" y="75" width="130" height="100" rx="8" fill="#1a2332" stroke="#334155" stroke-width="1.5"/>
+  <rect x="230" y="75" width="130" height="26" rx="8" fill="#1d4ed8"/>
+  <rect x="230" y="93" width="130" height="8" fill="#1d4ed8"/>
+  <text x="295" y="93" fill="#ffffff" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">CLIENT</text>
+  <circle cx="355" cy="125" r="6" fill="#3b82f6"/>
+  <text x="355" y="128" font-family="monospace" font-size="7" fill="#ffffff" text-anchor="middle">N</text>
+  <text x="295" y="125" fill="#9ca3af" font-family="monospace" font-size="9" text-anchor="middle">curl https://api.dev</text>
+  <text x="295" y="142" fill="#9ca3af" font-family="monospace" font-size="8" text-anchor="middle">10.0.1.42:443</text>
+  <text x="295" y="158" fill="#9ca3af" font-family="monospace" font-size="8" text-anchor="middle">User-Agent: curl/7.68</text>
+
+  <!-- Right server -->
+  <rect x="530" y="75" width="130" height="100" rx="8" fill="#1a2332" stroke="#334155" stroke-width="1.5"/>
+  <rect x="530" y="75" width="130" height="26" rx="8" fill="#047857"/>
+  <rect x="530" y="93" width="130" height="8" fill="#047857"/>
+  <text x="595" y="93" fill="#ffffff" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">SERVER</text>
+  <circle cx="540" cy="125" r="6" fill="#10b981"/>
+  <text x="540" y="128" font-family="monospace" font-size="7" fill="#ffffff" text-anchor="middle">S</text>
+  <text x="595" y="125" fill="#9ca3af" font-family="monospace" font-size="9" text-anchor="middle">nginx/1.24.0</text>
+  <text x="595" y="142" fill="#9ca3af" font-family="monospace" font-size="8" text-anchor="middle">93.184.216.34:443</text>
+  <text x="595" y="158" fill="#9ca3af" font-family="monospace" font-size="8" text-anchor="middle">HTTP/2 200 OK</text>
+
+  <!-- Arrow between client and server -->
+  <g>
+    <line x1="365" y1="100" x2="520" y2="90" stroke="#3b82f6" stroke-width="2" stroke-dasharray="6 3"/>
+    <polygon points="525,88 515,93 520,83" fill="#3b82f6"/>
+    <text x="442" y="88" fill="#3b82f6" font-family="monospace" font-size="8" text-anchor="middle">SYN &gt;</text>
+
+    <line x1="520" y1="115" x2="365" y2="125" stroke="#10b981" stroke-width="2" stroke-dasharray="6 3"/>
+    <polygon points="360,127 370,122 365,132" fill="#10b981"/>
+    <text x="442" y="131" fill="#10b981" font-family="monospace" font-size="8" text-anchor="middle">&lt; SYN-ACK</text>
+
+    <line x1="365" y1="140" x2="520" y2="150" stroke="#f59e0b" stroke-width="2" stroke-dasharray="6 3"/>
+    <polygon points="525,152 515,147 520,157" fill="#f59e0b"/>
+    <text x="442" y="164" fill="#f59e0b" font-family="monospace" font-size="8" text-anchor="middle">ACK &gt;</text>
+  </g>
+
+  <!-- ===== DNS LOOKUP BOX ===== -->
+  <rect x="230" y="185" width="160" height="55" rx="6" fill="#0f172a" stroke="#8b5cf6" stroke-width="1"/>
+  <rect x="230" y="185" width="160" height="20" rx="6" fill="#6d28d9"/>
+  <text x="310" y="199" fill="#ffffff" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">DNS RESOLUTION</text>
+  <text x="310" y="218" fill="#c4b5fd" font-family="monospace" font-size="8" text-anchor="middle">dig +short example.com</text>
+  <text x="310" y="233" fill="#c4b5fd" font-family="monospace" font-size="8" text-anchor="middle">93.184.216.34</text>
+
+  <!-- ===== LOAD BALANCER ===== -->
+  <rect x="420" y="185" width="160" height="55" rx="6" fill="#0f172a" stroke="#f59e0b" stroke-width="1"/>
+  <rect x="420" y="185" width="160" height="20" rx="6" fill="#b45309"/>
+  <text x="500" y="199" fill="#ffffff" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">LOAD BALANCER</text>
+  <text x="500" y="218" fill="#fde68a" font-family="monospace" font-size="8" text-anchor="middle">Round Robin DNS</text>
+  <text x="500" y="233" fill="#fde68a" font-family="monospace" font-size="8" text-anchor="middle">Health Check / Healthz</text>
+
+  <!-- ===== CIDR / SUBNET BOX ===== -->
+  <rect x="610" y="185" width="160" height="55" rx="6" fill="#0f172a" stroke="#06b6d4" stroke-width="1"/>
+  <rect x="610" y="185" width="160" height="20" rx="6" fill="#0891b2"/>
+  <text x="690" y="199" fill="#ffffff" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">SUBNET DESIGN</text>
+  <text x="690" y="218" fill="#67e8f9" font-family="monospace" font-size="8" text-anchor="middle">10.0.1.0/24 (Public)</text>
+  <text x="690" y="233" fill="#67e8f9" font-family="monospace" font-size="8" text-anchor="middle">10.0.10.0/24 (Private)</text>
+
+  <!-- ===== K8s box ===== -->
+  <rect x="800" y="185" width="160" height="55" rx="6" fill="#0f172a" stroke="#ec4899" stroke-width="1"/>
+  <rect x="800" y="185" width="160" height="20" rx="6" fill="#be185d"/>
+  <text x="880" y="199" fill="#ffffff" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">KUBERNETES</text>
+  <text x="880" y="218" fill="#fbcfe8" font-family="monospace" font-size="8" text-anchor="middle">ClusterIP / NodePort</text>
+  <text x="880" y="233" fill="#fbcfe8" font-family="monospace" font-size="8" text-anchor="middle">kubectl get svc -A</text>
+
+  <!-- ===== CONNECTING LINES between boxes ===== -->
+  <line x1="390" y1="130" x2="390" y2="185" stroke="#8b5cf6" stroke-width="1" stroke-opacity="0.4"/>
+  <line x1="500" y1="130" x2="500" y2="185" stroke="#f59e0b" stroke-width="1" stroke-opacity="0.4"/>
+  <line x1="660" y1="130" x2="660" y2="185" stroke="#06b6d4" stroke-width="1" stroke-opacity="0.4"/>
+
+  <!-- ===== TOOLS SECTION (bottom) ===== -->
+  <rect x="30" y="255" width="1140" height="65" rx="8" fill="#1a2332" stroke="#334155" stroke-width="1"/>
+  <rect x="30" y="255" width="140" height="65" rx="8" fill="#1d4ed8"/>
+  <text x="100" y="290" fill="#ffffff" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">DEVOPS</text>
+  <text x="100" y="308" fill="#93c5fd" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">TOOLS</text>
+
+  <text x="190" y="280" fill="#ffffff" font-family="monospace" font-size="10" font-weight="bold">Network Troubleshooting</text>
+  <text x="190" y="300" fill="#9ca3af" font-family="monospace" font-size="9">ping -c 4 google.com   |   traceroute -n example.com   |   curl -v https://api.dev   |   dig +trace example.com</text>
+  <text x="190" y="315" fill="#9ca3af" font-family="monospace" font-size="9">nc -zv host 443        |   tcpdump -i any port 80    |   ss -tlnp              |   iperf3 -c 10.0.1.50 -t 30</text>
+
+  <!-- ===== CLOUD / INFRASTRUCTURE ROW ===== -->
+  <rect x="30" y="335" width="1140" height="50" rx="8" fill="#1a2332" stroke="#334155" stroke-width="1"/>
+  <rect x="30" y="335" width="140" height="50" rx="8" fill="#047857"/>
+  <text x="100" y="358" fill="#ffffff" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">CLOUD &amp;</text>
+  <text x="100" y="374" fill="#a7f3d0" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">INFRA</text>
+
+  <text x="190" y="355" fill="#ffffff" font-family="monospace" font-size="10" font-weight="bold">Cloud Networking (AWS)</text>
+  <text x="190" y="375" fill="#9ca3af" font-family="monospace" font-size="9">VPC / Subnets / Route Tables / IGW / NGW / Security Groups / NACLs / VPC Peering / Transit Gateway / VPC Endpoints</text>
+
+  <!-- ===== MONITORING ROW ===== -->
+  <rect x="30" y="398" width="1140" height="40" rx="8" fill="#1a2332" stroke="#334155" stroke-width="1"/>
+  <rect x="30" y="398" width="140" height="40" rx="8" fill="#b45309"/>
+  <text x="100" y="422" fill="#ffffff" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">MONITORING</text>
+
+  <text x="190" y="418" fill="#ffffff" font-family="monospace" font-size="10" font-weight="bold">Observability Stack</text>
+  <text x="190" y="435" fill="#9ca3af" font-family="monospace" font-size="9">Prometheus node_exporter / Grafana / VPC Flow Logs / NetFlow / Datadog / Latency (p95 / p99) / Packet Loss / TCP Retransmits</text>
+
+  <!-- ===== Side labels ===== -->
+  <text x="230" y="72" fill="#3b82f6" font-family="monospace" font-size="8">tcp-handshake</text>
+  <text x="530" y="72" fill="#10b981" font-family="monospace" font-size="8">http-response</text>
+  <text x="470" y="182" fill="#f59e0b" font-family="monospace" font-size="8">infra</text>
+  <text x="300" y="252" fill="#8b5cf6" font-family="monospace" font-size="8">dns</text>
+</svg>

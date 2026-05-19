@@ -1,0 +1,1206 @@
+{
+  "title": "Networking for DevOps: The Complete A–Z Guide",
+  "icon": "🌐",
+  "description": "A comprehensive end-to-end guide to networking for DevOps engineers. Covers OSI model, TCP/IP, DNS, HTTP/HTTPS, load balancing, container networking (Docker & Kubernetes), cloud VPC design, troubleshooting tools, monitoring, infrastructure as code, automation, security, and production best practices.",
+  "author": "E-Learning Platform",
+  "date": "2026-05-19",
+  "readTime": "40 min read",
+  "heroImage": "/images/networking-devops-hero.svg",
+  "heroAlt": "Networking for DevOps architecture diagram showing network core, cloud VPC, Kubernetes, Docker, load balancer, CDN, monitoring, automation, and security layers",
+  "sections": [
+    {
+      "id": "introduction",
+      "title": "Introduction to Networking for DevOps",
+      "description": "Why every DevOps engineer must understand networking.",
+      "items": [
+        {
+          "label": "Why Networking Matters in DevOps",
+          "text": "Networking is the backbone of modern infrastructure. As a DevOps engineer, you design, deploy, and troubleshoot the network layer that connects containers, microservices, cloud resources, and end users. Understanding networking fundamentals is essential for:\n\n- Debugging connectivity issues between services (cURL timeouts, connection refused errors)\n- Designing secure cloud architectures (VPCs, subnets, security groups)\n- Configuring load balancers and reverse proxies (NGINX, HAProxy, ALB/NLB)\n- Managing container networking (Docker bridge, Kubernetes CNI, service meshes)\n- Automating infrastructure with Terraform, Ansible, and CloudFormation\n- Monitoring and optimizing network performance (latency, throughput, packet loss)\n- Implementing zero-trust security models and network policies\n\nThis guide covers everything from the OSI model to Kubernetes networking to cloud VPC design — all with practical commands and real-world DevOps scenarios."
+        },
+        {
+          "label": "DevOps Networking Stack Overview",
+          "text": [
+            "Layer 1–2 (Physical/Data Link): Ethernet, MAC addresses, VLANs, ARP",
+            "Layer 3 (Network): IP addressing, CIDR, routing, VPC peering",
+            "Layer 4 (Transport): TCP/UDP, ports, connection states, load balancing",
+            "Layer 5–7 (Application): DNS, HTTP/HTTPS, TLS, gRPC, WebSocket",
+            "Container Networking: CNI plugins, Overlay networks, Service Mesh",
+            "Cloud Networking: VPC, Subnets, Route Tables, IGW, NGW, VPC Peering, Transit Gateway",
+            "Monitoring: NetFlow, sFlow, Prometheus node_exporter, Grafana"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "osi-model",
+      "title": "OSI Model & TCP/IP Stack",
+      "description": "The foundational models that describe how data travels across networks.",
+      "items": [
+        {
+          "label": "OSI 7-Layer Model",
+          "table": {
+            "headers": [
+              "Layer",
+              "Name",
+              "Protocols & Technologies",
+              "DevOps Relevance"
+            ],
+            "rows": [
+              [
+                "7",
+                "Application",
+                "HTTP, HTTPS, DNS, SSH, FTP, SMTP, gRPC",
+                "API design, web servers, DNS config"
+              ],
+              [
+                "6",
+                "Presentation",
+                "SSL/TLS, JPEG, GIF, ASCII",
+                "Certificate management, encryption"
+              ],
+              [
+                "5",
+                "Session",
+                "NetBIOS, RPC, Sockets",
+                "Session persistence, sticky sessions"
+              ],
+              [
+                "4",
+                "Transport",
+                "TCP, UDP, QUIC",
+                "Port config, load balancing, firewall rules"
+              ],
+              [
+                "3",
+                "Network",
+                "IP (IPv4/IPv6), ICMP, ARP, BGP, OSPF",
+                "Subnet design, routing, VPC peering"
+              ],
+              [
+                "2",
+                "Data Link",
+                "Ethernet, MAC, VLAN, ARP",
+                "MAC addresses, switch config, VLAN tagging"
+              ],
+              [
+                "1",
+                "Physical",
+                "Cables, Fiber, Wi-Fi, Hubs",
+                "Physical infrastructure, bandwidth"
+              ]
+            ]
+          }
+        },
+        {
+          "label": "TCP/IP Model (4 Layers)",
+          "text": "The TCP/IP model is the practical implementation used on the internet. It maps to the OSI model but is simpler with 4 layers:\n\n1. Application Layer (OSI 5–7): HTTP, DNS, SSH, TLS\n2. Transport Layer (OSI 4): TCP, UDP\n3. Internet Layer (OSI 3): IP, ICMP, ARP\n4. Network Access Layer (OSI 1–2): Ethernet, Wi-Fi, physical"
+        },
+        {
+          "label": "Data Encapsulation Process",
+          "code": "# Data encapsulation as it moves down the stack:\n# Application Layer:\n  HTTP Request: GET /api/users HTTP/1.1\n  Headers: Host: example.com, User-Agent: curl/7.68\n\n# Transport Layer (TCP):\n  Source Port: 54321\n  Destination Port: 443\n  Sequence Number: 12345\n  TCP Flags: SYN=0, ACK=1\n\n# Internet Layer (IP):\n  Source IP: 192.168.1.100\n  Destination IP: 93.184.216.34\n  TTL: 64, Protocol: TCP (6)\n\n# Network Access Layer (Ethernet):\n  Source MAC: aa:bb:cc:dd:ee:ff\n  Destination MAC: 11:22:33:44:55:66\n  Ethernet Type: IPv4 (0x0800)\n\n# View encapsulation with tcpdump:\nuser@host:~$ sudo tcpdump -nn -X -c 1 host example.com\n12:34:56.789012 IP 192.168.1.100.54321 > 93.184.216.34.443:\n  Flags [S], seq 12345, win 65535, options [mss 1460]\n          0x0000:  4500 003c 1c46 4000 4006 0000 c0a8 0164  E..<.F@.@......d\n          0x0010:  5db8 d822 d431 01bb 3039 0000 0000 0000  ]..\".1..09......"
+        }
+      ]
+    },
+    {
+      "id": "ip-addressing",
+      "title": "IP Addressing & Subnetting",
+      "description": "IPv4, IPv6, CIDR notation, and subnet design for cloud infrastructure.",
+      "items": [
+        {
+          "label": "IPv4 Addressing & CIDR",
+          "code": "# IPv4 address: 32 bits, 4 octets (0-255 each)\n# Example: 192.168.1.0/24\n\n# CIDR notation: IP/prefix-length\n# /24 = 255.255.255.0 = 256 addresses (254 usable)\n# /16 = 255.255.0.0 = 65,536 addresses\n# /8  = 255.0.0.0 = 16,777,216 addresses\n# /32 = single host\n\n# Calculate subnet details:\nuser@host:~$ ipcalc 10.0.0.0/16\nAddress:   10.0.0.0           00001010.00000000.00000000.00000000\nNetmask:   255.255.0.0 = 16   11111111.11111111.00000000.00000000\nWildcard:  0.0.255.255        00000000.00000000.11111111.11111111\nNetwork:   10.0.0.0/16        00001010.00000000.00000000.00000000\nHostMin:   10.0.0.1           00001010.00000000.00000000.00000001\nHostMax:   10.0.255.254       00001010.00000000.11111111.11111110\nBroadcast: 10.0.255.255       00001010.00000000.11111111.11111111\nHosts/Net: 65534               Class A, Private IPv4\n\n# Private IP ranges (RFC 1918):\n10.0.0.0/8     - 10.255.255.255     (16M hosts)\n172.16.0.0/12  - 172.31.255.255     (1M hosts)\n192.168.0.0/16 - 192.168.255.255    (65K hosts)"
+        },
+        {
+          "label": "Subnetting for Cloud VPC Design",
+          "code": "# AWS VPC subnet design example:\n# VPC: 10.0.0.0/16 (65,536 addresses)\n\n# Public subnets (with Internet Gateway):\nPublic Subnet 1 (AZ-A):  10.0.1.0/24   (254 hosts)\nPublic Subnet 2 (AZ-B):  10.0.2.0/24   (254 hosts)\nPublic Subnet 3 (AZ-C):  10.0.3.0/24   (254 hosts)\n\n# Private subnets (no direct internet access):\nPrivate Subnet 1 (AZ-A): 10.0.10.0/24  (254 hosts)\nPrivate Subnet 2 (AZ-B): 10.0.11.0/24  (254 hosts)\nPrivate Subnet 3 (AZ-C): 10.0.12.0/24  (254 hosts)\n\n# Database subnets (restricted access):\nDB Subnet 1 (AZ-A):      10.0.20.0/24  (254 hosts)\nDB Subnet 2 (AZ-B):      10.0.21.0/24  (254 hosts)\nDB Subnet 3 (AZ-C):      10.0.22.0/24  (254 hosts)"
+        },
+        {
+          "label": "IPv6 Basics for DevOps",
+          "code": "# IPv6: 128 bits, hexadecimal notation\n# Example: 2001:0db8:85a3:0000:0000:8a2e:0370:7334\n\n# Shorthand: leading zeros omitted, :: for zero blocks\n# 2001:0db8:85a3:0000:0000:8a2e:0370:7334\n# = 2001:db8:85a3::8a2e:370:7334\n\n# Common IPv6 prefixes for cloud:\n# /64 = standard subnet size\n# /56 = typical AWS VPC allocation (256 subnets)\n# /48 = large allocation (65,536 subnets)\n\n# Test IPv6 connectivity:\nuser@host:~$ curl -6 https://api64.ipify.org\n2600:xxxx:xxxx:xxxx::xxxx"
+        },
+        {
+          "label": "IP Address Tools",
+          "code": "# Check local IPs:\nuser@host:~$ ip addr show\n1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536\n    inet 127.0.0.1/8 scope host lo\n2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500\n    inet 10.0.1.42/24 brd 10.0.1.255 scope global eth0\n\n# Public IP:\nuser@host:~$ curl -s ifconfig.me\n203.0.113.42"
+        }
+      ]
+    },
+    {
+      "id": "dns",
+      "title": "DNS — Domain Name System",
+      "description": "How DNS resolution works and essential commands for troubleshooting.",
+      "items": [
+        {
+          "label": "DNS Resolution Process",
+          "text": "When you type 'example.com' in a browser, here's what happens:\n\n1. Browser checks its local DNS cache\n2. OS checks /etc/hosts file\n3. Query sent to configured DNS resolver (e.g., 8.8.8.8)\n4. Resolver queries Root DNS servers for .com TLD servers\n5. .com TLD servers return authoritative nameservers for example.com\n6. Authoritative nameservers return the A/AAAA record (IP address)\n7. Response is cached and returned to the client\n\nWhen debugging DNS issues in DevOps:\n- Always check cache first (nscd, systemd-resolved, dnsmasq)\n- Propagation can take hours due to TTL caches\n- Use dig +trace to see the full resolution path"
+        },
+        {
+          "label": "DNS Record Types",
+          "table": {
+            "headers": [
+              "Record",
+              "Purpose",
+              "Example"
+            ],
+            "rows": [
+              [
+                "A",
+                "IPv4 address mapping",
+                "example.com. 3600 IN A 93.184.216.34"
+              ],
+              [
+                "AAAA",
+                "IPv6 address mapping",
+                "example.com. 3600 IN AAAA 2606:2800:220:1:248:1893:25c8:1946"
+              ],
+              [
+                "CNAME",
+                "Canonical name (alias)",
+                "www.example.com. 3600 IN CNAME example.com."
+              ],
+              [
+                "MX",
+                "Mail exchange",
+                "example.com. 3600 IN MX 10 mail.example.com."
+              ],
+              [
+                "TXT",
+                "Text data (SPF, DKIM, DMARC)",
+                "example.com. 3600 IN TXT \"v=spf1 include:_spf.google.com ~all\""
+              ],
+              [
+                "NS",
+                "Authoritative nameserver",
+                "example.com. 172800 IN NS ns1.example.com."
+              ],
+              [
+                "SOA",
+                "Start of Authority",
+                "example.com. 3600 IN SOA ns1.example.com. admin.example.com. 2026051901 7200 3600 1209600 3600"
+              ],
+              [
+                "PTR",
+                "Reverse DNS (IP to hostname)",
+                "34.216.184.93.in-addr.arpa. 3600 IN PTR example.com."
+              ],
+              [
+                "CAA",
+                "Certificate Authority Authorization",
+                "example.com. 3600 IN CAA 0 issue \"letsencrypt.org\""
+              ]
+            ]
+          }
+        },
+        {
+          "label": "dig Command (DNS Swiss Army Knife)",
+          "code": "# Basic A record lookup:\nuser@host:~$ dig example.com\n\n; <<>> DiG 9.18 <<>> example.com\n;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 12345\n;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 2, ADDITIONAL: 1\n\n;; ANSWER SECTION:\nexample.com.\t\t3600\tIN\tA\t93.184.216.34\n\n;; Query time: 23 msec\n;; SERVER: 8.8.8.8#53(8.8.8.8)\n\n# Short answer:\nuser@host:~$ dig +short example.com\n93.184.216.34\n\n# Trace full resolution path:\nuser@host:~$ dig +trace example.com\n\n# Query specific record types:\nuser@host:~$ dig mx example.com\nuser@host:~$ dig txt example.com\nuser@host:~$ dig ns example.com\n\n# Reverse DNS:\nuser@host:~$ dig -x 93.184.216.34"
+        },
+        {
+          "label": "DNS Troubleshooting Commands",
+          "code": "# nslookup:\nuser@host:~$ nslookup example.com\nServer:\t\t8.8.8.8\nAddress:\t8.8.8.8#53\nNon-authoritative answer:\nName:\texample.com\nAddress: 93.184.216.34\n\n# host command:\nuser@host:~$ host example.com\nexample.com has address 93.184.216.34\n\n# Check /etc/hosts:\nuser@host:~$ cat /etc/hosts\n127.0.0.1 localhost\n127.0.1.1 my-server\n10.0.1.50  db-primary.internal\n\n# Check system DNS resolver:\nuser@host:~$ resolvectl status\nGlobal\n       Protocols: -LLMNR -mDNS -DNSOverTLS DNSSEC=no\nLink 2 (eth0)\nCurrent DNS Server: 10.0.0.2\n       DNS Servers: 10.0.0.2 8.8.8.8"
+        }
+      ]
+    },
+    {
+      "id": "http-https",
+      "title": "HTTP/HTTPS Protocol Deep Dive",
+      "description": "Understanding HTTP methods, status codes, headers, and the TLS handshake.",
+      "items": [
+        {
+          "label": "HTTP Methods & When to Use Them",
+          "table": {
+            "headers": [
+              "Method",
+              "Purpose",
+              "Idempotent",
+              "Safe"
+            ],
+            "rows": [
+              [
+                "GET",
+                "Retrieve a resource",
+                "Yes",
+                "Yes"
+              ],
+              [
+                "POST",
+                "Create a resource",
+                "No",
+                "No"
+              ],
+              [
+                "PUT",
+                "Update/replace a resource",
+                "Yes",
+                "No"
+              ],
+              [
+                "PATCH",
+                "Partial update",
+                "No",
+                "No"
+              ],
+              [
+                "DELETE",
+                "Delete a resource",
+                "Yes",
+                "No"
+              ],
+              [
+                "HEAD",
+                "Same as GET, no body",
+                "Yes",
+                "Yes"
+              ],
+              [
+                "OPTIONS",
+                "List supported methods",
+                "Yes",
+                "Yes"
+              ]
+            ]
+          }
+        },
+        {
+          "label": "HTTP Status Codes Reference",
+          "table": {
+            "headers": [
+              "Code",
+              "Category",
+              "Common Examples"
+            ],
+            "rows": [
+              [
+                "1xx",
+                "Informational",
+                "100 Continue, 101 Switching Protocols"
+              ],
+              [
+                "200",
+                "Success",
+                "200 OK"
+              ],
+              [
+                "201",
+                "Created",
+                "Resource created (POST response)"
+              ],
+              [
+                "204",
+                "No Content",
+                "Success, no body (DELETE response)"
+              ],
+              [
+                "301",
+                "Moved Permanently",
+                "Permanent redirect (SEO)"
+              ],
+              [
+                "302",
+                "Found",
+                "Temporary redirect"
+              ],
+              [
+                "304",
+                "Not Modified",
+                "Cached resource is valid"
+              ],
+              [
+                "400",
+                "Bad Request",
+                "Malformed request"
+              ],
+              [
+                "401",
+                "Unauthorized",
+                "Authentication required"
+              ],
+              [
+                "403",
+                "Forbidden",
+                "Authenticated but not authorized"
+              ],
+              [
+                "404",
+                "Not Found",
+                "Resource doesn't exist"
+              ],
+              [
+                "405",
+                "Method Not Allowed",
+                "Wrong HTTP method"
+              ],
+              [
+                "429",
+                "Too Many Requests",
+                "Rate limit exceeded"
+              ],
+              [
+                "500",
+                "Internal Server Error",
+                "Generic server error"
+              ],
+              [
+                "502",
+                "Bad Gateway",
+                "Upstream returned invalid response"
+              ],
+              [
+                "503",
+                "Service Unavailable",
+                "Server overloaded or down"
+              ],
+              [
+                "504",
+                "Gateway Timeout",
+                "Upstream took too long"
+              ]
+            ]
+          }
+        },
+        {
+          "label": "cURL — The DevOps HTTP Swiss Army Knife",
+          "code": "# Basic GET:\nuser@host:~$ curl https://api.github.com/repos/nginx/nginx\n\n# Show response headers:\nuser@host:~$ curl -I https://example.com\nHTTP/2 200\nserver: nginx/1.24.0\ncontent-type: text/html\ncontent-length: 615\n\n# Verbose output (TLS handshake, DNS, timing):\nuser@host:~$ curl -v https://example.com\n*   Trying 93.184.216.34:443...\n* Connected to example.com (93.184.216.34) port 443 (#0)\n* ALPN: offers h2,http/1.1\n* SSL connection using TLSv1.3 / CHACHA20-POLY1305-SHA256\n* ALPN: server accepted h2\n> GET / HTTP/2\n> Host: example.com\n> user-agent: curl/7.68.0\n>\n< HTTP/2 200\n< server: nginx/1.24.0\n\n# POST with JSON body:\nuser@host:~$ curl -X POST https://api.example.com/users \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Authorization: Bearer token123\" \\\n  -d '{\"name\":\"Alice\",\"email\":\"alice@example.com\"}'\n\n# Measure timing breakdown:\nuser@host:~$ curl -o /dev/null -s -w '\n  DNS: %{time_namelookup}s\n  TCP Connect: %{time_connect}s\n  TLS Handshake: %{time_appconnect}s\n  TTFB: %{time_starttransfer}s\n  Total: %{time_total}s\n' https://example.com\nDNS: 0.023s\nTCP Connect: 0.045s\nTLS Handshake: 0.089s\nTTFB: 0.134s\nTotal: 0.234s"
+        },
+        {
+          "label": "TLS Handshake & Certificate Inspection",
+          "code": "# Inspect TLS certificates:\nuser@host:~$ openssl s_client -connect example.com:443 -servername example.com\nCONNECTED(00000003)\ndepth=2 C=US; O=Internet Security Research Group; CN=ISRG Root X1\nverify return:1\ndepth=1 C=US; O=Let's Encrypt; CN=R3\nverify return:1\ndepth=0 CN=example.com\nverify return:1\n\nServer certificate\nsubject=CN=example.com\nissuer=C=US; O=Let's Encrypt; CN=R3\n\nSSL handshake has read 3421 bytes and written 397 bytes\nNew, TLSv1.3, Cipher is TLS_AES_256_GCM_SHA384\n\n# Check certificate expiry:\nuser@host:~$ openssl s_client -connect example.com:443 -servername example.com 2>/dev/null | openssl x509 -noout -dates\nnotBefore=May 19 00:00:00 2026 GMT\nnotAfter=Aug 17 23:59:59 2026 GMT"
+        }
+      ]
+    },
+    {
+      "id": "tcp-udp",
+      "title": "TCP vs UDP",
+      "description": "Understanding transport layer protocols and when to use each.",
+      "items": [
+        {
+          "label": "TCP vs UDP Comparison",
+          "table": {
+            "headers": [
+              "Feature",
+              "TCP",
+              "UDP"
+            ],
+            "rows": [
+              [
+                "Connection",
+                "Connection-oriented (3-way handshake)",
+                "Connectionless"
+              ],
+              [
+                "Reliability",
+                "Guaranteed delivery (ACKs + retransmission)",
+                "No guarantee (fire and forget)"
+              ],
+              [
+                "Ordering",
+                "In-order delivery (sequence numbers)",
+                "No ordering guarantee"
+              ],
+              [
+                "Flow control",
+                "Sliding window",
+                "None"
+              ],
+              [
+                "Congestion control",
+                "Slow start, congestion avoidance",
+                "None"
+              ],
+              [
+                "Speed",
+                "Slower (overhead)",
+                "Faster (minimal overhead)"
+              ],
+              [
+                "Header size",
+                "20–60 bytes",
+                "8 bytes"
+              ],
+              [
+                "Use cases",
+                "HTTP, SSH, SMTP, FTP, SQL",
+                "DNS, DHCP, VoIP, streaming, gaming"
+              ]
+            ]
+          }
+        },
+        {
+          "label": "TCP 3-Way Handshake & Connection States",
+          "code": "# TCP 3-way handshake:\n# 1. Client -> Server: SYN (seq=x)\n# 2. Server -> Client: SYN-ACK (seq=y, ack=x+1)\n# 3. Client -> Server: ACK (seq=x+1, ack=y+1)\n# Connection established!\n\n# View handshake with tcpdump:\nuser@host:~$ sudo tcpdump -nn -i any host example.com and port 443\n13:42:01.123456 IP 10.0.1.42.54321 > 93.184.216.34.443:\n  Flags [S], seq 1000, win 65535, options [mss 1460]\n13:42:01.123789 IP 93.184.216.34.443 > 10.0.1.42.54321:\n  Flags [S.], seq 2000, ack 1001, win 65535, options [mss 1460]\n13:42:01.123890 IP 10.0.1.42.54321 > 93.184.216.34.443:\n  Flags [.], ack 2001, win 65535\n\n# TCP connection states:\nuser@host:~$ ss -tn | head -10\nState       Recv-Q Send-Q  Local Address:Port   Peer Address:Port\nESTAB       0      0       10.0.1.42:54321      93.184.216.34:443\nESTAB       0      0       10.0.1.42:22         192.168.1.50:40000\nTIME_WAIT   0      0       10.0.1.42:44444      203.0.113.42:80\nLISTEN      0      128     0.0.0.0:22           0.0.0.0:*"
+        },
+        {
+          "label": "UDP in DevOps Context",
+          "code": "# UDP powers critical infrastructure protocols:\n\n# DNS queries (port 53 UDP):\nuser@host:~$ dig +short example.com @8.8.8.8\n93.184.216.34\n\n# DHCP (ports 67/68 UDP):\nuser@host:~$ sudo dhclient eth0\n\n# NTP time sync (port 123 UDP):\nuser@host:~$ timedatectl timesync-status\n       Server: 10.0.0.2 (ntp.example.com)\n\n# View UDP connections:\nuser@host:~$ ss -un\nState       Recv-Q Send-Q  Local Address:Port   Peer Address:Port\nESTAB       0      0       10.0.1.42:54321      8.8.8.8:53\n\n# Measure UDP throughput:\n# Server:\nuser@server:~$ iperf3 -s -p 5201\n# Client:\nuser@client:~$ iperf3 -c 10.0.1.42 -u -b 100m -t 30\n[ ID] Interval           Transfer     Bitrate         Total Datagrams\n[  5]   0.00-30.00  sec   358 MBytes   100 Mbits/sec  45875\n[  5] Sent 45875 datagrams, 0% loss"
+        }
+      ]
+    },
+    {
+      "id": "ports-sockets",
+      "title": "Ports & Sockets",
+      "description": "Understanding port numbers, socket states, and how services listen.",
+      "items": [
+        {
+          "label": "Well-Known Ports Reference",
+          "table": {
+            "headers": [
+              "Port",
+              "Protocol",
+              "Service",
+              "DevOps Use"
+            ],
+            "rows": [
+              [
+                "22",
+                "TCP",
+                "SSH",
+                "Remote server access, tunneling"
+              ],
+              [
+                "53",
+                "TCP/UDP",
+                "DNS",
+                "Domain resolution"
+              ],
+              [
+                "80",
+                "TCP",
+                "HTTP",
+                "Web traffic (unencrypted)"
+              ],
+              [
+                "443",
+                "TCP",
+                "HTTPS",
+                "Web traffic (encrypted)"
+              ],
+              [
+                "2375/2376",
+                "TCP",
+                "Docker API",
+                "Docker remote API"
+              ],
+              [
+                "3306",
+                "TCP",
+                "MySQL",
+                "MySQL database"
+              ],
+              [
+                "5432",
+                "TCP",
+                "PostgreSQL",
+                "PostgreSQL database"
+              ],
+              [
+                "6379",
+                "TCP",
+                "Redis",
+                "Redis cache"
+              ],
+              [
+                "6443",
+                "TCP",
+                "K8s API Server",
+                "Kubernetes API"
+              ],
+              [
+                "8080",
+                "TCP",
+                "HTTP Alt",
+                "Common proxy port"
+              ],
+              [
+                "9090",
+                "TCP",
+                "Prometheus",
+                "Prometheus metrics"
+              ],
+              [
+                "9100",
+                "TCP",
+                "node_exporter",
+                "Prometheus node metrics"
+              ],
+              [
+                "30000–32767",
+                "TCP/UDP",
+                "K8s NodePort",
+                "Kubernetes NodePort range"
+              ]
+            ]
+          }
+        },
+        {
+          "label": "Socket State Inspection",
+          "code": "# List all listening ports:\nuser@host:~$ ss -tlnp\nState    Recv-Q   Send-Q     Local Address:Port     Peer Address:Port   Process\nLISTEN   0        128              0.0.0.0:22            0.0.0.0:*       users:((\"sshd\",pid=1234,fd=3))\nLISTEN   0        511              0.0.0.0:80            0.0.0.0:*       users:((\"nginx\",pid=2345,fd=8))\nLISTEN   0        511              0.0.0.0:443           0.0.0.0:*       users:((\"nginx\",pid=2345,fd=9))\nLISTEN   0        128            127.0.0.1:3000          0.0.0.0:*       users:((\"node\",pid=3456,fd=21))\nLISTEN   0        64                    *:3306                *:*       users:((\"mysqld\",pid=4567,fd=25))\n\n# Check a specific port:\nuser@host:~$ ss -tlnp | grep ':5432'\nLISTEN   0        128              0.0.0.0:5432          0.0.0.0:*       users:((\"postgres\",pid=6789,fd=11))\n\n# Check port with fuser:\nuser@host:~$ sudo fuser 80/tcp\n80/tcp:               2345"
+        },
+        {
+          "label": "Checking Port Connectivity",
+          "code": "# Quick TCP port check with nc:\nuser@host:~$ nc -zv google.com 443\nConnection to google.com (142.250.80.46) 443 port [tcp/https] succeeded!\n\n# With timeout:\nuser@host:~$ nc -zv -w 3 10.0.1.50 3306\nnc: connect to 10.0.1.50 port 3306 (tcp) timed out\n\n# Check multiple ports:\nuser@host:~$ for port in 80 443 3000 9090; do\n  nc -zv localhost $port 2>&1 | grep -E 'succeeded|open'\ndone\n\n# UDP test:\nuser@host:~$ nc -zuv 8.8.8.8 53\nConnection to 8.8.8.8 53 port [udp/domain] succeeded!\n\n# Port scan with nmap:\nuser@host:~$ nmap -p 1-10000 10.0.1.50\nStarting Nmap 7.80 ( https://nmap.org )\nNmap scan report for 10.0.1.50\nPORT     STATE    SERVICE\n22/tcp   open     ssh\n80/tcp   open     http\n443/tcp  open     https\n3306/tcp filtered mysql"
+        }
+      ]
+    },
+    {
+      "id": "nat",
+      "title": "Network Address Translation (NAT)",
+      "description": "How NAT works and its role in cloud networking.",
+      "items": [
+        {
+          "label": "NAT Types & Use Cases",
+          "table": {
+            "headers": [
+              "NAT Type",
+              "How It Works",
+              "DevOps Use Case"
+            ],
+            "rows": [
+              [
+                "SNAT (Source NAT)",
+                "Changes source IP of outbound packets",
+                "Private instances accessing internet via NAT Gateway"
+              ],
+              [
+                "DNAT (Destination NAT)",
+                "Changes destination IP of inbound packets",
+                "Port forwarding to internal servers"
+              ],
+              [
+                "MASQUERADE",
+                "Dynamic SNAT (IP changes per connection)",
+                "Docker bridge network outbound traffic"
+              ],
+              [
+                "PAT (Port Address Translation)",
+                "Many private IPs to one public IP using different ports",
+                "Home router / cloud NAT Gateway (most common)"
+              ]
+            ]
+          }
+        },
+        {
+          "label": "NAT in Cloud (AWS NAT Gateway)",
+          "code": "# AWS VPC NAT Gateway:\n# - Managed service in public subnet\n# - Allows private subnet instances to access internet\n# - Cost: ~$0.045/hour + $0.045/GB data processed\n\n# Terraform configuration:\nresource \"aws_eip\" \"nat\" {\n  domain = \"vpc\"\n}\n\nresource \"aws_nat_gateway\" \"main\" {\n  allocation_id = aws_eip.nat.id\n  subnet_id     = aws_subnet.public[0].id\n  tags = { Name = \"main-nat-gateway\" }\n}\n\nresource \"aws_route\" \"private_nat\" {\n  route_table_id         = aws_route_table.private.id\n  destination_cidr_block = \"0.0.0.0/0\"\n  nat_gateway_id         = aws_nat_gateway.main.id\n}\n\n# Verify NAT is working:\nuser@host:~$ curl -s ifconfig.me\n203.0.113.42  # NAT Gateway's public IP\n\n# iptables SNAT example:\nuser@host:~$ sudo iptables -t nat -A POSTROUTING -o eth0 -j SNAT --to-source 203.0.113.42\nuser@host:~$ sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE"
+        },
+        {
+          "label": "Port Forwarding (DNAT)",
+          "code": "# iptables port forwarding:\nuser@host:~$ sudo iptables -t nat -A PREROUTING -p tcp --dport 8080 -j REDIRECT --to-port 80\nuser@host:~$ sudo iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 443 -j DNAT --to-destination 10.0.1.50:443\n\n# Enable IP forwarding:\nuser@host:~$ sudo sysctl -w net.ipv4.ip_forward=1\nuser@host:~$ echo 'net.ipv4.ip_forward = 1' | sudo tee -a /etc/sysctl.conf\n\n# Kubernetes port forwarding:\nuser@host:~$ kubectl port-forward svc/my-service 8080:80\nForwarding from 127.0.0.1:8080 -> 80\n\n# Docker port mapping:\nuser@host:~$ docker run -d -p 8080:80 nginx\n\n# SSH local port forwarding:\nuser@host:~$ ssh -L 9000:localhost:3000 user@jumphost\n# http://localhost:9000 forwards through jumphost to remote:3000"
+        }
+      ]
+    },
+    {
+      "id": "firewalls-security-groups",
+      "title": "Firewalls & Security Groups",
+      "description": "Network security with cloud security groups, NACLs, and iptables.",
+      "items": [
+        {
+          "label": "Cloud Security Groups vs NACLs",
+          "table": {
+            "headers": [
+              "Feature",
+              "Security Group (AWS)",
+              "NACL (AWS)"
+            ],
+            "rows": [
+              [
+                "Scope",
+                "Instance-level (stateful)",
+                "Subnet-level (stateless)"
+              ],
+              [
+                "State",
+                "Stateful (return traffic allowed)",
+                "Stateless (must allow both directions)"
+              ],
+              [
+                "Default",
+                "Deny all inbound, allow all outbound",
+                "Allow all inbound/outbound"
+              ],
+              [
+                "Rules",
+                "Allow only",
+                "Allow and Deny (numbered)"
+              ],
+              [
+                "Evaluation",
+                "All rules applied together",
+                "Evaluated in order (lowest first)"
+              ]
+            ]
+          }
+        },
+        {
+          "label": "Cloud Security Group (Terraform)",
+          "code": "resource \"aws_security_group\" \"web_sg\" {\n  name        = \"web-server-sg\"\n  description = \"Security group for web servers\"\n  vpc_id      = aws_vpc.main.id\n\n  ingress {\n    description = \"HTTPS from anywhere\"\n    from_port   = 443\n    to_port     = 443\n    protocol    = \"tcp\"\n    cidr_blocks = [\"0.0.0.0/0\"]\n  }\n\n  ingress {\n    description = \"HTTP from anywhere\"\n    from_port   = 80\n    to_port     = 80\n    protocol    = \"tcp\"\n    cidr_blocks = [\"0.0.0.0/0\"]\n  }\n\n  ingress {\n    description = \"SSH from office\"\n    from_port   = 22\n    to_port     = 22\n    protocol    = \"tcp\"\n    cidr_blocks = [\"203.0.113.0/24\"]\n  }\n\n  egress {\n    from_port   = 0\n    to_port     = 0\n    protocol    = \"-1\"\n    cidr_blocks = [\"0.0.0.0/0\"]\n  }\n\n  tags = { Name = \"web-server-sg\" }\n}\n\n# Reference another SG (most secure):\nresource \"aws_security_group_rule\" \"app_to_db\" {\n  type                     = \"ingress\"\n  from_port                = 3306\n  to_port                  = 3306\n  protocol                 = \"tcp\"\n  source_security_group_id = aws_security_group.app_sg.id\n  security_group_id        = aws_security_group.db_sg.id\n}"
+        },
+        {
+          "label": "iptables for DevOps",
+          "code": "# Check current rules:\nuser@host:~$ sudo iptables -L -n -v\n\n# Default policies:\nuser@host:~$ sudo iptables -P INPUT DROP\nuser@host:~$ sudo iptables -P FORWARD DROP\nuser@host:~$ sudo iptables -P OUTPUT ACCEPT\n\n# Allow established connections:\nuser@host:~$ sudo iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\n\n# Allow specific services:\nuser@host:~$ sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT\nuser@host:~$ sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT\nuser@host:~$ sudo iptables -A INPUT -p tcp --dport 443 -j ACCEPT\n\n# Allow loopback:\nuser@host:~$ sudo iptables -A INPUT -i lo -j ACCEPT\n\n# Rate limit SSH (prevent brute force):\nuser@host:~$ sudo iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --set\nuser@host:~$ sudo iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 60 --hitcount 4 -j DROP\n\n# Save rules:\nuser@host:~$ sudo iptables-save > /etc/iptables/rules.v4"
+        }
+      ]
+    },
+    {
+      "id": "load-balancing-concepts",
+      "title": "Load Balancing Concepts",
+      "description": "Load balancing algorithms, types, and cloud LB services.",
+      "items": [
+        {
+          "label": "Load Balancer Types",
+          "table": {
+            "headers": [
+              "Type",
+              "Layer",
+              "How It Works",
+              "AWS Example"
+            ],
+            "rows": [
+              [
+                "Application LB",
+                "Layer 7",
+                "Routes based on HTTP headers, path, host",
+                "ALB"
+              ],
+              [
+                "Network LB",
+                "Layer 4",
+                "Routes based on IP:port, ultra-low latency",
+                "NLB"
+              ],
+              [
+                "Gateway LB",
+                "Layer 3",
+                "Transparent inline for appliances",
+                "GWLB"
+              ],
+              [
+                "HAProxy",
+                "Layer 4/7",
+                "Open-source, highly configurable",
+                "Self-managed"
+              ],
+              [
+                "NGINX",
+                "Layer 7",
+                "Reverse proxy with load balancing",
+                "Self-managed"
+              ]
+            ]
+          }
+        },
+        {
+          "label": "Load Balancing Algorithms",
+          "code": "# 1. Round Robin (default) - distributes evenly\nupstream backend {\n    server 10.0.1.10:3000;\n    server 10.0.1.11:3000;\n}\n\n# 2. Least Connections - sends to least busy server\nupstream backend {\n    least_conn;\n    server 10.0.1.10:3000;\n    server 10.0.1.11:3000;\n}\n\n# 3. IP Hash (sticky sessions) - same client, same server\nupstream backend {\n    ip_hash;\n    server 10.0.1.10:3000;\n    server 10.0.1.11:3000;\n}\n\n# 4. Weighted - distribute by capacity\nupstream backend {\n    server 10.0.1.10:3000 weight=5;\n    server 10.0.1.11:3000 weight=1;\n}"
+        },
+        {
+          "label": "Health Checks & Target Groups",
+          "code": "# ALB health check (Terraform):\nresource \"aws_lb_target_group\" \"app\" {\n  name     = \"app-tg\"\n  port     = 80\n  protocol = \"HTTP\"\n  vpc_id   = aws_vpc.main.id\n\n  health_check {\n    enabled             = true\n    interval            = 30\n    path                = \"/health\"\n    healthy_threshold   = 2\n    unhealthy_threshold = 3\n    timeout             = 5\n    matcher             = \"200\"\n  }\n}\n\n# NGINX passive health checks:\nupstream backend {\n    server 10.0.1.10:3000 max_fails=3 fail_timeout=30s;\n    server 10.0.1.11:3000 max_fails=3 fail_timeout=30s;\n}\n\n# Check ALB target health via CLI:\nuser@host:~$ aws elbv2 describe-target-health --target-group-arn arn:aws:elasticloadbalancing:...\n{\n    \"TargetHealthDescriptions\": [{\n        \"Target\": {\"Id\": \"i-12345\", \"Port\": 80},\n        \"TargetHealth\": {\"State\": \"healthy\"}\n    }]\n}"
+        }
+      ]
+    },
+    {
+      "id": "container-networking",
+      "title": "Container Networking (Docker)",
+      "description": "Docker networking modes, port mapping, and multi-host networking.",
+      "items": [
+        {
+          "label": "Docker Network Drivers",
+          "table": {
+            "headers": [
+              "Driver",
+              "Scope",
+              "Use Case"
+            ],
+            "rows": [
+              [
+                "bridge",
+                "Single host",
+                "Default network for containers on same host"
+              ],
+              [
+                "host",
+                "Single host",
+                "Container uses host's network stack"
+              ],
+              [
+                "overlay",
+                "Multi-host",
+                "Swarm/K8s multi-node communication (VXLAN)"
+              ],
+              [
+                "macvlan",
+                "Multi-host",
+                "Containers get own MAC/IP on physical network"
+              ],
+              [
+                "none",
+                "N/A",
+                "No networking (loopback only)"
+              ]
+            ]
+          }
+        },
+        {
+          "label": "Docker Bridge Networking",
+          "code": "# List Docker networks:\nuser@host:~$ docker network ls\nNETWORK ID     NAME      DRIVER    SCOPE\ncdef12345678   bridge    bridge    local\nabcdef123456   host      host      local\n\n# Inspect bridge network:\nuser@host:~$ docker network inspect bridge\n[{\n    \"Name\": \"bridge\",\n    \"Driver\": \"bridge\",\n    \"IPAM\": {\"Config\": [{\"Subnet\": \"172.17.0.0/16\", \"Gateway\": \"172.17.0.1\"}]}\n}]\n\n# Create custom bridge network:\nuser@host:~$ docker network create --driver bridge --subnet 10.10.0.0/16 my-network\n\n# Run containers on custom network:\nuser@host:~$ docker run -d --name app --network my-network my-app:latest\nuser@host:~$ docker run -d --name db --network my-network postgres:16\n\n# DNS resolution by container name:\nuser@host:~$ docker exec app ping db\nPING db (10.10.0.3) 56(84) bytes of data.\n64 bytes from db.my-network (10.10.0.3): icmp_seq=1 ttl=64 time=0.123ms\n\n# Port mapping:\nuser@host:~$ docker run -d -p 8080:80 -p 8443:443 nginx"
+        },
+        {
+          "label": "Docker Overlay Networking (Swarm)",
+          "code": "# Initialize Docker Swarm:\nuser@host:~$ docker swarm init --advertise-addr 10.0.1.10\n\n# Create overlay network:\nuser@host:~$ docker network create --driver overlay --attachable my-overlay\n\n# Deploy service on overlay:\nuser@host:~$ docker service create --name web --network my-overlay --replicas 3 nginx\n\n# Verify overlay:\nuser@host:~$ docker network inspect my-overlay\n[{\n    \"Name\": \"my-overlay\",\n    \"Driver\": \"overlay\",\n    \"IPAM\": {\"Config\": [{\"Subnet\": \"10.0.0.0/24\", \"Gateway\": \"10.0.0.1\"}]}\n}]\n\n# Docker DNS resolution across nodes:\nuser@host:~$ docker exec container1 sh -c 'getent hosts web'\n10.0.0.2  web\n10.0.0.3  web"
+        }
+      ]
+    },
+    {
+      "id": "kubernetes-networking",
+      "title": "Kubernetes Networking",
+      "description": "CNI plugins, Services, Ingress, Network Policies, and Service Mesh.",
+      "items": [
+        {
+          "label": "Kubernetes Networking Model",
+          "text": "Kubernetes has strict networking requirements:\n\n1. Pods can communicate with all other Pods without NAT (flat network)\n2. Nodes can communicate with all Pods without NAT\n3. Agents (kubelet) see the Pod's IP as the source IP\n\nThis is achieved through CNI (Container Network Interface) plugins:\n- Calico: Network policy enforcement, BGP routing, high performance\n- Cilium: eBPF-based, advanced observability with Hubble\n- Flannel: Simple overlay (VXLAN), no network policies\n- Weave Net: Mesh overlay with encryption\n- Amazon VPC CNI: Native AWS VPC integration (each pod gets a VPC IP)"
+        },
+        {
+          "label": "Kubernetes Service Types",
+          "table": {
+            "headers": [
+              "Service Type",
+              "Accessible From",
+              "Use Case"
+            ],
+            "rows": [
+              [
+                "ClusterIP",
+                "Within the cluster only",
+                "Internal microservice communication"
+              ],
+              [
+                "NodePort",
+                "External via <NodeIP>:<NodePort>",
+                "Development, direct node access"
+              ],
+              [
+                "LoadBalancer",
+                "External via cloud LB",
+                "Production services exposed to internet"
+              ],
+              [
+                "ExternalName",
+                "DNS alias",
+                "Points a K8s service to an external DNS name"
+              ],
+              [
+                "Headless",
+                "Pod DNS lookup",
+                "StatefulSets, each pod needs stable DNS name"
+              ]
+            ]
+          }
+        },
+        {
+          "label": "Kubernetes Services & Ingress",
+          "code": "# ClusterIP Service:\napiVersion: v1\nkind: Service\nmetadata:\n  name: my-app\nspec:\n  selector:\n    app: my-app\n  ports:\n  - port: 80\n    targetPort: 3000\n    protocol: TCP\n  type: ClusterIP\n\n# DNS resolution inside cluster:\nuser@host:~$ kubectl run test --rm -it --image=busybox -- nslookup my-app\nServer:    10.96.0.10\nName:      my-app\nAddress 1: 10.100.200.10 my-app.default.svc.cluster.local\n\n# NodePort Service:\napiVersion: v1\nkind: Service\nmetadata:\n  name: my-app-nodeport\nspec:\n  type: NodePort\n  selector:\n    app: my-app\n  ports:\n  - port: 80\n    targetPort: 3000\n    nodePort: 30080\n\n# Access: curl http://10.0.1.10:30080\n\n# Ingress (requires Ingress Controller):\napiVersion: networking.k8s.io/v1\nkind: Ingress\nmetadata:\n  name: my-ingress\n  annotations:\n    nginx.ingress.kubernetes.io/rewrite-target: /\n    cert-manager.io/cluster-issuer: letsencrypt-prod\nspec:\n  ingressClassName: nginx\n  tls:\n  - hosts:\n    - app.example.com\n    secretName: app-tls\n  rules:\n  - host: app.example.com\n    http:\n      paths:\n      - path: /api\n        pathType: Prefix\n        backend:\n          service:\n            name: api-service\n            port:\n              number: 80\n      - path: /\n        pathType: Prefix\n        backend:\n          service:\n            name: web-service\n            port:\n              number: 80"
+        },
+        {
+          "label": "Kubernetes Network Policies",
+          "code": "# Deny all ingress traffic:\napiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: deny-all-ingress\nspec:\n  podSelector: {}\n  policyTypes:\n  - Ingress\n\n# Allow only from specific pods:\napiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: allow-api-only\nspec:\n  podSelector:\n    matchLabels:\n      app: database\n  ingress:\n  - from:\n    - podSelector:\n        matchLabels:\n          app: api-server\n    ports:\n    - port: 5432\n\n# Egress policy (only allow DNS):\napiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: allow-egress-dns-only\nspec:\n  podSelector:\n    matchLabels:\n      app: secure-app\n  policyTypes:\n  - Egress\n  egress:\n  - to:\n    - namespaceSelector: {}\n      podSelector:\n        matchLabels:\n          k8s-app: kube-dns\n    ports:\n    - port: 53\n      protocol: UDP"
+        },
+        {
+          "label": "Service Mesh (Istio / Linkerd)",
+          "code": "# Service mesh adds a sidecar proxy to each pod:\n# - mTLS between services\n# - Traffic splitting (canary deployments)\n# - Circuit breaking, retries, timeouts\n# - Distributed tracing\n\n# Istio VirtualService (traffic routing):\napiVersion: networking.istio.io/v1beta1\nkind: VirtualService\nmetadata:\n  name: my-app\nspec:\n  hosts:\n  - my-app\n  http:\n  - match:\n    - headers:\n        version:\n          exact: v2\n    route:\n    - destination:\n        host: my-app\n        subset: v2\n      weight: 100\n  - route:\n    - destination:\n        host: my-app\n        subset: v1\n      weight: 100\n\n# Istio DestinationRule:\napiVersion: networking.istio.io/v1beta1\nkind: DestinationRule\nmetadata:\n  name: my-app\nspec:\n  host: my-app\n  subsets:\n  - name: v1\n    labels:\n      version: v1\n  - name: v2\n    labels:\n      version: v2\n\n# Check Istio proxy status:\nuser@host:~$ istioctl proxy-status\nNAME              STATUS\nmy-app-v1-abc     SYNCED"
+        }
+      ]
+    },
+    {
+      "id": "cloud-networking",
+      "title": "Cloud Networking (VPC Design)",
+      "description": "Designing secure, scalable network architectures on AWS.",
+      "items": [
+        {
+          "label": "AWS VPC Components",
+          "table": {
+            "headers": [
+              "Component",
+              "Purpose",
+              "Notes"
+            ],
+            "rows": [
+              [
+                "VPC",
+                "Isolated virtual network",
+                "CIDR block (e.g., 10.0.0.0/16)"
+              ],
+              [
+                "Subnet",
+                "Segment of VPC in one AZ",
+                "Public (has IGW route) or Private"
+              ],
+              [
+                "Internet Gateway",
+                "Internet access for public subnets",
+                "Attached to VPC, 1:1"
+              ],
+              [
+                "NAT Gateway",
+                "Outbound internet for private subnets",
+                "Runs in public subnet, ~$0.045/hr"
+              ],
+              [
+                "Route Table",
+                "Controls traffic routing between subnets",
+                "Each subnet must have one"
+              ],
+              [
+                "Security Group",
+                "Instance-level firewall (stateful)",
+                "Allow rules only"
+              ],
+              [
+                "NACL",
+                "Subnet-level firewall (stateless)",
+                "Allow + Deny rules, numbered"
+              ],
+              [
+                "VPC Peering",
+                "Connect VPCs directly",
+                "No transitive routing"
+              ],
+              [
+                "Transit Gateway",
+                "Hub-and-spoke for many VPCs",
+                "Supports VPN, Direct Connect"
+              ],
+              [
+                "VPC Endpoints",
+                "Private access to AWS services",
+                "Gateway (S3) or Interface"
+              ]
+            ]
+          }
+        },
+        {
+          "label": "VPC Design Patterns (Terraform)",
+          "code": "# Three-tier VPC with Terraform:\nresource \"aws_vpc\" \"main\" {\n  cidr_block           = \"10.0.0.0/16\"\n  enable_dns_support   = true\n  enable_dns_hostnames = true\n  tags = { Name = \"main-vpc\" }\n}\n\n# Public subnets (ALB, NAT Gateway, Bastion):\nresource \"aws_subnet\" \"public\" {\n  count                   = 3\n  vpc_id                  = aws_vpc.main.id\n  cidr_block              = \"10.0.${count.index}.0/24\"\n  availability_zone       = data.aws_availability_zones.available.names[count.index]\n  map_public_ip_on_launch = true\n  tags = { Name = \"public-${count.index}\" }\n}\n\n# Private app subnets:\nresource \"aws_subnet\" \"private\" {\n  count             = 3\n  vpc_id            = aws_vpc.main.id\n  cidr_block        = \"10.0.${count.index + 10}.0/24\"\n  availability_zone = data.aws_availability_zones.available.names[count.index]\n  tags = { Name = \"private-${count.index}\" }\n}\n\n# Database subnets:\nresource \"aws_subnet\" \"database\" {\n  count             = 3\n  vpc_id            = aws_vpc.main.id\n  cidr_block        = \"10.0.${count.index + 20}.0/24\"\n  availability_zone = data.aws_availability_zones.available.names[count.index]\n  tags = { Name = \"database-${count.index}\" }\n}\n\n# Internet Gateway:\nresource \"aws_internet_gateway\" \"main\" {\n  vpc_id = aws_vpc.main.id\n  tags = { Name = \"main-igw\" }\n}\n\n# NAT Gateway:\nresource \"aws_eip\" \"nat\" { domain = \"vpc\" }\nresource \"aws_nat_gateway\" \"main\" {\n  allocation_id = aws_eip.nat.id\n  subnet_id     = aws_subnet.public[0].id\n}"
+        },
+        {
+          "label": "VPC Peering & Transit Gateway",
+          "code": "# VPC Peering (connect two VPCs):\nresource \"aws_vpc_peering_connection\" \"peer\" {\n  vpc_id      = aws_vpc.main.id\n  peer_vpc_id = aws_vpc.secondary.id\n  auto_accept = true\n}\n\n# Add routes in both VPCs:\nresource \"aws_route\" \"main_to_secondary\" {\n  route_table_id            = aws_route_table.private.id\n  destination_cidr_block    = aws_vpc.secondary.cidr_block\n  vpc_peering_connection_id = aws_vpc_peering_connection.peer.id\n}\n\n# Transit Gateway (hub-and-spoke):\nresource \"aws_ec2_transit_gateway\" \"main\" {\n  description = \"Main Transit Gateway\"\n}\n\nresource \"aws_ec2_transit_gateway_vpc_attachment\" \"main\" {\n  subnet_ids         = aws_subnet.private[*].id\n  transit_gateway_id = aws_ec2_transit_gateway.main.id\n  vpc_id             = aws_vpc.main.id\n}"
+        },
+        {
+          "label": "VPC Endpoints (PrivateLink)",
+          "code": "# Gateway Endpoint (S3 - free):\nresource \"aws_vpc_endpoint\" \"s3\" {\n  vpc_id       = aws_vpc.main.id\n  service_name = \"com.amazonaws.us-east-1.s3\"\n  route_table_ids = [aws_route_table.private.id]\n}\n\n# Interface Endpoint (ECR, etc. - paid):\nresource \"aws_vpc_endpoint\" \"ecr_api\" {\n  vpc_id             = aws_vpc.main.id\n  service_name       = \"com.amazonaws.us-east-1.ecr.api\"\n  vpc_endpoint_type  = \"Interface\"\n  subnet_ids         = aws_subnet.private[*].id\n  security_group_ids = [aws_security_group.vpc_endpoint.id]\n  private_dns_enabled = true\n}\n\n# Test endpoint connectivity:\nuser@host:~$ aws s3 ls --region us-east-1  # Works via Gateway Endpoint"
+        }
+      ]
+    },
+    {
+      "id": "troubleshooting-tools",
+      "title": "Network Troubleshooting Tools",
+      "description": "Essential commands for diagnosing network issues.",
+      "items": [
+        {
+          "label": "ping & ICMP",
+          "code": "# Basic connectivity test:\nuser@host:~$ ping -c 4 google.com\nPING google.com (142.250.80.46) 56(84) bytes of data.\n64 bytes from 142.250.80.46: icmp_seq=1 ttl=118 time=0.834 ms\n64 bytes from 142.250.80.46: icmp_seq=2 ttl=118 time=0.792 ms\n64 bytes from 142.250.80.46: icmp_seq=3 ttl=118 time=0.812 ms\n64 bytes from 142.250.80.46: icmp_seq=4 ttl=118 time=0.845 ms\n--- google.com ping statistics ---\n4 packets transmitted, 4 received, 0% packet loss, time 3004ms\nrtt min/avg/max/mdev = 0.792/0.821/0.845/0.019 ms\n\n# Check MTU:\nuser@host:~$ ping -M do -s 1472 google.com\n\n# Note: Many cloud providers block ICMP, use nc or curl as alternative"
+        },
+        {
+          "label": "traceroute / mtr (Path Discovery)",
+          "code": "# traceroute:\nuser@host:~$ traceroute -n google.com\ntraceroute to google.com (142.250.80.46), 30 hops max, 60 byte packets\n 1  10.0.0.1    0.345 ms   0.312 ms   0.298 ms\n 2  203.0.113.1   1.234 ms   1.198 ms   1.187 ms\n 3  72.14.242.1   2.456 ms   2.398 ms   2.412 ms\n 4  142.250.80.46  0.834 ms   0.812 ms   0.798 ms\n\n# mtr (real-time ping + traceroute):\nuser@host:~$ mtr -n -c 10 google.com\n                              Packets               Pings\nHost                       Loss%   Snt   Last   Avg  Best  Wrst StDev\n1. 10.0.0.1                0.0%    10   0.3   0.3   0.2   0.4   0.1\n2. 203.0.113.1             0.0%    10   1.2   1.2   1.1   1.4   0.1\n3. 72.14.242.1             0.0%    10   2.4   2.5   2.3   3.1   0.3\n4. 142.250.80.46           0.0%    10   0.8   0.9   0.8   1.2   0.2"
+        },
+        {
+          "label": "tcpdump — Packet Analysis",
+          "code": "# Capture HTTP traffic on port 80:\nuser@host:~$ sudo tcpdump -i any -nn port 80\n\n# Capture specific host:\nuser@host:~$ sudo tcpdump -i any -nn host 10.0.1.50\n\n# Save to file (for Wireshark analysis):\nuser@host:~$ sudo tcpdump -i any -nn -w /tmp/capture.pcap port 443\n\n# Read from capture file:\nuser@host:~$ tcpdump -r /tmp/capture.pcap -nn\n\n# Capture packet contents (ASCII):\nuser@host:~$ sudo tcpdump -i any -nn -A port 80\n\n# Capture DNS queries:\nuser@host:~$ sudo tcpdump -i any -nn port 53\n\n# Filter by TCP flags (SYN packets):\nuser@host:~$ sudo tcpdump -i any 'tcp[tcpflags] & tcp-syn != 0'"
+        },
+        {
+          "label": "iperf3 — Bandwidth Testing",
+          "code": "# Install iperf3:\nuser@host:~$ sudo apt install iperf3 -y\n\n# Start server:\nuser@host:~$ iperf3 -s -p 5201\n\n# Run client (30 second test):\nuser@host:~$ iperf3 -c 10.0.1.50 -t 30\n[ ID] Interval           Transfer     Bitrate         Retr\n[  5]   0.00-30.00  sec  3.45 GBytes   988 Mbits/sec   12   sender\n[  5]   0.00-30.00  sec  3.45 GBytes   988 Mbits/sec         receiver\n\n# UDP test:\nuser@host:~$ iperf3 -c 10.0.1.50 -u -b 100m -t 30\n[ ID] Interval           Transfer     Bitrate         Total Datagrams\n[  5]   0.00-30.00  sec   358 MBytes   100 Mbits/sec  45875\n[  5]   0.00-30.00  sec   358 MBytes   100 Mbits/sec   0/45875 (0%)"
+        },
+        {
+          "label": "Additional Diagnostic Commands",
+          "code": "# arp - MAC address table:\nuser@host:~$ arp -n\nAddress                  HWtype  HWaddress           Iface\n10.0.0.1                 ether   aa:bb:cc:dd:ee:ff   eth0\n\n# ip route - routing table:\nuser@host:~$ ip route show\ndefault via 10.0.0.1 dev eth0\n10.0.0.0/16 dev eth0 proto kernel scope link src 10.0.1.42\n172.17.0.0/16 dev docker0 proto kernel scope link src 172.17.0.1\n\n# ethtool - NIC info:\nuser@host:~$ ethtool eth0\nSettings for eth0:\n    Speed: 10000Mb/s\n    Duplex: Full\n\n# ss - socket statistics summary:\nuser@host:~$ ss -s\nTotal: 342 (kernel 456)\nTCP:   86 (estab 42, closed 12, orphaned 0, timewait 8/0), ports 0"
+        }
+      ]
+    },
+    {
+      "id": "cdn-edge",
+      "title": "CDN & Edge Networking",
+      "description": "Content Delivery Networks and global traffic optimization.",
+      "items": [
+        {
+          "label": "How CDNs Work",
+          "text": "A CDN (Content Delivery Network) distributes content across a global network of edge servers. When a user requests content:\n\n1. DNS resolves to the nearest CDN edge server (via GeoDNS / Anycast)\n2. Edge server serves cached content (cache hit) or fetches from origin (cache miss)\n3. Subsequent requests from nearby users get cache hits (faster response)\n\nKey CDN features:\n- Caching: Static assets cached at edge with configurable TTL\n- DDoS Protection: Absorb large volumetric attacks across global network\n- SSL/TLS: Free certificates, end-to-end encryption\n- Edge Computing: Lambda@Edge, CloudFront Functions, Cloudflare Workers\n- WAF: Web Application Firewall at the edge\n\nPopular CDNs: CloudFront (AWS), Cloudflare, Fastly, Akamai"
+        },
+        {
+          "label": "AWS CloudFront Configuration",
+          "code": "# CloudFront distribution with S3 + ALB origins:\nresource \"aws_cloudfront_distribution\" \"main\" {\n  enabled             = true\n  is_ipv6_enabled     = true\n  default_root_object = \"index.html\"\n\n  # ALB origin (dynamic content)\n  origin {\n    domain_name = aws_lb.app.dns_name\n    origin_id   = \"ALBOrigin\"\n    custom_origin_config {\n      http_port              = 80\n      https_port             = 443\n      origin_protocol_policy = \"https-only\"\n      origin_ssl_protocols   = [\"TLSv1.2\"]\n    }\n  }\n\n  # S3 origin (static assets)\n  origin {\n    domain_name = aws_s3_bucket.static.bucket_regional_domain_name\n    origin_id   = \"S3Origin\"\n    s3_origin_config {\n      origin_access_identity = aws_cloudfront_origin_access_identity.oai.cloudfront_access_identity_path\n    }\n  }\n\n  # Cache static assets for 1 year\n  ordered_cache_behavior {\n    path_pattern     = \"/static/*\"\n    target_origin_id = \"S3Origin\"\n    viewer_protocol_policy = \"redirect-to-https\"\n    min_ttl     = 0\n    default_ttl = 86400\n    max_ttl     = 31536000\n    compress = true\n  }\n\n  # Default behavior (dynamic - no caching)\n  default_cache_behavior {\n    target_origin_id       = \"ALBOrigin\"\n    viewer_protocol_policy = \"redirect-to-https\"\n    min_ttl     = 0\n    default_ttl = 0\n    max_ttl     = 0\n    compress = true\n  }\n\n  viewer_certificate {\n    acm_certificate_arn = aws_acm_certificate.main.arn\n    ssl_support_method  = \"sni-only\"\n  }\n\n  restrictions {\n    geo_restriction { restriction_type = \"none\" }\n  }\n}"
+        }
+      ]
+    },
+    {
+      "id": "network-monitoring",
+      "title": "Network Monitoring & Observability",
+      "description": "Monitoring network health, latency, and traffic patterns.",
+      "items": [
+        {
+          "label": "Key Network Metrics",
+          "code": "# 1. Latency (RTT):\nuser@host:~$ ping -c 100 google.com | tail -1\nrtt min/avg/max/mdev = 0.792/0.821/0.845/0.019 ms\n\n# 2. Throughput:\nuser@host:~$ iperf3 -c 10.0.1.50 -t 10 | grep 'receiver'\n[  5]   0.00-10.00  sec  1.12 GBytes   962 Mbits/sec   receiver\n\n# 3. Packet loss:\nuser@host:~$ ping -c 1000 -f google.com | tail -2\n1000 packets transmitted, 999 received, 0.1% packet loss\n\n# 4. Connection count:\nuser@host:~$ ss -tn | wc -l\n342\n\n# 5. Connection state breakdown:\nuser@host:~$ ss -tn | awk '{print $1}' | sort | uniq -c | sort -rn\n  42 ESTAB\n   8 TIME_WAIT\n   2 LISTEN\n\n# 6. TCP retransmits:\nuser@host:~$ netstat -s | grep -i retransmit\n  12 segments retransmitted\n\n# 7. DNS resolution time:\nuser@host:~$ dig google.com | grep 'Query time'\n;; Query time: 23 msec"
+        },
+        {
+          "label": "Prometheus Network Metrics",
+          "code": "# node_exporter network metrics:\nnode_network_receive_bytes_total{device=\"eth0\"}\nnode_network_transmit_bytes_total{device=\"eth0\"}\nnode_network_receive_errors_total{device=\"eth0\"}\nnode_netstat_Tcp_CurrEstab\nnode_netstat_Tcp_RetransSegs\n\n# Useful PromQL queries:\n\n# Network throughput (bits/sec):\nrate(node_network_receive_bytes_total{device=\"eth0\"}[5m]) * 8\n\n# TCP retransmission rate:\nrate(node_netstat_Tcp_RetransSegs[5m]) / rate(node_netstat_Tcp_OutSegs[5m])\n\n# Active connections:\nnode_netstat_Tcp_CurrEstab\n\n# Blackbox exporter probes:\nprobe_success{instance=\"https://example.com\"}\nprobe_duration_seconds{instance=\"https://example.com\"}\nprobe_ssl_earliest_cert_expiry{instance=\"https://example.com\"}"
+        },
+        {
+          "label": "VPC Flow Logs",
+          "code": "# Enable VPC Flow Logs (Terraform):\nresource \"aws_flow_log\" \"main\" {\n  log_destination      = aws_s3_bucket.flow_logs.arn\n  traffic_type         = \"ALL\"\n  vpc_id               = aws_vpc.main.id\n}\n\n# Query with Athena:\nSELECT * FROM vpc_flow_logs\nWHERE dst_port = 22\n  AND action = 'REJECT'\nORDER BY timestamp DESC\nLIMIT 10;\n\n# Install softflowd (NetFlow):\nuser@host:~$ sudo apt install softflowd -y\nuser@host:~$ sudo softflowd -i eth0 -n 10.0.1.100:9995 -T full\n\n# Analyze flows with nfdump:\nuser@host:~$ nfdump -r /var/log/nfdump/flow.dat -s ip | head -10\nTop 10 IP addresses:\n 10.0.1.10        /24   1.2 GB  45%\n 10.0.1.11        /24   800 MB  30%"
+        }
+      ]
+    },
+    {
+      "id": "iac-networking",
+      "title": "Infrastructure as Code for Networking",
+      "description": "Managing network infrastructure with Terraform and Ansible.",
+      "items": [
+        {
+          "label": "Terraform VPC Module",
+          "code": "# Reusable VPC module:\nmodule \"vpc\" {\n  source = \"terraform-aws-modules/vpc/aws\"\n  version = \"5.0.0\"\n\n  name = \"production-vpc\"\n  cidr = \"10.0.0.0/16\"\n\n  azs             = [\"us-east-1a\", \"us-east-1b\", \"us-east-1c\"]\n  private_subnets = [\"10.0.1.0/24\", \"10.0.2.0/24\", \"10.0.3.0/24\"]\n  public_subnets  = [\"10.0.101.0/24\", \"10.0.102.0/24\", \"10.0.103.0/24\"]\n  database_subnets = [\"10.0.201.0/24\", \"10.0.202.0/24\", \"10.0.203.0/24\"]\n\n  enable_nat_gateway   = true\n  single_nat_gateway   = true\n  enable_dns_hostnames = true\n\n  enable_flow_log                   = true\n  flow_log_destination_type         = \"cloud-watch-logs\"\n  flow_log_max_aggregation_interval = 60\n\n  tags = {\n    Environment = \"production\"\n    ManagedBy   = \"Terraform\"\n  }\n}\n\noutput \"vpc_id\" { value = module.vpc.vpc_id }\noutput \"public_subnets\" { value = module.vpc.public_subnets }\noutput \"private_subnets\" { value = module.vpc.private_subnets }\n\n# Remote state backend:\nterraform {\n  backend \"s3\" {\n    bucket         = \"my-terraform-state\"\n    key            = \"network/terraform.tfstate\"\n    region         = \"us-east-1\"\n    dynamodb_table = \"terraform-locks\"\n  }\n}"
+        },
+        {
+          "label": "Ansible for Network Automation",
+          "code": "# Ansible playbook for network device config:\n---\n- name: Configure network devices\n  hosts: routers\n  gather_facts: yes\n  vars:\n    ntp_servers:\n      - 0.pool.ntp.org\n      - 1.pool.ntp.org\n\n  tasks:\n    - name: Configure hostname\n      ios_config:\n        lines:\n          - hostname {{ inventory_hostname }}\n\n    - name: Configure NTP servers\n      ios_config:\n        lines:\n          - ntp server {{ item }}\n      loop: \"{{ ntp_servers }}\"\n\n    - name: Configure ACL (SSH only from office)\n      ios_config:\n        lines:\n          - ip access-list extended SSH_ACCESS\n          - permit tcp 203.0.113.0 0.0.0.255 host {{ inventory_hostname }} eq 22\n          - deny tcp any host {{ inventory_hostname }} eq 22\n          - line vty 0 4\n          - access-class SSH_ACCESS in\n\n    - name: Save config\n      ios_command:\n        commands:\n          - write memory"
+        }
+      ]
+    },
+    {
+      "id": "performance-latency",
+      "title": "Performance & Latency Optimization",
+      "description": "Identifying and reducing network latency in distributed systems.",
+      "items": [
+        {
+          "label": "Understanding Network Latency",
+          "code": "# Sources of network latency:\n# 1. Propagation delay: distance / speed of light in fiber (~200 km/ms)\n#    NYC to London (~5500 km): ~27.5ms\n#    NYC to Sydney (~16000 km): ~80ms\n# 2. Transmission delay: packet size / bandwidth\n#    1500 byte MTU / 1 Gbps = 0.012ms\n# 3. Processing delay: router/switch processing time\n# 4. Queuing delay: packets waiting in buffer\n\n# Measure latency with curl:\nuser@host:~$ curl -o /dev/null -s -w '\n  DNS Lookup: %{time_namelookup}s\n  TCP Connect: %{time_connect}s\n  TLS Handshake: %{time_appconnect}s\n  TTFB: %{time_starttransfer}s\n  Total: %{time_total}s\n' https://example.com\nDNS Lookup: 0.023s\nTCP Connect: 0.045s\nTLS Handshake: 0.089s\nTTFB: 0.134s\nTotal: 0.234s"
+        },
+        {
+          "label": "TCP Tuning for Low Latency",
+          "code": "# Increase TCP buffer sizes:\nuser@host:~$ sudo sysctl -w net.core.rmem_max=16777216\nuser@host:~$ sudo sysctl -w net.core.wmem_max=16777216\nuser@host:~$ sudo sysctl -w net.ipv4.tcp_rmem='4096 87380 16777216'\nuser@host:~$ sudo sysctl -w net.ipv4.tcp_wmem='4096 65536 16777216'\n\n# Enable BBR congestion control (Google's algorithm):\nuser@host:~$ sudo sysctl -w net.core.default_qdisc=fq\nuser@host:~$ sudo sysctl -w net.ipv4.tcp_congestion_control=bbr\nuser@host:~$ sysctl net.ipv4.tcp_congestion_control\nnet.ipv4.tcp_congestion_control = bbr\n\n# Enable TCP fast open:\nuser@host:~$ sudo sysctl -w net.ipv4.tcp_fastopen=3\n\n# Increase TCP backlog:\nuser@host:~$ sudo sysctl -w net.core.somaxconn=65535\n\n# Make permanent:\nuser@host:~$ sudo tee -a /etc/sysctl.conf << 'EOF'\nnet.core.rmem_max = 16777216\nnet.core.wmem_max = 16777216\nnet.ipv4.tcp_rmem = 4096 87380 16777216\nnet.ipv4.tcp_wmem = 4096 65536 16777216\nnet.core.default_qdisc = fq\nnet.ipv4.tcp_congestion_control = bbr\nnet.ipv4.tcp_fastopen = 3\nnet.core.somaxconn = 65535\nEOF\nuser@host:~$ sudo sysctl -p"
+        },
+        {
+          "label": "Latency Optimization Strategies",
+          "code": "# 1. Use CDN for static content\n#    CloudFront: 450+ edge locations globally\n#    Cloudflare: 330+ locations\n\n# 2. Choose cloud regions close to users:\n#    us-east-1 for US East\n#    eu-west-1 for Europe\n#    ap-southeast-1 for Asia\n\n# 3. AWS Global Accelerator (Anycast routing):\nresource \"aws_global_accelerator\" \"main\" {\n  name            = \"main-accelerator\"\n  ip_address_type = \"IPV4\"\n  enabled         = true\n}\n\n# 4. Connection pooling:\nupstream backend {\n    server 10.0.1.10:3000;\n    keepalive 32;\n}\n\n# 5. HTTP/2 and HTTP/3 (QUIC):\n#    HTTP/2: multiplexing, header compression\n#    HTTP/3: over UDP, 0-RTT, no head-of-line blocking\n\n# 6. Enable caching at every level:\n#    Browser cache, CDN cache, NGINX proxy cache, application cache (Redis)"
+        }
+      ]
+    },
+    {
+      "id": "troubleshooting-common-issues",
+      "title": "Troubleshooting Common Network Issues",
+      "description": "Practical debugging approach for real-world network problems.",
+      "items": [
+        {
+          "label": "Systematic Troubleshooting Approach",
+          "code": "# OSI model troubleshooting framework:\n\n# Step 1: Application layer (Layer 7)\nuser@host:~$ curl -v http://localhost:3000/health\n\n# Step 2: Transport layer (Layer 4)\nuser@host:~$ nc -zv localhost 3000\n\n# Step 3: Network layer (Layer 3)\nuser@host:~$ ping -c 4 10.0.1.50\n\n# Step 4: DNS (critical)\nuser@host:~$ dig +short service.example.com\n\n# Step 5: Firewall\nuser@host:~$ sudo iptables -L -n -v | grep DROP\n\n# Diagnostic checklist:\ncat << 'CHECKLIST'\n[ ] Is the service running? (systemctl status <service>)\n[ ] Is the port listening? (ss -tlnp | grep <port>)\n[ ] Is the firewall allowing traffic? (iptables -L)\n[ ] Is DNS resolving correctly? (dig <hostname>)\n[ ] Can you reach the host? (ping <ip>)\n[ ] Can you reach the port? (nc -zv <ip> <port>)\n[ ] What does the application log say?\n[ ] What does the network capture show? (tcpdump)\n[ ] Has anything changed recently? (git log)\nCHECKLIST"
+        },
+        {
+          "label": "Common Issues & Solutions",
+          "table": {
+            "headers": [
+              "Symptom",
+              "Likely Cause",
+              "Solution"
+            ],
+            "rows": [
+              [
+                "Connection refused",
+                "Service not running or wrong port",
+                "Start service or verify port config"
+              ],
+              [
+                "Connection timeout",
+                "Firewall blocking or host unreachable",
+                "Check security groups, routing, NACLs"
+              ],
+              [
+                "DNS resolution fails",
+                "Wrong DNS server or /etc/hosts",
+                "Check /etc/resolv.conf, DNS server health"
+              ],
+              [
+                "Slow response times",
+                "High latency or overloaded server",
+                "Check resources, add caching, scale up"
+              ],
+              [
+                "Intermittent failures",
+                "Load balancer health checks failing",
+                "Check backend health, increase timeout"
+              ],
+              [
+                "SSL certificate error",
+                "Expired or misconfigured cert",
+                "Renew cert, check cert path"
+              ],
+              [
+                "Packet loss",
+                "Network congestion or faulty hardware",
+                "Check interface errors, replace cables"
+              ],
+              [
+                "High TIME_WAIT",
+                "Short-lived connections without pooling",
+                "Enable keepalive, connection pooling"
+              ],
+              [
+                "Container no internet",
+                "NAT missing or misrouted",
+                "Check NAT GW, route tables, security groups"
+              ],
+              [
+                "Pod can't reach pod",
+                "Network policy blocking",
+                "Check NetworkPolicy, CNI plugin config"
+              ]
+            ]
+          }
+        },
+        {
+          "label": "Real-World Debugging Workflow",
+          "code": "# Scenario: Users report 502 Bad Gateway on https://api.example.com\n\n# 1. Reproduce:\nuser@host:~$ curl -I https://api.example.com/health\nHTTP/2 502\n\n# 2. Check the load balancer:\nuser@host:~$ curl -I http://internal-alb-12345.elb.amazonaws.com/health\nHTTP/1.1 200 OK  # ALB is healthy\n\n# 3. Check individual backends:\nuser@host:~$ for i in 10.0.1.10 10.0.1.11 10.0.1.12; do\n  echo -n \"$i: \"; curl -s -o /dev/null -w \"%{http_code}\n\" http://$i:3000/health\ndone\n10.0.1.10: 200\n10.0.1.11: 200\n10.0.1.12: 000  # Instance 3 is down!\n\n# 4. Investigate:\nuser@host:~$ ssh 10.0.1.12\nuser@host:~$ systemctl status app\nActive: failed (Result: exit-code)\n\nuser@host:~$ journalctl -u app -n 50 --no-pager\nError: EACCES: permission denied, bind 0.0.0.0:3000\n\n# 5. Fix and verify:\nuser@host:~$ sudo systemctl restart app\nuser@host:~$ curl -s http://localhost:3000/health\n{\"status\":\"ok\"}"
+        }
+      ]
+    },
+    {
+      "id": "best-practices",
+      "title": "Best Practices for DevOps Networking",
+      "description": "Production-proven networking recommendations from real-world DevOps.",
+      "items": [
+        {
+          "label": "Network Design Principles",
+          "text": [
+            "✓ Design for failure: Use at least 3 availability zones with proper subnet isolation.",
+            "✓ Follow least privilege: Security groups should only allow necessary traffic.",
+            "✓ Use private subnets for all workloads that don't need direct internet access.",
+            "✓ Defense in depth: Security groups + NACLs + WAF.",
+            "✓ Use separate VPCs for different environments (dev, staging, production).",
+            "✓ Enable VPC Flow Logs in all VPCs for audit trail.",
+            "✓ Reserve CIDR ranges for future expansion.",
+            "✓ Document your network architecture (diagrams in NetBox or Draw.io)."
+          ]
+        },
+        {
+          "label": "Production Readiness Checklist",
+          "code": "=== NETWORK SECURITY ===\n[ ] Security groups restrict inbound to minimum required ports\n[ ] NACLs provide subnet-level defense\n[ ] No security groups allow 0.0.0.0/0 on SSH (port 22)\n[ ] WAF enabled for web-facing ALBs\n[ ] DDoS protection (AWS Shield, Cloudflare) enabled\n[ ] Network Policies implemented in Kubernetes\n\n=== HIGH AVAILABILITY ===\n[ ] Resources span at least 3 availability zones\n[ ] Load balancers configured with health checks\n[ ] NAT Gateways in each AZ (not a single one)\n[ ] Databases in multi-AZ deployment\n\n=== MONITORING ===\n[ ] VPC Flow Logs enabled and sent to central logging\n[ ] Network metrics in Prometheus/Grafana\n[ ] Latency alerts (p95 > 200ms, p99 > 500ms)\n[ ] SSL cert expiry monitoring\n\n=== PERFORMANCE ===\n[ ] BBR congestion control enabled\n[ ] CDN configured for static content\n[ ] HTTP/2 or HTTP/3 enabled\n[ ] Connection pooling configured"
+        },
+        {
+          "label": "Security Best Practices",
+          "code": "# Least-privilege security group design:\nresource \"aws_security_group\" \"alb\" {\n  name = \"alb-sg\"\n  ingress {\n    from_port = 443; to_port = 443; protocol = \"tcp\"\n    cidr_blocks = [\"0.0.0.0/0\"]\n  }\n  egress {\n    from_port = 80; to_port = 80; protocol = \"tcp\"\n    security_groups = [aws_security_group.app.id]\n  }\n}\n\nresource \"aws_security_group\" \"app\" {\n  name = \"app-sg\"\n  ingress {\n    from_port = 80; to_port = 80; protocol = \"tcp\"\n    security_groups = [aws_security_group.alb.id]\n  }\n  egress {\n    from_port = 3306; to_port = 3306; protocol = \"tcp\"\n    security_groups = [aws_security_group.database.id]\n  }\n}\n\nresource \"aws_security_group\" \"database\" {\n  name = \"database-sg\"\n  ingress {\n    from_port = 3306; to_port = 3306; protocol = \"tcp\"\n    security_groups = [aws_security_group.app.id]\n  }\n}\n\n# Audit for open SSH:\nuser@host:~$ aws ec2 describe-security-groups \\\n  --filters \"Name=ip-permission.cidr,Values=0.0.0.0/0\" \\\n  --query 'SecurityGroups[?IpPermissions[?FromPort==`22`]].GroupId'"
+        }
+      ]
+    },
+    {
+      "id": "summary",
+      "title": "Summary & Next Steps",
+      "description": "Key takeaways and what to explore next.",
+      "items": [
+        {
+          "label": "Key Takeaways",
+          "text": [
+            "✓ Networking is the foundation of DevOps — understanding it is essential for debugging, security, and design.",
+            "✓ Use the OSI model as a troubleshooting framework: start from Layer 7 and work down.",
+            "✓ DNS is the most common root cause of issues — master dig, nslookup, and /etc/hosts.",
+            "✓ TCP handshake analysis with tcpdump reveals connection-level problems instantly.",
+            "✓ Cloud networking (VPCs, subnets, security groups) should be managed as code with Terraform.",
+            "✓ Container networking (Docker overlay, K8s CNI) is a separate skill — understand it before deploying.",
+            "✓ Network policies and security groups are NOT the same as firewalls — use defense in depth.",
+            "✓ Monitor key metrics: latency (p95/p99), packet loss, retransmits, and connection states.",
+            "✓ BBR congestion control, CDN, HTTP/2, and connection pooling can dramatically improve performance.",
+            "✓ Always debug systematically: reproduce → isolate → fix → verify."
+          ]
+        },
+        {
+          "label": "Next Steps",
+          "text": [
+            "1. Practice subnetting until CIDR calculations are second nature.",
+            "2. Deploy a three-tier VPC on AWS with Terraform and test connectivity.",
+            "3. Use tcpdump to capture and analyze a full HTTP request/response cycle.",
+            "4. Set up a Kubernetes cluster and experiment with Services, Ingress, and Network Policies.",
+            "5. Configure Prometheus node_exporter and Grafana to monitor network metrics.",
+            "6. Implement mTLS between microservices using Istio or Linkerd.",
+            "7. Get certified: AWS Advanced Networking Specialty or CKA (Certified Kubernetes Administrator).",
+            "8. Read: Computer Networking: A Top-Down Approach (Kurose & Ross)."
+          ]
+        },
+        {
+          "label": "Essential Tools Reference",
+          "table": {
+            "headers": [
+              "Tool",
+              "Purpose",
+              "Command Example"
+            ],
+            "rows": [
+              [
+                "ping",
+                "ICMP connectivity test",
+                "ping -c 4 google.com"
+              ],
+              [
+                "traceroute",
+                "Path discovery",
+                "traceroute -n google.com"
+              ],
+              [
+                "mtr",
+                "Real-time path + ping",
+                "mtr -n google.com"
+              ],
+              [
+                "dig",
+                "DNS queries",
+                "dig +short example.com"
+              ],
+              [
+                "curl",
+                "HTTP requests",
+                "curl -v https://example.com"
+              ],
+              [
+                "nc",
+                "TCP/UDP port test",
+                "nc -zv host 443"
+              ],
+              [
+                "ss",
+                "Socket statistics",
+                "ss -tlnp"
+              ],
+              [
+                "tcpdump",
+                "Packet capture",
+                "tcpdump -i any port 80"
+              ],
+              [
+                "iperf3",
+                "Bandwidth testing",
+                "iperf3 -c host -t 30"
+              ],
+              [
+                "nmap",
+                "Port scanning",
+                "nmap -p 80,443 host"
+              ],
+              [
+                "openssl",
+                "TLS inspection",
+                "openssl s_client -connect host:443"
+              ],
+              [
+                "ip",
+                "Interface & routing",
+                "ip addr show"
+              ],
+              [
+                "ifconfig",
+                "Interface config",
+                "ifconfig eth0"
+              ]
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
