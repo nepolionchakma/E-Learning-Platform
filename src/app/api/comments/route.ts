@@ -13,7 +13,7 @@ interface CommentNode {
 const dataDir = path.join(process.cwd(), 'src', 'data')
 
 function getCommentsFile(slug: string): string {
-  return path.join(dataDir, `comments-${slug}.json`)
+  return path.join(dataDir, slug, 'comments.json')
 }
 
 async function ensureCommentsFile(slug: string) {
