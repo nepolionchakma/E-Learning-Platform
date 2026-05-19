@@ -19,5 +19,12 @@
     "content": "Learn to deploy a full-stack React application with PostgreSQL database on local VMs using VirtualBox, configure firewalls, setup SSH tunnels, port forwarding with TP-Link Deco router, and expose your app to the internet securely with HTTPS.",
     "author": "E-Learning Platform",
     "date": "2026-05-19"
+  },
+  {
+    "slug": "postgresql-high-availability",
+    "title": "PostgreSQL High Availability with Patroni, ETCD, and HAProxy",
+    "content": "A comprehensive guide to building a production-grade PostgreSQL HA cluster using Patroni for automatic failover, ETCD for distributed consensus, and HAProxy for load balancing. Covers architecture, installation, configuration, monitoring, backup/recovery with pgBackRest, and multi-cluster setups on different ports.",
+    "author": "E-Learning Platform",
+    "date": "2026-05-19"
   }
 ]
