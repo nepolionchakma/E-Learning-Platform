@@ -25,7 +25,7 @@ async function getBlogs(): Promise<BlogMeta[]> {
 
 async function getBlogData(slug: string) {
   try {
-    const filePath = path.join(process.cwd(), 'src', 'data', `${slug}.json`)
+    const filePath = path.join(process.cwd(), 'src', 'data', slug, 'post.json')
     const raw = await fs.readFile(filePath, 'utf-8')
     return JSON.parse(raw)
   } catch {

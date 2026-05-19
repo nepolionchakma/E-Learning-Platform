@@ -1,0 +1,834 @@
+{
+  "title": "PostgreSQL High Availability: Complete Guide with Patroni, ETCD & Multi-Port Setup",
+  "icon": "🐘",
+  "description": "A comprehensive, step-by-step guide to building a production-grade PostgreSQL High Availability cluster using Patroni and ETCD. Learn to deploy multiple PostgreSQL instances on different ports, configure automatic failover, set up HAProxy load balancing, and run multiple HA clusters side by side with zero downtime.",
+  "author": "E-Learning Platform",
+  "date": "2026-05-19",
+  "readTime": "55 min read",
+  "heroImage": "/images/postgresql-ha-hero.svg",
+  "heroAlt": "PostgreSQL High Availability architecture diagram showing 3-node Patroni cluster with ETCD, HAProxy, and application layer",
+  "sections": [
+    {
+      "id": "introduction",
+      "title": "Introduction",
+      "content": [
+        "Database downtime costs businesses millions every year. Whether you're running an e-commerce platform, a SaaS application, or a critical enterprise system, losing your database means losing customers, revenue, and trust. PostgreSQL High Availability (HA) solves this problem by ensuring your database remains accessible even when individual servers fail.",
+        "In this comprehensive guide, you'll learn how to build a production-grade PostgreSQL HA cluster using Patroni (the industry-standard HA manager) and ETCD (a distributed key-value store for leader election). We'll cover everything from architecture design to hands-on configuration, including running multiple PostgreSQL instances on different ports simultaneously.",
+        "By the end of this guide, you'll have a fully automated, self-healing PostgreSQL cluster that can survive server failures without manual intervention."
+      ],
+      "infoBox": {
+        "type": "info",
+        "content": "This guide uses PostgreSQL 16, Patroni 4.x, ETCD 3.5, and HAProxy 2.x. All commands are tested on Ubuntu 22.04 LTS but work on Debian, RHEL, Rocky Linux, and CentOS with minimal adjustments."
+      }
+    },
+    {
+      "id": "architecture-overview",
+      "title": "Architecture Overview",
+      "content": [
+        "Before we dive into the setup, let's understand how the pieces fit together."
+      ],
+      "cards": [
+        { "title": "PostgreSQL", "desc": "The world's most advanced open-source relational database. Provides streaming replication for keeping replicas in sync with the primary." },
+        { "title": "Patroni", "desc": "A Python-based HA template for PostgreSQL. Automates leader election, replica management, and handles failover when the primary fails." },
+        { "title": "ETCD", "desc": "A distributed key-value store that acts as the source of truth. Stores cluster state, leader information, and coordinates decisions between Patroni nodes." },
+        { "title": "HAProxy", "desc": "A high-performance TCP/HTTP load balancer. Routes read/write traffic to the appropriate PostgreSQL node based on Patroni's REST API health checks." }
+      ]
+    },
+    {
+      "id": "architecture-diagram",
+      "title": "Architecture Diagram",
+      "content": [
+        "The following architecture shows a 3-node PostgreSQL cluster managed by Patroni, with ETCD providing distributed consensus and HAProxy routing application traffic."
+      ],
+      "image": {
+        "src": "/images/postgresql-ha-hero.svg",
+        "alt": "PostgreSQL HA architecture with 3 nodes, ETCD cluster, HAProxy, and application layer"
+      },
+      "subsections": [
+        {
+          "title": "Data Flow Summary",
+          "content": "Applications connect to HAProxy ports 5000 (write) and 5001 (read). HAProxy forwards writes to the Patroni leader and distributes reads across all replicas. Patroni monitors PostgreSQL health via its REST API and triggers automatic failover if the leader fails."
+        }
+      ]
+    },
+    {
+      "id": "prerequisites",
+      "title": "Prerequisites",
+      "content": [
+        "You need at least 3 Linux servers (physical or virtual) to build a high-availability cluster. A 3-node setup gives you reliable failover and tolerates the loss of any single node."
+      ],
+      "tables": {
+        "headers": ["Resource", "Requirement", "Notes"],
+        "rows": [
+          ["Servers", "3 nodes (minimum)", "1 leader + 2 replicas"],
+          ["OS", "Ubuntu 22.04 / Debian 12 / RHEL 9", "Tested on all major distributions"],
+          ["CPU", "2 cores per node", "4+ cores recommended for production"],
+          ["RAM", "4 GB per node", "8+ GB for production workloads"],
+          ["Disk", "20 GB system + data drives", "SSD recommended, separate data volume"],
+          ["Network", "1 Gbps between nodes", "Low latency is critical for replication"],
+          ["PostgreSQL", "Version 14, 15, or 16", "This guide uses PostgreSQL 16"],
+          ["Python", "3.8 or higher", "Required for Patroni"]
+        ]
+      },
+      "items": [
+        {
+          "label": "Hostname Configuration",
+          "text": "Use the following hostnames and IP addresses throughout this guide. Adjust based on your actual network."
+        }
+      ],
+      "subsections": [
+        {
+          "title": "Sample Node Configuration",
+          "items": [
+            {
+              "label": "/etc/hosts entries (all nodes)",
+              "code": "root@node1:~$ sudo nano /etc/hosts\n\n# Add these lines to all 3 nodes\n192.168.1.201  node1.local  node1\n192.168.1.202  node2.local  node2\n192.168.1.203  node3.local  node3\n"
+            },
+            {
+              "label": "Hostname setup (run on each node)",
+              "code": "root@node1:~$ sudo hostnamectl set-hostname node1\nroot@node2:~$ sudo hostnamectl set-hostname node2\nroot@node3:~$ sudo hostnamectl set-hostname node3"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "etcd-cluster-setup",
+      "title": "Part 1: ETCD Cluster Setup",
+      "content": [
+        "ETCD is the distributed key-value store that Patroni uses as its Distributed Configuration Store (DCS). It's responsible for leader election, storing cluster state, and coordinating decisions between Patroni nodes. We'll install a 3-node ETCD cluster for high availability.",
+        "ETCD uses port 2379 for client communication and port 2380 for peer-to-peer communication between ETCD nodes."
+      ],
+      "subsections": [
+        {
+          "title": "Step 1: Install ETCD on All Nodes",
+          "description": "Install ETCD using the official script from the ETCD project.",
+          "items": [
+            {
+              "label": "Download and install ETCD",
+              "code": "root@node1:~$ sudo apt-get update\nroot@node1:~$ sudo apt-get install etcd -y\n\n# If not available in repos, download manually:\nroot@node1:~$ ETCD_VER=v3.5.15\nroot@node1:~$ wget https://github.com/etcd-io/etcd/releases/download/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz\nroot@node1:~$ tar xzf etcd-${ETCD_VER}-linux-amd64.tar.gz\nroot@node1:~$ sudo mv etcd-${ETCD_VER}-linux-amd64/{etcd,etcdctl} /usr/local/bin/\nroot@node1:~$ rm -rf etcd-${ETCD_VER}-linux-amd64*\n\n# Verify installation\nroot@node1:~$ etcd --version\netcd Version: 3.5.15\nGo Version: go1.21.8\nGit SHA: a2e0ef46a"
+            }
+          ]
+        },
+        {
+          "title": "Step 2: Configure ETCD on Node 1",
+          "description": "Create the ETCD configuration file on the first node.",
+          "items": [
+            {
+              "label": "ETCD configuration node1",
+              "code": "root@node1:~$ sudo mkdir -p /etc/etcd /var/lib/etcd\nroot@node1:~$ sudo nano /etc/etcd/etcd.conf.yml\n\n# Paste the following:\nname: 'node1'\ndata-dir: '/var/lib/etcd'\nlisten-peer-urls: 'http://192.168.1.201:2380'\nlisten-client-urls: 'http://192.168.1.201:2379,http://127.0.0.1:2379'\nadvertise-peer-urls: 'http://192.168.1.201:2380'\nadvertise-client-urls: 'http://192.168.1.201:2379'\ninitial-advertise-peer-urls: 'http://192.168.1.201:2380'\ninitial-cluster: 'node1=http://192.168.1.201:2380,node2=http://192.168.1.202:2380,node3=http://192.168.1.203:2380'\ninitial-cluster-token: 'pg-ha-etcd'\ninitial-cluster-state: 'new'"
+            }
+          ]
+        },
+        {
+          "title": "Step 3: Configure ETCD on Node 2",
+          "items": [
+            {
+              "label": "ETCD configuration node2",
+              "code": "root@node2:~$ sudo mkdir -p /etc/etcd /var/lib/etcd\nroot@node2:~$ sudo nano /etc/etcd/etcd.conf.yml\n\nname: 'node2'\ndata-dir: '/var/lib/etcd'\nlisten-peer-urls: 'http://192.168.1.202:2380'\nlisten-client-urls: 'http://192.168.1.202:2379,http://127.0.0.1:2379'\nadvertise-peer-urls: 'http://192.168.1.202:2380'\nadvertise-client-urls: 'http://192.168.1.202:2379'\ninitial-advertise-peer-urls: 'http://192.168.1.202:2380'\ninitial-cluster: 'node1=http://192.168.1.201:2380,node2=http://192.168.1.202:2380,node3=http://192.168.1.203:2380'\ninitial-cluster-token: 'pg-ha-etcd'\ninitial-cluster-state: 'new'"
+            }
+          ]
+        },
+        {
+          "title": "Step 4: Configure ETCD on Node 3",
+          "items": [
+            {
+              "label": "ETCD configuration node3",
+              "code": "root@node3:~$ sudo mkdir -p /etc/etcd /var/lib/etcd\nroot@node3:~$ sudo nano /etc/etcd/etcd.conf.yml\n\nname: 'node3'\ndata-dir: '/var/lib/etcd'\nlisten-peer-urls: 'http://192.168.1.203:2380'\nlisten-client-urls: 'http://192.168.1.203:2379,http://127.0.0.1:2379'\nadvertise-peer-urls: 'http://192.168.1.203:2380'\nadvertise-client-urls: 'http://192.168.1.203:2379'\ninitial-advertise-peer-urls: 'http://192.168.1.203:2380'\ninitial-cluster: 'node1=http://192.168.1.201:2380,node2=http://192.168.1.202:2380,node3=http://192.168.1.203:2380'\ninitial-cluster-token: 'pg-ha-etcd'\ninitial-cluster-state: 'new'"
+            }
+          ]
+        },
+        {
+          "title": "Step 5: Start & Verify ETCD Cluster",
+          "items": [
+            {
+              "label": "Start ETCD on all nodes",
+              "code": "root@node1:~$ sudo systemctl start etcd\nroot@node1:~$ sudo systemctl enable etcd\n\nroot@node2:~$ sudo systemctl start etcd\nroot@node2:~$ sudo systemctl enable etcd\n\nroot@node3:~$ sudo systemctl start etcd\nroot@node3:~$ sudo systemctl enable etcd"
+            },
+            {
+              "label": "Verify cluster health",
+              "code": "root@node1:~$ etcdctl endpoint health --cluster --write-out=table\n\n+---------------------------+-----------+-------------+-------+\n|         ENDPOINT          |  HEALTH   |   TOOK      | ERROR |\n+---------------------------+-----------+-------------+-------+\n| http://192.168.1.201:2379 |   true    | 8.472ms     |       |\n| http://192.168.1.202:2379 |   true    | 9.103ms     |       |\n| http://192.168.1.203:2379 |   true    | 7.891ms     |       |\n+---------------------------+-----------+-------------+-------+\n\n# List cluster members\nroot@node1:~$ etcdctl member list --write-out=table\n+-----------+-------+--------+---------------------------+---------------------------+\n|   ID      | STATUS |  NAME  |       PEER URLS          |      CLIENT URLS         |\n+-----------+-------+--------+---------------------------+---------------------------+\n| abc123... | started| node1  | http://192.168.1.201:2380| http://192.168.1.201:2379|\n| def456... | started| node2  | http://192.168.1.202:2380| http://192.168.1.202:2379|\n| ghi789... | started| node3  | http://192.168.1.203:2380| http://192.168.1.203:2379|\n+-----------+-------+--------+---------------------------+---------------------------+"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "postgresql-installation",
+      "title": "Part 2: PostgreSQL Installation on All Nodes",
+      "content": [
+        "Install PostgreSQL 16 on all three nodes. We'll install it from the official PostgreSQL apt repository for the latest stable version."
+      ],
+      "subsections": [
+        {
+          "title": "Install PostgreSQL 16",
+          "items": [
+            {
+              "label": "Install on all nodes",
+              "code": "root@node1:~$ sudo apt-get install -y postgresql-common\nroot@node1:~$ sudo sh /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh\n\n# Install PostgreSQL 16\nroot@node1:~$ sudo apt-get install postgresql-16 postgresql-client-16 -y\n\n# Verify installation\nroot@node1:~$ psql --version\npsql (PostgreSQL) 16.4\nroot@node1:~$ pg_config --version\nPostgreSQL 16.4"
+            }
+          ]
+        },
+        {
+          "title": "Create PostgreSQL Data Directories for Multi-Port Setup",
+          "content": "Since we plan to run multiple PostgreSQL instances on different ports, create separate data directories for each instance. This is critical for the multi-database, multi-port setup.",
+          "items": [
+            {
+              "label": "Create data directories for 3 instances",
+              "code": "root@node1:~$ sudo mkdir -p /data/pg/{cluster1,cluster2,cluster3}\nroot@node1:~$ sudo chown -R postgres:postgres /data/pg\nroot@node1:~$ sudo chmod 700 /data/pg/*\n\n# Verify\nroot@node1:~$ ls -la /data/pg/\ntotal 20\ndrwx------ 3 postgres postgres 4096 May 19 10:00 cluster1\ndrwx------ 3 postgres postgres 4096 May 19 10:00 cluster2\ndrwx------ 3 postgres postgres 4096 May 19 10:00 cluster3"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "patroni-installation",
+      "title": "Part 3: Patroni Installation",
+      "content": [
+        "Patroni is a Python application. We'll install it in a virtual environment to keep dependencies isolated."
+      ],
+      "subsections": [
+        {
+          "title": "Install Patroni (all nodes)",
+          "items": [
+            {
+              "label": "Install dependencies and Patroni",
+              "code": "root@node1:~$ sudo apt-get install python3 python3-pip python3-venv -y\n\n# Install psycopg2 binary (PostgreSQL adapter)\nroot@node1:~$ sudo apt-get install libpq-dev -y\nroot@node1:~$ sudo pip3 install psycopg2-binary\n\n# Install Patroni\nroot@node1:~$ sudo pip3 install patroni[etcd3]\n\n# Verify\nroot@node1:~$ patroni --version\npatroni 4.1.3\n\nroot@node2:~$ sudo pip3 install patroni[etcd3]\nroot@node3:~$ sudo pip3 install patroni[etcd3]"
+            },
+            {
+              "label": "Create Patroni system user",
+              "code": "root@node1:~$ sudo useradd --system --no-create-home --shell /bin/false patroni\nroot@node1:~$ sudo usermod -aG postgres patroni"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "patroni-configuration",
+      "title": "Part 4: Patroni Configuration for 3-Node Cluster on Different Ports",
+      "content": [
+        "Now we configure Patroni to manage PostgreSQL instances on different ports across our 3-node cluster. Each node will have a unique PostgreSQL port but share the same cluster configuration via ETCD."
+      ],
+      "subsections": [
+        {
+          "title": "Patroni Configuration File Structure",
+          "content": "Each Patroni node needs a YAML configuration file. The configuration tells Patroni how to connect to ETCD, which PostgreSQL instance to manage, on which port to run its REST API, and what replication settings to use.",
+          "items": [
+            {
+              "label": "Create config directory",
+              "code": "root@node1:~$ sudo mkdir -p /etc/patroni\nroot@node1:~$ sudo chown -R patroni:patroni /etc/patroni"
+            }
+          ]
+        },
+        {
+          "title": "Node 1: Leader Candidate (Port 5432)",
+          "content": "This node will be the initial leader (primary). It runs PostgreSQL on port 5432.",
+          "items": [
+            {
+              "label": "Node 1 Patroni configuration",
+              "code": "root@node1:~$ sudo nano /etc/patroni/patroni.yml\n\n# /etc/patroni/patroni.yml - Node 1\nscope: pg-ha-cluster\nnamespace: /db/\nname: node1-pg\n\nrestapi:\n  listen: 192.168.1.201:8008\n  connect_address: 192.168.1.201:8008\n  authentication:\n    username: patroni_api\n    password: secure-api-pass-123\n  https: false\n\netcd:\n  hosts: 192.168.1.201:2379,192.168.1.202:2379,192.168.1.203:2379\n\nbootstrap:\n  dcs:\n    ttl: 30\n    loop_wait: 10\n    retry_timeout: 10\n    maximum_lag_on_failover: 1048576\n    postgresql:\n      use_pg_rewind: true\n      use_slots: true\n      parameters:\n        wal_level: replica\n        wal_log_hints: 'on'\n        max_wal_senders: 10\n        max_replication_slots: 10\n        wal_keep_size: 512\n        max_connections: 200\n        shared_buffers: 1GB\n        work_mem: 128MB\n        maintenance_work_mem: 256MB\n        effective_cache_size: 3GB\n\n  initdb:\n  - encoding: UTF8\n  - locale: en_US.UTF-8\n  - data-checksums\n\n  pg_hba:\n  - host replication replicator 192.168.1.0/24 trust\n  - host all all 192.168.1.0/24 trust\n  - host all all 127.0.0.1/32 trust\n\npostgresql:\n  listen: 192.168.1.201:5432\n  connect_address: 192.168.1.201:5432\n  data_dir: /data/patroni/pg\n  bin_dir: /usr/lib/postgresql/16/bin\n  pgpass: /tmp/pgpass\n  authentication:\n    replication:\n      username: replicator\n      password: repl-pass-456\n    superuser:\n      username: postgres\n      password: super-pass-789\n    rewind:\n      username: rewind_user\n      password: rewind-pass-000\n  parameters:\n    unix_socket_directories: '/var/run/postgresql'\n    port: 5432\n\ntags:\n  nofailover: false\n  noloadbalance: false\n  clonefrom: false\n  nosync: false"
+            }
+          ]
+        },
+        {
+          "title": "Node 2: Replica (Port 5433)",
+          "content": "This node runs as a replica on port 5433.",
+          "items": [
+            {
+              "label": "Node 2 Patroni configuration",
+              "code": "root@node2:~$ sudo mkdir -p /etc/patroni\nroot@node2:~$ sudo nano /etc/patroni/patroni.yml\n\n# /etc/patroni/patroni.yml - Node 2\nscope: pg-ha-cluster\nnamespace: /db/\nname: node2-pg\n\nrestapi:\n  listen: 192.168.1.202:8008\n  connect_address: 192.168.1.202:8008\n  authentication:\n    username: patroni_api\n    password: secure-api-pass-123\n  https: false\n\netcd:\n  hosts: 192.168.1.201:2379,192.168.1.202:2379,192.168.1.203:2379\n\npostgresql:\n  listen: 192.168.1.202:5433\n  connect_address: 192.168.1.202:5433\n  data_dir: /data/patroni/pg\n  bin_dir: /usr/lib/postgresql/16/bin\n  pgpass: /tmp/pgpass\n  authentication:\n    replication:\n      username: replicator\n      password: repl-pass-456\n    superuser:\n      username: postgres\n      password: super-pass-789\n    rewind:\n      username: rewind_user\n      password: rewind-pass-000\n  parameters:\n    unix_socket_directories: '/var/run/postgresql'\n    port: 5433\n\ntags:\n  nofailover: false\n  noloadbalance: false\n  clonefrom: false\n  nosync: false"
+            }
+          ]
+        },
+        {
+          "title": "Node 3: Replica (Port 5434)",
+          "content": "This node runs as a replica on port 5434.",
+          "items": [
+            {
+              "label": "Node 3 Patroni configuration",
+              "code": "root@node3:~$ sudo mkdir -p /etc/patroni\nroot@node3:~$ sudo nano /etc/patroni/patroni.yml\n\n# /etc/patroni/patroni.yml - Node 3\nscope: pg-ha-cluster\nnamespace: /db/\nname: node3-pg\n\nrestapi:\n  listen: 192.168.1.203:8008\n  connect_address: 192.168.1.203:8008\n  authentication:\n    username: patroni_api\n    password: secure-api-pass-123\n  https: false\n\netcd:\n  hosts: 192.168.1.201:2379,192.168.1.202:2379,192.168.1.203:2379\n\npostgresql:\n  listen: 192.168.1.203:5434\n  connect_address: 192.168.1.203:5434\n  data_dir: /data/patroni/pg\n  bin_dir: /usr/lib/postgresql/16/bin\n  pgpass: /tmp/pgpass\n  authentication:\n    replication:\n      username: replicator\n      password: repl-pass-456\n    superuser:\n      username: postgres\n      password: super-pass-789\n    rewind:\n      username: rewind_user\n      password: rewind-pass-000\n  parameters:\n    unix_socket_directories: '/var/run/postgresql'\n    port: 5434\n\ntags:\n  nofailover: false\n  noloadbalance: false\n  clonefrom: false\n  nosync: false"
+            }
+          ]
+        },
+        {
+          "title": "Important Configuration Notes",
+          "items": [
+            {
+              "label": "Key Differences Between Nodes",
+              "table": {
+                "headers": ["Setting", "Node 1 (Leader)", "Node 2 (Replica)", "Node 3 (Replica)"],
+                "rows": [
+                  ["PostgreSQL Port", "5432", "5433", "5434"],
+                  ["REST API Port", "8008", "8008", "8008"],
+                  ["Data Directory", "/data/patroni/pg", "/data/patroni/pg", "/data/patroni/pg"],
+                  ["Node Name", "node1-pg", "node2-pg", "node3-pg"],
+                  ["connect_address IP", "192.168.1.201", "192.168.1.202", "192.168.1.203"],
+                  ["listen IP", "192.168.1.201", "192.168.1.202", "192.168.1.203"]
+                ]
+              }
+            },
+            {
+              "label": "Configuration Parameters Explained",
+              "table": {
+                "headers": ["Parameter", "Value", "Purpose"],
+                "rows": [
+                  ["scope", "pg-ha-cluster", "Unique cluster name within ETCD"],
+                  ["ttl", "30", "Time-to-live for leader lock (seconds)"],
+                  ["loop_wait", "10", "Patroni loop interval (seconds)"],
+                  ["retry_timeout", "10", "Maximum retry timeout for DCS operations"],
+                  ["maximum_lag_on_failover", "1048576", "Max replication lag before promoting replica"],
+                  ["use_pg_rewind", "true", "Allow former leader to rejoin as replica"],
+                  ["use_slots", "true", "Use replication slots to prevent WAL loss"],
+                  ["wal_level", "replica", "Required for streaming replication"],
+                  ["max_wal_senders", "10", "Maximum concurrent WAL sender processes"]
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "starting-cluster",
+      "title": "Part 5: Starting the Patroni Cluster",
+      "content": [
+        "With all configurations in place, it's time to bootstrap and start the cluster. The first node started will initialize the PostgreSQL data directory and become the leader."
+      ],
+      "subsections": [
+        {
+          "title": "Stop Existing PostgreSQL Service",
+          "content": "If the default PostgreSQL service is running, stop and disable it to avoid port conflicts.",
+          "items": [
+            {
+              "label": "Stop system PostgreSQL on all nodes",
+              "code": "root@node1:~$ sudo systemctl stop postgresql\nroot@node1:~$ sudo systemctl disable postgresql\nroot@node1:~$ sudo systemctl mask postgresql\n\nroot@node2:~$ sudo systemctl stop postgresql\nroot@node2:~$ sudo systemctl disable postgresql\nroot@node2:~$ sudo systemctl mask postgresql\n\nroot@node3:~$ sudo systemctl stop postgresql\nroot@node3:~$ sudo systemctl disable postgresql\nroot@node3:~$ sudo systemctl mask postgresql"
+            }
+          ]
+        },
+        {
+          "title": "Start Node 1 First (Initial Leader)",
+          "content": "The first node initializes the PostgreSQL data directory and creates the initial cluster state in ETCD.",
+          "items": [
+            {
+              "label": "Create data directory and start Patroni",
+              "code": "root@node1:~$ sudo mkdir -p /data/patroni\nroot@node1:~$ sudo chown patroni:postgres /data/patroni\nroot@node1:~$ sudo chmod 775 /data/patroni\n\n# Start Patroni manually to check logs\nroot@node1:~$ sudo -u patroni patroni /etc/patroni/patroni.yml &\n\n# Check logs\nroot@node1:~$ sudo journalctl -u patroni -f\n# Or check the Patroni log directly\nroot@node1:~$ sudo -u patroni tail -f /var/log/patroni.log"
+            }
+          ]
+        },
+        {
+          "title": "Create Systemd Service for Patroni (All Nodes)",
+          "content": "Create a systemd service so Patroni runs automatically on boot.",
+          "items": [
+            {
+              "label": "Systemd service file",
+              "code": "root@node1:~$ sudo nano /etc/systemd/system/patroni.service\n\n[Unit]\nDescription=Patroni: PostgreSQL High Availability\nAfter=etcd.service\nWants=network-online.target\n\n[Service]\nType=simple\nUser=patroni\nGroup=patroni\nExecStart=/usr/local/bin/patroni /etc/patroni/patroni.yml\nKillMode=process\nRestart=always\nRestartSec=10\nTimeoutSec=30\n\n[Install]\nWantedBy=multi-user.target"
+            },
+            {
+              "label": "Enable and start Patroni service",
+              "code": "root@node1:~$ sudo systemctl daemon-reload\nroot@node1:~$ sudo systemctl enable patroni\nroot@node1:~$ sudo systemctl start patroni\n\n# Verify\nroot@node1:~$ sudo systemctl status patroni\nPatroni: PostgreSQL High Availability\n  Loaded: loaded (/etc/systemd/system/patroni.service; enabled)\n  Active: active (running) since ...\n\n# Create same service on Node 2 and Node 3\nroot@node2:~$ sudo systemctl enable patroni\nroot@node2:~$ sudo systemctl start patroni\n\nroot@node3:~$ sudo systemctl enable patroni\nroot@node3:~$ sudo systemctl start patroni"
+            }
+          ]
+        },
+        {
+          "title": "Verify Cluster Status",
+          "items": [
+            {
+              "label": "Check cluster with patronictl",
+              "code": "root@node1:~$ sudo patronictl -c /etc/patroni/patroni.yml list\n\n+ Cluster: pg-ha-cluster ----------+---------+----+-----------+\n| Member    | Host              | Role    | State | TL | Lag |\n+-----------+-------------------+---------+------+----+-----+\n| node1-pg  | 192.168.1.201:5432| Leader  | running | 1 |   0 |\n| node2-pg  | 192.168.1.202:5433| Replica | running | 1 |   0 |\n| node3-pg  | 192.168.1.203:5434| Replica | running | 1 |   0 |\n+-----------+-------------------+---------+------+----+-----+"
+            },
+            {
+              "label": "Check via Patroni REST API",
+              "code": "root@node1:~$ curl -s http://192.168.1.201:8008/health | python3 -m json.tool\n{\n    \"state\": \"running\",\n    \"postmaster_start_time\": \"2026-05-19 10:30:00 UTC\",\n    \"role\": \"primary\",\n    \"server_version\": 160004,\n    \"timeline\": 1\n}\n\nroot@node1:~$ curl -s http://192.168.1.202:8008/health | python3 -m json.tool\n{\n    \"state\": \"running\",\n    \"postmaster_start_time\": \"2026-05-19 10:30:15 UTC\",\n    \"role\": \"replica\",\n    \"server_version\": 160004,\n    \"timeline\": 1\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "patronictl-usage",
+      "title": "Part 6: Working with patronictl",
+      "content": [
+        "patronictl is the command-line tool for managing and monitoring your Patroni cluster. Learn the essential commands."
+      ],
+      "items": [
+        {
+          "label": "List cluster members",
+          "code": "root@node1:~$ sudo patronictl -c /etc/patroni/patroni.yml list\n\n+ Cluster: pg-ha-cluster ----------+---------+----+-----------+\n| Member    | Host              | Role    | State | TL | Lag |\n+-----------+-------------------+---------+------+----+-----+\n| node1-pg  | 192.168.1.201:5432| Leader  | running | 1 |   0 |\n| node2-pg  | 192.168.1.202:5433| Replica | running | 1 |   0 |\n| node3-pg  | 192.168.1.203:5434| Replica | running | 1 |   0 |\n+-----------+-------------------+---------+------+----+-----+"
+        },
+        {
+          "label": "Check cluster topology",
+          "code": "root@node1:~$ sudo patronictl -c /etc/patroni/patroni.yml topology\n\n+ Cluster: pg-ha-cluster ----------+---------+----+-----------+\n| Member    | Host              | Role    | State | TL | Lag |\n+-----------+-------------------+---------+------+----+-----+\n| node1-pg  | 192.168.1.201:5432| Leader  | running | 1 |   0 |\n  + node2-pg | 192.168.1.202:5433| Replica | running | 1 |   0 |\n  + node3-pg | 192.168.1.203:5434| Replica | running | 1 |   0 |\n+-----------+-------------------+---------+------+----+-----+"
+        },
+        {
+          "label": "Manual switchover",
+          "code": "root@node1:~$ sudo patronictl -c /etc/patroni/patroni.yml switchover --master node1-pg --candidate node2-pg --scheduled now\nCurrent cluster topology\n+ Cluster: pg-ha-cluster ----------+---------+----+-----------+\n| Member    | Host              | Role    | State | TL | Lag |\n+-----------+-------------------+---------+------+----+-----+\n| node1-pg  | 192.168.1.201:5432| Leader  | running | 1 |   0 |\n| node2-pg  | 192.168.1.202:5433| Replica | running | 1 |   0 |\n| node3-pg  | 192.168.1.203:5434| Replica | running | 1 |   0 |\n+-----------+-------------------+---------+------+----+-----+\nAre you sure you want to switchover cluster pg-ha-cluster? [y/N]: y\nSwitchover successful\n\n# Verify new leader\nroot@node1:~$ sudo patronictl -c /etc/patroni/patroni.yml list\n+ Cluster: pg-ha-cluster ----------+---------+----+-----------+\n| Member    | Host              | Role    | State | TL | Lag |\n+-----------+-------------------+---------+------+----+-----+\n| node1-pg  | 192.168.1.201:5432| Replica | running | 2 |   0 |\n| node2-pg  | 192.168.1.202:5433| Leader  | running | 2 |   0 |\n| node3-pg  | 192.168.1.203:5434| Replica | running | 2 |   0 |\n+-----------+-------------------+---------+------+----+-----+"
+        },
+        {
+          "label": "View cluster history",
+          "code": "root@node1:~$ sudo patronictl -c /etc/patroni/patroni.yml history\n\n+ Timeline | LSN    | Leader         | Reason +\n+----------+--------+----------------+-------+\n|        1 | 0/90000| node1-pg       |       |\n|        2 | 0/A0000| node2-pg       | switchover |\n+----------+--------+----------------+-------+\n\n# Get cluster configuration\nroot@node1:~$ sudo patronictl -c /etc/patroni/patroni.yml show-config\n\nttl: 30\nloop_wait: 10\nretry_timeout: 10\nmaximum_lag_on_failover: 1048576\npostgresql:\n  use_pg_rewind: true\n  use_slots: true\n  parameters:\n    wal_level: replica\n    wal_log_hints: 'on'"
+        },
+        {
+          "label": "Reinitialize a failed replica",
+          "code": "root@node1:~$ sudo patronictl -c /etc/patroni/patroni.yml reinit pg-ha-cluster node3-pg\nAre you sure you want to reinitialize node3-pg? [y/N]: y\nReinitializing node3-pg..."
+        }
+      ]
+    },
+    {
+      "id": "haproxy-setup",
+      "title": "Part 7: HAProxy Load Balancer Setup",
+      "content": [
+        "HAProxy routes application traffic to the correct PostgreSQL node. Write queries go to the leader, read queries can be distributed across all replicas. HAProxy uses Patroni's REST API to dynamically detect which node is the leader."
+      ],
+      "subsections": [
+        {
+          "title": "Install HAProxy",
+          "items": [
+            {
+              "label": "Install on all nodes (or a dedicated load balancer)",
+              "code": "root@node1:~$ sudo apt-get install haproxy -y\nroot@node1:~$ sudo systemctl stop haproxy"
+            }
+          ]
+        },
+        {
+          "title": "Configure HAProxy",
+          "content": "Create the HAProxy configuration that uses Patroni's REST API to dynamically route traffic.",
+          "items": [
+            {
+              "label": "HAProxy configuration",
+              "code": "root@node1:~$ sudo nano /etc/haproxy/haproxy.cfg\n\nglobal\n    maxconn 1000\n    log 127.0.0.1 local2\n    stats socket /var/run/haproxy.sock mode 600 level admin\n    stats timeout 30s\n\ndefaults\n    mode tcp\n    log global\n    option tcplog\n    timeout connect 5000ms\n    timeout client 50000ms\n    timeout server 50000ms\n    timeout check 2000ms\n\n# HAProxy Statistics Dashboard\nlisten stats\n    mode http\n    bind *:7000\n    stats enable\n    stats uri /stats\n    stats refresh 10s\n    stats auth admin:admin-pass-123\n\n# PostgreSQL Write (Primary) - Port 5000\nlisten pg-write\n    bind *:5000\n    mode tcp\n    option httpchk GET /primary\n    http-check expect status 200\n    default-server inter 3s fall 3 rise 2 on-marked-down shutdown-sessions\n    \n    server node1-pg 192.168.1.201:5432 check port 8008\n    server node2-pg 192.168.1.202:5433 check port 8008\n    server node3-pg 192.168.1.203:5434 check port 8008\n\n# PostgreSQL Read (Replicas) - Port 5001\nlisten pg-read\n    bind *:5001\n    mode tcp\n    balance roundrobin\n    option httpchk GET /replica\n    http-check expect status 200\n    default-server inter 3s fall 3 rise 2\n    \n    server node1-pg 192.168.1.201:5432 check port 8008\n    server node2-pg 192.168.1.202:5433 check port 8008\n    server node3-pg 192.168.1.203:5434 check port 8008"
+            }
+          ]
+        },
+        {
+          "title": "HAProxy Configuration Explained",
+          "items": [
+            {
+              "label": "Configuration Breakdown",
+              "table": {
+                "headers": ["Section", "Port", "Purpose"],
+                "rows": [
+                  ["stats", "7000", "HAProxy monitoring dashboard with /stats URL"],
+                  ["pg-write", "5000", "Write queries → always routed to the primary/leader"],
+                  ["pg-read", "5001", "Read queries → load balanced across replicas"]
+                ]
+              }
+            },
+            {
+              "label": "Health Check Logic",
+              "text": [
+                "HAProxy checks Patroni's REST API on port 8008 every 3 seconds:",
+                "• GET /primary → returns HTTP 200 if this node is the leader",
+                "• GET /replica → returns HTTP 200 if this node is a replica",
+                "If a check fails 3 times, the server is marked as down.",
+                "When the leader fails, HAProxy automatically detects the new leader via Patroni's REST API."
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Start HAProxy",
+          "items": [
+            {
+              "label": "Enable and start HAProxy",
+              "code": "root@node1:~$ sudo systemctl enable haproxy\nroot@node1:~$ sudo systemctl start haproxy\n\n# Verify\nroot@node1:~$ sudo systemctl status haproxy\nHAProxy Load Balancer\n  Loaded: loaded\n  Active: active (running)\n\n# Check HAProxy stats\nroot@node1:~$ curl -u admin:admin-pass-123 http://localhost:7000/stats"
+            }
+          ]
+        },
+        {
+          "title": "Test Connection Through HAProxy",
+          "items": [
+            {
+              "label": "Connect to PostgreSQL through HAProxy",
+              "code": "root@node1:~$ psql -h 192.168.1.201 -p 5000 -U postgres -d postgres\nPassword for user postgres:\npostgres=# SELECT inet_server_addr(), inet_server_port();\n inet_server_addr | inet_server_port\n------------------+------------------\n 192.168.1.201    |            5432\n(1 row)\n\n# This confirms we reached the leader through port 5000\n\npostgres=# CREATE DATABASE testdb;\nCREATE DATABASE\npostgres=# \\q\n\n# Test read connection\nroot@node1:~$ psql -h 192.168.1.201 -p 5001 -U postgres -d postgres\npostgres=# SELECT inet_server_addr(), inet_server_port();\n inet_server_addr | inet_server_port\n------------------+------------------\n 192.168.1.202    |            5433\n(1 row)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "testing-failover",
+      "title": "Part 8: Testing High Availability (Failover)",
+      "content": [
+        "The most important test of any HA system is simulating a failure and verifying automatic recovery."
+      ],
+      "items": [
+        {
+          "label": "Test 1: Stop the Leader Process",
+          "code": "# Simulate leader failure by stopping Patroni (which stops PostgreSQL)\nroot@node1:~$ sudo systemctl stop patroni\n\n# On another node, check the cluster\nroot@node2:~$ sudo patronictl -c /etc/patroni/patroni.yml list\n+ Cluster: pg-ha-cluster ----------+---------+----+-----------+\n| Member    | Host              | Role    | State | TL | Lag |\n+-----------+-------------------+---------+------+----+-----+\n| node1-pg  | 192.168.1.201:5432| unknown | stopped | 1 |   0 |\n| node2-pg  | 192.168.1.202:5433| Leader  | running | 2 |   0 |\n| node3-pg  | 192.168.1.203:5434| Replica | running | 2 |   0 |\n+-----------+-------------------+---------+------+----+-----+\n\n# Expected: Node 2 was automatically promoted to leader!\n# Node 1 is now stopped/down"
+        },
+        {
+          "label": "Test 2: Bring the Failed Node Back",
+          "code": "root@node1:~$ sudo systemctl start patroni\n\n# Check cluster - node1 rejoins as replica\nroot@node2:~$ sudo patronictl -c /etc/patroni/patroni.yml list\n+ Cluster: pg-ha-cluster ----------+---------+----+-----------+\n| Member    | Host              | Role    | State | TL | Lag |\n+-----------+-------------------+---------+------+----+-----+\n| node1-pg  | 192.168.1.201:5432| Replica | running | 2 |   0 |\n| node2-pg  | 192.168.1.202:5433| Leader  | running | 2 |   0 |\n| node3-pg  | 192.168.1.203:5434| Replica | running | 2 |   0 |\n+-----------+-------------------+---------+------+----+-----+\n\n# Node 1 automatically rejoined as a replica!\n# Timeline 2 means a new leader timeline was created"
+        },
+        {
+          "label": "Test 3: Kill PostgreSQL Directly",
+          "code": "# Kill PostgreSQL process on the leader node\nroot@node2:~$ sudo kill -9 $(head -n 1 /data/patroni/pg/postmaster.pid)\n\n# Patroni detects the crash and restarts PostgreSQL\n# Check patroni logs:\nroot@node2:~$ sudo journalctl -u patroni -n 20 --no-pager\n\n# Wait ~10 seconds for loop_wait\n# Check cluster status\nroot@node1:~$ sudo patronictl -c /etc/patroni/patroni.yml list\n\n# Expected: Patroni restarted PostgreSQL on node2\n# If it fails to restart after retry_timeout, node2 is marked as failed\n# Another replica is promoted to leader"
+        },
+        {
+          "label": "Test 4: Network Partition",
+          "code": "# Simulate network failure (block ETCD port)\nroot@node2:~$ sudo iptables -A INPUT -p tcp --dport 2379 -j DROP\n\n# Patroni loses connection to ETCD after ttl (30 seconds)\n# The leader cannot renew its lock in ETCD -> replicas notice\n# After ttl expires, replicas hold a new leader election\n\n# Restore connectivity\nroot@node2:~$ sudo iptables -D INPUT -p tcp --dport 2379 -j DROP\n\n# Check cluster\nroot@node1:~$ sudo patronictl -c /etc/patroni/patroni.yml list"
+        }
+      ]
+    },
+    {
+      "id": "multi-cluster-different-ports",
+      "title": "Part 9: Running Multiple HA Clusters on Different Ports",
+      "content": [
+        "In production, you often need to run multiple PostgreSQL clusters side by side. Perhaps you have different applications, environments (staging, production), or tenants. Patroni makes this straightforward by using different scopes and ports for each cluster.",
+        "Each cluster needs its own unique scope name in ETCD, its own set of PostgreSQL ports, and its own Patroni configuration file."
+      ],
+      "subsections": [
+        {
+          "title": "Cluster Layout: Two Separate HA Clusters",
+          "content": "We'll create two independent HA clusters on the same 3 nodes:",
+          "items": [
+            {
+              "label": "Multi-Cluster Port Allocation",
+              "table": {
+                "headers": ["Cluster", "Scope", "Node 1 Port", "Node 2 Port", "Node 3 Port", "HAProxy Write", "HAProxy Read"],
+                "rows": [
+                  ["Cluster A", "pg-cluster-a", "5432", "5433", "5434", "5000", "5001"],
+                  ["Cluster B", "pg-cluster-b", "5442", "5443", "5444", "6000", "6001"]
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "title": "Configuration for Cluster A (already done above)",
+          "content": "Cluster A uses scope 'pg-ha-cluster' with ports 5432, 5433, 5434 as configured in Part 4."
+        },
+        {
+          "title": "Configuration for Cluster B: Node 1 (Port 5442)",
+          "items": [
+            {
+              "label": "Cluster B - Node 1 Patroni config",
+              "code": "root@node1:~$ sudo nano /etc/patroni/patroni-cluster-b.yml\n\n# /etc/patroni/patroni-cluster-b.yml\nscope: pg-cluster-b\nnamespace: /db/\nname: node1-cluster-b\n\nrestapi:\n  listen: 192.168.1.201:8009\n  connect_address: 192.168.1.201:8009\n  authentication:\n    username: patroni_api\n    password: secure-api-pass-123\n\netcd:\n  hosts: 192.168.1.201:2379,192.168.1.202:2379,192.168.1.203:2379\n\nbootstrap:\n  dcs:\n    ttl: 30\n    loop_wait: 10\n    retry_timeout: 10\n    maximum_lag_on_failover: 1048576\n    postgresql:\n      use_pg_rewind: true\n      use_slots: true\n      parameters:\n        wal_level: replica\n        wal_log_hints: 'on'\n        max_wal_senders: 10\n        max_replication_slots: 10\n        wal_keep_size: 512\n        max_connections: 100\n        shared_buffers: 512MB\n\n  initdb:\n  - encoding: UTF8\n  - locale: en_US.UTF-8\n  - data-checksums\n\n  pg_hba:\n  - host replication replicator 192.168.1.0/24 trust\n  - host all all 192.168.1.0/24 trust\n\npostgresql:\n  listen: 192.168.1.201:5442\n  connect_address: 192.168.1.201:5442\n  data_dir: /data/pg/cluster_b/node1\n  bin_dir: /usr/lib/postgresql/16/bin\n  pgpass: /tmp/pgpass-cluster-b\n  authentication:\n    replication:\n      username: replicator_b\n      password: repl-b-pass-456\n    superuser:\n      username: postgres\n      password: super-b-pass-789\n    rewind:\n      username: rewind_user_b\n      password: rewind-b-pass-000\n  parameters:\n    port: 5442\n\ntags:\n  nofailover: false\n  noloadbalance: false\n  clonefrom: false\n  nosync: false"
+            }
+          ]
+        },
+        {
+          "title": "Configuration for Cluster B: Node 2 (Port 5443)",
+          "items": [
+            {
+              "label": "Cluster B - Node 2 Patroni config",
+              "code": "root@node2:~$ sudo nano /etc/patroni/patroni-cluster-b.yml\n\nscope: pg-cluster-b\nnamespace: /db/\nname: node2-cluster-b\n\nrestapi:\n  listen: 192.168.1.202:8009\n  connect_address: 192.168.1.202:8009\n\netcd:\n  hosts: 192.168.1.201:2379,192.168.1.202:2379,192.168.1.203:2379\n\npostgresql:\n  listen: 192.168.1.202:5443\n  connect_address: 192.168.1.202:5443\n  data_dir: /data/pg/cluster_b/node2\n  bin_dir: /usr/lib/postgresql/16/bin\n  authentication:\n    replication:\n      username: replicator_b\n      password: repl-b-pass-456\n    superuser:\n      username: postgres\n      password: super-b-pass-789\n    rewind:\n      username: rewind_user_b\n      password: rewind-b-pass-000\n  parameters:\n    port: 5443\n\ntags:\n  nofailover: false\n  noloadbalance: false\n  clonefrom: false\n  nosync: false"
+            }
+          ]
+        },
+        {
+          "title": "Configuration for Cluster B: Node 3 (Port 5444)",
+          "items": [
+            {
+              "label": "Cluster B - Node 3 Patroni config",
+              "code": "root@node3:~$ sudo nano /etc/patroni/patroni-cluster-b.yml\n\nscope: pg-cluster-b\nnamespace: /db/\nname: node3-cluster-b\n\nrestapi:\n  listen: 192.168.1.203:8009\n  connect_address: 192.168.1.203:8009\n\netcd:\n  hosts: 192.168.1.201:2379,192.168.1.202:2379,192.168.1.203:2379\n\npostgresql:\n  listen: 192.168.1.203:5444\n  connect_address: 192.168.1.203:5444\n  data_dir: /data/pg/cluster_b/node3\n  bin_dir: /usr/lib/postgresql/16/bin\n  authentication:\n    replication:\n      username: replicator_b\n      password: repl-b-pass-456\n    superuser:\n      username: postgres\n      password: super-b-pass-789\n    rewind:\n      username: rewind_user_b\n      password: rewind-b-pass-000\n  parameters:\n    port: 5444\n\ntags:\n  nofailover: false\n  noloadbalance: false\n  clonefrom: false\n  nosync: false"
+            }
+          ]
+        },
+        {
+          "title": "Create Data Directories for Cluster B",
+          "items": [
+            {
+              "label": "Create directories on all nodes",
+              "code": "root@node1:~$ sudo mkdir -p /data/pg/cluster_b/node1\nroot@node1:~$ sudo chown -R patroni:postgres /data/pg/cluster_b\n\nroot@node2:~$ sudo mkdir -p /data/pg/cluster_b/node2\nroot@node2:~$ sudo chown -R patroni:postgres /data/pg/cluster_b\n\nroot@node3:~$ sudo mkdir -p /data/pg/cluster_b/node3\nroot@node3:~$ sudo chown -R patroni:postgres /data/pg/cluster_b"
+            }
+          ]
+        },
+        {
+          "title": "Start Cluster B",
+          "items": [
+            {
+              "label": "Create systemd service for Cluster B",
+              "code": "root@node1:~$ sudo nano /etc/systemd/system/patroni-cluster-b.service\n\n[Unit]\nDescription=Patroni Cluster B: PostgreSQL HA\nAfter=etcd.service\nWants=network-online.target\n\n[Service]\nType=simple\nUser=patroni\nGroup=patroni\nExecStart=/usr/local/bin/patroni /etc/patroni/patroni-cluster-b.yml\nKillMode=process\nRestart=always\nRestartSec=10\n\n[Install]\nWantedBy=multi-user.target\n\n# Start on all nodes\nroot@node1:~$ sudo systemctl daemon-reload\nroot@node1:~$ sudo systemctl enable patroni-cluster-b\nroot@node1:~$ sudo systemctl start patroni-cluster-b\n\nroot@node2:~$ sudo systemctl enable patroni-cluster-b\nroot@node2:~$ sudo systemctl start patroni-cluster-b\n\nroot@node3:~$ sudo systemctl enable patroni-cluster-b\nroot@node3:~$ sudo systemctl start patroni-cluster-b"
+            }
+          ]
+        },
+        {
+          "title": "Verify Both Clusters Are Running",
+          "items": [
+            {
+              "label": "List both clusters",
+              "code": "root@node1:~$ sudo patronictl -c /etc/patroni/patroni.yml list\n+ Cluster: pg-ha-cluster ----------+---------+----+-----------+\n| Member    | Host              | Role    | State | TL | Lag |\n+-----------+-------------------+---------+------+----+-----+\n| node1-pg  | 192.168.1.201:5432| Leader  | running | 1 |   0 |\n| node2-pg  | 192.168.1.202:5433| Replica | running | 1 |   0 |\n| node3-pg  | 192.168.1.203:5434| Replica | running | 1 |   0 |\n+-----------+-------------------+---------+------+----+-----+\n\nroot@node1:~$ sudo patronictl -c /etc/patroni/patroni-cluster-b.yml list\n+ Cluster: pg-cluster-b ------------+---------+----+-----------+\n| Member         | Host              | Role    | State | TL | Lag |\n+----------------+-------------------+---------+------+----+-----+\n| node1-cluster-b| 192.168.1.201:5442| Leader  | running | 1 |   0 |\n| node2-cluster-b| 192.168.1.202:5443| Replica | running | 1 |   0 |\n| node3-cluster-b| 192.168.1.203:5444| Replica | running | 1 |   0 |\n+----------------+-------------------+---------+------+----+-----+\n\n# Both clusters running independently!\n# Each leader can fail independently\n# Each cluster has its own replication stream"
+            },
+            {
+              "label": "Verify different PostgreSQL ports",
+              "code": "root@node1:~$ netstat -tlnp | grep postgres\ntcp  0  0 192.168.1.201:5432  0.0.0.0:*  LISTEN  12345/postgres\ntcp  0  0 192.168.1.201:5442  0.0.0.0:*  LISTEN  12346/postgres\n\n# Two PostgreSQL instances running on different ports!\n# Independent failover, independent replication"
+            }
+          ]
+        },
+        {
+          "title": "Extended HAProxy for Multiple Clusters",
+          "items": [
+            {
+              "label": "HAProxy config with both clusters",
+              "code": "root@node1:~$ sudo nano /etc/haproxy/haproxy.cfg\n\n# Add to existing configuration:\n\n# Cluster A Write\nlisten pg-cluster-a-write\n    bind *:5000\n    mode tcp\n    option httpchk GET /primary\n    http-check expect status 200\n    default-server inter 3s fall 3 rise 2 on-marked-down shutdown-sessions\n    server node1-pg 192.168.1.201:5432 check port 8008\n    server node2-pg 192.168.1.202:5433 check port 8008\n    server node3-pg 192.168.1.203:5434 check port 8008\n\n# Cluster A Read\nlisten pg-cluster-a-read\n    bind *:5001\n    mode tcp\n    balance roundrobin\n    option httpchk GET /replica\n    http-check expect status 200\n    default-server inter 3s fall 3 rise 2\n    server node1-pg 192.168.1.201:5432 check port 8008\n    server node2-pg 192.168.1.202:5433 check port 8008\n    server node3-pg 192.168.1.203:5434 check port 8008\n\n# Cluster B Write\nlisten pg-cluster-b-write\n    bind *:6000\n    mode tcp\n    option httpchk GET /primary\n    http-check expect status 200\n    default-server inter 3s fall 3 rise 2 on-marked-down shutdown-sessions\n    server node1-cluster-b 192.168.1.201:5442 check port 8009\n    server node2-cluster-b 192.168.1.202:5443 check port 8009\n    server node3-cluster-b 192.168.1.203:5444 check port 8009\n\n# Cluster B Read\nlisten pg-cluster-b-read\n    bind *:6001\n    mode tcp\n    balance roundrobin\n    option httpchk GET /replica\n    http-check expect status 200\n    default-server inter 3s fall 3 rise 2\n    server node1-cluster-b 192.168.1.201:5442 check port 8009\n    server node2-cluster-b 192.168.1.202:5443 check port 8009\n    server node3-cluster-b 192.168.1.203:5444 check port 8009\n\nroot@node1:~$ sudo systemctl reload haproxy\n\n# Verify\nroot@node1:~$ psql -h localhost -p 5000 -U postgres -d postgres -c \"SELECT 'Cluster A: Write OK'\"\n ?column?\n-----------------\n Cluster A: Write OK\n\nroot@node1:~$ psql -h localhost -p 6000 -U postgres -d postgres -c \"SELECT 'Cluster B: Write OK'\"\n ?column?\n-----------------\n Cluster B: Write OK"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "monitoring",
+      "title": "Part 10: Monitoring Your HA Cluster",
+      "content": [
+        "Monitoring is essential for any production deployment. Patroni provides multiple ways to monitor your cluster's health."
+      ],
+      "subsections": [
+        {
+          "title": "Patroni REST API Endpoints",
+          "content": "Each Patroni node exposes a REST API on port 8008 (or 8009 for Cluster B).",
+          "items": [
+            {
+              "label": "Useful API endpoints",
+              "code": "root@node1:~$ curl -s http://192.168.1.201:8008/\n{\"database\":{\"PostgreSQL 16.4\":{\"host\":\"192.168.1.201:5432\",\"port\":5432,\"state\":\"running\",\"timeline\":1}},\"patroni\":{\"scope\":\"pg-ha-cluster\",\"version\":\"4.1.3\"}}\n\nroot@node1:~$ curl -s http://192.168.1.201:8008/health\n{\"state\":\"running\",\"postmaster_start_time\":\"2026-05-19 10:30:00 UTC\",\"role\":\"primary\",\"server_version\":160004,\"timeline\":1}\n\nroot@node1:~$ curl -s http://192.168.1.201:8008/cluster | python3 -m json.tool\n{\n    \"members\": [\n        {\"name\":\"node1-pg\",\"host\":\"192.168.1.201:5432\",\"role\":\"primary\",\"state\":\"running\",\"timeline\":1},\n        {\"name\":\"node2-pg\",\"host\":\"192.168.1.202:5433\",\"role\":\"replica\",\"state\":\"running\",\"timeline\":1},\n        {\"name\":\"node3-pg\",\"host\":\"192.168.1.203:5434\",\"role\":\"replica\",\"state\":\"running\",\"timeline\":1}\n    ]\n}\n\nroot@node1:~$ curl -s http://192.168.1.201:8008/patroni\n{\"database_system_identifier\":\"7371234567890987654\",\"postmaster_start_time\":\"2026-05-19 10:30:00 UTC\",\"timeline\":1,\"xlog\":{\"location\":603979776},\"pending_restart\":false}"
+            }
+          ]
+        },
+        {
+          "title": "HAProxy Statistics Dashboard",
+          "content": "The HAProxy stats dashboard provides a web-based view of all backends and their health.",
+          "items": [
+            {
+              "label": "Access HAProxy dashboard",
+              "code": "# Open in browser:\nhttp://192.168.1.201:7000/stats\n\n# Login:\nUsername: admin\nPassword: admin-pass-123\n\n# Or check via command line:\nroot@node1:~$ curl -u admin:admin-pass-123 http://localhost:7000/stats | grep -E \"pg-|UP|DOWN\""
+            },
+            {
+              "label": "Watch statistics in real time",
+              "code": "root@node1:~$ watch -n 2 'sudo patronictl -c /etc/patroni/patroni.yml list'\n\nEvery 2.0s: patronictl list\n\n+ Cluster: pg-ha-cluster ----------+---------+----+-----------+\n| Member    | Host              | Role    | State | TL | Lag |\n+-----------+-------------------+---------+------+----+-----+\n| node1-pg  | 192.168.1.201:5432| Leader  | running | 1 |   0 |\n| node2-pg  | 192.168.1.202:5433| Replica | running | 1 |   0 |\n| node3-pg  | 192.168.1.203:5434| Replica | running | 1 |   0 |\n+-----------+-------------------+---------+------+----+-----+"
+            }
+          ]
+        },
+        {
+          "title": "PostgreSQL Monitoring Queries",
+          "items": [
+            {
+              "label": "Check replication status",
+              "code": "postgres=# SELECT client_addr, state, sync_state, sent_lsn, write_lsn, flush_lsn, replay_lsn FROM pg_stat_replication;\n  client_addr  |   state   | sync_state |  sent_lsn  |  write_lsn |  flush_lsn | replay_lsn\n---------------+---------------+------------+------------+------------+------------+------------\n 192.168.1.202 | streaming  | async      | 0/9500000  | 0/9500000  | 0/9500000  | 0/9500000\n 192.168.1.203 | streaming  | async      | 0/9500000  | 0/9500000  | 0/9500000  | 0/9500000\n(2 rows)\n\n# Check replication lag\npostgres=# SELECT pg_size_pretty(pg_wal_lsn_diff(pg_current_wal_lsn(), replay_lsn)) AS lag FROM pg_stat_replication;\n   lag   \n---------\n 0 bytes\n 0 bytes\n(2 rows)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "backup-recovery",
+      "title": "Part 11: Backup & Point-in-Time Recovery",
+      "content": [
+        "High availability protects against server failures, but you still need backups to protect against data corruption, accidental deletions, and disasters."
+      ],
+      "subsections": [
+        {
+          "title": "Enable WAL Archiving",
+          "content": "Configure PostgreSQL to archive WAL files for point-in-time recovery.",
+          "items": [
+            {
+              "label": "Update Patroni config for WAL archiving",
+              "code": "# Edit Patroni configuration to add WAL archiving parameters\nroot@node1:~$ sudo patronictl -c /etc/patroni/patroni.yml edit-config\n\n# Add these parameters (in interactive editor):\npostgresql:\n  parameters:\n    archive_mode: 'on'\n    archive_command: 'pgbackrest --stanza=pg-ha archive-push %p'\n    archive_timeout: 60\n\n# Or update via patronictl\nroot@node1:~$ sudo patronictl -c /etc/patroni/patroni.yml update-config --apply - <<EOF\npostgresql:\n  parameters:\n    archive_mode: 'on'\n    archive_command: 'pgbackrest --stanza=pg-ha archive-push %p'\n    archive_timeout: 60\nEOF"
+            }
+          ]
+        },
+        {
+          "title": "Install and Configure pgBackRest",
+          "items": [
+            {
+              "label": "Install pgBackRest",
+              "code": "root@node1:~$ sudo apt-get install pgbackrest -y"
+            },
+            {
+              "label": "Configure pgBackRest",
+              "code": "root@node1:~$ sudo nano /etc/pgbackrest/pgbackrest.conf\n\n[pg-ha]\npg1-path=/data/patroni/pg\npg1-port=5432\npg1-user=postgres\n\n[global]\nrepo1-path=/backup/pgbackrest\nrepo1-retention-full=4\nrepo1-retention-diff=7\nrepo1-cipher-type=none\nprocess-max=4\ncompress-type=gz\n\n[global:archive-push]\ncompress-level=6"
+            },
+            {
+              "label": "Create stanza and run first backup",
+              "code": "root@node1:~$ sudo mkdir -p /backup/pgbackrest\nroot@node1:~$ sudo chown -R postgres:postgres /backup\nroot@node1:~$ sudo -u postgres pgbackrest --stanza=pg-ha stanza-create\n\n# Take a full backup\nroot@node1:~$ sudo -u postgres pgbackrest --stanza=pg-ha --type=full backup\n\n# Verify backup\nroot@node1:~$ sudo -u postgres pgbackrest --stanza=pg-ha info\nstanza: pg-ha\n    status: ok\n    cipher: none\n\n    db (current)\n        wal archive min/max (16-1): 000000010000000000000001 / 00000001000000000000000A\n\n        full backup: 20260519-103000F\n            timestamp start/stop: 2026-05-19 10:30:00 / 2026-05-19 10:35:00\n            size: 512MB, backup size: 128MB"
+            }
+          ]
+        },
+        {
+          "title": "Point-in-Time Recovery",
+          "items": [
+            {
+              "label": "Restore to a specific point in time",
+              "code": "# Stop the cluster first\nroot@node1:~$ sudo systemctl stop patroni\n\n# Restore from backup\nroot@node1:~$ sudo -u postgres pgbackrest --stanza=pg-ha --type=time --target=\"2026-05-19 09:30:00\" --target-action=promote restore\n\n# Restart Patroni (it will detect restored data)\nroot@node1:~$ sudo systemctl start patroni"
+            }
+          ]
+        },
+        {
+          "title": "Schedule Automatic Backups",
+          "items": [
+            {
+              "label": "Daily cron for backups",
+              "code": "root@node1:~$ sudo crontab -e\n\n# Full backup every Sunday at 2 AM\n0 2 * * 0 /usr/bin/pgbackrest --stanza=pg-ha --type=full backup >> /var/log/pgbackrest-full.log 2>&1\n\n# Differential backup every day at 3 AM (except Sunday)\n0 3 * * 1-6 /usr/bin/pgbackrest --stanza=pg-ha --type=diff backup >> /var/log/pgbackrest-diff.log 2>&1\n\n# Verify backups weekly\n0 4 * * 0 /usr/bin/pgbackrest --stanza=pg-ha check"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "troubleshooting",
+      "title": "Troubleshooting",
+      "description": "Common issues you might encounter and how to resolve them.",
+      "subsections": [
+        {
+          "title": "Split Brain (Multiple Leaders Detected)",
+          "content": "In rare cases, network issues might cause two nodes to think they're the leader.",
+          "items": [
+            {
+              "label": "Symptoms & Solution",
+              "text": [
+                "Symptom: patronictl list shows two nodes in 'Leader' role.",
+                "Solution: Stop Patroni on one of the leaders and restart it.",
+                "Patroni will use pg_rewind to sync the node as a replica."
+              ]
+            },
+            {
+              "label": "Fix split brain",
+              "code": "root@node1:~$ sudo systemctl stop patroni\n# Check which node has the most recent data\n# That one should remain leader\nroot@node1:~$ sudo systemctl start patroni\n# The stopped node will auto-join as replica"
+            }
+          ]
+        },
+        {
+          "title": "Patroni Can't Connect to ETCD",
+          "content": "If Patroni loses connection to ETCD, it cannot manage the cluster.",
+          "items": [
+            {
+              "label": "Check ETCD health",
+              "code": "root@node1:~$ etcdctl endpoint health --cluster\n\n# If ETCD is down, restart it\nroot@node1:~$ sudo systemctl status etcd\nroot@node1:~$ sudo systemctl restart etcd\n\n# Check Patroni logs\nroot@node1:~$ sudo journalctl -u patroni -n 50 --no-pager | grep -i error"
+            }
+          ]
+        },
+        {
+          "title": "Replication Lag",
+          "content": "High replication lag can cause data loss during failover.",
+          "items": [
+            {
+              "label": "Check and fix replication lag",
+              "code": "postgres=# SELECT application_name, state, pg_size_pretty(\n    pg_wal_lsn_diff(pg_current_wal_lsn(), replay_lsn)\n) AS lag FROM pg_stat_replication;\n\n# Common causes of lag:\n# - Slow network between nodes\n# - Under-provisioned replicas (CPU/memory)\n# - Long-running queries on replicas\n# - wal_keep_size too small\n\n# Solutions:\n# 1. Increase wal_keep_size\n# 2. Add more CPU/RAM to replicas\n# 3. Check network latency\n# 4. Reduce load on replicas (use connection pooling)"
+            }
+          ]
+        },
+        {
+          "title": "Patroni Service Won't Start",
+          "items": [
+            {
+              "label": "Diagnose startup failure",
+              "code": "root@node1:~$ sudo journalctl -u patroni -n 100 --no-pager\n\n# Common issues:\n# - Port already in use\n# - Permissions on data directory\n# - Python dependency missing\n\n# Fix port conflicts\nroot@node1:~$ netstat -tlnp | grep 5432\nroot@node1:~$ netstat -tlnp | grep 8008\n\n# Fix permissions\nroot@node1:~$ sudo chown -R patroni:postgres /data/patroni\nroot@node1:~$ sudo chmod 700 /data/patroni\n\n# Test configuration\nroot@node1:~$ sudo -u patroni patroni /etc/patroni/patroni.yml --validate"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "summary-best-practices",
+      "title": "Summary & Best Practices",
+      "content": [
+        "You've built a complete PostgreSQL High Availability cluster with Patroni, ETCD, and HAProxy. Let's recap what you've accomplished and review some best practices."
+      ],
+      "items": [
+        {
+          "label": "What You've Learned",
+          "table": {
+            "headers": ["Component", "Purpose", "Status"],
+            "rows": [
+              ["ETCD Cluster", "Distributed key-value store for leader election", "3 nodes, ports 2379/2380"],
+              ["PostgreSQL 16", "Database instances on different ports", "3 instances per cluster"],
+              ["Patroni", "HA management, failover, replica sync", "Active on all nodes"],
+              ["HAProxy", "Load balancing, read/write splitting", "Ports 5000/5001 per cluster"],
+              ["pgBackRest", "Backup and point-in-time recovery", "Scheduled daily backups"]
+            ]
+          }
+        },
+        {
+          "label": "Production Checklist",
+          "text": [
+            "✓ Minimum 3 nodes for reliable quorum (5 for large deployments)",
+            "✓ Separate network for replication traffic (low latency, high bandwidth)",
+            "✓ Synchronous replication for zero data loss (set synchronous_mode: true)",
+            "✓ Regular failover testing (at least once a month)",
+            "✓ Monitor replication lag (alert if > 100MB)",
+            "✓ Enable WAL archiving and backup automation",
+            "✓ Set up Patroni REST API authentication",
+            "✓ Use separate ports for different clusters",
+            "✓ Configure alerts for node failures",
+            "✓ Document your failover procedures"
+          ]
+        },
+        {
+          "label": "Port Allocation Summary",
+          "table": {
+            "headers": ["Service", "Port(s)", "Purpose"],
+            "rows": [
+              ["PostgreSQL Cluster A", "5432, 5433, 5434", "Data instances on 3 nodes"],
+              ["PostgreSQL Cluster B", "5442, 5443, 5444", "Data instances on 3 nodes"],
+              ["Patroni REST API A", "8008", "Health monitoring per node"],
+              ["Patroni REST API B", "8009", "Health monitoring per node"],
+              ["ETCD Client", "2379", "Client connections to ETCD"],
+              ["ETCD Peer", "2380", "ETCD inter-node communication"],
+              ["HAProxy Stats", "7000", "Web dashboard"],
+              ["HAProxy Write A", "5000", "Write queries Cluster A"],
+              ["HAProxy Read A", "5001", "Read queries Cluster A"],
+              ["HAProxy Write B", "6000", "Write queries Cluster B"],
+              ["HAProxy Read B", "6001", "Read queries Cluster B"]
+            ]
+          }
+        },
+        {
+          "label": "Final Architecture Diagram",
+          "text": [
+            "┌───────────────────────────────────────────────────────────────┐",
+            "│              APPLICATION LAYER                               │",
+            "│    Web Apps • API Services • Microservices                  │",
+            "└──────────────────────┬──────────────────────────────────────┘",
+            "                       │",
+            "┌──────────────────────▼──────────────────────────────────────┐",
+            "│              HAPROXY LOAD BALANCER                           │",
+            "│    Write: Port 5000 → Leader    Read: Port 5001 → Replicas  │",
+            "└──────┬────────────────────┬────────────────────┬────────────┘",
+            "       │                    │                    │",
+            "┌──────▼──────┐    ┌───────▼──────┐    ┌────────▼────────┐",
+            "│ Node 1      │    │ Node 2       │    │ Node 3          │",
+            "│ PostgreSQL  │    │ PostgreSQL   │    │ PostgreSQL      │",
+            "│ Port 5432   │◄───│ Port 5433    │◄───│ Port 5434       │",
+            "│ Patroni     │    │ Patroni      │    │ Patroni         │",
+            "│ ETCD        │    │ ETCD         │    │ ETCD            │",
+            "└─────────────┘    └──────────────┘    └─────────────────┘",
+            "       │                    │                    │",
+            "       └────────────────────┼────────────────────┘",
+            "                            │",
+            "              ┌─────────────▼──────────────┐",
+            "              │      ETCD CLUSTER           │",
+            "              │  Ports 2379, 2380           │",
+            "              │  Leader Election + Config   │",
+            "              └────────────────────────────┘"
+          ]
+        }
+      ],
+      "infoBox": {
+        "type": "tip",
+        "content": "Always test your failover procedures in a staging environment before deploying to production. Automate failover tests using tools like Chaos Engineering or LitmusChaos to build confidence in your HA setup."
+      }
+    },
+    {
+      "id": "resources",
+      "title": "Additional Resources",
+      "items": [
+        {
+          "label": "Official Documentation",
+          "table": {
+            "headers": ["Resource", "URL"],
+            "rows": [
+              ["PostgreSQL Documentation", "https://www.postgresql.org/docs/16/"],
+              ["Patroni Documentation", "https://patroni.readthedocs.io/"],
+              ["ETCD Documentation", "https://etcd.io/docs/"],
+              ["HAProxy Documentation", "https://www.haproxy.org/documentation/"],
+              ["pgBackRest Documentation", "https://pgbackrest.org/"]
+            ]
+          }
+        },
+        {
+          "label": "Troubleshooting Commands Quick Reference",
+          "code": "# Quick cluster status\nsudo patronictl -c /etc/patroni/patroni.yml list\nsudo patronictl -c /etc/patroni/patroni.yml topology\n\n# Check all nodes\ncurl -s http://node1:8008/health\ncurl -s http://node2:8008/cluster\n\n# Check ETCD\nexport ETCDCTL_API=3\nsudo etcdctl endpoint health --cluster\n\n# Restart services in order\nsudo systemctl restart etcd\nsudo systemctl restart patroni\nsudo systemctl reload haproxy\n\n# View logs\nsudo journalctl -u patroni -f\nsudo journalctl -u etcd -n 100\nsudo tail -f /var/log/haproxy.log"
+        }
+      ]
+    }
+  ]
+}

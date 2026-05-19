@@ -11,7 +11,7 @@ interface Engagement {
 const dataDir = path.join(process.cwd(), 'src', 'data')
 
 function getEngagementFile(slug: string): string {
-  return path.join(dataDir, `engagement-${slug}.json`)
+  return path.join(dataDir, slug, 'engagement.json')
 }
 
 async function ensureEngagementFile(slug: string) {
