@@ -1,0 +1,143 @@
+{
+  "title": "Your Blog Post Title Here",
+  "icon": "📝",
+  "description": "A brief description of your blog post that appears in the listing and at the top of the page.",
+  "author": "E-Learning Platform",
+  "date": "2026-05-19",
+  "readTime": "15 min read",
+  "heroImage": "/images/your-hero-image.svg",
+  "heroAlt": "Description of the hero image for accessibility",
+  "sections": [
+    {
+      "id": "introduction",
+      "title": "Introduction",
+      "description": "Overview of what this blog post covers.",
+      "items": [
+        {
+          "label": "Getting Started",
+          "text": "Your introductory text goes here. You can use multiple paragraphs by adding more text items."
+        },
+        {
+          "label": "Prerequisites",
+          "text": [
+            "Item 1: Description",
+            "Item 2: Description",
+            "Item 3: Description"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-with-terminal",
+      "title": "Section with Terminal Blocks",
+      "description": "Code examples with terminal-style blocks.",
+      "items": [
+        {
+          "label": "Run this command",
+          "code": "user@hostname:~$ your-command-here\nExpected output line 1\nExpected output line 2"
+        },
+        {
+          "label": "Another example",
+          "code": "user@hostname:~$ sudo apt-get update\nHit:1 http://archive.ubuntu.com/ubuntu jammy InRelease\nReading package lists... Done"
+        }
+      ],
+      "subsections": [
+        {
+          "title": "Configuration Section",
+          "description": "Detailed configuration instructions.",
+          "items": [
+            {
+              "label": "Configuration File",
+              "code": "user@hostname:~$ sudo nano /etc/config/file.conf\n\n# Edit the file with your settings"
+            },
+            {
+              "label": "Apply Changes",
+              "code": "user@hostname:~$ sudo systemctl restart service\nuser@hostname:~$ sudo systemctl status service\nService is running"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-with-table",
+      "title": "Section with Tables",
+      "description": "Use tables to compare options or show data.",
+      "items": [
+        {
+          "label": "Feature Comparison",
+          "table": {
+            "headers": ["Feature", "Option A", "Option B"],
+            "rows": [
+              ["Feature 1", "Supported ✓", "Not supported ✗"],
+              ["Feature 2", "Free", "Paid"],
+              ["Feature 3", "Easy", "Complex"]
+            ]
+          }
+        },
+        {
+          "label": "Quick Reference",
+          "table": {
+            "headers": ["Command", "Description", "Example"],
+            "rows": [
+              ["command-1", "Does something", "command-1 arg"],
+              ["command-2", "Does another thing", "command-2 --flag"]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "section-with-text-only",
+      "title": "Text-Only Section",
+      "description": "For explanations, notes, and concepts.",
+      "items": [
+        {
+          "label": "Key Concept",
+          "text": "Here you can write long-form content explaining concepts, best practices, and important information. The text will automatically wrap and format properly."
+        },
+        {
+          "label": "Step-by-Step Guide",
+          "text": [
+            "Step 1: First thing to do",
+            "Step 2: Second thing to do",
+            "Step 3: Third thing to do"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "troubleshooting",
+      "title": "Troubleshooting",
+      "description": "Common issues and how to fix them.",
+      "items": [
+        {
+          "label": "Issue 1: Common Problem",
+          "text": "Description of the problem and how to fix it."
+        },
+        {
+          "label": "Issue 2: Another Problem",
+          "text": "Solution for this issue."
+        }
+      ]
+    },
+    {
+      "id": "summary",
+      "title": "Summary",
+      "description": "Wrap up the blog post with key takeaways.",
+      "items": [
+        {
+          "label": "Key Takeaways",
+          "text": [
+            "✓ What you learned item 1",
+            "✓ What you learned item 2",
+            "✓ What you learned item 3"
+          ]
+        },
+        {
+          "label": "Next Steps",
+          "text": "What the reader should do next after reading this post."
+        }
+      ]
+    }
+  ]
+}

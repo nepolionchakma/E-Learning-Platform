@@ -5,6 +5,8 @@
   "author": "E-Learning Platform",
   "date": "2026-05-19",
   "readTime": "45 min read",
+  "heroImage": "/images/react-postgresql-hero.svg",
+  "heroAlt": "Architecture diagram showing Public VM with React and Nginx, router with public IP, and Private VM with PostgreSQL database connected via SSH tunnel",
   "tableOfContents": [
     "Architecture Overview",
     "Part 1: VM-to-VM Communication & Network Setup",
