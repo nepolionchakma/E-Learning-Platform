@@ -1,0 +1,847 @@
+{
+  "title": "Next.js: The Complete A–Z Guide",
+  "icon": "▲",
+  "description": "A comprehensive end-to-end guide to Next.js from fundamentals to production. Covers the App Router, server & client components, data fetching, server actions, caching, routing, middleware, authentication, deployment, performance optimization, TypeScript integration, and production best practices — for beginners and experienced developers alike.",
+  "author": "E-Learning Platform",
+  "date": "2026-05-21",
+  "readTime": "45 min read",
+  "heroImage": "/images/nextjs-hero.svg",
+  "heroAlt": "Next.js App Router architecture diagram showing project structure, component model, data fetching, rendering strategies, built-in features, and deployment options",
+  "sections": [
+    {
+      "id": "introduction",
+      "title": "Introduction to Next.js",
+      "description": "What Next.js is and why it has become the most popular React framework for production.",
+      "items": [
+        {
+          "label": "What is Next.js?",
+          "text": "Next.js is the leading React framework for building full-stack web applications. Created by Vercel and now open-source, it provides a complete toolkit for production-grade React apps including server-side rendering, static site generation, API routes, file-system routing, middleware, image optimization, font optimization, and more.\n\nNext.js eliminates the need to manually configure Webpack (via Turbopack), Babel, routing, code-splitting, and bundling. It ships with all of these out of the box, letting you focus on building your application.\n\nKey milestones:\n- Next.js 13 (2022): Introduced the App Router with React Server Components\n- Next.js 14 (2023): Stable App Router, improved Turbopack\n- Next.js 15 (2024): React 19 support, `@next/codemod` upgrades\n- Next.js 16 (2025): Full React 19 integration, Partial Prerendering (PPR) stable, enhanced caching, Tailwind CSS v4 support"
+        },
+        {
+          "label": "Why Next.js?",
+          "text": [
+            "File-system Routing — Intuitive App Router with nested layouts, loading states, error boundaries, and route groups.",
+            "React Server Components — Components that run on the server, reducing client JavaScript by up to 90%.",
+            "Hybrid Rendering — Static (SSG), Dynamic (SSR), Incremental (ISR), and Partial Prerendering (PPR) — per route.",
+            "Built-in Optimizations — Automatic image optimization, font optimization, script loading, bundle analysis.",
+            "Full-Stack Capabilities — API routes (Route Handlers), Server Actions for mutations, middleware for edge logic.",
+            "Zero Config — Turbopack, TypeScript, ESLint, PostCSS/Tailwind CSS all pre-configured.",
+            "Vercel Integration — Deploy with git push, automatic ISR, Edge Functions, analytics, and preview URLs.",
+            "Security by Default — Automatic XSS protection, CSRF for Server Actions, input validation patterns."
+          ]
+        },
+        {
+          "label": "Next.js vs Other Frameworks",
+          "table": {
+            "headers": ["Feature", "Next.js", "Remix", "Gatsby", "Vite + React"],
+            "rows": [
+              ["Routing", "File-system (App Router)", "File-system (nested)", "File-system (pages)", "Manual (React Router)"],
+              ["Rendering", "SSG / SSR / ISR / PPR", "SSR / streaming", "SSG only", "CSR (configurable)"],
+              ["Server Components", "Native (RSC)", "Loader functions", "No", "No"],
+              ["Server Actions", "Built-in", "Actions (similar)", "No", "No"],
+              ["API Routes", "Built-in", "Loader/Action only", "No", "No"],
+              ["Image Optimization", "Built-in", "Plugin needed", "Plugin needed", "Plugin needed"],
+              ["Middleware", "Edge runtime", "No (headers)", "No", "No"],
+              ["Static Export", "output: 'export'", "Yes", "Yes", "Yes"],
+              ["Learning Curve", "Moderate", "Moderate", "Low", "Low (no framework)"],
+              ["Bundle Size (empty)", "~70 KB JS", "~20 KB JS", "~200 KB JS", "~40 KB JS"]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "setup",
+      "title": "Setup & Project Initialization",
+      "description": "Creating a new Next.js project and understanding the setup options.",
+      "items": [
+        {
+          "label": "Prerequisites",
+          "text": "Before starting, ensure you have:\n\n- Node.js 18.18+ (recommended: Node.js 22 LTS)\n- npm, yarn, pnpm, or bun\n- A code editor (VS Code recommended with the official Next.js extension)\n- Basic knowledge of React (components, hooks, JSX)"
+        },
+        {
+          "label": "Creating a New Project",
+          "code": "# Using create-next-app (recommended):\nuser@dev:~$ npx create-next-app@latest my-app\n? Would you like to use TypeScript? Yes / No\n? Would you like to use ESLint? Yes / No\n? Would you like to use Tailwind CSS? Yes / No\n? Would you like to use src/ directory? Yes / No\n? Would you like to use App Router? Yes / No\n? Would you like to customize the default import alias? No / Yes\n\n# Alternative package managers:\nuser@dev:~$ yarn create next-app my-app\nuser@dev:~$ pnpm create next-app my-app\n\n# With all flags:\nuser@dev:~$ npx create-next-app@latest my-app --ts --tailwind --eslint --app --src-dir --import-alias \"@/*\"\n\n# Navigate to project:\nuser@dev:~$ cd my-app\nuser@dev:~$ npm run dev\n  Next.js 16.2.6\n  - Local: http://localhost:3000\n  Ready in 2.4s"
+        },
+        {
+          "label": "Project Options Explained",
+          "table": {
+            "headers": ["Option", "Recommended", "Why"],
+            "rows": [
+              ["TypeScript", "Yes", "Type safety, better IDE support, catch errors at build time"],
+              ["ESLint", "Yes", "Catches common issues, enforces code quality"],
+              ["Tailwind CSS", "Yes", "Utility-first CSS, great developer experience with Next.js"],
+              ["src/ directory", "Yes", "Separates source from config files, cleaner root"],
+              ["App Router", "Yes", "The modern way - supports RSC, layouts, streaming"],
+              ["Import alias", "Yes", "Cleaner imports: @/components/Button vs ../../components/Button"]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "project-structure",
+      "title": "Project Structure Explained",
+      "description": "Understanding the files and folders created by create-next-app.",
+      "items": [
+        {
+          "label": "Directory Layout",
+          "code": "my-app/\n  .next/                # Build output (auto-generated, gitignored)\n  node_modules/         # Dependencies (auto-generated)\n  public/               # Static assets (images, fonts, etc.)\n  src/\n    app/                # App Router pages and layouts\n      favicon.ico\n      globals.css        # Global styles\n      layout.tsx         # Root layout (wraps all pages)\n      page.tsx           # Home page (/)\n    components/          # Shared components\n      button.tsx\n  .gitignore\n  eslint.config.mjs\n  next.config.ts         # Next.js configuration\n  package.json\n  postcss.config.mjs     # PostCSS config (for Tailwind)\n  tsconfig.json          # TypeScript configuration"
+        },
+        {
+          "label": "Key Configuration Files",
+          "code": "// next.config.ts - Main Next.js configuration file\nimport type { NextConfig } from 'next';\n\nconst nextConfig: NextConfig = {\n  images: {\n    remotePatterns: [\n      { protocol: 'https', hostname: 'images.example.com' },\n    ],\n  },\n  experimental: {\n    ppr: true,        // Enable Partial Prerendering\n  },\n  logging: {\n    fetches: { fullUrl: true },\n  },\n};\n\nexport default nextConfig;\n\n// tsconfig.json - TypeScript config snippet\n{\n  \"compilerOptions\": {\n    \"target\": \"ES2017\",\n    \"lib\": [\"dom\", \"dom.iterable\", \"esnext\"],\n    \"allowJs\": true,\n    \"skipLibCheck\": true,\n    \"strict\": true,\n    \"noEmit\": true,\n    \"esModuleInterop\": true,\n    \"module\": \"esnext\",\n    \"moduleResolution\": \"bundler\",\n    \"resolveJsonModule\": true,\n    \"isolatedModules\": true,\n    \"jsx\": \"preserve\",\n    \"incremental\": true,\n    \"plugins\": [{ \"name\": \"next\" }],\n    \"paths\": { \"@/*\": [\"./src/*\"] }\n  },\n  \"include\": [\"next-env.d.ts\", \"**/*.ts\", \"**/*.tsx\", \".next/types/**/*.ts\"],\n  \"exclude\": [\"node_modules\"]\n}"
+        }
+      ]
+    },
+    {
+      "id": "app-router",
+      "title": "App Router Fundamentals",
+      "description": "How the App Router works - the foundation of all Next.js applications.",
+      "items": [
+        {
+          "label": "How the App Router Works",
+          "text": "The App Router is a file-system based router built on top of React Server Components. Every folder inside src/app/ maps to a URL path segment. Special files inside each folder define the UI:\n\n- page.tsx - The main content for a route (public, must export a component)\n- layout.tsx - A shared wrapper that persists across navigations\n- template.tsx - Similar to layout but re-renders on each navigation\n- loading.tsx - Loading UI shown while the page loads (Suspense boundary)\n- error.tsx - Error boundary for that segment\n- not-found.tsx - 404 handler for that segment\n- route.ts - API route (Route Handler, does not render UI)\n\nExample: The URL /blog/my-post maps to src/app/blog/[slug]/page.tsx"
+        },
+        {
+          "label": "Route Segment Hierarchy",
+          "code": "app/\n  layout.tsx            # Root layout (applies to ALL routes)\n  page.tsx              # / (home page)\n  about/\n    layout.tsx          # /about layout (applies to /about/*)\n    page.tsx            # /about\n    team/\n      page.tsx          # /about/team\n  blog/\n    layout.tsx          # /blog layout\n    page.tsx            # /blog (list)\n    [slug]/\n      page.tsx          # /blog/hello-world (dynamic)\n  dashboard/\n    layout.tsx          # /dashboard layout (sidebar nav)\n    page.tsx            # /dashboard\n  api/\n    users/\n      route.ts          # GET /api/users (API endpoint)"
+        },
+        {
+          "label": "Special File Priority",
+          "text": "When a URL matches a route segment, Next.js renders these special files in a specific order:\n\n1. layout.tsx - Wraps the page and all nested layouts\n2. template.tsx - If present, wraps the page (re-renders on nav)\n3. loading.tsx - Shown while the page is loading (Suspense)\n4. error.tsx - Renders on error (catches errors from children)\n5. page.tsx - The actual page content\n\nLayouts nest. A route like /blog/my-post renders:\nRoot layout -> Blog layout -> Blog post page"
+        }
+      ]
+    },
+    {
+      "id": "pages-layouts",
+      "title": "Pages, Layouts, and Templates",
+      "description": "How to create pages, shared layouts, and re-rendering templates.",
+      "items": [
+        {
+          "label": "Creating a Page",
+          "code": "// src/app/about/page.tsx\n// Renders at: /about\n\nexport default function AboutPage() {\n  return (\n    <main>\n      <h1 className=\"text-3xl font-bold\">About Us</h1>\n      <p className=\"mt-4 text-zinc-600\">\n        We are a team of developers passionate about web technology.\n      </p>\n    </main>\n  );\n}"
+        },
+        {
+          "label": "Root Layout (Required)",
+          "code": "// src/app/layout.tsx - Root layout wraps every page\nimport type { Metadata } from 'next';\nimport { Geist, Geist_Mono } from 'next/font/google';\nimport './globals.css';\n\nconst geistSans = Geist({\n  variable: '--font-geist-sans',\n  subsets: ['latin'],\n});\n\nconst geistMono = Geist_Mono({\n  variable: '--font-geist-mono',\n  subsets: ['latin'],\n});\n\nexport const metadata: Metadata = {\n  title: 'My App',\n  description: 'Generated by create next app',\n};\n\nexport default function RootLayout({\n  children,\n}: {\n  children: React.ReactNode;\n}) {\n  return (\n    <html lang=\"en\">\n      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>\n        {children}\n      </body>\n    </html>\n  );\n}"
+        },
+        {
+          "label": "Nested Layout",
+          "code": "// src/app/dashboard/layout.tsx - Applies to /dashboard/*\nimport Sidebar from '@/components/Sidebar';\n\nexport default function DashboardLayout({\n  children,\n}: {\n  children: React.ReactNode;\n}) {\n  return (\n    <div className=\"flex min-h-screen\">\n      <Sidebar />\n      <main className=\"flex-1 p-8\">{children}</main>\n    </div>\n  );\n}\n\n// Important: Layouts PRESERVE state across navigations within the same segment.\n// The Sidebar will NOT re-mount when navigating between /dashboard/analytics and /dashboard/settings."
+        },
+        {
+          "label": "Template (Re-renders on Navigation)",
+          "code": "// src/app/dashboard/template.tsx\n// Unlike layout.tsx, this RE-RENDERS on every navigation\n\nexport default function DashboardTemplate({\n  children,\n}: {\n  children: React.ReactNode;\n}) {\n  return <div>{children}</div>;\n}\n\n// Use layout for persistent UI (nav, sidebar, header) that keeps state\n// Use template when you need to reset state on navigation (filters, search)"
+        },
+        {
+          "label": "Layout and Template Nesting Rules",
+          "table": {
+            "headers": ["File", "Behavior", "State Persistence"],
+            "rows": [
+              ["layout.tsx", "Wraps all child routes, persists across navigations", "Yes - state is preserved"],
+              ["template.tsx", "Wraps child routes, re-renders on every navigation", "No - state is reset"],
+              ["page.tsx", "The actual page content (leaf route)", "N/A - re-renders on nav"]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "routing",
+      "title": "Routing Deep Dive",
+      "description": "Dynamic routes, catch-all segments, route groups, parallel routes, and intercepting routes.",
+      "items": [
+        {
+          "label": "Dynamic Routes: [folder]",
+          "code": "// src/app/blog/[slug]/page.tsx\n// Matches: /blog/hello-world, /blog/nextjs-guide, anything\n\nexport default async function BlogPost({\n  params,\n}: {\n  params: Promise<{ slug: string }>;\n}) {\n  const { slug } = await params;\n  return <h1>Blog Post: {slug}</h1>;\n}\n\n// Multiple dynamic segments:\n// app/blog/[category]/[slug]/page.tsx\n// Matches: /blog/tech/react-intro, /blog/life/travel-tips\n\nexport default async function CategoryPost({\n  params,\n}: {\n  params: Promise<{ category: string; slug: string }>;\n}) {\n  const { category, slug } = await params;\n  return <h1>{category} / {slug}</h1>;\n}"
+        },
+        {
+          "label": "Catch-All and Optional Catch-All Routes",
+          "code": "// [...slug] - Catch-all segments\n// app/docs/[...slug]/page.tsx\n// Matches: /docs/getting-started, /docs/getting-started/installation\n\nexport default async function DocsPage({\n  params,\n}: {\n  params: Promise<{ slug: string[] }>;\n}) {\n  const { slug } = await params;\n  // slug = ['getting-started'] for /docs/getting-started\n  // slug = ['getting-started', 'installation'] for /docs/getting-started/installation\n  return <h1>Docs: {slug?.join(' / ')}</h1>;\n}\n\n// [[...slug]] - Optional catch-all (also matches the parent path)\n// app/docs/[[...slug]]/page.tsx\n// Matches: /docs, /docs/getting-started, /docs/a/b/c"
+        },
+        {
+          "label": "Route Groups: (folder)",
+          "code": "// Route groups let you ORGANIZE routes without affecting the URL\n\n// app/(marketing)/about/page.tsx  ->  /about\n// app/(marketing)/blog/page.tsx   ->  /blog\n// app/(shop)/products/page.tsx    ->  /products\n// app/(shop)/cart/page.tsx        ->  /cart\n\n// Route groups are useful for:\n// 1. Different layouts for different sections\n// app/(marketing)/layout.tsx  - Navbar + Footer\n// app/(shop)/layout.tsx       - Store navigation + Cart sidebar\n// 2. Organizing large projects\n// 3. Breaking out of nested layouts\n// 4. Different loading states per section"
+        },
+        {
+          "label": "Parallel Routes and Intercepting Routes",
+          "code": "// Parallel routes: Multiple pages in the same layout slot\n// app/@analytics/page.tsx     -> renders in @analytics slot\n// app/@chat/page.tsx          -> renders in @chat slot\n\nexport default function Layout({\n  children,\n  analytics,\n  chat,\n}: {\n  children: React.ReactNode;\n  analytics: React.ReactNode;\n  chat: React.ReactNode;\n}) {\n  return (\n    <div className=\"flex\">\n      <main>{children}</main>\n      <aside>{analytics}</aside>\n      <aside>{chat}</aside>\n    </div>\n  );\n}\n\n// Intercepting routes: (.)feed, (..)photo, (..)(...)modal\n// Great for modals that show content without full navigation"
+        },
+        {
+          "label": "generateStaticParams (Static Generation)",
+          "code": "// Pre-render dynamic routes at build time\n// src/app/blog/[slug]/page.tsx\n\nexport async function generateStaticParams() {\n  const posts = await fetch('https://api.example.com/posts').then(r => r.json());\n\n  return posts.map((post: { slug: string }) => ({\n    slug: post.slug,\n  }));\n}\n\n// This will pre-render /blog/first-post, /blog/second-post at build time\n// Any slugs NOT returned will be generated on-demand (ISR)\n\n// export const dynamicParams = false; // Only pre-built slugs work"
+        }
+      ]
+    },
+    {
+      "id": "navigation",
+      "title": "Linking and Navigation",
+      "description": "Client-side navigation, the Link component, and programmatic navigation.",
+      "items": [
+        {
+          "label": "The Link Component",
+          "code": "import Link from 'next/link';\n\nexport default function Navbar() {\n  return (\n    <nav className=\"flex gap-4 p-4\">\n      {/* Basic link - client-side navigation (no full page reload) */}\n      <Link href=\"/\" className=\"text-blue-600 hover:underline\">\n        Home\n      </Link>\n\n      {/* Dynamic link */}\n      <Link href={`/blog/${post.slug}`}>\n        {post.title}\n      </Link>\n\n      {/* With query parameters */}\n      <Link href=\"/search?q=nextjs\">\n        Search Next.js\n      </Link>\n\n      {/* Replace instead of push (no back button entry) */}\n      <Link href=\"/dashboard\" replace>\n        Dashboard\n      </Link>\n\n      {/* Prefetch disabled (for rarely visited links) */}\n      <Link href=\"/settings\" prefetch={false}>\n        Settings\n      </Link>\n    </nav>\n  );\n}"
+        },
+        {
+          "label": "Programmatic Navigation (useRouter)",
+          "code": "'use client';\n\nimport { useRouter } from 'next/navigation';\n\nexport default function NavigationButtons() {\n  const router = useRouter();\n\n  return (\n    <div className=\"flex gap-2\">\n      <button onClick={() => router.push('/dashboard')}>\n        Go to Dashboard\n      </button>\n      <button onClick={() => router.replace('/login')}>\n        Login (no back)\n      </button>\n      <button onClick={() => router.back()}>\n        Go Back\n      </button>\n      <button onClick={() => router.forward()}>\n        Go Forward\n      </button>\n      <button onClick={() => router.refresh()}>\n        Refresh (re-fetches, no full reload)\n      </button>\n    </div>\n  );\n}\n\n// Note: useRouter is a CLIENT-ONLY hook (requires 'use client')"
+        },
+        {
+          "label": "Link vs useRouter",
+          "table": {
+            "headers": ["Feature", "<Link>", "router.push()"],
+            "rows": [
+              ["Works in Server Components", "Yes (RSC-compatible)", "No (requires 'use client')"],
+              ["Automatic prefetch", "Yes (by default)", "Manual (.prefetch())"],
+              ["Keyboard support", "Yes (open in new tab)", "No (button only)"],
+              ["SEO (crawlers)", "Yes", "No (JS required)"],
+              ["Programmatic control", "No", "Yes"],
+              ["Recommended for", "Navigation elements", "After form submit, redirects"]
+            ]
+          }
+        },
+        {
+          "label": "Prefetching Behavior",
+          "text": "Next.js automatically prefetches <Link> components that are visible in the viewport:\n\n- Static routes: The full page HTML + RSC payload is prefetched and cached\n- Dynamic routes: Only the shared layout data is prefetched (not the page itself)\n- Disable: Use prefetch={false} for rarely-visited links\n- Prefetch only happens in production: In dev mode, all links cause full fetches"
+        }
+      ]
+    },
+    {
+      "id": "server-client-components",
+      "title": "Server Components vs Client Components",
+      "description": "Understanding the two component models in Next.js and when to use each.",
+      "items": [
+        {
+          "label": "Server Components (Default)",
+          "text": "In Next.js App Router, all components are Server Components by default. This means they run on the server, not in the browser.\n\nWhat Server Components CAN do:\n- Access databases directly (no API needed)\n- Read files from the filesystem\n- Access environment variables (even sensitive ones)\n- Fetch data without exposing tokens to the client\n- Reduce client JavaScript bundle size (large libraries stay on server)\n\nWhat Server Components CANNOT do:\n- Use hooks (useState, useEffect, useRouter, etc.)\n- Respond to user interactions (onClick, onChange)\n- Use browser-only APIs (localStorage, window, document)"
+        },
+        {
+          "label": "Client Components ('use client')",
+          "code": "'use client';  // This directive makes it a Client Component\n\nimport { useState, useEffect } from 'react';\n\nexport default function Counter() {\n  const [count, setCount] = useState(0);\n\n  useEffect(() => {\n    document.title = `Count: ${count}`;  // Browser-only API\n  }, [count]);\n\n  return (\n    <div className=\"p-4\">\n      <p>Count: {count}</p>\n      <button onClick={() => setCount(c => c + 1)}\n        className=\"px-4 py-2 bg-blue-500 text-white rounded\">\n        Increment\n      </button>\n    </div>\n  );\n}\n\n// When to use 'use client':\n// 1. Interactive UI (buttons, inputs, toggles)\n// 2. State management (useState, useReducer)\n// 3. Side effects (useEffect, useLayoutEffect)\n// 4. Custom hooks that need browser APIs\n// 5. Context providers\n// 6. Third-party component libraries"
+        },
+        {
+          "label": "Composition Pattern: Server + Client Together",
+          "code": "// BEST PRACTICE: Server component wrapping a client child\n\n// src/app/dashboard/page.tsx - SERVER COMPONENT (default)\nimport DashboardClient from './DashboardClient';\nimport { getDashboardData, getUserInfo } from '@/lib/data';\n\nexport default async function DashboardPage() {\n  // Data fetching happens on the server\n  const data = await getDashboardData();\n  const user = await getUserInfo();\n\n  // Pass data as props to client component\n  return (\n    <div>\n      <DashboardClient dashboardData={data} user={user} />\n    </div>\n  );\n}\n\n// src/app/dashboard/DashboardClient.tsx - CLIENT COMPONENT\n'use client';\n\nimport { useState } from 'react';\n\nexport default function DashboardClient({ dashboardData, user }: any) {\n  const [isExpanded, setIsExpanded] = useState(false);\n\n  return (\n    <div>\n      <h1 onClick={() => setIsExpanded(!isExpanded)}>\n        Welcome, {user.name}\n      </h1>\n      {isExpanded && <pre>{JSON.stringify(dashboardData, null, 2)}</pre>}\n    </div>\n  );\n}\n\n// Key insight: Fetch ONCE on the server, pass as props to the client."
+        },
+        {
+          "label": "Component Decision Guide",
+          "table": {
+            "headers": ["Need", "Component Type", "Why"],
+            "rows": [
+              ["Display data from database", "Server Component", "Direct access, no API, no client JS"],
+              ["Interactive form", "Client Component", "Needs useState, onSubmit"],
+              ["Fetch data then filter on client", "Server to Client props", "Fetch once on server, filter on client"],
+              ["Animations / drag-and-drop", "Client Component", "Requires browser APIs"],
+              ["SEO-critical content", "Server Component", "HTML is in the initial response"],
+              ["Real-time updates (WebSocket)", "Client Component", "Needs useEffect + WebSocket API"],
+              ["Third-party chart library", "Client Component", "Most need browser access"],
+              ["Static content / marketing page", "Server Component", "Zero client JS, fastest possible load"],
+              ["Context provider (theme, auth)", "Client Component with children", "Children can be Server Components"]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "data-fetching",
+      "title": "Data Fetching",
+      "description": "Best practices for fetching data in Server Components, including caching, deduplication, and revalidation.",
+      "items": [
+        {
+          "label": "Fetching Data in Server Components",
+          "code": "// src/app/users/page.tsx - Direct fetch in Server Component\n\nexport default async function UsersPage() {\n  // fetch() is extended by Next.js with caching and deduplication\n  const users = await fetch('https://api.example.com/users', {\n    next: { revalidate: 3600 },  // ISR: revalidate every hour\n  }).then(r => r.json());\n\n  return (\n    <ul>\n      {users.map((user: any) => <li key={user.id}>{user.name}</li>)}\n    </ul>\n  );\n}\n\n// The same fetch URL called in multiple components\n// Next.js DEDUPES the request (only one actual HTTP request)\n\n// Fetch with cache control:\nconst static = await fetch(url);  // Cached indefinitely (default)\nconst dynamic = await fetch(url, { cache: 'no-store' });  // Fresh every request\nconst timed = await fetch(url, { next: { revalidate: 60 } });  // ISR: 60 seconds"
+        },
+        {
+          "label": "Direct Database Access",
+          "code": "// Server Components can access databases DIRECTLY (no API needed)\nimport { sql } from '@vercel/postgres';\n\nexport default async function ProductPage({ params }: {\n  params: Promise<{ id: string }>;\n}) {\n  const { id } = await params;\n\n  // Direct database query - NO fetch wrapper needed!\n  const { rows } = await sql`SELECT * FROM products WHERE id = ${id}`;\n\n  if (rows.length === 0) {\n    return <div>Product not found</div>;\n  }\n\n  const product = rows[0];\n\n  return (\n    <div>\n      <h1 className=\"text-2xl font-bold\">{product.name}</h1>\n      <p className=\"text-zinc-600\">{product.description}</p>\n      <p className=\"text-lg font-semibold\">${product.price}</p>\n    </div>\n  );\n}\n\n// Benefits over traditional API approach:\n// - No API route boilerplate\n// - No JSON serialization overhead\n// - No network latency (same process)\n// - Direct type safety from the database"
+        },
+        {
+          "label": "Parallel Data Fetching",
+          "code": "// src/app/dashboard/page.tsx\n// Fetch multiple data sources in PARALLEL (much faster than sequential)\n\nexport default async function DashboardPage() {\n  // All three fetches start at the same time\n  const [user, posts, analytics] = await Promise.all([\n    fetch('https://api.example.com/user'),\n    fetch('https://api.example.com/posts'),\n    fetch('https://api.example.com/analytics'),\n  ]);\n\n  const [userData, postsData, analyticsData] = await Promise.all([\n    user.json(),\n    posts.json(),\n    analytics.json(),\n  ]);\n\n  return (\n    <div>\n      <UserProfile user={userData} />\n      <PostList posts={postsData} />\n      <AnalyticsChart data={analyticsData} />\n    </div>\n  );\n}\n\n// BAD: Sequential fetching (SLOW)\n// const user = await fetch('/api/user');\n// const posts = await fetch('/api/posts');  // waits for user!\n// const analytics = await fetch('/api/analytics');  // waits for posts!"
+        },
+        {
+          "label": "Sequential Data Fetching (Waterfalls)",
+          "code": "// Sometimes sequential is necessary (data depends on previous)\n\nexport default async function UserProfilePage({ params }: {\n  params: Promise<{ userId: string }>;\n}) {\n  const { userId } = await params;\n\n  // Must fetch user FIRST\n  const user = await fetch(`https://api.example.com/users/${userId}`).then(r => r.json());\n\n  // Then fetch team members (depends on user.teamId)\n  const team = await fetch(`https://api.example.com/teams/${user.teamId}`).then(r => r.json());\n\n  return (\n    <div>\n      <h1>{user.name}'s Team</h1>\n      <ul>{team.members.map((m: any) => <li key={m.id}>{m.name}</li>)}</ul>\n    </div>\n  );\n}\n\n// Tip: Use loading.tsx or Suspense to show UI while waterfalls happen"
+        },
+        {
+          "label": "Revalidation Strategies",
+          "table": {
+            "headers": ["Strategy", "Code", "Behavior"],
+            "rows": [
+              ["Default (static)", "fetch(url)", "Cached forever, never re-fetched"],
+              ["Time-based (ISR)", "fetch(url, { next: { revalidate: 60 } })", "Re-fetches every 60 seconds"],
+              ["Dynamic", "fetch(url, { cache: 'no-store' })", "Always fresh, never cached"],
+              ["On-demand (path)", "revalidatePath('/blog')", "Purges cache manually via Server Action"],
+              ["On-demand (tag)", "revalidateTag('posts')", "Purges specific fetch tagged with { next: { tags: ['posts'] } }"]
+            ]
+          }
+        },
+        {
+          "label": "On-Demand Revalidation",
+          "code": "'use server';\n\nimport { revalidatePath, revalidateTag } from 'next/cache';\n\nexport async function publishPost(formData: FormData) {\n  const title = formData.get('title');\n  const content = formData.get('content');\n\n  // Save to database...\n  await db.insert({ title, content });\n\n  // Method 1: Revalidate a specific path\n  revalidatePath('/blog');\n\n  // Method 2: Revalidate by tag (if you tagged your fetch)\n  revalidateTag('posts');\n\n  // Method 3: Revalidate entire layout\n  revalidatePath('/', 'layout');\n}"
+        },
+        {
+          "label": "Data Fetching Best Practices",
+          "text": [
+            "1. Fetch data as high up the tree as possible and pass down to children.",
+            "2. Use Promise.all for parallel data fetching - never waterfall unless dependent.",
+            "3. Avoid making API routes just to forward data - fetch directly from the server.",
+            "4. Use loading.tsx or Suspense boundaries for streaming loading states.",
+            "5. Tag your fetches with next: { tags: [...] } for targeted revalidation.",
+            "6. Use generateStaticParams for static pages at build time.",
+            "7. Move data fetching to a dedicated lib/data.ts file for reusability.",
+            "8. Use TypeScript to type your fetch responses.",
+            "9. Remember: fetch is cached by default - use cache: 'no-store' for dynamic data.",
+            "10. For client-side fetches (rare), use a library like SWR or TanStack Query."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "server-actions",
+      "title": "Server Actions and Mutations",
+      "description": "Form handling, mutations, and server-side processing with Server Actions.",
+      "items": [
+        {
+          "label": "What are Server Actions?",
+          "text": "Server Actions are async functions that run on the SERVER but can be called from the CLIENT. They are the primary way to handle form submissions and data mutations in Next.js App Router.\n\n- Defined with the 'use server' directive\n- Can be called from Server Components AND Client Components\n- Receive form data or arbitrary arguments\n- Can revalidate cache, redirect, return values\n- Have built-in CSRF protection\n- Support progressive enhancement (forms work without JavaScript)"
+        },
+        {
+          "label": "Server Action in a Server Component",
+          "code": "// src/app/contact/page.tsx\n\nexport default function ContactPage() {\n  async function submitContact(formData: FormData) {\n    'use server';  // This is a Server Action\n\n    const name = formData.get('name') as string;\n    const email = formData.get('email') as string;\n    const message = formData.get('message') as string;\n\n    // Validate\n    if (!name || !email) {\n      throw new Error('Name and email are required');\n    }\n\n    // Save to database\n    await db.insert({ table: 'contacts', values: { name, email, message } });\n\n    // Revalidate the page\n    revalidatePath('/contact');\n\n    // Optionally redirect\n    redirect('/thank-you');\n  }\n\n  return (\n    <form action={submitContact} className=\"space-y-4 max-w-md\">\n      <div>\n        <label htmlFor=\"name\">Name</label>\n        <input id=\"name\" name=\"name\" required className=\"w-full border rounded p-2\" />\n      </div>\n      <div>\n        <label htmlFor=\"email\">Email</label>\n        <input id=\"email\" name=\"email\" type=\"email\" required className=\"w-full border rounded p-2\" />\n      </div>\n      <div>\n        <label htmlFor=\"message\">Message</label>\n        <textarea id=\"message\" name=\"message\" rows={4} className=\"w-full border rounded p-2\" />\n      </div>\n      <button type=\"submit\" className=\"bg-blue-600 text-white px-6 py-2 rounded\">Send</button>\n    </form>\n  );\n}"
+        },
+        {
+          "label": "Server Action in a Separate File",
+          "code": "// src/lib/actions.ts\n'use server';\n\nimport { revalidatePath } from 'next/cache';\nimport { redirect } from 'next/navigation';\nimport { z } from 'zod';\n\nconst PostSchema = z.object({\n  title: z.string().min(1, 'Title is required').max(100),\n  content: z.string().min(10, 'Content must be at least 10 characters'),\n  published: z.boolean().default(false),\n});\n\nexport async function createPost(formData: FormData) {\n  // Parse and validate\n  const validated = PostSchema.parse({\n    title: formData.get('title'),\n    content: formData.get('content'),\n    published: formData.get('published') === 'on',\n  });\n\n  // Save to database\n  const post = await db.insert({ table: 'posts', values: validated });\n\n  // Revalidate related pages\n  revalidatePath('/blog');\n  revalidateTag('posts');\n\n  redirect(`/blog/${post.id}`);\n}\n\nexport async function deletePost(postId: string) {\n  await db.delete({ table: 'posts', where: { id: postId } });\n  revalidatePath('/blog');\n}\n\n// src/app/blog/new/page.tsx - Using the imported action\nimport { createPost } from '@/lib/actions';\n\nexport default function NewPostPage() {\n  return (\n    <form action={createPost} className=\"space-y-4\">\n      <input name=\"title\" placeholder=\"Title\" required />\n      <textarea name=\"content\" placeholder=\"Content\" rows={6} required />\n      <label><input type=\"checkbox\" name=\"published\" /> Publish immediately</label>\n      <button type=\"submit\">Create Post</button>\n    </form>\n  );\n}"
+        },
+        {
+          "label": "Server Action from Client Component",
+          "code": "'use client';\n\nimport { createPost } from '@/lib/actions';\nimport { useActionState } from 'react';\n\nexport default function CreatePostForm() {\n  const [state, formAction, isPending] = useActionState(\n    createPost,\n    { message: '', errors: {} }\n  );\n\n  return (\n    <form action={formAction} className=\"space-y-4\">\n      <div>\n        <input name=\"title\" placeholder=\"Post Title\" className=\"w-full border rounded p-2\" />\n        {state.errors?.title && <p className=\"text-red-500 text-sm\">{state.errors.title}</p>}\n      </div>\n      <div>\n        <textarea name=\"content\" placeholder=\"Content\" rows={6} className=\"w-full border rounded p-2\" />\n        {state.errors?.content && <p className=\"text-red-500 text-sm\">{state.errors.content}</p>}\n      </div>\n      <button type=\"submit\" disabled={isPending}\n        className=\"bg-blue-600 text-white px-6 py-2 rounded disabled:opacity-50\">\n        {isPending ? 'Creating...' : 'Create Post'}\n      </button>\n      {state.message && <p className=\"text-green-600\">{state.message}</p>}\n    </form>\n  );\n}"
+        },
+        {
+          "label": "Server Action Best Practices",
+          "text": [
+            "1. Always validate input - use zod, yup, or similar on the server.",
+            "2. Don't trust the client - re-validate everything in the Server Action.",
+            "3. Use useActionState for pending states and validation errors.",
+            "4. Don't expose sensitive operations - check auth inside the Server Action.",
+            "5. Use revalidatePath or revalidateTag to refresh stale data.",
+            "6. Use redirect after successful mutations (not in try/catch).",
+            "7. Keep actions in a separate lib/actions.ts file (with 'use server' top-level).",
+            "8. Error handling: wrap in try/catch for user-friendly error messages."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "route-handlers",
+      "title": "Route Handlers (API Routes)",
+      "description": "Creating REST API endpoints using the App Router's Route Handlers.",
+      "items": [
+        {
+          "label": "Basic Route Handler",
+          "code": "// src/app/api/users/route.ts\n// Responds at: GET /api/users\n\nimport { NextResponse } from 'next/server';\n\nexport async function GET(request: Request) {\n  const users = await db.query('SELECT * FROM users');\n  return NextResponse.json(users);\n}\n\nexport async function POST(request: Request) {\n  const body = await request.json();\n\n  if (!body.name || !body.email) {\n    return NextResponse.json(\n      { error: 'Name and email are required' },\n      { status: 400 }\n    );\n  }\n\n  const user = await db.insert({\n    table: 'users',\n    values: { name: body.name, email: body.email },\n  });\n\n  return NextResponse.json(user, { status: 201 });\n}"
+        },
+        {
+          "label": "Dynamic Route Handlers",
+          "code": "// src/app/api/users/[id]/route.ts\n// Responds at: GET /api/users/123\n\nimport { NextResponse } from 'next/server';\n\nexport async function GET(\n  request: Request,\n  { params }: { params: Promise<{ id: string }> }\n) {\n  const { id } = await params;\n  const user = await db.query('SELECT * FROM users WHERE id = $1', [id]);\n\n  if (!user) {\n    return NextResponse.json({ error: 'User not found' }, { status: 404 });\n  }\n\n  return NextResponse.json(user);\n}\n\nexport async function DELETE(\n  request: Request,\n  { params }: { params: Promise<{ id: string }> }\n) {\n  const { id } = await params;\n  await db.query('DELETE FROM users WHERE id = $1', [id]);\n  return NextResponse.json({ success: true });\n}"
+        },
+        {
+          "label": "Request and Response Utilities",
+          "code": "import { NextRequest, NextResponse } from 'next/server';\n\nexport async function GET(request: NextRequest) {\n  // Access query parameters\n  const searchParams = request.nextUrl.searchParams;\n  const query = searchParams.get('q');\n  const page = Number(searchParams.get('page')) || 1;\n\n  // Access cookies\n  const token = request.cookies.get('auth-token');\n\n  // Access headers\n  const userAgent = request.headers.get('user-agent');\n\n  // CORS headers\n  const response = NextResponse.json({ results });\n  response.headers.set('Access-Control-Allow-Origin', '*');\n\n  // Set cookies\n  response.cookies.set('session-id', 'abc123', {\n    httpOnly: true,\n    secure: true,\n    sameSite: 'lax',\n    maxAge: 60 * 60 * 24,\n  });\n\n  return response;\n}"
+        }
+      ]
+    },
+    {
+      "id": "middleware",
+      "title": "Middleware",
+      "description": "Running code before a request completes - authentication, redirects, headers, and more.",
+      "items": [
+        {
+          "label": "What is Middleware?",
+          "text": "Middleware is code that runs BEFORE a request is completed. It executes on the Edge Runtime and can:\n- Redirect or rewrite URLs\n- Check authentication and redirect to login\n- Add, modify, or remove headers\n- Set cookies\n- Implement A/B testing\n- Block requests based on geolocation, IP, or user-agent\n- Rate limit API calls\n\nMiddleware runs for EVERY request that matches its config.\nThe file MUST be at the root of your project or in src/:\n- middleware.ts (project root)\n- src/middleware.ts (if using src/ directory)"
+        },
+        {
+          "label": "Basic Middleware (Auth Protection)",
+          "code": "// src/middleware.ts\nimport { NextResponse } from 'next/server';\nimport type { NextRequest } from 'next/server';\n\nexport function middleware(request: NextRequest) {\n  const isLoggedIn = request.cookies.has('auth-token');\n  const isLoginPage = request.nextUrl.pathname === '/login';\n\n  // Redirect to login if not authenticated\n  if (!isLoggedIn && !isLoginPage) {\n    const loginUrl = new URL('/login', request.url);\n    loginUrl.searchParams.set('redirect', request.nextUrl.pathname);\n    return NextResponse.redirect(loginUrl);\n  }\n\n  // If already logged in and on login page, redirect to dashboard\n  if (isLoggedIn && isLoginPage) {\n    return NextResponse.redirect(new URL('/dashboard', request.url));\n  }\n\n  return NextResponse.next();\n}\n\nexport const config = {\n  matcher: [\n    '/dashboard/:path*',\n    '/settings/:path*',\n    '/login',\n    '/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)',\n  ],\n};"
+        },
+        {
+          "label": "Advanced Middleware Patterns",
+          "code": "// src/middleware.ts - Advanced examples\nimport { NextResponse } from 'next/server';\nimport type { NextRequest } from 'next/server';\n\nexport function middleware(request: NextRequest) {\n  // 1. Rewrite (serve different content without changing URL)\n  if (request.nextUrl.pathname === '/old-page') {\n    return NextResponse.rewrite(new URL('/new-page', request.url));\n  }\n\n  // 2. Add security headers\n  const response = NextResponse.next();\n  response.headers.set('X-Frame-Options', 'DENY');\n  response.headers.set('X-Content-Type-Options', 'nosniff');\n  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');\n\n  // 3. Redirect based on user-agent\n  const userAgent = request.headers.get('user-agent') || '';\n  const isBot = /bot|crawler|spider|crawling/i.test(userAgent);\n  if (isBot && request.nextUrl.pathname === '/') {\n    return NextResponse.rewrite(new URL('/seo', request.url));\n  }\n\n  return response;\n}\n\nexport const config = {\n  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],\n};"
+        },
+        {
+          "label": "Middleware Matcher Patterns",
+          "table": {
+            "headers": ["Pattern", "Matches", "Does NOT Match"],
+            "rows": [
+              ["/dashboard/:path*", "/dashboard, /dashboard/settings, /dashboard/users/123", "/api/dashboard"],
+              ["/about", "/about (exact)", "/about/team, /about-us"],
+              ["/((?!api).*)", "/about, /dashboard, /blog", "/api/users, /api/posts"],
+              ["/(en|fr)/:path*", "/en/about, /fr/contact", "/de/about"]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "loading-streaming",
+      "title": "Loading UI and Streaming",
+      "description": "Creating loading states and streaming content with Suspense boundaries.",
+      "items": [
+        {
+          "label": "loading.tsx - Automatic Loading States",
+          "code": "// src/app/dashboard/loading.tsx\n// Shows instantly while the page content is loading\n// Automatically wrapped in <Suspense>\n\nexport default function Loading() {\n  return (\n    <div className=\"flex items-center justify-center min-h-screen\">\n      <div className=\"flex flex-col items-center gap-4\">\n        <div className=\"w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin\" />\n        <p className=\"text-zinc-500\">Loading dashboard...</p>\n      </div>\n    </div>\n  );\n}\n\n// Or use skeleton placeholders:\n// <div className=\"animate-pulse space-y-4\">\n//   <div className=\"h-4 bg-zinc-200 rounded w-3/4\" />\n//   <div className=\"h-4 bg-zinc-200 rounded w-1/2\" />\n//   <div className=\"h-32 bg-zinc-200 rounded\" />\n// </div>"
+        },
+        {
+          "label": "Manual Suspense Boundaries (Streaming)",
+          "code": "// src/app/dashboard/page.tsx\n// Custom Suspense boundaries for selective streaming\n\nimport { Suspense } from 'react';\nimport UserProfile from '@/components/UserProfile';\nimport RecentPosts from '@/components/RecentPosts';\n\nfunction ProfileSkeleton() {\n  return <div className=\"h-24 bg-zinc-200 rounded animate-pulse\" />;\n}\n\nfunction PostsSkeleton() {\n  return (\n    <div className=\"space-y-2\">\n      {[1, 2, 3].map(i => <div key={i} className=\"h-12 bg-zinc-200 rounded animate-pulse\" />)}\n    </div>\n  );\n}\n\nexport default function DashboardPage() {\n  return (\n    <div className=\"space-y-6\">\n      <h1 className=\"text-2xl font-bold\">Dashboard</h1>\n\n      {/* Each Suspense boundary streams in independently */}\n      <Suspense fallback={<ProfileSkeleton />}>\n        <UserProfile />\n      </Suspense>\n\n      <Suspense fallback={<PostsSkeleton />}>\n        <RecentPosts />\n      </Suspense>\n    </div>\n  );\n}\n\n// Fast data appears first, slow data streams in later"
+        },
+        {
+          "label": "Instant Loading States",
+          "text": "Next.js provides instant loading states through two mechanisms:\n\n1. loading.tsx - Auto-wraps the page in Suspense. Shows immediately (no wait for network).\n2. Manual Suspense - Granular control over which parts stream in.\n\nHow streaming works:\n1. Browser requests a page\n2. Server sends the static HTML shell + Suspense fallbacks immediately\n3. As data fetches complete, chunks of HTML + RSC payload stream in\n4. Each Suspense boundary resolves independently\n5. The browser progressively renders content without a full reload"
+        }
+      ]
+    },
+    {
+      "id": "error-handling",
+      "title": "Error Handling",
+      "description": "Error boundaries, not-found pages, and global error handling.",
+      "items": [
+        {
+          "label": "error.tsx - Error Boundary",
+          "code": "// src/app/dashboard/error.tsx\n// Catches errors in the dashboard segment and descendants\n'use client';  // Error boundaries MUST be client components\n\nexport default function Error({\n  error,\n  reset,\n}: {\n  error: Error & { digest?: string };\n  reset: () => void;\n}) {\n  return (\n    <div className=\"flex flex-col items-center justify-center min-h-[50vh]\">\n      <h2 className=\"text-2xl font-bold text-red-600 mb-4\">Something went wrong!</h2>\n      <p className=\"text-zinc-600 mb-4\">{error.message || 'An unexpected error occurred.'}</p>\n      <button onClick={reset}\n        className=\"px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700\">\n        Try Again\n      </button>\n    </div>\n  );\n}\n\n// Nesting: You can have error.tsx at every segment level\n// app/error.tsx -> Catches errors in entire app\n// app/dashboard/error.tsx -> Catches dashboard errors only"
+        },
+        {
+          "label": "global-error.tsx (Root Catch-All)",
+          "code": "// src/app/global-error.tsx\n// Only catches errors in the root layout (not inside other error boundaries)\n// MUST include <html> and <body> tags\n// Only rendered in production\n\n'use client';\n\nexport default function GlobalError({\n  error,\n  reset,\n}: {\n  error: Error & { digest?: string };\n  reset: () => void;\n}) {\n  return (\n    <html>\n      <body>\n        <div className=\"flex flex-col items-center justify-center min-h-screen\">\n          <h1 className=\"text-4xl font-bold text-red-600 mb-4\">Critical Error</h1>\n          <p className=\"text-zinc-600 mb-4\">A critical error occurred.</p>\n          <button onClick={reset} className=\"px-4 py-2 bg-blue-600 text-white rounded\">\n            Reload\n          </button>\n        </div>\n      </body>\n    </html>\n  );\n}"
+        },
+        {
+          "label": "not-found.tsx - Custom 404 Pages",
+          "code": "// src/app/not-found.tsx - Global 404 page\n\nexport default function NotFound() {\n  return (\n    <div className=\"flex flex-col items-center justify-center min-h-[60vh]\">\n      <h1 className=\"text-6xl font-bold text-zinc-300 mb-4\">404</h1>\n      <h2 className=\"text-2xl font-semibold mb-2\">Page Not Found</h2>\n      <p className=\"text-zinc-500 mb-6\">The page you are looking for does not exist.</p>\n      <a href=\"/\" className=\"px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700\">Go Home</a>\n    </div>\n  );\n}\n\n// Trigger not found from a page:\nimport { notFound } from 'next/navigation';\n\nexport default async function BlogPost({ params }: {\n  params: Promise<{ slug: string }>;\n}) {\n  const { slug } = await params;\n  const post = await db.query('SELECT * FROM posts WHERE slug = $1', [slug]);\n\n  if (!post) {\n    notFound();  // Shows the nearest not-found.tsx\n  }\n\n  return <article>{post.content}</article>;\n}"
+        },
+        {
+          "label": "Error Handling Patterns",
+          "table": {
+            "headers": ["File", "Scope", "When to Use"],
+            "rows": [
+              ["error.tsx", "Segment + children", "Standard error boundary per route"],
+              ["global-error.tsx", "Entire app", "Root layout errors (critical failures)"],
+              ["not-found.tsx", "Segment + children", "Custom 404 for missing resources"],
+              ["loading.tsx", "Segment", "Show loading UI while page loads"],
+              ["try/catch", "Within components", "Graceful handling of expected errors"]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "metadata-seo",
+      "title": "Metadata and SEO",
+      "description": "Managing page metadata, Open Graph, Twitter cards, and sitemaps.",
+      "items": [
+        {
+          "label": "Static Metadata",
+          "code": "// src/app/about/page.tsx\nimport type { Metadata } from 'next';\n\nexport const metadata: Metadata = {\n  title: 'About Us | My App',\n  description: 'Learn more about our team and mission.',\n  openGraph: {\n    title: 'About My App',\n    description: 'Learn more about our team and mission.',\n    type: 'website',\n    url: 'https://myapp.com/about',\n    siteName: 'My App',\n    images: [{ url: 'https://myapp.com/og-about.png', width: 1200, height: 630 }],\n  },\n  twitter: {\n    card: 'summary_large_image',\n    title: 'About My App',\n    description: 'Learn more about our team and mission.',\n    images: ['https://myapp.com/og-about.png'],\n  },\n  alternates: {\n    canonical: 'https://myapp.com/about',\n  },\n};"
+        },
+        {
+          "label": "Dynamic Metadata (generateMetadata)",
+          "code": "// src/app/blog/[slug]/page.tsx\nimport type { Metadata } from 'next';\n\ninterface Props {\n  params: Promise<{ slug: string }>;\n}\n\nexport async function generateMetadata({ params }: Props): Promise<Metadata> {\n  const { slug } = await params;\n  const post = await fetch(`https://api.example.com/posts/${slug}`).then(r => r.json());\n\n  if (!post) {\n    return { title: 'Post Not Found' };\n  }\n\n  return {\n    title: `${post.title} | Blog`,\n    description: post.excerpt,\n    openGraph: {\n      title: post.title,\n      description: post.excerpt,\n      type: 'article',\n      publishedTime: post.publishedAt,\n      authors: [post.author],\n      images: [{ url: post.ogImage }],\n    },\n  };\n}\n\n// Note: generateMetadata runs on the server and supports async"
+        },
+        {
+          "label": "Metadata Object Reference",
+          "table": {
+            "headers": ["Field", "Purpose", "Example"],
+            "rows": [
+              ["title", "Browser tab title", "'Home | My App'"],
+              ["description", "Meta description", "'A great app for developers'"],
+              ["openGraph", "Social sharing cards", "{ title, description, images }"],
+              ["twitter", "Twitter card", "{ card: 'summary_large_image', title }"],
+              ["robots", "Search engine indexing", "{ index: true, follow: true }"],
+              ["canonical", "Canonical URL", "'https://example.com/page'"],
+              ["icons", "Favicon / app icons", "[{ url: '/favicon.ico' }]"],
+              ["alternates", "Language/hreflang", "{ languages: { 'en-US': '/en' } }"]
+            ]
+          }
+        },
+        {
+          "label": "Sitemap and Robots",
+          "code": "// src/app/sitemap.ts\nimport type { MetadataRoute } from 'next';\n\nexport default async function sitemap(): Promise<MetadataRoute.Sitemap> {\n  const staticPages = [\n    { url: 'https://myapp.com', lastModified: new Date(), priority: 1.0 },\n    { url: 'https://myapp.com/about', priority: 0.8 },\n  ];\n\n  const posts = await fetch('https://api.example.com/posts').then(r => r.json());\n\n  const blogPages = posts.map((post: any) => ({\n    url: `https://myapp.com/blog/${post.slug}`,\n    lastModified: new Date(post.updatedAt),\n    priority: 0.7,\n  }));\n\n  return [...staticPages, ...blogPages];\n}\n\n// src/app/robots.ts\nimport type { MetadataRoute } from 'next';\n\nexport default function robots(): MetadataRoute.Robots {\n  return {\n    rules: [\n      { userAgent: '*', allow: '/', disallow: '/admin/' },\n      { userAgent: 'GPTBot', disallow: '/' },  // Block AI crawlers\n    ],\n    sitemap: 'https://myapp.com/sitemap.xml',\n  };\n}"
+        }
+      ]
+    },
+    {
+      "id": "images-fonts",
+      "title": "Images and Font Optimization",
+      "description": "Using next/image for automatic image optimization and next/font for font loading.",
+      "items": [
+        {
+          "label": "next/image - Image Optimization",
+          "code": "import Image from 'next/image';\nimport profilePic from '@/public/profile.jpg';  // Local image\n\nexport default function Profile() {\n  return (\n    <div>\n      {/* Local image (imported) - dimensions auto-detected */}\n      <Image\n        src={profilePic}\n        alt=\"Profile photo\"\n        className=\"rounded-full\"\n        placeholder=\"blur\"  // Shows blur-up while loading\n        priority             // Preload (for above-the-fold images)\n      />\n\n      {/* Remote image - needs width, height, and remotePatterns */}\n      <Image\n        src=\"https://images.example.com/photo.jpg\"\n        alt=\"Remote photo\"\n        width={800}\n        height={600}\n        sizes=\"(max-width: 768px) 100vw, 50vw\"\n        quality={85}\n      />\n\n      {/* Fill parent container (must have position: relative) */}\n      <div className=\"relative w-full h-64\">\n        <Image\n          src={heroImage}\n          alt=\"Hero\"\n          fill\n          className=\"object-cover\"\n          sizes=\"100vw\"\n        />\n      </div>\n    </div>\n  );\n}\n\n// next/image provides:\n// - WebP/AVIF automatic format conversion\n// - Responsive images with srcSet\n// - Lazy loading (loading=\"lazy\" by default)\n// - Blur-up placeholders\n// - CLS prevention\n// - On-demand image optimization"
+        },
+        {
+          "label": "next/image Configuration",
+          "code": "// next.config.ts - Configure remote images\nimport type { NextConfig } from 'next';\n\nconst nextConfig: NextConfig = {\n  images: {\n    remotePatterns: [\n      {\n        protocol: 'https',\n        hostname: 'images.example.com',\n        pathname: '/**',\n      },\n      {\n        protocol: 'https',\n        hostname: '*.cloudfront.net',\n      },\n    ],\n    formats: ['image/avif', 'image/webp'],\n    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],\n    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],\n  },\n};\n\nexport default nextConfig;"
+        },
+        {
+          "label": "next/font - Font Optimization",
+          "code": "// src/app/layout.tsx - Google Fonts with next/font\nimport { Inter, JetBrains_Mono } from 'next/font/google';\n\nconst inter = Inter({\n  variable: '--font-inter',\n  subsets: ['latin'],\n  display: 'swap',\n});\n\nconst mono = JetBrains_Mono({\n  variable: '--font-mono',\n  subsets: ['latin'],\n  display: 'swap',\n});\n\nexport default function RootLayout({ children }: {\n  children: React.ReactNode;\n}) {\n  return (\n    <html lang=\"en\" className={`${inter.variable} ${mono.variable}`}>\n      <body className=\"font-sans\">\n        {children}\n      </body>\n    </html>\n  );\n}\n\n// Benefits of next/font:\n// - Self-hosted by default (no external network requests)\n// - Zero layout shift (size-adjust: 100% via CSS)\n// - Automatic subsetting (only loads needed characters)\n// - CSS font-display: swap (text visible immediately)"
+        },
+        {
+          "label": "Local Font Files",
+          "code": "// Local font files with next/font/local\nimport localFont from 'next/font/local';\n\nconst myFont = localFont({\n  src: '../public/fonts/my-custom-font.woff2',\n  display: 'swap',\n  variable: '--font-custom',\n});\n\n// Multiple weights\nconst clashDisplay = localFont({\n  src: [\n    { path: './fonts/ClashDisplay-Regular.woff2', weight: '400' },\n    { path: './fonts/ClashDisplay-Bold.woff2', weight: '700' },\n  ],\n  variable: '--font-clash',\n});\n\nexport default function Header() {\n  return (\n    <h1 className={myFont.className}>\n      Custom Font Heading\n    </h1>\n  );\n}"
+        }
+      ]
+    },
+    {
+      "id": "styling",
+      "title": "Styling in Next.js",
+      "description": "CSS Modules, Tailwind CSS, CSS-in-JS, and globals.",
+      "items": [
+        {
+          "label": "Tailwind CSS v4 (Default and Recommended)",
+          "code": "/* src/app/globals.css - Tailwind CSS v4 */\n@import \"tailwindcss\";\n\n@theme {\n  --color-primary: #3b82f6;\n  --color-secondary: #8b5cf6;\n  --font-sans: 'Inter', sans-serif;\n  --font-mono: 'JetBrains Mono', monospace;\n}\n\n@custom-variant dark (&:where(.dark, .dark *));\n\n/* Usage in components: */\nexport default function Card({ title, children }: {\n  title: string;\n  children: React.ReactNode;\n}) {\n  return (\n    <div className=\"rounded-xl border border-zinc-200 dark:border-zinc-700\n                    bg-white dark:bg-zinc-900 p-6 shadow-sm\n                    hover:shadow-md transition-shadow\">\n      <h3 className=\"text-lg font-semibold text-zinc-900 dark:text-zinc-100\">\n        {title}\n      </h3>\n      <div className=\"mt-2 text-sm text-zinc-600 dark:text-zinc-400\">\n        {children}\n      </div>\n    </div>\n  );\n}"
+        },
+        {
+          "label": "CSS Modules",
+          "code": "/* src/components/Button.module.css */\n.button {\n  padding: 0.5rem 1rem;\n  border-radius: 0.5rem;\n  font-weight: 600;\n  transition: all 0.2s;\n}\n.primary { background: #3b82f6; color: white; }\n.primary:hover { background: #2563eb; }\n\n// src/components/Button.tsx\nimport styles from './Button.module.css';\n\nexport default function Button({ variant = 'primary', children }: {\n  variant?: 'primary';\n  children: React.ReactNode;\n}) {\n  return (\n    <button className={`${styles.button} ${styles[variant]}`}>\n      {children}\n    </button>\n  );\n}\n\n// CSS Modules have automatic scoping (class names are hashed)\n// They work in both Server and Client Components"
+        },
+        {
+          "label": "Styling Comparison",
+          "table": {
+            "headers": ["Feature", "Tailwind CSS", "CSS Modules", "CSS-in-JS"],
+            "rows": [
+              ["Server Components", "Yes", "Yes", "No (needs client)"],
+              ["Runtime overhead", "None (build-time)", "None", "High (runtime generation)"],
+              ["Bundle size", "Small (purged)", "Small", "Large (runtime library)"],
+              ["Scoping", "Manual (classes)", "Automatic (hashed)", "Automatic (generated)"],
+              ["Dynamic styles", "Classes + props", "Compose classes", "Template literals"],
+              ["Best for", "Most projects", "Existing CSS skills", "Design systems"]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "forms-validation",
+      "title": "Forms and Validation",
+      "description": "Building forms with Server Actions, client-side validation, and error handling.",
+      "items": [
+        {
+          "label": "Form with Validation (Zod + useActionState)",
+          "code": "// src/lib/actions.ts\n'use server';\n\nimport { z } from 'zod';\n\nconst ContactSchema = z.object({\n  name: z.string().min(2, 'Name must be at least 2 characters'),\n  email: z.string().email('Invalid email address'),\n  message: z.string().min(10, 'Message must be at least 10 characters'),\n});\n\nexport async function submitContact(prevState: any, formData: FormData) {\n  const validated = ContactSchema.safeParse({\n    name: formData.get('name'),\n    email: formData.get('email'),\n    message: formData.get('message'),\n  });\n\n  if (!validated.success) {\n    return {\n      message: 'Please fix the errors below.',\n      errors: validated.error.flatten().fieldErrors,\n      data: { name: formData.get('name'), email: formData.get('email') },\n    };\n  }\n\n  try {\n    await sendEmail(validated.data);\n    return { message: 'Message sent successfully!', errors: {}, data: null };\n  } catch {\n    return { message: 'Failed to send. Please try again.', errors: {}, data: null };\n  }\n}\n\n// src/app/contact/page.tsx\n'use client';\n\nimport { useActionState } from 'react';\nimport { submitContact } from '@/lib/actions';\n\nexport default function ContactForm() {\n  const [state, formAction, isPending] = useActionState(submitContact, {\n    message: '', errors: {}, data: null,\n  });\n\n  return (\n    <form action={formAction} className=\"max-w-md space-y-4\">\n      <div>\n        <input name=\"name\" defaultValue={state.data?.name || ''}\n          className=\"w-full border rounded-lg p-2\" />\n        {state.errors?.name && <p className=\"text-red-500 text-sm\">{state.errors.name}</p>}\n      </div>\n      <div>\n        <input name=\"email\" type=\"email\" defaultValue={state.data?.email || ''}\n          className=\"w-full border rounded-lg p-2\" />\n        {state.errors?.email && <p className=\"text-red-500 text-sm\">{state.errors.email}</p>}\n      </div>\n      <div>\n        <textarea name=\"message\" rows={4} className=\"w-full border rounded-lg p-2\" />\n        {state.errors?.message && <p className=\"text-red-500 text-sm\">{state.errors.message}</p>}\n      </div>\n      <button type=\"submit\" disabled={isPending}\n        className=\"w-full bg-blue-600 text-white py-2 rounded-lg disabled:opacity-50\">\n        {isPending ? 'Sending...' : 'Send Message'}\n      </button>\n    </form>\n  );\n}"
+        }
+      ]
+    },
+    {
+      "id": "authentication",
+      "title": "Authentication Patterns",
+      "description": "Implementing authentication with Next.js - middleware, server-side checks, and providers.",
+      "items": [
+        {
+          "label": "Auth with NextAuth.js (Auth.js)",
+          "code": "// src/app/api/auth/[...nextauth]/route.ts\nimport NextAuth from 'next-auth';\nimport GithubProvider from 'next-auth/providers/github';\n\nconst handler = NextAuth({\n  providers: [\n    GithubProvider({\n      clientId: process.env.GITHUB_ID!,\n      clientSecret: process.env.GITHUB_SECRET!,\n    }),\n  ],\n  session: { strategy: 'jwt' },\n  pages: { signIn: '/login' },\n});\n\nexport { handler as GET, handler as POST };\n\n// Usage in Server Components:\nimport { getServerSession } from 'next-auth';\n\nexport default async function DashboardPage() {\n  const session = await getServerSession();\n\n  if (!session) {\n    return <p>Access denied. Please sign in.</p>;\n  }\n\n  return <div>Welcome, {session.user?.name}</div>;\n}"
+        },
+        {
+          "label": "Middleware Auth Protection",
+          "code": "// src/middleware.ts - Protect routes with middleware\nimport { NextResponse } from 'next/server';\nimport type { NextRequest } from 'next/server';\n\nexport function middleware(request: NextRequest) {\n  const token = request.cookies.get('next-auth.session-token')?.value\n    || request.cookies.get('__Secure-next-auth.session-token')?.value;\n\n  const isAuthPage = request.nextUrl.pathname.startsWith('/login');\n  const isProtected = request.nextUrl.pathname.startsWith('/dashboard');\n\n  if (!token && isProtected) {\n    const loginUrl = new URL('/login', request.url);\n    loginUrl.searchParams.set('callbackUrl', request.nextUrl.pathname);\n    return NextResponse.redirect(loginUrl);\n  }\n\n  if (token && isAuthPage) {\n    return NextResponse.redirect(new URL('/dashboard', request.url));\n  }\n\n  return NextResponse.next();\n}\n\nexport const config = { matcher: ['/dashboard/:path*', '/login'] };"
+        },
+        {
+          "label": "Auth Best Practices",
+          "text": [
+            "1. Use getServerSession() in Server Components - never expose session to client JS.",
+            "2. Protect API routes (Route Handlers) by checking session inside the handler.",
+            "3. Use middleware for redirect-based auth protection (login redirects).",
+            "4. Never store plain passwords - use bcrypt or argon2.",
+            "5. Use CSRF protection (built-in for Server Actions).",
+            "6. Implement rate limiting on login endpoints to prevent brute force.",
+            "7. Use secure: true and httpOnly: true for auth cookies in production.",
+            "8. Consider using Auth.js (NextAuth) for social login, magic links, etc."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "caching",
+      "title": "Caching and Revalidation",
+      "description": "Understanding Next.js caching mechanisms - Full Route Cache, Data Cache, Router Cache, and more.",
+      "items": [
+        {
+          "label": "How Caching Works in Next.js",
+          "text": "Next.js has multiple caching layers:\n\n1. Full Route Cache (Static): HTML + RSC payload cached on the server. Only for statically rendered routes.\n\n2. Data Cache: Results of fetch() calls cached. Configurable with cache and next.revalidate options. Persists across builds.\n\n3. Router Cache (Client-Side): RSC payload stored in the browser. Lasts 30 seconds for dynamic routes, 5 minutes for static. Enables instant back/forward navigation.\n\n4. Full Route Cache (Dynamic): NOT cached - rendered per request. Controlled by dynamic = 'force-dynamic' or cookies()/headers() usage."
+        },
+        {
+          "label": "Cache Configuration Examples",
+          "code": "// 1. Cached indefinitely (default for fetch without options)\nconst data = await fetch('https://api.example.com/data');\n\n// 2. Time-based revalidation (ISR) - cache for 60 seconds\nconst data = await fetch('https://api.example.com/data', {\n  next: { revalidate: 60 },\n});\n\n// 3. Dynamic - no cache, always fresh\nconst data = await fetch('https://api.example.com/data', {\n  cache: 'no-store',\n});\n\n// 4. Tag-based caching - manually purge specific data\nconst data = await fetch('https://api.example.com/posts', {\n  next: { tags: ['posts', 'homepage'] },\n});\n\n// 5. Opting a layout/page out of static rendering\nexport const dynamic = 'force-dynamic';\n\n// 6. Segment-level cache config\nexport const revalidate = 300;  // ISR: revalidate every 5 minutes\n\n// 7. On-demand revalidation\nrevalidatePath('/blog');\nrevalidateTag('posts');"
+        },
+        {
+          "label": "Cache Debugging",
+          "code": "// next.config.ts - Enable fetch logging\nconst nextConfig: NextConfig = {\n  logging: {\n    fetches: { fullUrl: true },\n  },\n};\n\n// Console output in dev:\n// GET https://api.example.com/posts 200 in 234ms (cache: HIT)\n// GET https://api.example.com/users 200 in 456ms (cache: MISS)\n// GET https://api.example.com/stats 200 in 123ms (cache: SKIP)\n\n// Cache statuses:\n// - HIT: Served from cache (fastest)\n// - MISS: Not in cache, fetched fresh\n// - SKIP: Skipped cache (no-store or dynamic)"
+        }
+      ]
+    },
+    {
+      "id": "rendering",
+      "title": "Rendering Strategies",
+      "description": "Static, Dynamic, Incremental, and Partial Prerendering - choosing the right strategy.",
+      "items": [
+        {
+          "label": "Rendering Strategies Overview",
+          "table": {
+            "headers": ["Strategy", "When It Renders", "Cache Duration", "Best For"],
+            "rows": [
+              ["Static (SSG)", "Build time", "Until rebuild", "Blog posts, marketing pages, docs"],
+              ["Dynamic (SSR)", "Request time", "Not cached", "Dashboards, user profiles, search"],
+              ["ISR", "Build + revalidation", "Time-based (configurable)", "E-commerce, CMS content"],
+              ["PPR", "Build + on-demand", "Static shell + dynamic holes", "Mix of static and dynamic"]
+            ]
+          }
+        },
+        {
+          "label": "Static Rendering (Default)",
+          "code": "// Static is the DEFAULT - no special configuration needed\n\nexport default async function AboutPage() {\n  const content = await fetch('https://api.example.com/about');\n  return <div>{content}</div>;\n}\n\n// For dynamic paths, use generateStaticParams:\nexport async function generateStaticParams() {\n  const posts = await fetch('https://api.example.com/posts').then(r => r.json());\n  return posts.map((p: any) => ({ slug: p.slug }));\n}\n\n// Static pages:\n// - Fastest possible TTFB (served from CDN edge)\n// - No server load\n// - SEO-friendly\n// - Cache forever (until next build)"
+        },
+        {
+          "label": "Incremental Static Regeneration (ISR)",
+          "code": "// ISR is the balance between static and dynamic\n\nexport default async function ProductPage({ params }: {\n  params: Promise<{ id: string }>;\n}) {\n  const { id } = await params;\n  const product = await fetch(`https://api.example.com/products/${id}`, {\n    next: { revalidate: 300 },  // Revalidate every 5 minutes\n  }).then(r => r.json());\n\n  return (\n    <div>\n      <h1>{product.name}</h1>\n      <p>{product.description}</p>\n      <p>${product.price}</p>\n    </div>\n  );\n}\n\n// Or route-level:\nexport const revalidate = 300;\n\n// How ISR works:\n// 1. Page is statically rendered at build time\n// 2. First request after 5 minutes triggers background revalidation\n// 3. User gets the STALE page (not waiting for rebuild)\n// 4. New page replaces cache when ready\n// Stale-while-revalidate pattern: users NEVER wait for a rebuild"
+        },
+        {
+          "label": "Partial Prerendering (PPR)",
+          "code": "// PPR combines static and dynamic in the SAME page\n// Requires: experimental: { ppr: true } in next.config.ts\n\nimport { Suspense } from 'react';\nimport ProductList from '@/components/ProductList';\n\nexport default function ProductsPage() {\n  return (\n    <div>\n      {/* Static shell - rendered at build time, cached */}\n      <h1 className=\"text-3xl font-bold\">Our Products</h1>\n\n      {/* Dynamic hole - renders per-request */}\n      <Suspense fallback={<div>Loading...</div>}>\n        <ProductList />\n      </Suspense>\n\n      {/* Static footer */}\n      <footer>2026 Our Store</footer>\n    </div>\n  );\n}\n\n// Benefits of PPR:\n// - Instant navigation (shell cached)\n// - Dynamic content without full page re-render\n// - Best of static + dynamic in a single request"
+        }
+      ]
+    },
+    {
+      "id": "env-variables",
+      "title": "Environment Variables and Configuration",
+      "description": "Managing environment variables across development, preview, and production.",
+      "items": [
+        {
+          "label": "Environment Variable Files",
+          "code": "# .env.local - Local dev (DO NOT commit)\nDATABASE_URL=postgresql://user:pass@localhost:5432/mydb\nAUTH_SECRET=my-super-secret-key\nNEXT_PUBLIC_API_URL=http://localhost:3000/api\n\n# .env - Defaults for all environments (COMMIT)\nNEXT_PUBLIC_APP_NAME=My App\n\n# File loading order (later files override earlier):\n# 1. .env.development (or .env.production)\n# 2. .env.local (always overrides!)\n# 3. .env\n\n# NEXT_PUBLIC_ variables are inlined at BUILD TIME\n# Non-public vars are only available in Server Components / API routes"
+        },
+        {
+          "label": "Accessing Environment Variables",
+          "code": "// In SERVER COMPONENTS - access ANY env variable:\nexport default async function AdminPage() {\n  const dbUrl = process.env.DATABASE_URL;  // NEVER exposed to the browser\n  return <div>{dbUrl ? 'Connected' : 'Not set'}</div>;\n}\n\n// In CLIENT COMPONENTS - only NEXT_PUBLIC_ variables:\n'use client';\n\nexport default function Header() {\n  const appName = process.env.NEXT_PUBLIC_APP_NAME;  // Inlined at build time\n  return <h1>{appName}</h1>;\n}\n\n// Type safety with @t3-oss/env-nextjs:\nimport { createEnv } from '@t3-oss/env-nextjs';\nimport { z } from 'zod';\n\nexport const env = createEnv({\n  server: {\n    DATABASE_URL: z.string().url(),\n    AUTH_SECRET: z.string().min(32),\n  },\n  client: {\n    NEXT_PUBLIC_API_URL: z.string().url(),\n  },\n  runtimeEnv: {\n    DATABASE_URL: process.env.DATABASE_URL,\n    AUTH_SECRET: process.env.AUTH_SECRET,\n    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,\n  },\n});"
+        }
+      ]
+    },
+    {
+      "id": "typescript",
+      "title": "TypeScript Integration",
+      "description": "TypeScript patterns, strict mode, and type helpers in Next.js.",
+      "items": [
+        {
+          "label": "Typed Patterns in Next.js",
+          "code": "// Page with typed params:\nexport default async function ProductPage({\n  params,\n  searchParams,\n}: {\n  params: Promise<{ category: string; slug: string }>;\n  searchParams: Promise<{ page?: string; sort?: string }>;\n}) {\n  const { category, slug } = await params;\n  const { page, sort } = await searchParams;\n}\n\n// Route Handler with typed params:\nexport async function GET(\n  request: NextRequest,\n  { params }: { params: Promise<{ id: string }> }\n) {\n  const { id } = await params;\n}\n\n// Typed fetch wrapper:\ninterface User { id: string; name: string; email: string; }\nasync function getUsers(): Promise<User[]> {\n  return fetch('https://api.example.com/users').then(r => r.json());\n}\n\n// Typed Server Action:\n'use server';\nimport { z } from 'zod';\n\nconst CreatePostSchema = z.object({\n  title: z.string().min(1),\n  content: z.string().min(10),\n});\n\nexport async function createPost(data: z.infer<typeof CreatePostSchema>) {\n  const validated = CreatePostSchema.parse(data);\n}"
+        }
+      ]
+    },
+    {
+      "id": "testing",
+      "title": "Testing",
+      "description": "Unit testing, integration testing, and end-to-end testing strategies.",
+      "items": [
+        {
+          "label": "Vitest for Unit and Integration Tests",
+          "code": "// vitest.config.ts\nimport { defineConfig } from 'vitest/config';\nimport path from 'path';\n\nexport default defineConfig({\n  test: {\n    environment: 'jsdom',\n    globals: true,\n  },\n  resolve: { alias: { '@': path.resolve(__dirname, './src') } },\n});\n\n// src/lib/format.test.ts\nimport { describe, expect, test } from 'vitest';\n\nfunction formatPrice(price: number): string {\n  return new Intl.NumberFormat('en-US', {\n    style: 'currency', currency: 'USD',\n  }).format(price);\n}\n\ndescribe('formatPrice', () => {\n  test('formats 1000 as $1,000.00', () => {\n    expect(formatPrice(1000)).toBe('$1,000.00');\n  });\n  test('handles zero', () => {\n    expect(formatPrice(0)).toBe('$0.00');\n  });\n});\n\n// package.json scripts:\n// \"test\": \"vitest\",\n// \"test:run\": \"vitest run\""
+        },
+        {
+          "label": "Playwright for E2E Tests",
+          "code": "// playwright.config.ts\nimport { defineConfig, devices } from '@playwright/test';\n\nexport default defineConfig({\n  testDir: './e2e',\n  fullyParallel: true,\n  retries: 2,\n  reporter: 'html',\n  use: { baseURL: 'http://localhost:3000' },\n  projects: [\n    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },\n    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },\n    { name: 'Mobile Safari', use: { ...devices['iPhone 15'] } },\n  ],\n});\n\n// e2e/home.spec.ts\nimport { test, expect } from '@playwright/test';\n\ntest('homepage renders correctly', async ({ page }) => {\n  await page.goto('/');\n  await expect(page.locator('h1')).toContainText('Welcome');\n});\n\ntest('navigation works', async ({ page }) => {\n  await page.goto('/');\n  await page.click('text=About');\n  await expect(page).toHaveURL(/.*about/);\n});"
+        },
+        {
+          "label": "Testing Best Practices",
+          "text": [
+            "1. Use Vitest for unit tests (fast, native TypeScript, compatible with Next.js).",
+            "2. Use React Testing Library for component tests.",
+            "3. Use Playwright for E2E tests (multi-browser, mobile emulation).",
+            "4. Run unit tests on every commit (fast, under 30 seconds).",
+            "5. Run E2E tests before deployment (slower but comprehensive).",
+            "6. Use MSW (Mock Service Worker) to mock API in tests.",
+            "7. Test accessibility with @axe-core/playwright.",
+            "8. Keep tests close to the code they test."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "deployment",
+      "title": "Deployment and Hosting",
+      "description": "Deploying Next.js applications to Vercel, Docker, and other platforms.",
+      "items": [
+        {
+          "label": "Vercel Deployment (Zero Config)",
+          "code": "# 1. Push to GitHub\nuser@dev:~$ git add .\nuser@dev:~$ git commit -m \"Initial commit\"\nuser@dev:~$ git push -u origin main\n\n# 2. Go to https://vercel.com/new\n# 3. Import your GitHub repository\n# 4. Vercel auto-detects Next.js - no configuration needed!\n# 5. Set environment variables in Vercel dashboard\n# 6. Deploy!\n\n# Features you get automatically:\n# - Automatic HTTPS/SSL\n# - Global CDN (100+ edge locations)\n# - Automatic ISR\n# - Image optimization\n# - Preview deployments per PR\n# - Serverless functions\n# - Analytics and Speed Insights"
+        },
+        {
+          "label": "Docker Deployment (Self-Hosted)",
+          "code": "# Dockerfile - Multi-stage build for minimal image size\nFROM node:22-alpine AS builder\nWORKDIR /app\nCOPY package*.json ./\nRUN npm ci\nCOPY . .\nRUN npm run build\n\nFROM node:22-alpine AS runner\nWORKDIR /app\n\nENV NODE_ENV=production\nENV NEXT_TELEMETRY_DISABLED=1\n\nRUN addgroup --system --gid 1001 nodejs\nRUN adduser --system --uid 1001 nextjs\n\nCOPY --from=builder /app/public ./public\nCOPY --from=builder /app/.next/standalone ./\nCOPY --from=builder /app/.next/static ./.next/static\n\nRUN chown -R nextjs:nodejs /app\nUSER nextjs\n\nEXPOSE 3000\nENV PORT=3000\nENV HOSTNAME=\"0.0.0.0\"\n\nCMD [\"node\", \"server.js\"]\n\n# next.config.ts - Enable standalone output\nconst nextConfig: NextConfig = {\n  output: 'standalone',\n};\n\n# Build and run:\nuser@dev:~$ docker build -t my-next-app .\nuser@dev:~$ docker run -d -p 3000:3000 my-next-app"
+        },
+        {
+          "label": "Deployment Options",
+          "table": {
+            "headers": ["Platform", "Type", "Best For"],
+            "rows": [
+              ["Vercel", "Managed (serverless)", "Most projects - zero config, best Next.js integration"],
+              ["Docker (any cloud)", "Self-hosted (container)", "Full control, compliance requirements"],
+              ["AWS Amplify", "Managed", "AWS ecosystem, CI/CD built-in"],
+              ["Google Cloud Run", "Serverless container", "GCP integration, auto-scaling"],
+              ["Netlify", "Managed", "Static export with serverless functions"],
+              ["Static Export", "Static files only", "Pure static sites (output: 'export')"]
+            ]
+          }
+        },
+        {
+          "label": "Static Export",
+          "code": "// next.config.ts\nconst nextConfig: NextConfig = {\n  output: 'export',  // Produces 'out/' directory with pure HTML+CSS+JS\n  images: { unoptimized: true },\n};\n\n// Limitations:\n// - No Server Components (runs on client)\n// - No API Routes / Route Handlers\n// - No Server Actions\n// - No ISR\n// - No Middleware\n// - No image optimization\n\n# Build:\nuser@dev:~$ npm run build\nuser@dev:~$ ls out/\n  404.html  index.html  _next/  about/\n# Deploy 'out/' to any static host"
+        }
+      ]
+    },
+    {
+      "id": "internationalization",
+      "title": "Internationalization (i18n)",
+      "description": "Multi-language support with the App Router - routing and content strategies.",
+      "items": [
+        {
+          "label": "i18n Routing with Middleware",
+          "code": "// src/middleware.ts - Handle locale-based routing\nimport { NextResponse } from 'next/server';\nimport type { NextRequest } from 'next/server';\n\nconst locales = ['en', 'fr', 'de', 'es', 'ja'];\nconst defaultLocale = 'en';\n\nfunction getLocale(request: NextRequest): string {\n  const cookieLocale = request.cookies.get('NEXT_LOCALE')?.value;\n  if (cookieLocale && locales.includes(cookieLocale)) return cookieLocale;\n\n  const acceptLang = request.headers.get('accept-language');\n  if (acceptLang) {\n    const preferred = acceptLang.split(',')\n      .map(l => l.split(';')[0].trim().split('-')[0])\n      .find(l => locales.includes(l));\n    if (preferred) return preferred;\n  }\n  return defaultLocale;\n}\n\nexport function middleware(request: NextRequest) {\n  const { pathname } = request.nextUrl;\n  const pathLocale = locales.find(locale =>\n    pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`\n  );\n\n  if (pathLocale) return NextResponse.next();\n\n  const locale = getLocale(request);\n  return NextResponse.redirect(new URL(`/${locale}${pathname}`, request.url));\n}\n\nexport const config = { matcher: ['/((?!api|_next|favicon).*)'] };"
+        },
+        {
+          "label": "next-intl Translation Messages",
+          "code": "// messages/en.json\n{\n  \"home\": {\n    \"title\": \"Welcome to My App\",\n    \"subtitle\": \"Built with Next.js\"\n  },\n  \"common\": {\n    \"nav\": { \"home\": \"Home\", \"about\": \"About\" }\n  }\n}\n\n// Usage in components:\nimport { useTranslations } from 'next-intl';\n\nexport default function HomePage() {\n  const t = useTranslations('home');\n  return <h1>{t('title')}</h1>;\n}\n\n// Server Component usage:\nimport { getTranslations } from 'next-intl/server';\n\nexport default async function AboutPage() {\n  const t = await getTranslations('common.nav');\n  return <nav><a href=\"/\">{t('home')}</a></nav>;\n}"
+        }
+      ]
+    },
+    {
+      "id": "performance",
+      "title": "Performance Optimization",
+      "description": "Optimizing Next.js applications for speed, LCP, and Core Web Vitals.",
+      "items": [
+        {
+          "label": "Core Web Vitals Optimization",
+          "text": "LCP (Largest Contentful Paint):\n- Use next/image with priority for above-the-fold images\n- Use next/font with display: 'swap'\n- Minimize layout shift by specifying image dimensions\n- Use static rendering for content-heavy pages\n\nFID (First Input Delay) / TIN (Total Interaction Delay):\n- Minimize client JavaScript - keep components server by default\n- Use dynamic(() => import(...)) for heavy client components\n- Avoid 'use client' when a server component suffices\n\nCLS (Cumulative Layout Shift):\n- Always specify width and height on images\n- Use CSS aspect-ratio for video embeds and dynamic containers\n- Use consistent font sizes (avoid FOUT/FOIT with next/font)"
+        },
+        {
+          "label": "Bundle Size Optimization",
+          "code": "// 1. Dynamic imports - lazy load heavy components\nimport dynamic from 'next/dynamic';\n\nconst HeavyChart = dynamic(() => import('@/components/Chart'), {\n  loading: () => <div className=\"h-64 bg-zinc-200 animate-pulse rounded\" />,\n  ssr: false,  // Skip SSR (client-only library)\n});\n\nexport default function AnalyticsPage() {\n  return (\n    <div>\n      <h1>Analytics</h1>\n      <HeavyChart />  {/* Loads only when needed */}\n    </div>\n  );\n}\n\n// 2. Bundle analyzer\n// next.config.ts\nconst withBundleAnalyzer = require('@next/bundle-analyzer')({\n  enabled: process.env.ANALYZE === 'true',\n});\nmodule.exports = withBundleAnalyzer(nextConfig);\n// Run: ANALYZE=true npm run build\n\n// 3. Optimize package imports\n// import Button from '@ui-library/Button';  // Better than barrel imports\n\n// 4. Use modularizeImports config\nconst nextConfig: NextConfig = {\n  modularizeImports: {\n    'lodash': { transform: 'lodash/{{member}}' },\n  },\n};"
+        },
+        {
+          "label": "Performance Checklist",
+          "text": [
+            "Use Server Components by default - minimize client JS bundle.",
+            "Use next/image with priority on hero images.",
+            "Use next/font with display: 'swap'.",
+            "Implement streaming with Suspense boundaries.",
+            "Use ISR instead of SSR for content that doesn't need real-time freshness.",
+            "Dynamic import heavy client components that are below the fold.",
+            "Configure remotePatterns for optimized remote images.",
+            "Enable PPR (experimental: { ppr: true }) for pages with mixed content.",
+            "Minimize Third-Party scripts - use next/script with strategy=\"afterInteractive\".",
+            "Use the Next.js bundle analyzer to find large dependencies.",
+            "Set proper Cache-Control headers for static assets.",
+            "Run Lighthouse CI to track performance regressions."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "security",
+      "title": "Security Best Practices",
+      "description": "Securing your Next.js application against common web vulnerabilities.",
+      "items": [
+        {
+          "label": "Built-in Security Protections",
+          "code": "// 1. XSS Protection (automatic)\n// React escapes values by default:\nexport default function Profile({ user }: { user: { name: string } }) {\n  // SAFE: React escapes this automatically\n  return <div>{user.name}</div>;\n}\n\n// 2. CSRF Protection (Server Actions)\n// Next.js generates a CSRF token for Server Actions automatically\n// No additional configuration needed\n\n// 3. HTTP Security Headers (in next.config.ts)\nconst nextConfig: NextConfig = {\n  async headers() {\n    return [\n      {\n        source: '/(.*)',\n        headers: [\n          { key: 'X-Frame-Options', value: 'DENY' },\n          { key: 'X-Content-Type-Options', value: 'nosniff' },\n          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },\n          { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },\n        ],\n      },\n    ];\n  },\n};"
+        },
+        {
+          "label": "Security Checklist",
+          "text": [
+            "Set security headers (HSTS, X-Frame-Options, CSP) in next.config.ts.",
+            "Sanitize user input - use zod for validation in Server Actions.",
+            "Never trust client-side validation - always validate on the server.",
+            "Use httpOnly and secure cookies for session tokens.",
+            "Never expose env variables with secrets to the client.",
+            "Implement rate limiting on API routes.",
+            "Sanitize HTML before using dangerouslySetInnerHTML.",
+            "Implement authentication checks in EACH Server Action and Route Handler.",
+            "Audit dependencies regularly with npm audit.",
+            "Use 'server-only' package to mark server-only modules.",
+            "Keep Next.js and all dependencies updated."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "production-checklist",
+      "title": "Production Checklist and Migration",
+      "description": "Everything you need to check before going to production, plus migrating from Pages Router.",
+      "items": [
+        {
+          "label": "Production Readiness Checklist",
+          "text": [
+            "npm run build succeeds without errors (zero TypeScript errors).",
+            "ESLint passes with npm run lint.",
+            "All environment variables are set in production.",
+            "Security headers are configured (HSTS, CSP, X-Frame-Options).",
+            "Images use next/image with remotePatterns configured.",
+            "Fonts use next/font (no external Google Fonts links).",
+            "Server Actions validate all input (zod, yup, or custom).",
+            "Auth is protected on server - not just frontend redirects.",
+            "Error boundaries are set up (error.tsx, not-found.tsx).",
+            "Loading states are implemented (loading.tsx, Suspense).",
+            "Metadata is set for all pages (generateMetadata or static metadata export).",
+            "Sitemap and robots.txt are configured.",
+            "Bundle size is optimized (check with bundle analyzer).",
+            "Performance is tested (Lighthouse, Core Web Vitals).",
+            "Caching strategy is defined (ISR / static / dynamic per route).",
+            "Environment variables are validated at startup.",
+            "Analytics and error monitoring are set up.",
+            "Rate limiting is configured on API routes.",
+            "Database connection pooling is set up for production.",
+            "CI/CD pipeline runs tests, lint, and type checking before deploy."
+          ]
+        },
+        {
+          "label": "Migrating from Pages Router to App Router",
+          "text": "Migration is incremental - you can run both routers side by side.\n\nStep 1: Add App Router\n- Create src/app/layout.tsx (wraps all pages, including Pages Router)\n- Keep existing pages/ directory - both work together\n\nStep 2: Migrate Routing\n- pages/index.tsx -> app/page.tsx\n- pages/about.tsx -> app/about/page.tsx\n- pages/blog/[slug].tsx -> app/blog/[slug]/page.tsx\n- pages/_app.tsx -> app/layout.tsx (root layout)\n- pages/_document.tsx -> Remove (metadata handled in layout)\n- pages/api/* -> app/api/*/route.ts (or keep as-is)\n\nStep 3: Replace Hooks\n- useRouter() from next/router -> useRouter() from next/navigation\n- getServerSideProps -> Server Component with direct fetch\n- getStaticProps -> Remove (fetch directly in component)\n- getStaticPaths -> generateStaticParams()\n\nStep 4: Update Components\n- Remove 'use client' from components that don't need interactivity\n- Replace next/head with generateMetadata or metadata export\n- Replace custom _error with error.tsx and not-found.tsx\n\nThe Pages Router and App Router can coexist. Migrate one page at a time."
+        }
+      ]
+    },
+    {
+      "id": "summary",
+      "title": "Summary and Next Steps",
+      "description": "Key takeaways and what to explore next.",
+      "items": [
+        {
+          "label": "Key Takeaways",
+          "text": [
+            "Next.js is a full-stack React framework with file-system routing, hybrid rendering, and built-in optimizations.",
+            "App Router uses Server Components by default - only add 'use client' when interactivity is needed.",
+            "Fetch data directly in Server Components - no API routes needed as middleware.",
+            "Server Actions handle form mutations with built-in CSRF protection and progressive enhancement.",
+            "Caching is multi-layered (Route Cache, Data Cache, Router Cache) with on-demand revalidation.",
+            "ISR provides stale-while-revalidate pattern - users never wait for page rebuilds.",
+            "PPR (Partial Prerendering) combines static and dynamic rendering in a single page.",
+            "Images and fonts are automatically optimized via next/image and next/font.",
+            "Middleware runs at the edge for authentication, redirects, headers, and A/B testing.",
+            "Deploy to Vercel for zero-config hosting, or use Docker for self-hosted deployments."
+          ]
+        },
+        {
+          "label": "Next Steps",
+          "text": [
+            "1. Create a new Next.js project and build a simple blog with the App Router.",
+            "2. Implement Server Actions for a contact form with validation (zod).",
+            "3. Add authentication with NextAuth.js and protect routes with middleware.",
+            "4. Configure ISR for content pages and test cache revalidation behavior.",
+            "5. Set up PPR (Partial Prerendering) for a product listing page.",
+            "6. Deploy to Vercel and enable Analytics and Speed Insights.",
+            "7. Write E2E tests with Playwright for critical user flows.",
+            "8. Run Lighthouse audit and optimize Core Web Vitals."
+          ]
+        }
+      ]
+    }
+  ]
+}
