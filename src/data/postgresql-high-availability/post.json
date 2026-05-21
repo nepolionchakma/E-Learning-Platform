@@ -28,10 +28,22 @@
         "Before we dive into the setup, let's understand how the pieces fit together."
       ],
       "cards": [
-        { "title": "PostgreSQL", "desc": "The world's most advanced open-source relational database. Provides streaming replication for keeping replicas in sync with the primary." },
-        { "title": "Patroni", "desc": "A Python-based HA template for PostgreSQL. Automates leader election, replica management, and handles failover when the primary fails." },
-        { "title": "ETCD", "desc": "A distributed key-value store that acts as the source of truth. Stores cluster state, leader information, and coordinates decisions between Patroni nodes." },
-        { "title": "HAProxy", "desc": "A high-performance TCP/HTTP load balancer. Routes read/write traffic to the appropriate PostgreSQL node based on Patroni's REST API health checks." }
+        {
+          "title": "PostgreSQL",
+          "desc": "The world's most advanced open-source relational database. Provides streaming replication for keeping replicas in sync with the primary."
+        },
+        {
+          "title": "Patroni",
+          "desc": "A Python-based HA template for PostgreSQL. Automates leader election, replica management, and handles failover when the primary fails."
+        },
+        {
+          "title": "ETCD",
+          "desc": "A distributed key-value store that acts as the source of truth. Stores cluster state, leader information, and coordinates decisions between Patroni nodes."
+        },
+        {
+          "title": "HAProxy",
+          "desc": "A high-performance TCP/HTTP load balancer. Routes read/write traffic to the appropriate PostgreSQL node based on Patroni's REST API health checks."
+        }
       ]
     },
     {
@@ -58,16 +70,52 @@
         "You need at least 3 Linux servers (physical or virtual) to build a high-availability cluster. A 3-node setup gives you reliable failover and tolerates the loss of any single node."
       ],
       "tables": {
-        "headers": ["Resource", "Requirement", "Notes"],
+        "headers": [
+          "Resource",
+          "Requirement",
+          "Notes"
+        ],
         "rows": [
-          ["Servers", "3 nodes (minimum)", "1 leader + 2 replicas"],
-          ["OS", "Ubuntu 22.04 / Debian 12 / RHEL 9", "Tested on all major distributions"],
-          ["CPU", "2 cores per node", "4+ cores recommended for production"],
-          ["RAM", "4 GB per node", "8+ GB for production workloads"],
-          ["Disk", "20 GB system + data drives", "SSD recommended, separate data volume"],
-          ["Network", "1 Gbps between nodes", "Low latency is critical for replication"],
-          ["PostgreSQL", "Version 16, 17, or 18", "This guide uses PostgreSQL 18"],
-          ["Python", "3.8 or higher", "Required for Patroni"]
+          [
+            "Servers",
+            "3 nodes (minimum)",
+            "1 leader + 2 replicas"
+          ],
+          [
+            "OS",
+            "Ubuntu 22.04 / Debian 12 / RHEL 9",
+            "Tested on all major distributions"
+          ],
+          [
+            "CPU",
+            "2 cores per node",
+            "4+ cores recommended for production"
+          ],
+          [
+            "RAM",
+            "4 GB per node",
+            "8+ GB for production workloads"
+          ],
+          [
+            "Disk",
+            "20 GB system + data drives",
+            "SSD recommended, separate data volume"
+          ],
+          [
+            "Network",
+            "1 Gbps between nodes",
+            "Low latency is critical for replication"
+          ],
+          [
+            "PostgreSQL",
+            "Version 16, 17, or 18",
+            "This guide uses PostgreSQL 18"
+          ],
+          [
+            "Python",
+            "3.8 or higher",
+            "Required for Patroni"
+          ]
         ]
       },
       "infoBox": {
@@ -79,14 +127,56 @@
           "label": "Package Installation by Node - Quick Reference",
           "text": "The table below shows exactly which packages to install on each VM. All commands use `sudo apt install`.",
           "table": {
-            "headers": ["Package", "Node 0 (.200)", "Node 1 (.201)", "Node 2 (.202)", "Install Command"],
+            "headers": [
+              "Package",
+              "Node 0 (.200)",
+              "Node 1 (.201)",
+              "Node 2 (.202)",
+              "Install Command"
+            ],
             "rows": [
-              ["ETCD", "✅", "✅", "✅", "sudo apt install etcd -y"],
-              ["PostgreSQL 18", "✅", "✅", "✅", "sudo apt install postgresql-18 postgresql-client-18 -y"],
-              ["Python 3 + pip + venv", "✅", "✅", "✅", "sudo apt install python3 python3-pip python3-venv libpq-dev -y"],
-              ["Patroni", "✅", "✅", "✅", "sudo pip3 install patroni[etcd3]"],
-              ["HAProxy", "✅ On node0 only", "Optional", "Optional", "sudo apt install haproxy -y"],
-              ["pgBackRest", "✅ On leader", "Optional", "Optional", "sudo apt install pgbackrest -y"]
+              [
+                "ETCD",
+                "✅",
+                "✅",
+                "✅",
+                "sudo apt install etcd -y"
+              ],
+              [
+                "PostgreSQL 18",
+                "✅",
+                "✅",
+                "✅",
+                "sudo apt install postgresql-18 postgresql-client-18 -y"
+              ],
+              [
+                "Python 3 + pip + venv",
+                "✅",
+                "✅",
+                "✅",
+                "sudo apt install python3 python3-pip python3-venv libpq-dev -y"
+              ],
+              [
+                "Patroni",
+                "✅",
+                "✅",
+                "✅",
+                "sudo pip3 install patroni[etcd3]"
+              ],
+              [
+                "HAProxy",
+                "✅ On node0 only",
+                "Optional",
+                "Optional",
+                "sudo apt install haproxy -y"
+              ],
+              [
+                "pgBackRest",
+                "✅ On leader",
+                "Optional",
+                "Optional",
+                "sudo apt install pgbackrest -y"
+              ]
             ]
           }
         },
@@ -343,33 +433,116 @@
             {
               "label": "Per-Node Settings Summary",
               "table": {
-                "headers": ["Setting", "Node 0 (.200)", "Node 1 (.201)", "Node 2 (.202)"],
+                "headers": [
+                  "Setting",
+                  "Node 0 (.200)",
+                  "Node 1 (.201)",
+                  "Node 2 (.202)"
+                ],
                 "rows": [
-                  ["PostgreSQL Port", "5432", "5432", "5432"],
-                  ["Patroni REST API", "8008", "8008", "8008"],
-                  ["Data Directory", "/data/patroni", "/data/patroni", "/data/patroni"],
-                  ["Node Name", "node0-pg", "node1-pg", "node2-pg"],
-                  ["connect_address IP", "192.168.68.200", "192.168.68.201", "192.168.68.202"],
-                  ["listen IP", "192.168.68.200", "192.168.68.201", "192.168.68.202"]
+                  [
+                    "PostgreSQL Port",
+                    "5432",
+                    "5432",
+                    "5432"
+                  ],
+                  [
+                    "Patroni REST API",
+                    "8008",
+                    "8008",
+                    "8008"
+                  ],
+                  [
+                    "Data Directory",
+                    "/data/patroni",
+                    "/data/patroni",
+                    "/data/patroni"
+                  ],
+                  [
+                    "Node Name",
+                    "node0-pg",
+                    "node1-pg",
+                    "node2-pg"
+                  ],
+                  [
+                    "connect_address IP",
+                    "192.168.68.200",
+                    "192.168.68.201",
+                    "192.168.68.202"
+                  ],
+                  [
+                    "listen IP",
+                    "192.168.68.200",
+                    "192.168.68.201",
+                    "192.168.68.202"
+                  ]
                 ]
               }
             },
             {
               "label": "Configuration Parameters Explained",
               "table": {
-                "headers": ["Parameter", "Value", "Purpose"],
+                "headers": [
+                  "Parameter",
+                  "Value",
+                  "Purpose"
+                ],
                 "rows": [
-                  ["scope", "pg-ha-cluster", "Unique cluster name within ETCD"],
-                  ["ttl", "30", "Time-to-live for leader lock (seconds)"],
-                  ["loop_wait", "10", "Patroni loop interval (seconds)"],
-                  ["retry_timeout", "10", "Max retry timeout for DCS operations"],
-                  ["maximum_lag_on_failover", "1048576", "Max replication lag before promoting replica"],
-                  ["use_pg_rewind", "true", "Allow former leader to rejoin as replica"],
-                  ["use_slots", "true", "Use replication slots to prevent WAL loss"],
-                  ["wal_level", "replica", "Required for streaming replication"],
-                  ["max_wal_senders", "10", "Max concurrent WAL sender processes"],
-                  ["data_dir", "/data/patroni", "PostgreSQL data directory (must exist)"],
-                  ["bin_dir", "/usr/lib/postgresql/18/bin", "PostgreSQL binary location (adjust for your version)"]
+                  [
+                    "scope",
+                    "pg-ha-cluster",
+                    "Unique cluster name within ETCD"
+                  ],
+                  [
+                    "ttl",
+                    "30",
+                    "Time-to-live for leader lock (seconds)"
+                  ],
+                  [
+                    "loop_wait",
+                    "10",
+                    "Patroni loop interval (seconds)"
+                  ],
+                  [
+                    "retry_timeout",
+                    "10",
+                    "Max retry timeout for DCS operations"
+                  ],
+                  [
+                    "maximum_lag_on_failover",
+                    "1048576",
+                    "Max replication lag before promoting replica"
+                  ],
+                  [
+                    "use_pg_rewind",
+                    "true",
+                    "Allow former leader to rejoin as replica"
+                  ],
+                  [
+                    "use_slots",
+                    "true",
+                    "Use replication slots to prevent WAL loss"
+                  ],
+                  [
+                    "wal_level",
+                    "replica",
+                    "Required for streaming replication"
+                  ],
+                  [
+                    "max_wal_senders",
+                    "10",
+                    "Max concurrent WAL sender processes"
+                  ],
+                  [
+                    "data_dir",
+                    "/data/patroni",
+                    "PostgreSQL data directory (must exist)"
+                  ],
+                  [
+                    "bin_dir",
+                    "/usr/lib/postgresql/18/bin",
+                    "PostgreSQL binary location (adjust for your version)"
+                  ]
                 ]
               }
             },
@@ -483,7 +656,7 @@
           "items": [
             {
               "label": "Install on Node 0",
-              "code": "node0:~$ sudo apt install haproxy -y\nnode0:~$ sudo systemctl stop haproxy"
+              "code": "sudo apt install haproxy -y\nsudo systemctl stop haproxy"
             }
           ]
         },
@@ -595,22 +768,66 @@
             {
               "label": "Port Allocation",
               "table": {
-                "headers": ["Cluster", "Scope", "Node 0 Port", "Node 1 Port", "Node 2 Port", "HAProxy Write", "HAProxy Read"],
+                "headers": [
+                  "Cluster",
+                  "Scope",
+                  "Node 0 Port",
+                  "Node 1 Port",
+                  "Node 2 Port",
+                  "HAProxy Write",
+                  "HAProxy Read"
+                ],
                 "rows": [
-                  ["Cluster A", "pg-ha-cluster", "5432", "5432", "5432", "5000", "5001"],
-                  ["Cluster B", "pg-cluster-b", "5442", "5443", "5444", "6000", "6001"]
+                  [
+                    "Cluster A",
+                    "pg-ha-cluster",
+                    "5432",
+                    "5432",
+                    "5432",
+                    "5000",
+                    "5001"
+                  ],
+                  [
+                    "Cluster B",
+                    "pg-cluster-b",
+                    "5442",
+                    "5443",
+                    "5444",
+                    "6000",
+                    "6001"
+                  ]
                 ]
               }
             },
             {
               "label": "Key Differences from Cluster A",
               "table": {
-                "headers": ["Setting", "Cluster A", "Cluster B"],
+                "headers": [
+                  "Setting",
+                  "Cluster A",
+                  "Cluster B"
+                ],
                 "rows": [
-                  ["Scope", "pg-ha-cluster", "pg-cluster-b"],
-                  ["REST API port", "8008", "8009"],
-                  ["Replication user", "replicator", "replicator_b"],
-                  ["Data directory pattern", "/data/patroni", "/data/pg/cluster_b/nodeX"]
+                  [
+                    "Scope",
+                    "pg-ha-cluster",
+                    "pg-cluster-b"
+                  ],
+                  [
+                    "REST API port",
+                    "8008",
+                    "8009"
+                  ],
+                  [
+                    "Replication user",
+                    "replicator",
+                    "replicator_b"
+                  ],
+                  [
+                    "Data directory pattern",
+                    "/data/patroni",
+                    "/data/pg/cluster_b/nodeX"
+                  ]
                 ]
               }
             }
@@ -889,13 +1106,37 @@
         {
           "label": "What You've Built",
           "table": {
-            "headers": ["Component", "Purpose", "Status"],
+            "headers": [
+              "Component",
+              "Purpose",
+              "Status"
+            ],
             "rows": [
-              ["ETCD Cluster", "Distributed key-value store for leader election", "3 nodes, ports 2379/2380"],
-              ["PostgreSQL 18", "Database on each node, port 5432", "3 instances, streaming replication"],
-              ["Patroni", "HA management, failover, replica sync", "Active on all 3 nodes"],
-              ["HAProxy on Node 0", "Load balancing, read/write splitting", "Ports 5000/5001"],
-              ["pgBackRest", "Backup and point-in-time recovery", "Scheduled daily backups"]
+              [
+                "ETCD Cluster",
+                "Distributed key-value store for leader election",
+                "3 nodes, ports 2379/2380"
+              ],
+              [
+                "PostgreSQL 18",
+                "Database on each node, port 5432",
+                "3 instances, streaming replication"
+              ],
+              [
+                "Patroni",
+                "HA management, failover, replica sync",
+                "Active on all 3 nodes"
+              ],
+              [
+                "HAProxy on Node 0",
+                "Load balancing, read/write splitting",
+                "Ports 5000/5001"
+              ],
+              [
+                "pgBackRest",
+                "Backup and point-in-time recovery",
+                "Scheduled daily backups"
+              ]
             ]
           }
         },
@@ -916,15 +1157,47 @@
         {
           "label": "Complete Port Allocation Reference",
           "table": {
-            "headers": ["Service", "Port(s)", "Purpose"],
+            "headers": [
+              "Service",
+              "Port(s)",
+              "Purpose"
+            ],
             "rows": [
-              ["PostgreSQL", "5432 (all nodes)", "Database"],
-              ["Patroni REST API", "8008", "Health monitoring"],
-              ["ETCD Client", "2379", "Client connections to ETCD"],
-              ["ETCD Peer", "2380", "ETCD inter-node communication"],
-              ["HAProxy Stats", "7000", "Web dashboard"],
-              ["HAProxy Write", "5000", "Write queries → leader"],
-              ["HAProxy Read", "5001", "Read queries → replicas"]
+              [
+                "PostgreSQL",
+                "5432 (all nodes)",
+                "Database"
+              ],
+              [
+                "Patroni REST API",
+                "8008",
+                "Health monitoring"
+              ],
+              [
+                "ETCD Client",
+                "2379",
+                "Client connections to ETCD"
+              ],
+              [
+                "ETCD Peer",
+                "2380",
+                "ETCD inter-node communication"
+              ],
+              [
+                "HAProxy Stats",
+                "7000",
+                "Web dashboard"
+              ],
+              [
+                "HAProxy Write",
+                "5000",
+                "Write queries → leader"
+              ],
+              [
+                "HAProxy Read",
+                "5001",
+                "Read queries → replicas"
+              ]
             ]
           }
         },
@@ -972,13 +1245,31 @@
         {
           "label": "Official Documentation",
           "table": {
-            "headers": ["Resource", "URL"],
+            "headers": [
+              "Resource",
+              "URL"
+            ],
             "rows": [
-              ["PostgreSQL Documentation", "https://www.postgresql.org/docs/18/"],
-              ["Patroni Documentation", "https://patroni.readthedocs.io/"],
-              ["ETCD Documentation", "https://etcd.io/docs/"],
-              ["HAProxy Documentation", "https://www.haproxy.org/documentation/"],
-              ["pgBackRest Documentation", "https://pgbackrest.org/"]
+              [
+                "PostgreSQL Documentation",
+                "https://www.postgresql.org/docs/18/"
+              ],
+              [
+                "Patroni Documentation",
+                "https://patroni.readthedocs.io/"
+              ],
+              [
+                "ETCD Documentation",
+                "https://etcd.io/docs/"
+              ],
+              [
+                "HAProxy Documentation",
+                "https://www.haproxy.org/documentation/"
+              ],
+              [
+                "pgBackRest Documentation",
+                "https://pgbackrest.org/"
+              ]
             ]
           }
         },
