@@ -352,6 +352,15 @@
               "code": "# ---------- NODE 0 ----------\nsudo mkdir -p /data/patroni\nsudo mkdir -p /data/pg/{cluster1,cluster2,cluster3}\nsudo chown -R postgres:postgres /data\nsudo chmod 700 /data/patroni\nsudo chmod 700 /data/pg/*\n\n# ---------- NODE 1 ----------\nsudo mkdir -p /data/patroni\nsudo mkdir -p /data/pg/{cluster1,cluster2,cluster3}\nsudo chown -R postgres:postgres /data\nsudo chmod 700 /data/patroni\nsudo chmod 700 /data/pg/*\n\n# ---------- NODE 2 ----------\nsudo mkdir -p /data/patroni\nsudo mkdir -p /data/pg/{cluster1,cluster2,cluster3}\nsudo chown -R postgres:postgres /data\nsudo chmod 700 /data/patroni\nsudo chmod 700 /data/pg/*"
             }
           ]
+        },
+        {
+          "title": "Check and Manage PostgreSQL Clusters",
+          "items": [
+            {
+              "label": "View running PostgreSQL clusters",
+              "code": "# Check which PostgreSQL clusters are currently running:\npg_lsclusters\n\n# The postgresql-18 package creates a default 'main' cluster on port 5432.\n\n# Verify port 5432 is free:\nss -tulpn | grep 5432"
+            }
+          ]
         }
       ]
     },
@@ -631,7 +640,7 @@
         },
         {
           "label": "Manual switchover (graceful leader change)",
-          "code": "# Promote node1-pg to leader, demote node0-pg to replica:\nsudo patronictl -c /etc/patroni/patroni.yml switchover --master node0-pg --candidate node1-pg --scheduled now\n\n# Type 'y' to confirm\n\n# Verify:\nsudo patronictl -c /etc/patroni/patroni.yml list\n# Expected: node1-pg is now Leader, node0-pg is Replica"
+          "code": "# Promote node1-pg to leader, demote node0-pg to replica:\nsudo patronictl -c /etc/patroni/patroni.yml switchover --leader node0-pg --candidate node1-pg --scheduled now\n\n# Type 'y' to confirm\n\n# Verify:\nsudo patronictl -c /etc/patroni/patroni.yml list\n# Expected: node1-pg is now Leader, node0-pg is Replica"
         },
         {
           "label": "View cluster history and config",
@@ -745,7 +754,7 @@
         },
         {
           "label": "Test 3: Kill PostgreSQL Directly (Patroni auto-restarts it)",
-          "code": "# Kill PostgreSQL on the current leader (node1):\nsudo kill -9 $(head -n 1 /data/patroni/postmaster.pid)\n\n# Wait 10 seconds (Patroni's loop_wait) and check:\nsudo patronictl -c /etc/patroni/patroni.yml list\n\n# Expected: Patroni restarted PostgreSQL on node1 within seconds\n# If restart fails repeatedly, Patroni marks the node as failed\n# and promotes a replica. Check Patroni logs:\nsudo journalctl -u patroni -n 20 --no-pager"
+          "code": "# Kill PostgreSQL on the current leader (node1):\nsudo sh -c 'kill -9 $(head -n 1 /data/patroni/postmaster.pid)'\n\n# Wait 10 seconds (Patroni's loop_wait) and check:\nsudo patronictl -c /etc/patroni/patroni.yml list\n\n# Expected: Patroni restarted PostgreSQL on node1 within seconds\n# If restart fails repeatedly, Patroni marks the node as failed\n# and promotes a replica. Check Patroni logs:\nsudo journalctl -u patroni -n 20 --no-pager"
         },
         {
           "label": "Test 4: Simulate Network Partition",
@@ -834,6 +843,20 @@
           ]
         },
         {
+          "title": "Cluster B Testing Tools",
+          "content": "Use pg_lsclusters to verify ports, and pg_createcluster to create a secondary test cluster if needed.",
+          "items": [
+            {
+              "label": "Check current PostgreSQL clusters on each node",
+              "code": "pg_lsclusters\n# Cluster A uses port 5432. Cluster B uses ports 5442-5444.\n# The default 'main' cluster on 5432 does NOT affect Cluster B."
+            },
+            {
+              "label": "Create a secondary test cluster on port 5433 (optional)",
+              "code": "# Useful for testing replication or validating config before deploying Cluster B:\nsudo pg_createcluster 18 secondary\n\n#OR specific port\n\nsudo pg_createcluster 18 secondary --port 5433 --start\n\n# Verify:\npg_lsclusters\npsql -p 5433 -d postgres -c \"SELECT version();\""
+            }
+          ]
+        },
+        {
           "title": "Cluster B: Node 0 Config (Port 5442, REST API 8009)",
           "items": [
             {
@@ -847,7 +870,7 @@
           "items": [
             {
               "label": "Create /etc/patroni/patroni-cluster-b.yml on Node 1",
-              "code": "sudo nano /etc/patroni/patroni-cluster-b.yml\n\nscope: pg-cluster-b\nnamespace: /db/\nname: node1-cluster-b\n\nrestapi:\n  listen: 192.168.68.201:8009\n  connect_address: 192.168.68.201:8009\n\netcd:\n  hosts: 192.168.68.200:2379,192.168.68.201:2379,192.168.68.202:2379\n\npostgresql:\n  listen: 192.168.68.201:5443\n  connect_address: 192.168.68.201:5443\n  data_dir: /data/pg/cluster_b/node1\n  bin_dir: /usr/lib/postgresql/18/bin\n  authentication:\n    replication:\n      username: replicator_b\n      password: repl-b-pass-456\n    superuser:\n      username: postgres\n      password: super-b-pass-789\n    rewind:\n      username: rewind_user_b\n      password: rewind-b-pass-000\n  parameters:\n    port: 5443\n\ntags:\n  nofailover: false\n  noloadbalance: false\n  clonefrom: false\n  nosync: false"
+              "code": "sudo nano /etc/patroni/patroni-cluster-b.yml\n\nscope: pg-cluster-b\nnamespace: /db/\nname: node1-cluster-b\n\nrestapi:\n  listen: 192.168.68.201:8009\n  connect_address: 192.168.68.201:8009\n\netcd:\n  hosts: 192.168.68.200:2379,192.168.68.201:2379,192.168.68.202:2379\n\npostgresql:\n  listen: 192.168.68.201:5443\n  connect_address: 192.168.68.201:5443\n  data_dir: /data/pg/cluster_b/node1\n  bin_dir: /usr/lib/postgresql/18/bin\n  pgpass: /tmp/pgpass-cluster-b\n  authentication:\n    replication:\n      username: replicator_b\n      password: repl-b-pass-456\n    superuser:\n      username: postgres\n      password: super-b-pass-789\n    rewind:\n      username: rewind_user_b\n      password: rewind-b-pass-000\n  parameters:\n    port: 5443\n\ntags:\n  nofailover: false\n  noloadbalance: false\n  clonefrom: false\n  nosync: false"
             }
           ]
         },
@@ -856,7 +879,7 @@
           "items": [
             {
               "label": "Create /etc/patroni/patroni-cluster-b.yml on Node 2",
-              "code": "sudo nano /etc/patroni/patroni-cluster-b.yml\n\nscope: pg-cluster-b\nnamespace: /db/\nname: node2-cluster-b\n\nrestapi:\n  listen: 192.168.68.202:8009\n  connect_address: 192.168.68.202:8009\n\netcd:\n  hosts: 192.168.68.200:2379,192.168.68.201:2379,192.168.68.202:2379\n\npostgresql:\n  listen: 192.168.68.202:5444\n  connect_address: 192.168.68.202:5444\n  data_dir: /data/pg/cluster_b/node2\n  bin_dir: /usr/lib/postgresql/18/bin\n  authentication:\n    replication:\n      username: replicator_b\n      password: repl-b-pass-456\n    superuser:\n      username: postgres\n      password: super-b-pass-789\n    rewind:\n      username: rewind_user_b\n      password: rewind-b-pass-000\n  parameters:\n    port: 5444\n\ntags:\n  nofailover: false\n  noloadbalance: false\n  clonefrom: false\n  nosync: false"
+              "code": "sudo nano /etc/patroni/patroni-cluster-b.yml\n\nscope: pg-cluster-b\nnamespace: /db/\nname: node2-cluster-b\n\nrestapi:\n  listen: 192.168.68.202:8009\n  connect_address: 192.168.68.202:8009\n\netcd:\n  hosts: 192.168.68.200:2379,192.168.68.201:2379,192.168.68.202:2379\n\npostgresql:\n  listen: 192.168.68.202:5444\n  connect_address: 192.168.68.202:5444\n  data_dir: /data/pg/cluster_b/node2\n  bin_dir: /usr/lib/postgresql/18/bin\n  pgpass: /tmp/pgpass-cluster-b\n  authentication:\n    replication:\n      username: replicator_b\n      password: repl-b-pass-456\n    superuser:\n      username: postgres\n      password: super-b-pass-789\n    rewind:\n      username: rewind_user_b\n      password: rewind-b-pass-000\n  parameters:\n    port: 5444\n\ntags:\n  nofailover: false\n  noloadbalance: false\n  clonefrom: false\n  nosync: false"
             }
           ]
         },
@@ -1091,6 +1114,26 @@
             {
               "label": "Diagnose startup failure",
               "code": "# Check logs:\nsudo journalctl -u patroni -n 100 --no-pager\n\n# Common issues:\n# - Port already in use: ss -tulpn | grep -E '5432|8008'\n# - Data directory permissions: ls -la /data/patroni\n# - Wrong bin_dir: cat /etc/patroni/patroni.yml | grep bin_dir\n# - Python dependency: pip3 list | grep patroni\n\n# Fix permissions:\nsudo chown -R patroni:postgres /data/patroni\n\n# Validate config:\nsudo -u patroni patroni /etc/patroni/patroni.yml --validate"
+            }
+          ]
+        },
+        {
+          "title": "Service File Has 'Missing =' Error (Windows Line Endings)",
+          "content": "systemd reports 'Missing ''='', ignoring line' on multiple lines when you try to start a custom Patroni service.",
+          "items": [
+            {
+              "label": "Fix CRLF line endings",
+              "code": "# Symptom:\nsudo systemctl status patroni-cluster-b\n# Shows: /etc/systemd/system/patroni-cluster-b.service:19: Missing '=', ignoring line.\n\n# Cause: The service file was edited on Windows or copy-pasted with CRLF (\\r\\n) line endings.\n# systemd on Linux expects Unix (\\n) line endings.\n\n# Fix with dos2unix:\nsudo apt install dos2unix -y\nsudo dos2unix /etc/systemd/system/patroni-cluster-b.service\nsudo systemctl daemon-reload\nsudo systemctl start patroni-cluster-b\n\n# Or fix with sed:\nsudo sed -i 's/\\r$//' /etc/systemd/system/patroni-cluster-b.service\nsudo systemctl daemon-reload\nsudo systemctl start patroni-cluster-b"
+            }
+          ]
+        },
+        {
+          "title": "Cluster B Fails with 'Permission denied: /home/patroni' (Missing pgpass)",
+          "content": "After starting patroni-cluster-b on Node 1 or Node 2, the service crashes with 'Permission denied: /home/patroni' followed by 'couldn't create the directory'.",
+          "items": [
+            {
+              "label": "Add missing pgpass to cluster B config",
+              "code": "# Symptom:\nsudo journalctl -u patroni-cluster-b -n 20\n# ERROR: Permission denied: '/home/patroni'\n# '/home/patroni' is defined in postgresql.pgpass, couldn't create the directory\n\n# Cause: Node 0's /etc/patroni/patroni-cluster-b.yml has 'pgpass: /tmp/pgpass-cluster-b'\n# but Nodes 1 and 2 are missing this line. Patroni tries /home/patroni/.pgpass\n# by default and can't create the /home/patroni directory.\n\n# Fix: Add pgpass to the config on Nodes 1 and 2:\nsudo nano /etc/patroni/patroni-cluster-b.yml\n\n# Add this line after 'bin_dir':\n#   pgpass: /tmp/pgpass-cluster-b\n\n# Then restart:\nsudo systemctl restart patroni-cluster-b"
             }
           ]
         }
