@@ -1,0 +1,265 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 450" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="450" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0a0a1a"/>
+      <stop offset="1" stop-color="#111111"/>
+    </linearGradient>
+    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#888888"/>
+    </linearGradient>
+    <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#3b82f6"/>
+      <stop offset="1" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#10b981"/>
+      <stop offset="1" stop-color="#047857"/>
+    </linearGradient>
+    <linearGradient id="g3" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#8b5cf6"/>
+      <stop offset="1" stop-color="#6d28d9"/>
+    </linearGradient>
+    <linearGradient id="g4" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#f59e0b"/>
+      <stop offset="1" stop-color="#b45309"/>
+    </linearGradient>
+    <linearGradient id="g5" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#ec4899"/>
+      <stop offset="1" stop-color="#be185d"/>
+    </linearGradient>
+    <linearGradient id="g6" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#06b6d4"/>
+      <stop offset="1" stop-color="#0891b2"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="450" fill="url(#bg)"/>
+
+  <!-- Subtle grid -->
+  <g stroke="#ffffff" stroke-opacity="0.02" stroke-width="1">
+    <line x1="0" y1="60" x2="1200" y2="60"/><line x1="0" y1="120" x2="1200" y2="120"/>
+    <line x1="0" y1="180" x2="1200" y2="180"/><line x1="0" y1="240" x2="1200" y2="240"/>
+    <line x1="0" y1="300" x2="1200" y2="300"/><line x1="0" y1="360" x2="1200" y2="360"/>
+    <line x1="0" y1="420" x2="1200" y2="420"/>
+  </g>
+
+  <!-- ===== TITLE ===== -->
+  <text x="600" y="38" fill="#ffffff" font-family="system-ui, sans-serif" font-size="22" font-weight="bold" text-anchor="middle">Next.js: The Complete A–Z Guide</text>
+  <text x="600" y="58" fill="#9ca3af" font-family="monospace" font-size="11" text-anchor="middle">Next.js 16 · React 19 · TypeScript · Tailwind CSS v4</text>
+
+  <!-- ===== A → Z JOURNEY VISUAL ===== -->
+  <g transform="translate(30, 75)">
+    <!-- Big A -->
+    <rect x="0" y="0" width="90" height="90" rx="12" fill="#1a2332" stroke="#3b82f6" stroke-width="2"/>
+    <text x="45" y="58" fill="#3b82f6" font-family="system-ui, sans-serif" font-size="42" font-weight="bold" text-anchor="middle">A</text>
+    <line x1="8" y1="75" x2="82" y2="75" stroke="#3b82f6" stroke-width="1.5" stroke-opacity="0.3"/>
+    <text x="45" y="86" fill="#60a5fa" font-family="monospace" font-size="8" text-anchor="middle">FUNDAMENTALS</text>
+
+    <!-- Arrow A to B -->
+    <line x1="100" y1="45" x2="130" y2="45" stroke="#ffffff" stroke-width="1.5" stroke-opacity="0.2"/>
+    <polygon points="133,45 125,40 125,50" fill="#ffffff" fill-opacity="0.2"/>
+
+    <!-- Big Z -->
+    <rect x="140" y="0" width="90" height="90" rx="12" fill="#1a2332" stroke="#f59e0b" stroke-width="2"/>
+    <text x="185" y="58" fill="#f59e0b" font-family="system-ui, sans-serif" font-size="42" font-weight="bold" text-anchor="middle">Z</text>
+    <line x1="148" y1="75" x2="222" y2="75" stroke="#f59e0b" stroke-width="1.5" stroke-opacity="0.3"/>
+    <text x="185" y="86" fill="#fde68a" font-family="monospace" font-size="8" text-anchor="middle">PRODUCTION</text>
+
+    <!-- Text between -->
+    <text x="115" y="38" fill="#9ca3af" font-family="monospace" font-size="8" text-anchor="middle">TO</text>
+    <text x="115" y="55" fill="#555555" font-family="monospace" font-size="8" text-anchor="middle">———</text>
+  </g>
+
+  <!-- ===== LEARNING PATH TOPICS ===== -->
+  <g transform="translate(260, 75)">
+    <text x="0" y="-5" fill="#ffffff" font-family="system-ui, sans-serif" font-size="11" font-weight="bold">30-CHAPTER LEARNING PATH</text>
+
+    <!-- Row 1: Setup & Fundamentals -->
+    <rect x="0" y="0" width="120" height="28" rx="6" fill="#1a2332" stroke="#3b82f6" stroke-width="0.5"/>
+    <text x="60" y="19" fill="#60a5fa" font-family="monospace" font-size="8" text-anchor="middle">Intro &amp; Setup</text>
+    <line x1="128" y1="14" x2="148" y2="14" stroke="#ffffff" stroke-width="1" stroke-opacity="0.15"/>
+    <polygon points="150,14 144,10 144,18" fill="#ffffff" fill-opacity="0.15"/>
+
+    <rect x="155" y="0" width="120" height="28" rx="6" fill="#1a2332" stroke="#3b82f6" stroke-width="0.5"/>
+    <text x="215" y="19" fill="#60a5fa" font-family="monospace" font-size="8" text-anchor="middle">Project Structure</text>
+    <line x1="283" y1="14" x2="303" y2="14" stroke="#ffffff" stroke-width="1" stroke-opacity="0.15"/>
+    <polygon points="305,14 299,10 299,18" fill="#ffffff" fill-opacity="0.15"/>
+
+    <rect x="310" y="0" width="120" height="28" rx="6" fill="#1a2332" stroke="#3b82f6" stroke-width="0.5"/>
+    <text x="370" y="19" fill="#60a5fa" font-family="monospace" font-size="8" text-anchor="middle">App Router</text>
+    <line x1="438" y1="14" x2="458" y2="14" stroke="#ffffff" stroke-width="1" stroke-opacity="0.15"/>
+    <polygon points="460,14 454,10 454,18" fill="#ffffff" fill-opacity="0.15"/>
+
+    <rect x="465" y="0" width="120" height="28" rx="6" fill="#1a2332" stroke="#3b82f6" stroke-width="0.5"/>
+    <text x="525" y="19" fill="#60a5fa" font-family="monospace" font-size="8" text-anchor="middle">Pages &amp; Layouts</text>
+
+    <!-- Row 2: Core Concepts -->
+    <rect x="0" y="36" width="120" height="28" rx="6" fill="#1a2332" stroke="#10b981" stroke-width="0.5"/>
+    <text x="60" y="55" fill="#34d399" font-family="monospace" font-size="8" text-anchor="middle">Routing Deep Dive</text>
+
+    <rect x="155" y="36" width="120" height="28" rx="6" fill="#1a2332" stroke="#10b981" stroke-width="0.5"/>
+    <text x="215" y="55" fill="#34d399" font-family="monospace" font-size="8" text-anchor="middle">Navigation</text>
+
+    <rect x="310" y="36" width="120" height="28" rx="6" fill="#1a2332" stroke="#10b981" stroke-width="0.5"/>
+    <text x="370" y="55" fill="#34d399" font-family="monospace" font-size="8" text-anchor="middle">Server Components</text>
+
+    <rect x="465" y="36" width="120" height="28" rx="6" fill="#1a2332" stroke="#10b981" stroke-width="0.5"/>
+    <text x="525" y="55" fill="#34d399" font-family="monospace" font-size="8" text-anchor="middle">Client Components</text>
+
+    <!-- Row 3: Data & Actions -->
+    <rect x="0" y="72" width="120" height="28" rx="6" fill="#1a2332" stroke="#8b5cf6" stroke-width="0.5"/>
+    <text x="60" y="91" fill="#a78bfa" font-family="monospace" font-size="8" text-anchor="middle">Data Fetching</text>
+
+    <rect x="155" y="72" width="120" height="28" rx="6" fill="#1a2332" stroke="#8b5cf6" stroke-width="0.5"/>
+    <text x="215" y="91" fill="#a78bfa" font-family="monospace" font-size="8" text-anchor="middle">Server Actions</text>
+
+    <rect x="310" y="72" width="120" height="28" rx="6" fill="#1a2332" stroke="#8b5cf6" stroke-width="0.5"/>
+    <text x="370" y="91" fill="#a78bfa" font-family="monospace" font-size="8" text-anchor="middle">Route Handlers</text>
+
+    <rect x="465" y="72" width="120" height="28" rx="6" fill="#1a2332" stroke="#8b5cf6" stroke-width="0.5"/>
+    <text x="525" y="91" fill="#a78bfa" font-family="monospace" font-size="8" text-anchor="middle">Middleware</text>
+  </g>
+
+  <!-- ===== RIGHT SIDE: KEY TOPICS PANEL ===== -->
+  <g transform="translate(870, 75)">
+    <text x="0" y="-5" fill="#ffffff" font-family="system-ui, sans-serif" font-size="11" font-weight="bold">WHAT YOU WILL LEARN</text>
+
+    <rect x="0" y="0" width="165" height="24" rx="4" fill="#1a2332" stroke="#3b82f6" stroke-width="0.5"/>
+    <circle cx="10" cy="12" r="3" fill="#3b82f6"/>
+    <text x="20" y="16" fill="#9ca3af" font-family="monospace" font-size="8">RSC &amp; Client Components</text>
+
+    <rect x="0" y="28" width="165" height="24" rx="4" fill="#1a2332" stroke="#10b981" stroke-width="0.5"/>
+    <circle cx="10" cy="40" r="3" fill="#10b981"/>
+    <text x="20" y="44" fill="#9ca3af" font-family="monospace" font-size="8">Data Fetching &amp; Caching</text>
+
+    <rect x="0" y="56" width="165" height="24" rx="4" fill="#1a2332" stroke="#8b5cf6" stroke-width="0.5"/>
+    <circle cx="10" cy="68" r="3" fill="#8b5cf6"/>
+    <text x="20" y="72" fill="#9ca3af" font-family="monospace" font-size="8">Server Actions &amp; Forms</text>
+
+    <rect x="0" y="84" width="165" height="24" rx="4" fill="#1a2332" stroke="#f59e0b" stroke-width="0.5"/>
+    <circle cx="10" cy="96" r="3" fill="#f59e0b"/>
+    <text x="20" y="100" fill="#9ca3af" font-family="monospace" font-size="8">Auth &amp; Middleware</text>
+
+    <rect x="0" y="112" width="165" height="24" rx="4" fill="#1a2332" stroke="#06b6d4" stroke-width="0.5"/>
+    <circle cx="10" cy="124" r="3" fill="#06b6d4"/>
+    <text x="20" y="128" fill="#9ca3af" font-family="monospace" font-size="8">Streaming &amp; Suspense</text>
+
+    <rect x="0" y="140" width="165" height="24" rx="4" fill="#1a2332" stroke="#ec4899" stroke-width="0.5"/>
+    <circle cx="10" cy="152" r="3" fill="#ec4899"/>
+    <text x="20" y="156" fill="#9ca3af" font-family="monospace" font-size="8">SSL/TLS &amp; Security</text>
+  </g>
+
+  <!-- ===== MORE TOPICS SECTION (lower middle) ===== -->
+  <g transform="translate(30, 190)">
+    <text x="0" y="-5" fill="#ffffff" font-family="system-ui, sans-serif" font-size="11" font-weight="bold">MORE CHAPTERS</text>
+
+    <rect x="0" y="0" width="130" height="26" rx="4" fill="#1a2332" stroke="#334155" stroke-width="0.5"/>
+    <text x="65" y="18" fill="#9ca3af" font-family="monospace" font-size="8" text-anchor="middle">Error Handling</text>
+
+    <rect x="140" y="0" width="130" height="26" rx="4" fill="#1a2332" stroke="#334155" stroke-width="0.5"/>
+    <text x="205" y="18" fill="#9ca3af" font-family="monospace" font-size="8" text-anchor="middle">Metadata &amp; SEO</text>
+
+    <rect x="280" y="0" width="130" height="26" rx="4" fill="#1a2332" stroke="#334155" stroke-width="0.5"/>
+    <text x="345" y="18" fill="#9ca3af" font-family="monospace" font-size="8" text-anchor="middle">Images &amp; Fonts</text>
+
+    <rect x="420" y="0" width="130" height="26" rx="4" fill="#1a2332" stroke="#334155" stroke-width="0.5"/>
+    <text x="485" y="18" fill="#9ca3af" font-family="monospace" font-size="8" text-anchor="middle">Styling</text>
+
+    <rect x="560" y="0" width="130" height="26" rx="4" fill="#1a2332" stroke="#334155" stroke-width="0.5"/>
+    <text x="625" y="18" fill="#9ca3af" font-family="monospace" font-size="8" text-anchor="middle">Forms &amp; Validation</text>
+
+    <rect x="700" y="0" width="130" height="26" rx="4" fill="#1a2332" stroke="#334155" stroke-width="0.5"/>
+    <text x="765" y="18" fill="#9ca3af" font-family="monospace" font-size="8" text-anchor="middle">Authentication</text>
+
+    <rect x="840" y="0" width="130" height="26" rx="4" fill="#1a2332" stroke="#334155" stroke-width="0.5"/>
+    <text x="905" y="18" fill="#9ca3af" font-family="monospace" font-size="8" text-anchor="middle">Caching</text>
+
+    <rect x="0" y="34" width="130" height="26" rx="4" fill="#1a2332" stroke="#334155" stroke-width="0.5"/>
+    <text x="65" y="52" fill="#9ca3af" font-family="monospace" font-size="8" text-anchor="middle">Rendering Strategies</text>
+
+    <rect x="140" y="34" width="130" height="26" rx="4" fill="#1a2332" stroke="#334155" stroke-width="0.5"/>
+    <text x="205" y="52" fill="#9ca3af" font-family="monospace" font-size="8" text-anchor="middle">Env Variables</text>
+
+    <rect x="280" y="34" width="130" height="26" rx="4" fill="#1a2332" stroke="#334155" stroke-width="0.5"/>
+    <text x="345" y="52" fill="#9ca3af" font-family="monospace" font-size="8" text-anchor="middle">TypeScript</text>
+
+    <rect x="420" y="34" width="130" height="26" rx="4" fill="#1a2332" stroke="#334155" stroke-width="0.5"/>
+    <text x="485" y="52" fill="#9ca3af" font-family="monospace" font-size="8" text-anchor="middle">Testing</text>
+
+    <rect x="560" y="34" width="130" height="26" rx="4" fill="#1a2332" stroke="#334155" stroke-width="0.5"/>
+    <text x="625" y="52" fill="#9ca3af" font-family="monospace" font-size="8" text-anchor="middle">Deployment</text>
+
+    <rect x="700" y="34" width="130" height="26" rx="4" fill="#1a2332" stroke="#334155" stroke-width="0.5"/>
+    <text x="765" y="52" fill="#9ca3af" font-family="monospace" font-size="8" text-anchor="middle">Internationalization</text>
+
+    <rect x="840" y="34" width="130" height="26" rx="4" fill="#1a2332" stroke="#334155" stroke-width="0.5"/>
+    <text x="905" y="52" fill="#9ca3af" font-family="monospace" font-size="8" text-anchor="middle">Performance</text>
+
+    <rect x="0" y="68" width="130" height="26" rx="4" fill="#1a2332" stroke="#334155" stroke-width="0.5"/>
+    <text x="65" y="86" fill="#9ca3af" font-family="monospace" font-size="8" text-anchor="middle">Security</text>
+
+    <rect x="140" y="68" width="130" height="26" rx="4" fill="#1a2332" stroke="#334155" stroke-width="0.5"/>
+    <text x="205" y="86" fill="#9ca3af" font-family="monospace" font-size="8" text-anchor="middle">Production Checklist</text>
+
+    <rect x="280" y="68" width="130" height="26" rx="4" fill="#1a2332" stroke="#334155" stroke-width="0.5"/>
+    <text x="345" y="86" fill="#9ca3af" font-family="monospace" font-size="8" text-anchor="middle">Pages Router Migration</text>
+
+    <rect x="420" y="68" width="130" height="26" rx="4" fill="#1a2332" stroke="#334155" stroke-width="0.5"/>
+    <text x="485" y="86" fill="#9ca3af" font-family="monospace" font-size="8" text-anchor="middle">Summary &amp; Next Steps</text>
+  </g>
+
+  <!-- ===== STATS BAR ===== -->
+  <g transform="translate(30, 300)">
+    <rect x="0" y="0" width="1140" height="56" rx="8" fill="#1a2332" stroke="#334155" stroke-width="1"/>
+    <rect x="0" y="0" width="140" height="56" rx="8" fill="#1d4ed8"/>
+    <text x="70" y="22" fill="#ffffff" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">GUIDE</text>
+    <text x="70" y="40" fill="#93c5fd" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">STATS</text>
+
+    <!-- Stat 1 -->
+    <text x="160" y="20" fill="#ffffff" font-family="monospace" font-size="18" font-weight="bold">30</text>
+    <text x="160" y="40" fill="#9ca3af" font-family="monospace" font-size="9">Chapters</text>
+
+    <line x1="260" y1="10" x2="260" y2="46" stroke="#334155" stroke-width="1"/>
+
+    <!-- Stat 2 -->
+    <text x="280" y="20" fill="#ffffff" font-family="monospace" font-size="18" font-weight="bold">45+</text>
+    <text x="280" y="40" fill="#9ca3af" font-family="monospace" font-size="9">Code Examples</text>
+
+    <line x1="400" y1="10" x2="400" y2="46" stroke="#334155" stroke-width="1"/>
+
+    <!-- Stat 3 -->
+    <text x="420" y="20" fill="#ffffff" font-family="monospace" font-size="18" font-weight="bold">200+</text>
+    <text x="420" y="40" fill="#9ca3af" font-family="monospace" font-size="9">Commands</text>
+
+    <line x1="530" y1="10" x2="530" y2="46" stroke="#334155" stroke-width="1"/>
+
+    <!-- Stat 4 -->
+    <text x="550" y="20" fill="#ffffff" font-family="monospace" font-size="18" font-weight="bold">30+</text>
+    <text x="550" y="40" fill="#9ca3af" font-family="monospace" font-size="9">Tables</text>
+
+    <line x1="640" y1="10" x2="640" y2="46" stroke="#334155" stroke-width="1"/>
+
+    <!-- Stat 5 -->
+    <text x="660" y="20" fill="#ffffff" font-family="monospace" font-size="18" font-weight="bold">45</text>
+    <text x="660" y="40" fill="#9ca3af" font-family="monospace" font-size="9">Minutes Read</text>
+
+    <line x1="780" y1="10" x2="780" y2="46" stroke="#334155" stroke-width="1"/>
+
+    <!-- Stat 6 -->
+    <text x="800" y="20" fill="#ffffff" font-family="monospace" font-size="18" font-weight="bold">26</text>
+    <text x="800" y="40" fill="#9ca3af" font-family="monospace" font-size="9">Topics Covered</text>
+  </g>
+
+  <!-- ===== TECH STACK BAR ===== -->
+  <g transform="translate(30, 372)">
+    <rect x="0" y="0" width="1140" height="60" rx="8" fill="#1a2332" stroke="#334155" stroke-width="1"/>
+    <rect x="0" y="0" width="140" height="60" rx="8" fill="#047857"/>
+    <text x="70" y="24" fill="#ffffff" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">TECH</text>
+    <text x="70" y="42" fill="#a7f3d0" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">STACK</text>
+
+    <text x="160" y="18" fill="#ffffff" font-family="monospace" font-size="10" font-weight="bold">Core Technologies</text>
+    <text x="160" y="38" fill="#9ca3af" font-family="monospace" font-size="9">Next.js 16 · React 19 · TypeScript 5 · Tailwind CSS v4 · Node.js 22</text>
+    <text x="160" y="54" fill="#9ca3af" font-family="monospace" font-size="9">Zod · NextAuth.js · Vitest · Playwright · next-intl · Docker · Vercel</text>
+  </g>
+</svg>

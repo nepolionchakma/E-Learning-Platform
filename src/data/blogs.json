@@ -40,5 +40,12 @@
     "content": "A comprehensive end-to-end guide to networking for DevOps engineers. Covers OSI model, TCP/IP, DNS, HTTP/HTTPS, load balancing, container networking (Docker & Kubernetes), cloud VPC design, troubleshooting tools, monitoring, infrastructure as code, automation, security, and production best practices.",
     "author": "E-Learning Platform",
     "date": "2026-05-19"
+  },
+  {
+    "slug": "nextjs-tutorial",
+    "title": "Next.js: The Complete A–Z Guide",
+    "content": "A comprehensive end-to-end guide to Next.js from fundamentals to production. Covers the App Router, server & client components, data fetching, server actions, routing, middleware, authentication, caching, rendering strategies, deployment, TypeScript, testing, i18n, performance optimization, and production best practices.",
+    "author": "E-Learning Platform",
+    "date": "2026-05-21"
   }
 ]

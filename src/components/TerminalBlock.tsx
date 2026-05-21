@@ -13,7 +13,7 @@ function CopyIcon({ copied }: { copied: boolean }) {
   if (copied) {
     return (
       <svg
-        className="w-4 h-4 text-green-500"
+        className="w-3.5 h-3.5 text-green-500"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -21,7 +21,7 @@ function CopyIcon({ copied }: { copied: boolean }) {
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
-          strokeWidth={2}
+          strokeWidth={2.5}
           d="M5 13l4 4L19 7"
         />
       </svg>
@@ -29,7 +29,7 @@ function CopyIcon({ copied }: { copied: boolean }) {
   }
   return (
     <svg
-      className="w-4 h-4"
+      className="w-3.5 h-3.5"
       fill="none"
       stroke="currentColor"
       viewBox="0 0 24 24"
@@ -74,7 +74,7 @@ function StripedBlock({
 
   return (
     <div className="group relative">
-      <div className={`px-3 py-1 ${bg} ${textColor} whitespace-pre-wrap font-mono text-xs sm:text-sm`}>
+      <div className={`px-3 py-1 ${bg} ${textColor} whitespace-pre-wrap`}>
         {lines.map((l, i) => (
           <div key={i}>{l || "\u00A0"}</div>
         ))}
@@ -167,16 +167,14 @@ export default function TerminalBlock({ command, output, explanation, raw }: Ter
   if (raw) {
     const blocks = parseRawTerminal(raw);
     return (
-      <div className="my-3 sm:my-4 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-700 shadow-lg">
-        <div className="flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-zinc-200 dark:bg-zinc-800/60 border-b border-zinc-300 dark:border-zinc-700">
-          <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
-          <span className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
-          <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
-          <span className="text-zinc-500 dark:text-zinc-400 text-[10px] sm:text-xs ml-2 font-mono">
-            terminal
-          </span>
+      <div className="my-3 rounded-lg overflow-hidden border border-zinc-300 dark:border-zinc-700 shadow-lg bg-zinc-100 dark:bg-zinc-900 text-xs font-mono leading-relaxed">
+        <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-zinc-300 dark:border-zinc-700 bg-zinc-200 dark:bg-zinc-800/60">
+          <span className="w-2 h-2 rounded-full bg-red-500" />
+          <span className="w-2 h-2 rounded-full bg-yellow-500" />
+          <span className="w-2 h-2 rounded-full bg-green-500" />
+          <span className="text-zinc-400 dark:text-zinc-500 text-[10px] ml-2">terminal output</span>
         </div>
-        <div className="bg-zinc-900 divide-y divide-zinc-800">
+        <div className="space-y-0">
           {blocks.filter(b => b.lines.length > 0 || b.lines[0] !== "").map((block, i) => (
             <StripedBlock
               key={i}
@@ -188,7 +186,7 @@ export default function TerminalBlock({ command, output, explanation, raw }: Ter
           ))}
         </div>
         {explanation && (
-          <div className="px-3 sm:px-4 py-2 sm:py-3 bg-blue-50 dark:bg-blue-900/20 border-t border-blue-200 dark:border-blue-800 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300">
+          <div className="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 border-t border-blue-200 dark:border-blue-800 text-zinc-700 dark:text-zinc-300">
             {explanation}
           </div>
         )}
