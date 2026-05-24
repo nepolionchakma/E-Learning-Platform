@@ -1,20 +1,633 @@
 {
-  "title": "React Native",
+  "title": "React Native: The Complete A–Z Guide",
   "icon": "📱",
-  "description": "Cross-platform mobile apps with React",
+  "description": "A comprehensive end-to-end guide to React Native from fundamentals to production. Covers every major concept — core components, styling, flexbox/Yoga, navigation, state management, networking, data persistence, device APIs (camera, location, permissions), animations (Reanimated, Animated API), gestures, forms, debugging, testing, push notifications, performance optimization, TypeScript, publishing to app stores, security, CI/CD, and production best practices — for beginners and experienced developers alike.",
+  "author": "E-Learning Platform",
+  "date": "2026-05-21",
+  "readTime": "55 min read",
+  "heroImage": "/images/react-native-hero.svg",
+  "heroAlt": "React Native architecture diagram showing the bridge, core components, navigation, state management, and deployment pipeline",
   "sections": [
     {
-      "title": "1. Core Components",
-      "type": "code",
+      "id": "introduction",
+      "title": "Introduction to React Native",
+      "description": "What React Native is, how it works, and why it has become the leading framework for cross-platform mobile development.",
       "items": [
-        { "label": "Basic Structure", "code": "import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';\n\nfunction App() {\n  return (\n    <View style={styles.container}>\n      <Text style={styles.title}>Hello React Native</Text>\n      <FlatList\n        data={[{ id: '1', name: 'Item 1' }]}\n        renderItem={({ item }) => (\n          <TouchableOpacity>\n            <Text>{item.name}</Text>\n          </TouchableOpacity>\n        )}\n      />\n    </View>\n  );\n}\n\nconst styles = StyleSheet.create({\n  container: { flex: 1, padding: 20 },\n  title: { fontSize: 24, fontWeight: 'bold' },\n});" }
+        {
+          "label": "What is React Native?",
+          "text": "React Native is an open-source mobile application framework created by Meta (formerly Facebook). It lets you build native mobile applications for iOS and Android using a single JavaScript/TypeScript codebase. Unlike hybrid approaches (Cordova, Ionic) that render web views, React Native compiles to real native UI components.\n\nThe core principle: \"Learn once, write anywhere.\" You write React components in JavaScript/TypeScript, and React Native renders them using native platform UI primitives — UIView on iOS, android.view on Android.\n\nKey milestones:\n- 2015: React Native open-sourced by Meta\n- 2019: React Native 0.60 (Auto-linking, CocoaPods by default)\n- 2020: React Native 0.63 (LogBox, Pressable)\n- 2021: React Native 0.64 (Hermes as default on Android)\n- 2022: React Native 0.70 (New Architecture — JSI + Fabric + TurboModules)\n- 2023: React Native 0.73 (New Architecture stable, Yoga 3.0)\n- 2024: React Native 0.75 (New Architecture default, Bridgeless mode)\n- 2025+: React Native 0.78+ (Fabric renderer everywhere, synchronous JSI)"
+        },
+        {
+          "label": "Why React Native?",
+          "text": [
+            "Cross-Platform — Write once, ship to iOS and Android with 90%+ code sharing.",
+            "Native Performance — Renders real native UI components, not web views.",
+            "Hot Reloading / Fast Refresh — See changes instantly without recompiling.",
+            "Huge Ecosystem — Thousands of libraries via npm + Native Modules.",
+            "Large Community — Backed by Meta, Expo, Microsoft, Shopify, Coinbase.",
+            "TypeScript Support — First-class TypeScript support.",
+            "Over-the-Air Updates — Use CodePush or EAS Update.",
+            "Existing React Skills — If you know React, you know most of React Native."
+          ]
+        },
+        {
+          "label": "React Native vs Other Frameworks",
+          "table": {
+            "headers": ["Feature", "React Native", "Flutter", "Kotlin Multiplatform", "Cordova / Ionic", "SwiftUI + Jetpack Compose"],
+            "rows": [
+              ["Language", "JavaScript / TypeScript", "Dart", "Kotlin", "JavaScript", "Swift / Kotlin"],
+              ["UI Rendering", "Native (Bridge/JSI)", "Custom Skia engine", "Native UI", "WebView", "100% Native"],
+              ["Code Sharing", "~90% across platforms", "~100%", "Shared logic only", "~90%", "0% (separate)"],
+              ["Performance", "Near-native", "60 FPS guaranteed", "Native", "WebView (slower)", "Native"],
+              ["Learning Curve", "Low (if React)", "Moderate", "High", "Low", "Platform-specific"],
+              ["Bundle Size", "~7 MB (Hermes)", "~15 MB", "~3 MB", "~5 MB", "~2 MB"]
+            ]
+          }
+        },
+        {
+          "label": "Architecture: The Bridge vs The New Architecture",
+          "text": "React Native has two architectures:\n\nOld Architecture (Bridge):\n- JavaScript thread and Native thread communicate via an asynchronous JSON serialization bridge\n- Batched messages — every async call creates overhead\n- Type conversions (JS -> JSON -> Native) cost performance\n- Limited by bridge serialization speed\n\nNew Architecture (JSI + Fabric + TurboModules):\n- JSI (JavaScript Interface): Direct C++ binding between JS and Native — no JSON serialization\n- Fabric: Synchronous rendering — UI updates in the same frame\n- TurboModules: Lazy-loaded native modules — only load when needed\n- Codegen: TypeScript props flow to C++ type safety\n- Bridgeless mode: No bridge at all in RN 0.75+\n\nMigration to New Architecture:\n- Since RN 0.75+, it is the default for new projects\n- Use newArchEnabled: true in react-native.config.js for existing projects\n- All major libraries (React Navigation, Reanimated, Gesture Handler) support it"
+        }
       ]
     },
     {
-      "title": "2. Navigation",
-      "type": "code",
+      "id": "setup",
+      "title": "Setup & Environment Configuration",
+      "description": "Setting up your development environment for React Native — from Expo to bare workflow.",
       "items": [
-        { "label": "Stack Navigator", "code": "import { NavigationContainer } from '@react-navigation/native';\nimport { createNativeStackNavigator } from '@react-navigation/native-stack';\n\nconst Stack = createNativeStackNavigator();\n\nfunction App() {\n  return (\n    <NavigationContainer>\n      <Stack.Navigator>\n        <Stack.Screen name=\"Home\" component={HomeScreen} />\n        <Stack.Screen name=\"Details\" component={DetailsScreen} />\n      </Stack.Navigator>\n    </NavigationContainer>\n  );\n}" }
+        {
+          "label": "Prerequisites",
+          "text": "Before starting, ensure you have:\n\n- Node.js 18 LTS or newer (recommended: 22 LTS)\n- A code editor (VS Code with React Native Tools extension recommended)\n- For iOS: macOS (Xcode 15+), CocoaPods (sudo gem install cocoapods)\n- For Android: Android Studio, JDK 17+, Android SDK (API 34+)\n- Basic knowledge of React (components, props, state, hooks)"
+        },
+        {
+          "label": "Option 1: Expo (Recommended for Beginners)",
+          "code": "# Create a new Expo project (managed workflow):\nuser@dev:~$ npx create-expo-app@latest MyReactNativeApp\n\n# Navigate to project:\nuser@dev:~$ cd MyReactNativeApp\n\n# Start the dev server:\nuser@dev:~$ npx expo start\n\n# This opens Expo Developer Tools in browser.\n# Scan QR code with Expo Go app on your phone.\n# Or press 'a' for Android emulator / 'i' for iOS simulator.\n\n# Expo project structure:\nMyReactNativeApp/\n  app.json              # Expo configuration\n  App.js                # Entry component\n  assets/               # Images, fonts, etc.\n  package.json\n  node_modules/\n\n# Key Expo commands:\nuser@dev:~$ npx expo start          # Start dev server\nuser@dev:~$ npx expo start --tunnel  # Share over internet\nuser@dev:~$ npx expo build           # Build for stores\nuser@dev:~$ npx expo run:android     # Bare Android run\nuser@dev:~$ npx expo run:ios         # Bare iOS run\nuser@dev:~$ npx expo eject           # Eject to bare workflow"
+        },
+        {
+          "label": "Option 2: React Native CLI (Bare Workflow)",
+          "code": "# Create a new React Native project (bare workflow):\nuser@dev:~$ npx @react-native-community/cli init MyReactNativeApp\n\n# Or with TypeScript template:\nuser@dev:~$ npx @react-native-community/cli init MyReactNativeApp --template react-native-template-typescript\n\n# Project structure:\nMyReactNativeApp/\n  android/              # Android native project (Gradle)\n  ios/                  # iOS native project (Xcode)\n  App.tsx               # Entry component\n  index.js              # App registry\n  metro.config.js       # Metro bundler config\n  babel.config.js       # Babel config\n  tsconfig.json         # TypeScript config\n  package.json\n\n# Install iOS dependencies:\nuser@dev:~$ cd ios && pod install && cd ..\n\n# Run on Android:\nuser@dev:~$ npx react-native run-android\n\n# Run on iOS:\nuser@dev:~$ npx react-native run-ios\n\n# Run on specific device/simulator:\nuser@dev:~$ npx react-native run-ios --simulator=\"iPhone 16 Pro\"\nuser@dev:~$ npx react-native run-android --deviceId=emulator-5554"
+        },
+        {
+          "label": "Expo vs React Native CLI: Decision Guide",
+          "table": {
+            "headers": ["Factor", "Expo (Managed)", "Expo (Dev Client)", "React Native CLI (Bare)"],
+            "rows": [
+              ["Setup Effort", "Minutes (no Xcode/Studio)", "Minutes", "Hours (Xcode + Android Studio)"],
+              ["Native Modules", "Limited to Expo SDK", "Any (config plugins)", "Any (manual linking)"],
+              ["OTA Updates", "Built-in (EAS Update)", "Built-in (EAS Update)", "CodePush or custom"],
+              ["Builds", "EAS Build (cloud)", "EAS Build (cloud)", "Local (Xcode/Gradle)"],
+              ["Custom Native Code", "Not possible (managed)", "Possible (prebuild)", "Fully supported"],
+              ["TypeScript", "Supported", "Supported", "Supported"],
+              ["When to choose", "Prototyping, simple apps", "Need native libs + Expo tooling", "Full control, complex native"]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "project-structure",
+      "title": "Project Structure Best Practices",
+      "description": "How to organize your React Native project for scalability, maintainability, and team collaboration.",
+      "items": [
+        {
+          "label": "Recommended Directory Layout",
+          "code": "MyReactNativeApp/\n  src/\n    app/                  # Navigation setup (React Navigation)\n    components/           # Reusable UI components\n      ui/                 # Design system primitives (Button, Input, Card)\n      shared/             # Shared feature components\n    features/             # Feature-based modules\n      auth/               # Authentication feature\n        screens/          # Auth screens\n        components/       # Auth-specific components\n        hooks/            # Auth-specific hooks\n        api.ts            # Auth API calls\n        types.ts          # Auth TypeScript types\n      home/\n      profile/\n      settings/\n    navigation/           # Navigation configuration\n      RootNavigator.tsx\n      types.ts            # Navigation param types\n    services/             # External services (API, push notifications)\n      api.ts              # Axios/fetch instance\n      notifications.ts\n    store/                # State management\n    hooks/                # Global custom hooks\n    utils/                # Utility functions\n    constants/            # App-wide constants\n    types/                # Global TypeScript types\n    assets/               # Images, fonts, animations\n  __tests__/              # Test files\n  App.tsx                 # Root component\n  index.js               # Entry point"
+        },
+        {
+          "label": "Feature-Based Organization",
+          "text": "Organizing by feature (not by type) is the recommended approach:\n\nBy Type (older pattern — avoid):\nsrc/screens/ -> 50+ files, hard to find\nsrc/components/ -> 100+ unrelated components\n\nBy Feature (recommended):\nsrc/features/auth/ -> Everything for auth in one place\nsrc/features/home/ -> Everything for home in one place\n\nBenefits:\n- Co-location: screen + components + hooks + API are together\n- Scoped imports\n- Easier refactoring: delete one folder instead of hunting files\n- Lazy loading: code-split by feature naturally"
+        }
+      ]
+    },
+    {
+      "id": "core-components",
+      "title": "Core Components — The Building Blocks",
+      "description": "Every React Native app is built from a set of core components that map to native UI primitives.",
+      "items": [
+        {
+          "label": "The Essential Components",
+          "code": "import React from 'react';\nimport {\n  View,\n  Text,\n  Image,\n  ScrollView,\n  TextInput,\n  TouchableOpacity,\n  StyleSheet,\n  SafeAreaView,\n  StatusBar,\n  Pressable,\n  ActivityIndicator,\n  Alert,\n  Modal,\n} from 'react-native';\n\n// View: The most fundamental component — a container (like <div> in web)\n// Maps to: UIView (iOS) / android.view (Android)\n<View style={styles.container}>\n  <SafeAreaView>\n    <StatusBar barStyle=\"dark-content\" backgroundColor=\"#fff\" />\n\n    {/* Text: The only component for displaying text */}\n    <Text style={styles.title}>Hello, React Native!</Text>\n    <Text style={styles.subtitle}>\n      This is a <Text style={{ fontWeight: 'bold', color: '#6C63FF' }}>nested Text</Text> component.\n    </Text>\n\n    {/* Image: Display local or remote images */}\n    <Image\n      source={require('./assets/logo.png')}\n      style={styles.logo}\n    />\n    <Image\n      source={{ uri: 'https://example.com/photo.jpg' }}\n      style={styles.heroImage}\n      resizeMode=\"cover\"\n    />\n\n    {/* TextInput: User text input */}\n    <TextInput\n      style={styles.input}\n      placeholder=\"Enter your email\"\n      value={email}\n      onChangeText={setEmail}\n      keyboardType=\"email-address\"\n      autoCapitalize=\"none\"\n      secureTextEntry={false}\n    />\n\n    {/* TouchableOpacity: Touchable with opacity feedback */}\n    <TouchableOpacity\n      style={styles.button}\n      onPress={handlePress}\n      activeOpacity={0.7}\n    >\n      <Text style={styles.buttonText}>Submit</Text>\n    </TouchableOpacity>\n\n    {/* Pressable: More flexible touchable (recommended) */}\n    <Pressable\n      style={({ pressed }) => [\n        styles.button,\n        pressed && styles.buttonPressed,\n      ]}\n      onPressIn={() => console.log('Pressed in')}\n      onPressOut={() => console.log('Pressed out')}\n      onLongPress={() => console.log('Long pressed')}\n    >\n      <Text style={styles.buttonText}>Press Me</Text>\n    </Pressable>\n\n    <ActivityIndicator size=\"large\" color=\"#6C63FF\" />\n\n    <ScrollView showsVerticalScrollIndicator={false}>\n      {items.map(item => (\n        <Text key={item.id}>{item.name}</Text>\n      ))}\n    </ScrollView>\n  </SafeAreaView>\n</View>"
+        },
+        {
+          "label": "All Core Components at a Glance",
+          "table": {
+            "headers": ["Component", "iOS Native", "Android Native", "Purpose"],
+            "rows": [
+              ["View", "UIView", "android.view.View", "Container, layout, flexbox"],
+              ["Text", "UILabel", "android.widget.TextView", "Display text"],
+              ["Image", "UIImageView", "android.widget.ImageView", "Show images"],
+              ["TextInput", "UITextField", "android.widget.EditText", "User text input"],
+              ["ScrollView", "UIScrollView", "android.widget.ScrollView", "Scrollable container"],
+              ["FlatList", "UICollectionView", "RecyclerView", "Virtualized list"],
+              ["SectionList", "UICollectionView", "RecyclerView (sections)", "Sectioned list"],
+              ["TouchableOpacity", "UIControl", "View with click", "Touch with opacity"],
+              ["Pressable", "UIControl", "View with state", "Flexible press handling"],
+              ["SafeAreaView", "SafeArea", "Inset handling", "Respect notches/indicators"],
+              ["StatusBar", "UIStatusBar", "Window Insets", "Status bar config"],
+              ["ActivityIndicator", "UIActivityIndicatorView", "ProgressBar", "Loading spinner"],
+              ["Modal", "UIViewController", "Dialog", "Overlay content"],
+              ["Alert", "UIAlertController", "AlertDialog", "Native alerts"],
+              ["Switch", "UISwitch", "Switch", "Toggle control"],
+              ["KeyboardAvoidingView", "UIView (keyboard)", "LinearLayout", "Avoid keyboard overlap"]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "styling",
+      "title": "Styling in React Native",
+      "description": "All React Native styling uses JavaScript objects — no CSS files, no selectors, no cascade.",
+      "items": [
+        {
+          "label": "StyleSheet — The Standard Way",
+          "code": "import { StyleSheet, View, Text } from 'react-native';\n\n// StyleSheet.create(): Validates and optimizes styles\nconst styles = StyleSheet.create({\n  container: {\n    flex: 1,\n    backgroundColor: '#fff',\n    paddingHorizontal: 16,\n    paddingTop: 8,\n  },\n  card: {\n    backgroundColor: '#f8f9fa',\n    borderRadius: 12,\n    padding: 16,\n    marginBottom: 12,\n    // Shadows (iOS)\n    shadowColor: '#000',\n    shadowOffset: { width: 0, height: 2 },\n    shadowOpacity: 0.1,\n    shadowRadius: 8,\n    // Elevation (Android)\n    elevation: 3,\n  },\n  title: {\n    fontSize: 24,\n    fontWeight: '700',\n    color: '#1a1a1a',\n    lineHeight: 32,\n  },\n});\n\n// Style rules unique to React Native:\n// 1. All property names are camelCase (backgroundColor, not background-color)\n// 2. Values are strings or numbers (no '16px')\n// 3. All dimensions are unitless (numbers = density-independent pixels)\n// 4. Layout defaults to flexbox (display: 'flex' is default)\n// 5. flexDirection defaults to 'column' (not 'row' like web CSS)\n\n// Inline styles work but are less performant:\n<View style={{ marginTop: 10, paddingLeft: 8 }} />\n\n// Style arrays (later styles override earlier):\n<View style={[baseStyles.card, isActive && styles.activeCard]} />"
+        },
+        {
+          "label": "Styling Properties Reference",
+          "table": {
+            "headers": ["Category", "Properties", "Notes"],
+            "rows": [
+              ["Layout", "flex, flexDirection, justifyContent, alignItems, gap", "flexDirection defaults to 'column'"],
+              ["Position", "position, top, right, bottom, left, zIndex", "Only 'absolute' and 'relative'"],
+              ["Size", "width, height, minWidth, maxWidth, minHeight, maxHeight", "All unitless numbers"],
+              ["Margin/Padding", "margin, marginTop, marginHorizontal, padding", "Use shorthand: marginHorizontal"],
+              ["Border", "borderWidth, borderColor, borderRadius", "No border-style; defaults to solid"],
+              ["Background", "backgroundColor, opacity", "No gradients built-in"],
+              ["Text", "fontSize, fontWeight, color, lineHeight, textAlign", "fontWeight uses strings"],
+              ["Shadow (iOS)", "shadowColor, shadowOffset, shadowOpacity, shadowRadius", "Only on iOS"],
+              ["Elevation (Android)", "elevation", "Only on Android"],
+              ["Transform", "transform: [{ rotate }, { scale }]", "Array of objects"]
+            ]
+          }
+        },
+        {
+          "label": "Platform-Specific Styling",
+          "code": "import { Platform, StyleSheet } from 'react-native';\n\n// Platform.OS: 'ios' or 'android'\nconst styles = StyleSheet.create({\n  container: {\n    flex: 1,\n    paddingTop: Platform.OS === 'ios' ? 44 : 0,\n  },\n  fontStyle: {\n    ...Platform.select({\n      ios: { fontFamily: 'San Francisco', fontWeight: '600' },\n      android: { fontFamily: 'Roboto', fontWeight: '600' },\n      default: { fontFamily: 'System' },\n    }),\n  },\n});\n\n// Platform-specific file extensions:\n// MyComponent.ios.tsx - Only used on iOS\n// MyComponent.android.tsx - Only used on Android\n// React Native auto-selects the correct file.\n\nimport { Platform } from 'react-native';\nconst isIOS = Platform.OS === 'ios';\nconst isAndroid = Platform.OS === 'android';"
+        },
+        {
+          "label": "Using Tailwind CSS (NativeWind)",
+          "code": "// NativeWind brings Tailwind CSS to React Native\n// Install: npm install nativewind tailwindcss-react-native\n\n// tailwind.config.js\nmodule.exports = {\n  content: ['./App.{js,jsx,ts,tsx}', './src/**/*.{js,jsx,ts,tsx}'],\n  theme: {\n    extend: {\n      colors: {\n        primary: '#6C63FF',\n        secondary: '#FF6584',\n      },\n    },\n  },\n};\n\n// Usage:\nimport { View, Text } from 'react-native';\n\nfunction MyCard() {\n  return (\n    <View className=\"flex-1 bg-white p-4 rounded-2xl shadow-lg mx-4 my-2\">\n      <Text className=\"text-2xl font-bold text-zinc-900\">\n        Hello, Tailwind!\n      </Text>\n      <Text className=\"text-sm text-zinc-500 mt-2\">\n        This is a card built with NativeWind.\n      </Text>\n      <View className=\"flex-row justify-between items-center mt-4\">\n        <Text className=\"text-primary font-semibold\">Learn More</Text>\n        <View className=\"bg-primary px-4 py-2 rounded-full\">\n          <Text className=\"text-white text-xs font-medium\">Get Started</Text>\n        </View>\n      </View>\n    </View>\n  );\n}"
+        }
+      ]
+    },
+    {
+      "id": "flexbox",
+      "title": "Flexbox Layout — Yoga Engine",
+      "description": "React Native uses Yoga, a C++ layout engine implementing a subset of CSS Flexbox.",
+      "items": [
+        {
+          "label": "Flexbox Fundamentals",
+          "code": "import { View, Text, StyleSheet } from 'react-native';\n\n// Key difference from web CSS Flexbox:\n// - flexDirection defaults to 'column' (not 'row')\n// - All values are numbers (no '100px' strings)\n\nconst styles = StyleSheet.create({\n  columnContainer: {\n    flexDirection: 'column',  // Default\n    alignItems: 'stretch',\n  },\n  rowContainer: {\n    flexDirection: 'row',\n    justifyContent: 'space-between',\n    alignItems: 'center',\n  },\n  flexExample: {\n    flex: 1,  // Take all available space\n  },\n  flexDouble: {\n    flex: 2,  // Take twice as much as flex: 1\n  },\n});\n\n// Complete Flexbox API:\n// Container: flexDirection, justifyContent, alignItems, flexWrap, alignContent, gap\n// Items: flex, alignSelf, flexGrow, flexShrink, flexBasis\n// Position: position ('relative' | 'absolute'), top, right, bottom, left, zIndex"
+        },
+        {
+          "label": "Flexbox Patterns & Recipes",
+          "code": "// --- Center a child ---\nconst Center = () => (\n  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>\n    <Text>Perfectly Centered</Text>\n  </View>\n);\n\n// --- Side-by-side layout ---\nconst Row = ({ left, right }) => (\n  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>\n    <Text>{left}</Text>\n    <Text>{right}</Text>\n  </View>\n);\n\n// --- Equal-width columns ---\nconst Grid = () => (\n  <View style={{ flexDirection: 'row' }}>\n    <View style={{ flex: 1 }}><Text>Column 1</Text></View>\n    <View style={{ flex: 1 }}><Text>Column 2</Text></View>\n    <View style={{ flex: 1 }}><Text>Column 3</Text></View>\n  </View>\n);\n\n// --- Sticky Footer ---\nconst Layout = () => (\n  <View style={{ flex: 1 }}>\n    <View style={{ flex: 1 }}><Text>Main Content</Text></View>\n    <View style={{ padding: 16, backgroundColor: '#f0f0f0' }}><Text>Footer</Text></View>\n  </View>\n);\n\n// --- Absolute fill ---\nconst AbsoluteFill = () => (\n  <View style={{ flex: 1, position: 'relative' }}>\n    <View style={{\n      ...StyleSheet.absoluteFillObject,\n      backgroundColor: 'rgba(0,0,0,0.5)',\n    }}>\n      <Text>Overlay</Text>\n    </View>\n  </View>\n);"
+        }
+      ]
+    },
+    {
+      "id": "navigation",
+      "title": "Navigation — Moving Between Screens",
+      "description": "React Navigation is the de facto standard for navigation in React Native apps.",
+      "items": [
+        {
+          "label": "Installing React Navigation",
+          "code": "# Install core navigation:\nuser@dev:~$ npm install @react-navigation/native @react-navigation/native-stack @react-navigation/bottom-tabs @react-navigation/drawer\n\n# Install dependencies:\nuser@dev:~$ npm install react-native-screens react-native-safe-area-context\n\n# For iOS, install pods:\nuser@dev:~$ cd ios && pod install && cd ..\n\n# React Navigation versions:\n# - @react-navigation/native: Core navigation logic\n# - @react-navigation/native-stack: Stack navigator (native, recommended)\n# - @react-navigation/bottom-tabs: Bottom tab navigator\n# - @react-navigation/drawer: Drawer navigator"
+        },
+        {
+          "label": "Stack Navigator (Native Stack)",
+          "code": "import { NavigationContainer } from '@react-navigation/native';\nimport { createNativeStackNavigator } from '@react-navigation/native-stack';\n\n// Define param types with TypeScript:\nexport type RootStackParamList = {\n  Home: undefined;\n  Profile: { userId: string };\n  Settings: { section?: string };\n};\n\nconst Stack = createNativeStackNavigator<RootStackParamList>();\n\nexport default function App() {\n  return (\n    <NavigationContainer>\n      <Stack.Navigator\n        initialRouteName=\"Home\"\n        screenOptions={{\n          headerStyle: { backgroundColor: '#6C63FF' },\n          headerTintColor: '#fff',\n          headerTitleStyle: { fontWeight: 'bold' },\n          animation: 'slide_from_right',\n        }}\n      >\n        <Stack.Screen name=\"Home\" component={HomeScreen}\n          options={{ title: 'Home', headerRight: () => <Button title=\"Edit\" /> }}\n        />\n        <Stack.Screen name=\"Profile\" component={ProfileScreen}\n          options={({ route }) => ({ title: `User ${route.params.userId}` })}\n        />\n        <Stack.Screen name=\"Settings\" component={SettingsScreen}\n          options={{ presentation: 'modal' }}\n        />\n      </Stack.Navigator>\n    </NavigationContainer>\n  );\n}\n\n// Navigating:\nconst navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();\nnavigation.navigate('Profile', { userId: '123' });\nnavigation.goBack();\nnavigation.reset({ index: 0, routes: [{ name: 'Home' }] });"
+        },
+        {
+          "label": "Tab Navigator (Bottom Tabs)",
+          "code": "import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';\nimport { Ionicons } from '@expo/vector-icons';\n\nconst Tab = createBottomTabNavigator();\n\nexport default function MainTabs() {\n  return (\n    <Tab.Navigator\n      screenOptions={({ route }) => ({\n        tabBarIcon: ({ focused, color, size }) => {\n          let iconName;\n          if (route.name === 'Home') iconName = focused ? 'home' : 'home-outline';\n          else if (route.name === 'Search') iconName = focused ? 'search' : 'search-outline';\n          else iconName = focused ? 'person' : 'person-outline';\n          return <Ionicons name={iconName} size={size} color={color} />;\n        },\n        tabBarActiveTintColor: '#6C63FF',\n        tabBarInactiveTintColor: 'gray',\n        tabBarStyle: { backgroundColor: '#fff', paddingBottom: 8, height: 60 },\n        headerShown: false,\n      })}\n    >\n      <Tab.Screen name=\"Home\" component={HomeStack} />\n      <Tab.Screen name=\"Search\" component={SearchStack} />\n      <Tab.Screen name=\"Profile\" component={ProfileStack} />\n    </Tab.Navigator>\n  );\n}\n\n// Nesting: Each tab can have its own Stack navigator"
+        },
+        {
+          "label": "Navigation Best Practices",
+          "text": [
+            "1. Always type your navigation params with TypeScript.",
+            "2. Use useNavigation hook in deep child components — don't pass navigation as a prop.",
+            "3. Nest navigators: Tabs -> Stacks -> Screens.",
+            "4. Use presentation: 'modal' for modals that slide up from the bottom.",
+            "5. Configure deep linking in NavigationContainer for push notifications.",
+            "6. Avoid passing complex objects as params — store in state and pass IDs.",
+            "7. Use navigation.reset() for authentication flows (login -> main screen).",
+            "8. Use navigation.replace() for splash -> main transitions."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "state-management",
+      "title": "State Management",
+      "description": "Managing state in React Native — from local state to global state with modern solutions.",
+      "items": [
+        {
+          "label": "Local State: useState and useReducer",
+          "code": "import { useState, useReducer } from 'react';\n\n// --- useState -- Simple local state ---\nfunction Counter() {\n  const [count, setCount] = useState(0);\n  return (\n    <View>\n      <Text>Count: {count}</Text>\n      <TouchableOpacity onPress={() => setCount(c => c + 1)}>\n        <Text>Increment</Text>\n      </TouchableOpacity>\n    </View>\n  );\n}\n\n// --- useReducer -- Complex state logic ---\ninterface FormState {\n  name: string;\n  email: string;\n  errors: Record<string, string>;\n  isSubmitting: boolean;\n}\n\ntype FormAction =\n  | { type: 'SET_FIELD'; field: string; value: string }\n  | { type: 'SET_ERRORS'; errors: Record<string, string> }\n  | { type: 'SET_SUBMITTING'; isSubmitting: boolean }\n  | { type: 'RESET' };\n\nfunction formReducer(state: FormState, action: FormAction): FormState {\n  switch (action.type) {\n    case 'SET_FIELD':\n      return { ...state, [action.field]: action.value };\n    case 'SET_ERRORS':\n      return { ...state, errors: action.errors };\n    case 'SET_SUBMITTING':\n      return { ...state, isSubmitting: action.isSubmitting };\n    case 'RESET':\n      return { name: '', email: '', errors: {}, isSubmitting: false };\n    default:\n      return state;\n  }\n}"
+        },
+        {
+          "label": "Global State: Zustand (Recommended)",
+          "code": "// Zustand — simple, performant, no boilerplate\n// Install: npm install zustand\n\nimport { create } from 'zustand';\nimport { persist, createJSONStorage } from 'zustand/middleware';\nimport AsyncStorage from '@react-native-async-storage/async-storage';\n\ninterface AuthState {\n  user: User | null;\n  token: string | null;\n  isAuthenticated: boolean;\n  isLoading: boolean;\n  login: (email: string, password: string) => Promise<void>;\n  logout: () => void;\n}\n\nexport const useAuthStore = create<AuthState>()(\n  persist(\n    (set) => ({\n      user: null,\n      token: null,\n      isAuthenticated: false,\n      isLoading: false,\n\n      login: async (email, password) => {\n        set({ isLoading: true });\n        try {\n          const response = await api.login({ email, password });\n          set({\n            user: response.user,\n            token: response.token,\n            isAuthenticated: true,\n            isLoading: false,\n          });\n        } catch (error) {\n          set({ isLoading: false });\n          throw error;\n        }\n      },\n\n      logout: () => {\n        set({ user: null, token: null, isAuthenticated: false });\n      },\n    }),\n    {\n      name: 'auth-storage',\n      storage: createJSONStorage(() => AsyncStorage),\n    }\n  )\n);\n\n// Usage in components:\nfunction ProfileScreen() {\n  const { user, logout } = useAuthStore();\n  return (\n    <View>\n      <Text>Welcome, {user?.name}</Text>\n      <TouchableOpacity onPress={logout}><Text>Logout</Text></TouchableOpacity>\n    </View>\n  );\n}"
+        },
+        {
+          "label": "State Management Comparison",
+          "table": {
+            "headers": ["Solution", "Type", "Boilerplate", "Best For"],
+            "rows": [
+              ["useState / useReducer", "Local", "Low", "Component-local state"],
+              ["Zustand", "Global", "Low", "Most apps (recommended)"],
+              ["Redux Toolkit", "Global", "Medium", "Large enterprise apps"],
+              ["Jotai", "Atomic", "Low", "Fine-grained state"],
+              ["React Context", "Global", "Medium", "Themes, i18n, simple global"],
+              ["TanStack Query", "Server", "Low", "Server state (API data)"],
+              ["MMKV Storage", "Persistent", "Low", "High-frequency writes"]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "networking-api",
+      "title": "Networking & APIs",
+      "description": "Communicating with servers, fetching data, handling offline state, and managing API calls.",
+      "items": [
+        {
+          "label": "Built-in fetch() API",
+          "code": "// React Native has built-in fetch() — no additional library needed\n// It uses native networking (NSURLSession on iOS, OkHttp on Android)\n\nasync function getUsers() {\n  try {\n    const response = await fetch('https://api.example.com/users', {\n      method: 'GET',\n      headers: {\n        'Content-Type': 'application/json',\n        Authorization: 'Bearer token123',\n      },\n    });\n\n    if (!response.ok) {\n      throw new Error(`HTTP ${response.status}: ${response.statusText}`);\n    }\n\n    const data = await response.json();\n    return data;\n  } catch (error) {\n    console.error('Fetch error:', error);\n    throw error;\n  }\n}\n\n// POST request\nasync function createUser(userData) {\n  const response = await fetch('https://api.example.com/users', {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify(userData),\n  });\n  return await response.json();\n}"
+        },
+        {
+          "label": "Axios — More Powerful HTTP Client",
+          "code": "// Install: npm install axios\n\nimport axios, { AxiosInstance, AxiosError } from 'axios';\n\n// Create a configured instance\nconst api: AxiosInstance = axios.create({\n  baseURL: 'https://api.example.com/v1',\n  timeout: 10000,\n  headers: { 'Content-Type': 'application/json' },\n});\n\n// Request interceptor (add auth token to every request)\napi.interceptors.request.use(\n  async (config) => {\n    const token = useAuthStore.getState().token;\n    if (token) {\n      config.headers.Authorization = `Bearer ${token}`;\n    }\n    return config;\n  },\n  (error) => Promise.reject(error)\n);\n\n// Response interceptor (handle errors globally)\napi.interceptors.response.use(\n  (response) => response,\n  async (error: AxiosError) => {\n    if (error.response?.status === 401) {\n      useAuthStore.getState().logout();\n    }\n    if (!error.response) {\n      Toast.show('No internet connection');\n    }\n    return Promise.reject(error);\n  }\n);\n\n// Usage:\nexport const userApi = {\n  getUsers: (page: number) => api.get(`/users?page=${page}&limit=20`),\n  getUser: (id: string) => api.get(`/users/${id}`),\n  createUser: (data) => api.post('/users', data),\n  updateUser: (id, data) => api.put(`/users/${id}`, data),\n  deleteUser: (id) => api.delete(`/users/${id}`),\n};"
+        },
+        {
+          "label": "TanStack Query (React Query) for Server State",
+          "code": "// Install: npm install @tanstack/react-query\n\nimport { QueryClient, QueryClientProvider } from '@tanstack/react-query';\nimport { onlineManager } from '@tanstack/react-query';\nimport NetInfo from '@react-native-community/netinfo';\n\nconst queryClient = new QueryClient({\n  defaultOptions: {\n    queries: {\n      staleTime: 5 * 60 * 1000,  // 5 min — data considered fresh\n      gcTime: 30 * 60 * 1000,    // 30 min — keep in cache\n      retry: 2,\n      refetchOnWindowFocus: false, // Disable for mobile\n      refetchOnReconnect: true,    // Refetch when network reconnects\n    },\n  },\n});\n\n// Online status manager\nonlineManager.setEventListener((setOnline) => {\n  return NetInfo.addEventListener((state) => {\n    setOnline(!!state.isConnected);\n  });\n});\n\n// Usage in a screen:\nfunction ProductsScreen() {\n  const { data: products, isLoading, refetch, isRefetching } = useQuery({\n    queryKey: ['products'],\n    queryFn: () => productApi.getProducts(),\n    select: (response) => response.data,\n  });\n\n  const addToCartMutation = useMutation({\n    mutationFn: (productId) => cartApi.addToCart(productId),\n    onSuccess: () => {\n      queryClient.invalidateQueries({ queryKey: ['cart'] });\n    },\n  });\n\n  if (isLoading) return <ActivityIndicator />;\n\n  return (\n    <FlatList\n      data={products}\n      renderItem={({ item }) => (\n        <ProductCard product={item} onAddToCart={() => addToCartMutation.mutate(item.id)} />\n      )}\n      refreshing={isRefetching}\n      onRefresh={refetch}\n    />\n  );\n}"
+        },
+        {
+          "label": "Offline-First Strategy",
+          "text": "React Native apps should work offline. Key strategies:\n\n1. NetInfo — Detect connectivity:\n   import NetInfo from '@react-native-community/netinfo';\n   const unsubscribe = NetInfo.addEventListener(state => {\n     console.log('Is connected:', state.isConnected);\n   });\n\n2. AsyncStorage / MMKV — Cache data locally:\n   - Store last-fetched data so the app is usable offline\n   - Queue mutations and sync when back online\n\n3. Offline-first libraries:\n   - TanStack Query (persister)\n   - WatermelonDB — SQLite-based local database\n   - RxDB — Reactive local database with replication\n\n4. Pattern: Stale-While-Revalidate:\n   - Show cached data immediately\n   - Fetch fresh data from API\n   - Update UI with fresh data\n   - Update local cache\n\n5. Mutation Queue:\n   - User creates a comment while offline\n   - Store the mutation in a queue (AsyncStorage)\n   - When network restores, replay queued mutations"
+        }
+      ]
+    },
+    {
+      "id": "data-persistence",
+      "title": "Data Persistence — Local Storage",
+      "description": "Storing data locally on the device for offline access, caching, and app state persistence.",
+      "items": [
+        {
+          "label": "AsyncStorage (Key-Value)",
+          "code": "// Install: npm install @react-native-async-storage/async-storage\n\nimport AsyncStorage from '@react-native-async-storage/async-storage';\n\nexport const storage = {\n  set: async (key: string, value: string) => {\n    await AsyncStorage.setItem(key, value);\n  },\n\n  get: async (key: string): Promise<string | null> => {\n    return await AsyncStorage.getItem(key);\n  },\n\n  setObject: async (key: string, value: object) => {\n    await AsyncStorage.setItem(key, JSON.stringify(value));\n  },\n\n  getObject: async <T>(key: string): Promise<T | null> => {\n    const json = await AsyncStorage.getItem(key);\n    return json ? JSON.parse(json) : null;\n  },\n\n  remove: async (key: string) => {\n    await AsyncStorage.removeItem(key);\n  },\n\n  clear: async () => {\n    await AsyncStorage.clear();\n  },\n\n  getAllKeys: async (): Promise<string[]> => {\n    return await AsyncStorage.getAllKeys();\n  },\n};"
+        },
+        {
+          "label": "MMKV — High-Performance Alternative",
+          "code": "// MMKV is 30-50x faster than AsyncStorage\n// Install: npm install react-native-mmkv\n\nimport { MMKV } from 'react-native-mmkv';\n\nexport const storage = new MMKV({\n  id: 'app-storage',\n  encryptionKey: 'optional-encryption-key',\n});\n\n// Strings\nstorage.set('username', 'john_doe');\nconst username = storage.getString('username');\n\n// Numbers\nstorage.set('age', 25);\nconst age = storage.getNumber('age');\n\n// Booleans\nstorage.set('isPremium', true);\nconst isPremium = storage.getBoolean('isPremium');\n\n// Delete\nstorage.delete('temp_key');\n\n// Clear all\nstorage.clearAll();\n\n// MMKV + Zustand\nimport { create } from 'zustand';\nimport { persist, createJSONStorage } from 'zustand/middleware';\n\nconst zustandMMKVStorage = {\n  getItem: (name: string) => storage.getString(name) ?? null,\n  setItem: (name: string, value: string) => storage.set(name, value),\n  removeItem: (name: string) => storage.delete(name),\n};\n\nexport const useStore = create(\n  persist(\n    (set) => ({ /* state and actions */ }),\n    {\n      name: 'app-store',\n      storage: createJSONStorage(() => zustandMMKVStorage),\n    }\n  )\n);"
+        },
+        {
+          "label": "Storage Comparison",
+          "table": {
+            "headers": ["Storage", "Type", "Speed", "Encryption", "Best For"],
+            "rows": [
+              ["AsyncStorage", "Key-Value (async)", "~200 ops/sec", "No", "Simple data, small amounts"],
+              ["MMKV", "Key-Value (sync)", "~10,000 ops/sec", "Yes", "High-frequency reads/writes"],
+              ["WatermelonDB", "SQLite (async)", "~5,000 ops/sec", "No", "Complex relational data"],
+              ["expo-sqlite", "SQLite (async)", "~2,000 ops/sec", "No", "Local SQL database"],
+              ["realm", "Object store (sync)", "~8,000 ops/sec", "Yes", "Complex objects, sync"]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "device-apis",
+      "title": "Device APIs — Camera, Location, Permissions & More",
+      "description": "Accessing native device features through Expo or community libraries.",
+      "items": [
+        {
+          "label": "Permissions System",
+          "code": "// Install: npm install react-native-permissions\n\nimport { check, request, PERMISSIONS, RESULTS, openSettings } from 'react-native-permissions';\nimport { Platform, Alert } from 'react-native';\n\nexport async function requestCameraPermission(): Promise<boolean> {\n  const permission = Platform.select({\n    ios: PERMISSIONS.IOS.CAMERA,\n    android: PERMISSIONS.ANDROID.CAMERA,\n  });\n\n  if (!permission) return false;\n\n  const result = await request(permission);\n\n  switch (result) {\n    case RESULTS.GRANTED:\n      return true;\n    case RESULTS.DENIED:\n      console.log('Camera permission denied');\n      return false;\n    case RESULTS.BLOCKED:\n      Alert.alert(\n        'Camera Permission Required',\n        'Please enable camera access in Settings.',\n        [\n          { text: 'Cancel', style: 'cancel' },\n          { text: 'Open Settings', onPress: () => openSettings() },\n        ]\n      );\n      return false;\n    default:\n      return false;\n  }\n}"
+        },
+        {
+          "label": "Camera & Image Picker",
+          "code": "// Install: npm install react-native-image-picker\n\nimport { launchCamera, launchImageLibrary } from 'react-native-image-picker';\n\nexport async function pickFromGallery() {\n  const result = await launchImageLibrary({\n    mediaType: 'photo',\n    quality: 0.8,\n    maxWidth: 1080,\n    maxHeight: 1920,\n  });\n\n  if (result.didCancel) return null;\n  if (result.errorCode) {\n    console.error('ImagePicker error:', result.errorMessage);\n    return null;\n  }\n\n  const asset = result.assets?.[0];\n  if (!asset) return null;\n\n  return {\n    uri: asset.uri!,\n    type: asset.type!,\n    fileName: asset.fileName!,\n    width: asset.width!,\n    height: asset.height!,\n    fileSize: asset.fileSize!,\n  };\n}\n\nexport async function takePhoto() {\n  const hasPermission = await requestCameraPermission();\n  if (!hasPermission) return null;\n\n  const result = await launchCamera({\n    mediaType: 'photo',\n    quality: 0.8,\n  });\n\n  return result.assets?.[0] ?? null;\n}"
+        },
+        {
+          "label": "Location Services",
+          "code": "// Install: npm install @react-native-community/geolocation\n\nimport Geolocation from '@react-native-community/geolocation';\n\nGeolocation.setRNConfiguration({\n  skipPermissionRequests: false,\n  authorizationLevel: 'whenInUse',\n});\n\ninterface LocationCoords {\n  latitude: number;\n  longitude: number;\n}\n\n// Get current position (one-time):\nexport function getCurrentPosition(): Promise<LocationCoords> {\n  return new Promise((resolve, reject) => {\n    Geolocation.getCurrentPosition(\n      (position) => {\n        const { latitude, longitude } = position.coords;\n        resolve({ latitude, longitude });\n      },\n      (error) => reject(error),\n      { enableHighAccuracy: true, timeout: 15000 }\n    );\n  });\n}\n\n// Watch position (continuous updates):\nexport function watchLocation(\n  onPosition: (coords: LocationCoords) => void,\n  onError?: (error: any) => void\n) {\n  const watchId = Geolocation.watchPosition(\n    (position) => {\n      const { latitude, longitude } = position.coords;\n      onPosition({ latitude, longitude });\n    },\n    onError,\n    { enableHighAccuracy: true, distanceFilter: 10 }\n  );\n\n  return () => Geolocation.clearWatch(watchId);\n}"
+        },
+        {
+          "label": "Other Essential Device APIs",
+          "table": {
+            "headers": ["API", "Library", "Purpose"],
+            "rows": [
+              ["Biometrics", "react-native-biometrics", "Face ID / Fingerprint auth"],
+              ["File System", "react-native-fs", "Read/write files on device"],
+              ["Clipboard", "@react-native-clipboard/clipboard", "Copy/paste to clipboard"],
+              ["Network Info", "@react-native-community/netinfo", "Check internet connectivity"],
+              ["Sharing", "react-native-share", "Share via system share sheet"],
+              ["Haptic Feedback", "expo-haptics", "Vibration and haptic feedback"],
+              ["Device Info", "react-native-device-info", "Device model, OS version, ID"],
+              ["Notifications", "react-native-push-notification", "Local/push notifications"],
+              ["In-App Purchases", "react-native-iap", "Purchases and subscriptions"],
+              ["Maps", "react-native-maps", "Native map views"]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "lists-performance",
+      "title": "Lists & Performance Optimization",
+      "description": "Rendering large lists efficiently and optimizing overall app performance.",
+      "items": [
+        {
+          "label": "FlatList — The Virtualized List",
+          "code": "import { FlatList, View, Text, StyleSheet } from 'react-native';\n\nfunction ProductList({ products, onEndReached, isLoadingMore }) {\n\n  const renderItem = ({ item }) => (\n    <ProductCard product={item} />\n  );\n\n  return (\n    <FlatList\n      data={products}\n      renderItem={renderItem}\n      keyExtractor={item => item.id}\n\n      // Performance settings\n      initialNumToRender={10}\n      maxToRenderPerBatch={10}\n      windowSize={5}                 // Lower = less memory\n      removeClippedSubviews={true}   // Android\n\n      // Pagination (infinite scroll)\n      onEndReached={onEndReached}\n      onEndReachedThreshold={0.5}\n\n      // Pull to refresh\n      refreshing={isRefreshing}\n      onRefresh={onRefresh}\n\n      // Custom components\n      ListHeaderComponent={<Header />}\n      ListFooterComponent={isLoadingMore ? <ActivityIndicator /> : null}\n      ListEmptyComponent={<Text>No products found</Text>}\n      ItemSeparatorComponent={() => <View style={{ height: 12 }} />}\n\n      scrollEventThrottle={16}\n    />\n  );\n}\n\n// FlatList vs ScrollView:\n// ScrollView: Renders ALL children. Good for < ~20 items.\n// FlatList: Virtualized. Good for 20+ items, infinite scroll."
+        },
+        {
+          "label": "Performance Optimization Checklist",
+          "text": [
+            "1. Use useCallback for renderItem — Prevents re-creating the function on every render.",
+            "2. Use useMemo for list headers/footers.",
+            "3. Set windowSize lower (5 instead of default 21) for memory-constrained devices.",
+            "4. Enable removeClippedSubviews={true} on Android.",
+            "5. Keep list items lightweight — no heavy images, avoid deep nesting.",
+            "6. Use getItemLayout if all items have the same height — eliminates measurement overhead.",
+            "7. Use React.memo on list item components.",
+            "8. Enable Hermes — JavaScript engine optimized for React Native.",
+            "9. Use InteractionManager.runAfterInteractions() — Defer non-critical work.",
+            "10. Profile with React DevTools Profiler and Flipper.",
+            "11. Use useNativeDriver: true for animations — runs on native thread.",
+            "12. Image optimization — use WebP format, resize server-side, use blurhash placeholders."
+          ]
+        },
+        {
+          "label": "getItemLayout — Fixed Height Items",
+          "code": "// When all items have the same height, use getItemLayout\n// This eliminates the need for FlatList to measure each item\n\nconst ITEM_HEIGHT = 80;\n\n<FlatList\n  data={items}\n  renderItem={renderItem}\n  keyExtractor={item => item.id}\n  getItemLayout={(data, index) => ({\n    length: ITEM_HEIGHT,\n    offset: ITEM_HEIGHT * index,\n    index,\n  })}\n/>\n\n// Without getItemLayout: FlatList must measure each item\n// With getItemLayout: FlatList knows exactly where each item is\n// This is the SINGLE biggest performance optimization for lists."
+        },
+        {
+          "label": "React.memo and InteractionManager",
+          "code": "import React, { memo } from 'react';\nimport { InteractionManager } from 'react-native';\n\n// --- Wrap list items with React.memo ---\nconst ProductCard = memo(function ProductCard({ product, onPress }) {\n  return (\n    <TouchableOpacity onPress={() => onPress?.(product.id)} style={styles.card}>\n      <Image source={{ uri: product.image }} style={styles.image} />\n      <Text style={styles.name} numberOfLines={2}>{product.name}</Text>\n      <Text style={styles.price}>${product.price}</Text>\n    </TouchableOpacity>\n  );\n});\n\n// --- InteractionManager — Defer Non-Critical Work ---\nfunction HeavyScreen() {\n  const [data, setData] = useState(null);\n\n  useEffect(() => {\n    InteractionManager.runAfterInteractions(async () => {\n      // This runs after navigation transition finishes\n      const result = await fetchExpensiveData();\n      setData(result);\n    });\n  }, []);\n\n  if (!data) return <LoadingSkeleton />;\n  return <ExpensiveChart data={data} />;\n}"
+        }
+      ]
+    },
+    {
+      "id": "animations",
+      "title": "Animations — Bringing Your App to Life",
+      "description": "From the built-in Animated API to Reanimated 4 — the modern animation library for React Native.",
+      "items": [
+        {
+          "label": "React Native Animated API (Built-in)",
+          "code": "import { Animated, Easing, useEffect, useRef } from 'react-native';\n\n// --- Basic Fade-In Animation ---\nfunction FadeInView({ children }) {\n  const opacity = useRef(new Animated.Value(0)).current;\n\n  useEffect(() => {\n    Animated.timing(opacity, {\n      toValue: 1,\n      duration: 1000,\n      easing: Easing.inOut(Easing.ease),\n      useNativeDriver: true,  // Always use when possible\n    }).start();\n  }, []);\n\n  return <Animated.View style={{ opacity }}>{children}</Animated.View>;\n}\n\n// --- Multiple Animations (Parallel) ---\nfunction AnimatedCard() {\n  const translateY = useRef(new Animated.Value(50)).current;\n  const opacity = useRef(new Animated.Value(0)).current;\n  const scale = useRef(new Animated.Value(0.8)).current;\n\n  useEffect(() => {\n    Animated.parallel([\n      Animated.timing(translateY, {\n        toValue: 0,\n        duration: 400,\n        easing: Easing.out(Easing.back(1.5)),\n        useNativeDriver: true,\n      }),\n      Animated.timing(opacity, {\n        toValue: 1,\n        duration: 300,\n        useNativeDriver: true,\n      }),\n      Animated.spring(scale, {\n        toValue: 1,\n        friction: 6,\n        tension: 100,\n        useNativeDriver: true,\n      }),\n    ]).start();\n  }, []);\n\n  return (\n    <Animated.View style={{\n      transform: [{ translateY }, { scale }],\n      opacity,\n    }}>\n      <Card />\n    </Animated.View>\n  );\n}"
+        },
+        {
+          "label": "Reanimated 4 — 60 FPS Animations",
+          "code": "// Reanimated runs animations on the UI thread (not JS thread)\n// This guarantees 60 FPS even during heavy JS computation.\n// Install: npm install react-native-reanimated\n// Add plugin to babel.config.js:\n//   plugins: ['react-native-reanimated/plugin']\n\nimport Animated, {\n  useSharedValue,\n  useAnimatedStyle,\n  withSpring,\n  withTiming,\n  withSequence,\n  FadeInDown,\n  FadeOutUp,\n  Layout,\n} from 'react-native-reanimated';\n\n// --- Shared Values + useAnimatedStyle ---\nfunction AnimatedButton() {\n  const scale = useSharedValue(1);\n  const opacity = useSharedValue(1);\n\n  const animatedStyle = useAnimatedStyle(() => ({\n    transform: [{ scale: scale.value }],\n    opacity: opacity.value,\n  }));\n\n  return (\n    <Animated.View style={[styles.button, animatedStyle]}>\n      <Pressable\n        onPressIn={() => {\n          scale.value = withSpring(0.95, { damping: 15 });\n          opacity.value = withTiming(0.8, { duration: 100 });\n        }}\n        onPressOut={() => {\n          scale.value = withSpring(1);\n          opacity.value = withTiming(1, { duration: 100 });\n        }}\n      >\n        <Text style={styles.buttonText}>Press Me</Text>\n      </Pressable>\n    </Animated.View>\n  );\n}\n\n// --- Entering / Exiting Animations ---\nfunction AnimatedList() {\n  const [items, setItems] = useState([1, 2, 3]);\n\n  return (\n    <View>\n      {items.map((item, index) => (\n        <Animated.View\n          key={item}\n          entering={FadeInDown.delay(index * 100).springify()}\n          exiting={FadeOutUp}\n          layout={Layout.springify()}\n        >\n          <Text>Item {item}</Text>\n        </Animated.View>\n      ))}\n    </View>\n  );\n}"
+        },
+        {
+          "label": "Animation Library Comparison",
+          "table": {
+            "headers": ["Library", "Thread", "Performance", "Best For"],
+            "rows": [
+              ["Animated API (built-in)", "Native (with useNativeDriver)", "Good", "Simple animations, transitions"],
+              ["Reanimated 4", "UI thread", "Excellent (60 FPS)", "Complex animations, gestures"],
+              ["LayoutAnimation (built-in)", "Native", "Excellent", "Layout changes (add/remove items)"],
+              ["Lottie", "Native renderer", "Excellent", "After Effects vector animations"],
+              ["Moti", "UI thread (Reanimated)", "Excellent", "Declarative animations"]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "gestures",
+      "title": "Gesture Handling",
+      "description": "Handling touch gestures — tap, swipe, pinch, rotation, drag, and custom gestures.",
+      "items": [
+        {
+          "label": "React Native Gesture Handler",
+          "code": "// Install: npm install react-native-gesture-handler\n// Must wrap app in GestureHandlerRootView:\n\n// App.tsx\nimport { GestureHandlerRootView } from 'react-native-gesture-handler';\n\nexport default function App() {\n  return (\n    <GestureHandlerRootView style={{ flex: 1 }}>\n      <NavigationContainer>{/* ... */}</NavigationContainer>\n    </GestureHandlerRootView>\n  );\n}\n\n// --- Pan Gesture (Draggable) ---\nimport { GestureDetector, Gesture } from 'react-native-gesture-handler';\nimport Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';\n\nfunction DraggableBox() {\n  const offsetX = useSharedValue(0);\n  const offsetY = useSharedValue(0);\n  const startX = useSharedValue(0);\n  const startY = useSharedValue(0);\n\n  const gesture = Gesture.Pan()\n    .onStart(() => {\n      startX.value = offsetX.value;\n      startY.value = offsetY.value;\n    })\n    .onUpdate((event) => {\n      offsetX.value = startX.value + event.translationX;\n      offsetY.value = startY.value + event.translationY;\n    })\n    .onEnd(() => {\n      offsetX.value = withSpring(0);\n      offsetY.value = withSpring(0);\n    });\n\n  const animatedStyle = useAnimatedStyle(() => ({\n    transform: [{ translateX: offsetX.value }, { translateY: offsetY.value }],\n  }));\n\n  return (\n    <GestureDetector gesture={gesture}>\n      <Animated.View style={[styles.box, animatedStyle]} />\n    </GestureDetector>\n  );\n}\n\n// --- Pinch to Zoom ---\nconst pinchGesture = Gesture.Pinch()\n  .onStart(() => { savedScale.value = scale.value; })\n  .onUpdate((event) => { scale.value = Math.min(Math.max(savedScale.value * event.scale, 0.5), 4); })\n  .onEnd(() => { scale.value = withSpring(1); });\n\n// --- Double Tap ---\nconst doubleTapGesture = Gesture.Tap()\n  .numberOfTaps(2)\n  .onStart(() => { scale.value = withSpring(scale.value === 1 ? 1.5 : 1); });\n\n// --- Combined Gestures ---\nconst composed = Gesture.Simultaneous(doubleTapGesture, pinchGesture, panGesture);\n<GestureDetector gesture={composed}><Animated.View style={animatedStyle} /></GestureDetector>"
+        },
+        {
+          "label": "Touchables Comparison",
+          "table": {
+            "headers": ["Component", "Feedback Type", "Use Case"],
+            "rows": [
+              ["TouchableOpacity", "Opacity fade", "Buttons, cards, list items"],
+              ["TouchableHighlight", "Color underlay", "Menu items, table cells"],
+              ["TouchableNativeFeedback (Android)", "Ripple effect", "Material Design buttons"],
+              ["Pressable", "State-driven style", "Custom press, hover, long press"],
+              ["Gesture Handler (Pan)", "Drag/swipe tracking", "Swipeable cards, sliders"]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "forms-input",
+      "title": "Forms & User Input",
+      "description": "Handling forms, validation, keyboard management, and input components.",
+      "items": [
+        {
+          "label": "TextInput & Keyboard Management",
+          "code": "import {\n  TextInput,\n  KeyboardAvoidingView,\n  Keyboard,\n  TouchableWithoutFeedback,\n  Platform,\n} from 'react-native';\n\nfunction LoginForm() {\n  const [email, setEmail] = useState('');\n  const [password, setPassword] = useState('');\n  const passwordRef = useRef<TextInput>(null);\n\n  return (\n    <KeyboardAvoidingView\n      style={{ flex: 1 }}\n      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}\n      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}\n    >\n      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>\n        <View style={{ flex: 1, padding: 20 }}>\n          <TextInput\n            placeholder=\"Email\"\n            value={email}\n            onChangeText={setEmail}\n            keyboardType=\"email-address\"\n            autoCapitalize=\"none\"\n            returnKeyType=\"next\"\n            onSubmitEditing={() => passwordRef.current?.focus()}\n          />\n\n          <TextInput\n            ref={passwordRef}\n            placeholder=\"Password\"\n            value={password}\n            onChangeText={setPassword}\n            secureTextEntry\n            returnKeyType=\"done\"\n            onSubmitEditing={handleLogin}\n          />\n\n          <TouchableOpacity onPress={() => { Keyboard.dismiss(); handleLogin(); }}>\n            <Text>Login</Text>\n          </TouchableOpacity>\n        </View>\n      </TouchableWithoutFeedback>\n    </KeyboardAvoidingView>\n  );\n}"
+        },
+        {
+          "label": "Form Validation (React Hook Form + Zod)",
+          "code": "// Install: npm install react-hook-form @hookform/resolvers zod\n\nimport { useForm, Controller } from 'react-hook-form';\nimport { z } from 'zod';\nimport { zodResolver } from '@hookform/resolvers/zod';\n\nconst signupSchema = z.object({\n  name: z.string().min(2, 'Name must be at least 2 characters'),\n  email: z.string().email('Invalid email address'),\n  password: z.string().min(8, 'Password must be at least 8 characters'),\n});\n\ntype SignupFormData = z.infer<typeof signupSchema>;\n\nfunction SignupForm() {\n  const {\n    control,\n    handleSubmit,\n    formState: { errors, isSubmitting },\n  } = useForm<SignupFormData>({\n    resolver: zodResolver(signupSchema),\n  });\n\n  return (\n    <KeyboardAvoidingView behavior=\"padding\" style={{ flex: 1 }}>\n      <ScrollView>\n        <Controller\n          control={control}\n          name=\"email\"\n          render={({ field: { onChange, onBlur, value } }) => (\n            <View>\n              <TextInput\n                placeholder=\"Email\"\n                onBlur={onBlur}\n                onChangeText={onChange}\n                value={value}\n                style={[styles.input, errors.email && styles.inputError]}\n              />\n              {errors.email && <Text style={styles.error}>{errors.email.message}</Text>}\n            </View>\n          )}\n        />\n        <Controller\n          control={control}\n          name=\"password\"\n          render={({ field: { onChange, onBlur, value } }) => (\n            <View>\n              <TextInput\n                placeholder=\"Password\"\n                secureTextEntry\n                onBlur={onBlur}\n                onChangeText={onChange}\n                value={value}\n                style={[styles.input, errors.password && styles.inputError]}\n              />\n              {errors.password && <Text style={styles.error}>{errors.password.message}</Text>}\n            </View>\n          )}\n        />\n        <TouchableOpacity onPress={handleSubmit(onSubmit)} disabled={isSubmitting}>\n          <Text>{isSubmitting ? 'Creating Account...' : 'Sign Up'}</Text>\n        </TouchableOpacity>\n      </ScrollView>\n    </KeyboardAvoidingView>\n  );\n}"
+        }
+      ]
+    },
+    {
+      "id": "debugging-testing",
+      "title": "Debugging & Testing",
+      "description": "Tools and techniques for debugging and testing React Native apps.",
+      "items": [
+        {
+          "label": "Debugging Tools",
+          "code": "# --- Flipper (React Native Debugger) ---\n# Meta's debugging platform for React Native\n# Install desktop app: https://fbflipper.com/\n# Plugins: React DevTools, Network Inspector, Layout Inspector,\n#          Crash Reporter, Performance, Hermes Debugger\n\n# --- React Native DevTools ---\n# Shake device or press Cmd+D (iOS) / Cmd+M (Android)\nuser@dev:~$ npm install -g react-devtools\nuser@dev:~$ react-devtools\n\n# --- LogBox ---\n# Built-in error/warning display\nimport { LogBox } from 'react-native';\n\n// Ignore specific warnings\nLogBox.ignoreLogs(['Warning: ...']);\n\nif (__DEV__) {\n  LogBox.ignoreLogs([\n    'Non-serializable values were found in the navigation state',\n  ]);\n}\n\n# --- Hermes Debugger (Recommended) ---\n# Hermes has its own inspector\nuser@dev:~$ npx react-native start\n# Connect using Chrome DevTools at chrome://inspect"
+        },
+        {
+          "label": "Testing with Jest + React Native Testing Library",
+          "code": "// Install: npm install --save-dev jest @testing-library/react-native\n\n// Component Test:\n// __tests__/Button.test.tsx\nimport { render, fireEvent, screen } from '@testing-library/react-native';\nimport Button from '@/components/ui/Button';\n\ndescribe('Button Component', () => {\n  it('renders correctly with title', () => {\n    render(<Button title=\"Submit\" onPress={() => {}} />);\n    expect(screen.getByText('Submit')).toBeTruthy();\n  });\n\n  it('calls onPress when pressed', () => {\n    const onPress = jest.fn();\n    render(<Button title=\"Press\" onPress={onPress} />);\n    fireEvent.press(screen.getByText('Press'));\n    expect(onPress).toHaveBeenCalledTimes(1);\n  });\n\n  it('does not call onPress when disabled', () => {\n    const onPress = jest.fn();\n    render(<Button title=\"Disabled\" disabled={true} onPress={onPress} />);\n    fireEvent.press(screen.getByText('Disabled'));\n    expect(onPress).not.toHaveBeenCalled();\n  });\n});\n\n// Screen Test:\ndescribe('LoginScreen', () => {\n  it('validates email format', async () => {\n    render(<LoginScreen />);\n\n    fireEvent.changeText(screen.getByPlaceholderText('Email'), 'invalid');\n    fireEvent.press(screen.getByText('Login'));\n\n    await waitFor(() => {\n      expect(screen.getByText('Invalid email address')).toBeTruthy();\n    });\n  });\n\n  it('calls login API with correct credentials', async () => {\n    const mockLogin = jest.fn().mockResolvedValue({ token: 'abc' });\n\n    render(<LoginScreen />);\n    fireEvent.changeText(screen.getByPlaceholderText('Email'), 'test@example.com');\n    fireEvent.changeText(screen.getByPlaceholderText('Password'), 'password123');\n    fireEvent.press(screen.getByText('Login'));\n\n    await waitFor(() => {\n      expect(mockLogin).toHaveBeenCalledWith({\n        email: 'test@example.com',\n        password: 'password123',\n      });\n    });\n  });\n});"
+        }
+      ]
+    },
+    {
+      "id": "notifications",
+      "title": "Push Notifications",
+      "description": "Setting up local and remote push notifications for iOS and Android.",
+      "items": [
+        {
+          "label": "Expo Notifications (Managed Workflow)",
+          "code": "// For Expo managed workflow\n// Install: npx expo install expo-notifications expo-device expo-constants\n\nimport * as Notifications from 'expo-notifications';\nimport * as Device from 'expo-device';\nimport { Platform } from 'react-native';\n\n// Configure notification handler\nNotifications.setNotificationHandler({\n  handleNotification: async () => ({\n    shouldShowAlert: true,\n    shouldPlaySound: true,\n    shouldSetBadge: true,\n  }),\n});\n\n// Register for push notifications\nexport async function registerForPushNotificationsAsync() {\n  if (!Device.isDevice) {\n    Alert.alert('Must use a physical device for push notifications');\n    return null;\n  }\n\n  const { status: existingStatus } = await Notifications.getPermissionsAsync();\n  let finalStatus = existingStatus;\n\n  if (existingStatus !== 'granted') {\n    const { status } = await Notifications.requestPermissionsAsync();\n    finalStatus = status;\n  }\n\n  if (finalStatus !== 'granted') return null;\n\n  const tokenData = await Notifications.getExpoPushTokenAsync();\n\n  // Android requires a notification channel\n  if (Platform.OS === 'android') {\n    await Notifications.setNotificationChannelAsync('default', {\n      name: 'default',\n      importance: Notifications.AndroidImportance.MAX,\n    });\n  }\n\n  return tokenData.data;\n}\n\n// Handle incoming notifications\nuseEffect(() => {\n  const foregroundSubscription = Notifications.addNotificationReceivedListener(\n    (notification) => console.log('Notification received:', notification)\n  );\n\n  const responseSubscription = Notifications.addNotificationResponseReceivedListener(\n    (response) => {\n      const data = response.notification.request.content.data;\n      if (data?.screen) {\n        navigation.navigate(data.screen, { id: data.courseId });\n      }\n    }\n  );\n\n  return () => {\n    foregroundSubscription.remove();\n    responseSubscription.remove();\n  };\n}, []);"
+        },
+        {
+          "label": "Firebase Cloud Messaging (Bare Workflow)",
+          "code": "// Install: npm install @react-native-firebase/app @react-native-firebase/messaging\n\nimport messaging from '@react-native-firebase/messaging';\n\n// Request permission\nexport async function requestNotificationPermission() {\n  const authStatus = await messaging().requestPermission();\n  const enabled =\n    authStatus === messaging.AuthorizationStatus.AUTHORIZED ||\n    authStatus === messaging.AuthorizationStatus.PROVISIONAL;\n  return enabled;\n}\n\n// Get FCM Token\nexport async function getFCMToken() {\n  const enabled = await requestNotificationPermission();\n  if (!enabled) return null;\n\n  const token = await messaging().getToken();\n  await api.registerDeviceToken(token);\n  return token;\n}\n\n// Listen for messages\nuseEffect(() => {\n  // Token refresh\n  const unsubscribeToken = messaging().onTokenRefresh(async (token) => {\n    await api.registerDeviceToken(token);\n  });\n\n  // Foreground messages\n  const unsubscribeMessage = messaging().onMessage(async (message) => {\n    Toast.show({ title: message.notification?.title, body: message.notification?.body });\n  });\n\n  // Handle notification tap (from quit state)\n  messaging().getInitialNotification().then((message) => {\n    if (message) handleNotificationData(message.data);\n  });\n\n  return () => {\n    unsubscribeToken();\n    unsubscribeMessage();\n  };\n}, []);"
+        }
+      ]
+    },
+    {
+      "id": "publishing",
+      "title": "Publishing to App Stores",
+      "description": "Building, signing, and publishing your React Native app to the Apple App Store and Google Play Store.",
+      "items": [
+        {
+          "label": "Building for Production",
+          "code": "# --- Android Release Build ---\n\n# Generate upload key (one-time):\nuser@dev:~$ keytool -genkey -v -keystore my-upload-key.keystore -alias my-key-alias -keyalg RSA -keysize 2048 -validity 10000\n\n# Build AAB (Android App Bundle — recommended for Play Store):\nuser@dev:~$ cd android && ./gradlew bundleRelease && cd ..\n# Output: android/app/build/outputs/bundle/release/app-release.aab\n\n# Build APK (for direct installation):\nuser@dev:~$ cd android && ./gradlew assembleRelease && cd ..\n# Output: android/app/build/outputs/apk/release/app-release.apk\n\n# --- iOS Release Build ---\n\n# Open in Xcode:\nuser@dev:~$ open ios/MyApp.xcworkspace\n\n# Steps in Xcode:\n# 1. Select Product > Scheme > Edit Scheme\n# 2. Set Build Configuration to Release\n# 3. Select Product > Archive\n# 4. In Organizer, distribute to App Store Connect\n\n# Or build via command line:\nuser@dev:~$ cd ios && xcodebuild -workspace MyApp.xcworkspace -scheme MyApp -configuration Release archive -archivePath build/MyApp.xcarchive && cd ..\n\n# --- With Expo EAS Build ---\nuser@dev:~$ npx eas build --platform all  # Build both platforms\nuser@dev:~$ npx eas submit --platform ios    # Submit to App Store\nuser@dev:~$ npx eas submit --platform android  # Submit to Play Store\nuser@dev:~$ npx eas update --branch production --message \"Fix login bug\"  # OTA update"
+        },
+        {
+          "label": "App Store Configuration Checklist",
+          "text": [
+            "iOS App Store:\n  1. Apple Developer Program ($99/year) — Enroll at developer.apple.com\n  2. Create App ID and Bundle Identifier in Apple Developer Console\n  3. Generate App Store Connect API Key for EAS Submit\n  4. Configure App Icon (1024x1024) and Screenshots (6.7\", 6.5\", 5.5\" displays)\n  5. Set up Certificates, Identifiers & Profiles\n  6. Prepare App Store metadata (name, subtitle, keywords, description)\n  7. Set up In-App Purchases or Subscriptions if applicable\n  8. Submit for Review (24-48 hours typical)\n\nGoogle Play Store:\n  1. Google Play Developer account ($25 one-time)\n  2. Create application in Play Console\n  3. Generate upload key (keep it safe!)\n  4. Configure App signing key\n  5. Prepare store listing (graphics, screenshots, description)\n  6. Set content rating questionnaire\n  7. Set pricing distribution (free or paid)\n  8. Roll out production (staged rollout recommended)\n\nBoth Stores:\n  - App privacy questionnaire (required)\n  - Data Safety section (Google Play)\n  - App Tracking Transparency (iOS 14.5+)\n  - Compliance with local regulations (GDPR, CCPA)"
+        ]
+      }
+      ]
+    },
+    {
+      "id": "typescript",
+      "title": "TypeScript with React Native",
+      "description": "Using TypeScript effectively in React Native for type safety and better developer experience.",
+      "items": [
+        {
+          "label": "TypeScript Configuration",
+          "code": "// tsconfig.json — Standard React Native TypeScript config\n{\n  \"compilerOptions\": {\n    \"target\": \"esnext\",\n    \"module\": \"commonjs\",\n    \"lib\": [\"es2022\"],\n    \"allowJs\": true,\n    \"jsx\": \"react-native\",\n    \"strict\": true,\n    \"moduleResolution\": \"node\",\n    \"resolveJsonModule\": true,\n    \"isolatedModules\": true,\n    \"noEmit\": true,\n    \"esModuleInterop\": true,\n    \"skipLibCheck\": true,\n    \"forceConsistentCasingInFileNames\": true,\n    \"baseUrl\": \".\",\n    \"paths\": {\n      \"@/*\": [\"src/*\"],\n      \"@components/*\": [\"src/components/*\"],\n      \"@features/*\": [\"src/features/*\"],\n      \"@utils/*\": [\"src/utils/*\"]\n    }\n  },\n  \"include\": [\"src/**/*\", \"index.js\", \"App.tsx\"],\n  \"exclude\": [\"node_modules\", \"babel.config.js\", \"metro.config.js\"]\n}"
+        },
+        {
+          "label": "Common TypeScript Patterns in React Native",
+          "code": "// --- Typed Props ---\ninterface ButtonProps {\n  title: string;\n  onPress: () => void;\n  variant?: 'primary' | 'secondary' | 'outline';\n  disabled?: boolean;\n  loading?: boolean;\n  icon?: React.ReactNode;\n  style?: StyleProp<ViewStyle>;\n}\n\nfunction Button({ title, onPress, variant = 'primary', disabled, loading, icon, style }: ButtonProps) {\n  return (\n    <TouchableOpacity\n      onPress={onPress}\n      disabled={disabled || loading}\n      style={[styles.base, styles[variant], disabled && styles.disabled, style]}\n    >\n      {icon && <View style={{ marginRight: 8 }}>{icon}</View>}\n      {loading ? <ActivityIndicator color=\"#fff\" /> : <Text style={styles.text}>{title}</Text>}\n    </TouchableOpacity>\n  );\n}\n\n// --- Generic List Component ---\ninterface ListProps<T> {\n  data: T[];\n  renderItem: (item: T, index: number) => React.ReactNode;\n  keyExtractor: (item: T) => string;\n  emptyMessage?: string;\n}\n\nfunction List<T>({ data, renderItem, keyExtractor, emptyMessage }: ListProps<T>) {\n  if (data.length === 0) return <Text>{emptyMessage || 'No items'}</Text>;\n  return <>{data.map((item, index) => <View key={keyExtractor(item)}>{renderItem(item, index)}</View>)}</>;\n}\n\n// --- Utility Types ---\ntype Nullable<T> = T | null;\ntype Optional<T> = T | undefined;\ntype AsyncState<T> = { data: T | null; isLoading: boolean; error: string | null };"
+        }
+      ]
+    },
+    {
+      "id": "security",
+      "title": "Security Best Practices",
+      "description": "Securing your React Native application and protecting user data.",
+      "items": [
+        {
+          "label": "Security Checklist",
+          "text": [
+            "1. Store secrets securely — Never hardcode API keys, tokens, or passwords. Use environment variables via react-native-config or expo-constants.",
+            "2. Use encrypted storage — Store sensitive data (tokens, biometrics) in Keychain (iOS) / EncryptedSharedPreferences (Android) via react-native-keychain or MMKV with encryption.",
+            "3. Implement certificate pinning — Use react-native-ssl-pinning or axios with custom httpsAgent to prevent MITM attacks.",
+            "4. Secure network communication — Always use HTTPS, never HTTP in production. Implement proper TLS configuration.",
+            "5. Deep link validation — Validate all incoming deep links to prevent URL scheme hijacking. Use verified links (iOS) / App Links (Android).",
+            "6. Input validation — Validate all user input both client-side and server-side. Sanitize inputs to prevent injection attacks.",
+            "7. Authentication — Use OAuth 2.0 / OpenID Connect. Implement biometric authentication for sensitive operations. Use short-lived tokens with refresh token rotation.",
+            "8. Code obfuscation — Use ProGuard (Android) and build with Release configuration to minimize reverse engineering risk.",
+            "9. Jailbreak/root detection — Use react-native-jailbreak-detection to prevent running on compromised devices (for high-security apps).",
+            "10. Regular dependency audits — Run `npm audit` regularly. Keep all dependencies updated. Use Dependabot or Snyk for automated vulnerability scanning.",
+            "11. App Transport Security (iOS) — Configure Info.plist to restrict network connections to HTTPS only.",
+            "12. Network Security Config (Android) — Use network_security_config.xml to enforce HTTPS and certificate pinning.",
+            "13. Logging — Never log sensitive information (tokens, passwords, PII). Strip logs in production builds.",
+            "14. WebView safety — If using WebView, disable JavaScript unless required, validate URLs, and use allowlist pattern.",
+            "15. Data minimization — Only collect and store data that is absolutely necessary. Follow privacy-by-design principles."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cicd",
+      "title": "CI/CD for React Native",
+      "description": "Setting up continuous integration and deployment pipelines for React Native apps.",
+      "items": [
+        {
+          "label": "GitHub Actions Workflow",
+          "code": "# .github/workflows/ci.yml\nname: React Native CI\n\non:\n  push:\n    branches: [main, develop]\n  pull_request:\n    branches: [main]\n\njobs:\n  lint-and-test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n\n      - uses: actions/setup-node@v4\n        with:\n          node-version: 22\n          cache: 'npm'\n\n      - run: npm ci\n\n      - run: npx eslint src/\n\n      - run: npx jest --coverage\n\n      - uses: actions/upload-artifact@v4\n        if: always()\n        with:\n          name: coverage\n          path: coverage/\n\n  android-build:\n    needs: lint-and-test\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: 22\n      - run: npm ci\n\n      - name: Setup JDK\n        uses: actions/setup-java@v4\n        with:\n          distribution: 'temurin'\n          java-version: '17'\n\n      - name: Build Android Release\n        run: cd android && ./gradlew bundleRelease\n\n      - uses: actions/upload-artifact@v4\n        with:\n          name: android-release\n          path: android/app/build/outputs/bundle/release/app-release.aab\n\n  ios-build:\n    needs: lint-and-test\n    runs-on: macos-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: 22\n\n      - run: npm ci\n\n      - name: Install Pods\n        run: cd ios && pod install\n\n      - name: Build iOS\n        run: |\n          xcodebuild -workspace ios/MyApp.xcworkspace \\\n            -scheme MyApp \\\n            -configuration Release \\\n            -sdk iphoneos \\\n            -derivedDataPath ios/build \\\n            archive -archivePath ios/build/MyApp.xcarchive\n\n      - uses: actions/upload-artifact@v4\n        with:\n          name: ios-release\n          path: ios/build/MyApp.xcarchive"
+        },
+        {
+          "label": "Fastlane for Deployment Automation",
+          "code": "# Fastlane automates beta deployments and App Store releases\n# Install: sudo gem install fastlane -NV\n\n# fastlane/Fastfile\nfastlane_version \"2.220.0\"\n\nplatform :ios do\n  desc \"Deploy to TestFlight\"\n  lane :beta do\n    increment_build_number\n    build_app(scheme: \"MyApp\", workspace: \"ios/MyApp.xcworkspace\")\n    upload_to_testflight(\n      skip_waiting_for_build_processing: true\n    )\n  end\n\n  desc \"Deploy to App Store\"\n  lane :release do\n    match(type: \"appstore\")\n    increment_build_number\n    build_app(scheme: \"MyApp\", workspace: \"ios/MyApp.xcworkspace\", configuration: \"Release\")\n    upload_to_app_store(\n      skip_metadata: true,\n      skip_screenshots: true\n    )\n  end\nend\n\nplatform :android do\n  desc \"Deploy to Play Console\"\n  lane :beta do\n    increment_version_code\n    gradle(task: \"bundleRelease\")\n    upload_to_play_store(track: \"beta\")\n  end\n\n  lane :release do\n    increment_version_code\n    gradle(task: \"bundleRelease\")\n    upload_to_play_store(track: \"production\")\n  end\nend\n\n# Usage:\n# fastlane ios beta\n# fastlane android beta"
+        }
+      ]
+    },
+    {
+      "id": "troubleshooting",
+      "title": "Troubleshooting Common Issues",
+      "description": "Solutions to the most common React Native development problems.",
+      "items": [
+        {
+          "label": "Issue 1: Metro Bundler Errors",
+          "text": "Symptoms: Bundling fails, red screen with syntax error, module not found.\n\nSolutions:\n1. Clear Metro cache: npx react-native start --reset-cache\n2. Clear npm cache: npm cache clean --force\n3. Delete node_modules and reinstall: rm -rf node_modules && npm install\n4. Check import paths for typos and case-sensitivity\n5. Ensure all dependencies are installed\n6. Check for duplicate modules (npm dedupe)\n7. Restart the bundler completely"
+        },
+        {
+          "label": "Issue 2: iOS Build Fails",
+          "text": "Symptoms: Build error in Xcode, pod install fails, missing frameworks.\n\nSolutions:\n1. cd ios && pod install --repo-update\n2. Clear derived data:\n   rm -rf ~/Library/Developer/Xcode/DerivedData\n3. Check Xcode version compatibility\n4. Update CocoaPods: sudo gem update cocoapods\n5. Check iOS deployment target matches pod requirements\n6. Open .xcworkspace (not .xcodeproj)\n7. Clean build folder in Xcode (Cmd+Shift+K)"
+        },
+        {
+          "label": "Issue 3: Android Build Fails",
+          "text": "Symptoms: Gradle build error, dex issues, SDK not found.\n\nSolutions:\n1. cd android && ./gradlew clean\n2. Check Java version (JDK 17+ required)\n3. Check Android Gradle Plugin version compatibility\n4. Update Android SDK in Android Studio SDK Manager\n5. Enable multidex if method count exceeds 64K\n6. Check build.gradle for dependency version conflicts\n7. ./gradlew --stop (kill all Gradle daemons)\n8. Check local.properties for SDK path"
+        },
+        {
+          "label": "Issue 4: App Crashes on Launch",
+          "text": "Symptoms: App opens briefly then closes, no error message.\n\nSolutions:\n1. Check native crash logs: \n   iOS: open Xcode -> Window -> Devices and Simulators -> View Device Logs\n   Android: adb logcat *:E\n2. Check for unlinked native modules\n3. Disable Hermes temporarily to compare\n4. Check Sentry or other crash reporting tools\n5. Test in Release mode vs Debug mode\n6. Check for null pointer exceptions\n7. Verify all third-party SDKs are correctly initialized"
+        },
+        {
+          "label": "Issue 5: Animation Performance Issues",
+          "text": "Symptoms: Animations stutter, drop frames, feel laggy.\n\nSolutions:\n1. Use useNativeDriver: true for Animated API\n2. Use Reanimated for UI-thread animations\n3. Avoid creating new Animated.Value on every render\n4. Use LayoutAnimation for layout changes\n5. Reduce bridge crossing during animations\n6. Enable Hermes engine\n7. Check for heavy JS thread load\n8. Use InteractionManager for non-critical work"
+        },
+        {
+          "label": "Issue 6: Push Notifications Not Working",
+          "text": "Symptoms: Notifications not received, permissions not showing.\n\nSolutions:\n1. iOS: Ensure Push Notification capability is enabled in Xcode\n2. iOS: Check APNs certificates are valid\n3. Android: Check Firebase Cloud Messaging setup\n4. Verify device token is being sent to backend\n5. Test with physical device (not simulator)\n6. Check notification channel settings (Android)\n7. Verify notification content (title, body not empty)\n8. Check app is not in foreground (or implement foreground handler)"
+        }
+      ]
+    },
+    {
+      "id": "summary",
+      "title": "Summary & Next Steps",
+      "description": "Key takeaways and resources for continuing your React Native journey.",
+      "items": [
+        {
+          "label": "What You've Learned",
+          "text": [
+            "Architecture: Bridge vs JSI/Fabric/TurboModules — Understanding the New Architecture",
+            "Setup: Expo (managed/dev client) vs React Native CLI (bare workflow) — choosing the right approach",
+            "Project Structure: Feature-based organization for scalability and maintainability",
+            "Core Components: View, Text, Image, TextInput, ScrollView, FlatList, Pressable and their native mappings",
+            "Styling: StyleSheet, Platform-specific styles, NativeWind/Tailwind CSS, and the Box Model differences from web",
+            "Flexbox/Yoga: Flex direction, justify/align content, flex wrap, gap, and common layout patterns",
+            "Navigation: React Navigation with Stack, Bottom Tabs, Drawer, type-safe navigation params",
+            "State Management: Zustand (recommended), Redux Toolkit, Jotai, Context — when to use each",
+            "Networking: fetch, Axios interceptors, TanStack Query for server state caching and offline support",
+            "Data Persistence: AsyncStorage, MMKV (high-performance), WatermelonDB for complex data",
+            "Device APIs: Camera, location, biometrics, permissions system, and essential native device features",
+            "Lists & Performance: FlatList virtualization, getItemLayout, React.memo, windowSize optimization",
+            "Animations: Animated API, Reanimated 4 (UI thread), LayoutAnimation, Lottie — choosing the right tool",
+            "Gestures: Gesture Handler with Pan, Pinch, Tap, Rotation, and composed gestures",
+            "Forms: TextInput with KeyboardAvoidingView, React Hook Form + Zod validation",
+            "Debugging: Flipper, React DevTools, LogBox, Hermes debugger, performance profiling",
+            "Testing: Jest for unit tests, React Native Testing Library for component tests, Detox for E2E",
+            "Push Notifications: Expo Notifications for managed, Firebase Cloud Messaging for bare workflow",
+            "Publishing: Building AAB/APK for Android, Archives for iOS, App Store and Play Store submission",
+            "TypeScript: Typed props, generic components, utility types, path aliases",
+            "Security: Encrypted storage, certificate pinning, authentication best practices, code obfuscation",
+            "CI/CD: GitHub Actions, Fastlane for automated build and deployment"
+          ]
+        },
+        {
+          "label": "Next Steps",
+          "text": "Congratulations on completing the React Native A–Z guide! Here's where to go next:\n\n1. Build a real app — Apply what you've learned by building a complete app from scratch\n2. Explore the ecosystem — Learn about Expo Router (file-based routing), Tamagui (UI library), Solito (universal navigation)\n3. Deep dive into native modules — Write your own TurboModule or Fabric component using C++/JSI\n4. Learn state management patterns — Master Zustand, explore Redux Toolkit for enterprise apps\n5. Master the New Architecture — Understand the full JSI/Fabric/TurboModules pipeline\n6. Study production patterns — Code push, feature flags, A/B testing, analytics, monitoring\n7. Contribute to open source — React Native, Expo, and community libraries welcome contributions\n8. Read the official docs — https://reactnative.dev/docs\n9. Join the community — React Native Discord, Reddit r/reactnative, Twitter/X #ReactNative\n10. Stay updated — Follow the React Native blog, release notes, and RFCs"
+        },
+        {
+          "label": "Official Documentation & Resources",
+          "table": {
+            "headers": ["Resource", "URL", "Description"],
+            "rows": [
+              ["React Native Docs", "https://reactnative.dev/docs", "Official documentation and API reference"],
+              ["React Native Blog", "https://reactnative.dev/blog", "Release notes, announcements, case studies"],
+              ["Expo Docs", "https://docs.expo.dev", "Expo SDK, EAS Build, development builds"],
+              ["React Navigation Docs", "https://reactnavigation.org/docs", "Navigation library documentation"],
+              ["Reanimated Docs", "https://docs.swmansion.com/react-native-reanimated", "Animation library docs"],
+              ["Gesture Handler Docs", "https://docs.swmansion.com/react-native-gesture-handler", "Gesture library docs"],
+              ["React Native Directory", "https://reactnative.directory", "Find React Native libraries"],
+              ["Made with React Native", "https://madewithreactnative.com", "Showcase of RN apps"],
+              ["Expo Router", "https://expo.github.io/router/docs", "File-based routing with Expo"],
+              ["New Architecture", "https://reactnative.dev/docs/the-new-architecture/landing-page", "Learn Fabric, TurboModules, JSI"]
+            ]
+          }
+        }
       ]
     }
   ]

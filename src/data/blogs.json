@@ -47,5 +47,12 @@
     "content": "A comprehensive end-to-end guide to Next.js from fundamentals to production. Covers the App Router, server & client components, data fetching, server actions, routing, middleware, authentication, caching, rendering strategies, deployment, TypeScript, testing, i18n, performance optimization, and production best practices.",
     "author": "E-Learning Platform",
     "date": "2026-05-21"
+  },
+  {
+    "slug": "react-native",
+    "title": "React Native: The Complete A–Z Guide",
+    "content": "A comprehensive end-to-end guide to React Native from fundamentals to production. Covers core components, styling, flexbox/Yoga, navigation, state management, networking, data persistence, device APIs (camera, location, permissions), animations (Reanimated, Animated API), gestures, forms, debugging, testing, push notifications, performance optimization, TypeScript, publishing to app stores, security, CI/CD, and production best practices.",
+    "author": "E-Learning Platform",
+    "date": "2026-05-21"
   }
 ]
