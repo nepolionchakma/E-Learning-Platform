@@ -1,0 +1,925 @@
+{
+  "title": "Testing PostgreSQL High Availability on a Single VM: The Complete Guide",
+  "icon": "🐘",
+  "description": "Learn how to set up and test a full PostgreSQL High Availability cluster — including Patroni, etcd, and HAProxy — on just one machine using native services and multiple PostgreSQL instances. Covers automatic failover, graceful switchover, node recovery, read/write splitting, and three different HA approaches with step-by-step instructions, real commands, and expected outputs.",
+  "author": "E-Learning Platform",
+  "date": "2026-05-21",
+  "readTime": "45 min read",
+  "heroImage": "/images/postgresql-ha-single-vm-hero.svg",
+  "heroAlt": "Single VM running multiple PostgreSQL instances with Patroni, etcd, and HAProxy as native services — simulating a multi-node HA cluster on one machine",
+  "sections": [
+    {
+      "id": "introduction",
+      "title": "Introduction",
+      "content": [
+        "PostgreSQL High Availability traditionally requires multiple physical or virtual machines: at least 3 nodes for a proper quorum-based setup. This creates a high barrier to entry. You need to provision VMs, configure networking between them, manage firewalls, and deal with infrastructure before you can even start learning how HA works.",
+        "There is a better way. A single Linux VM can run multiple PostgreSQL instances with different ports and data directories, each managed by Patroni and coordinated by etcd — all as native processes. You get the full HA experience — leader election, automatic failover, read/write splitting — without any container overhead.",
+        "In this comprehensive guide, you will learn three approaches to testing PostgreSQL HA on a single VM, from a full production-grade Patroni stack down to lightweight manual replication. Every command includes its expected output so you know exactly what should happen."
+      ],
+      "infoBox": {
+        "type": "info",
+        "content": "💡 All examples use PostgreSQL 17/18, Patroni 4.x, etcd 3.5, and HAProxy 2.9 installed directly on Ubuntu 22.04+ or Debian 12+. Everything runs as native systemd services or background processes. No Docker required."
+      },
+      "items": [
+        {
+          "label": "What You Will Learn",
+          "text": [
+            "✅ How to simulate a 3-node PostgreSQL cluster on a single machine using native OS services",
+            "✅ Three different HA approaches: Patroni+etcd+HAProxy, pg_auto_failover, and manual streaming replication",
+            "✅ How to test automatic failover by killing the leader and watching a replica get promoted",
+            "✅ How to test graceful switchover for planned maintenance",
+            "✅ How to test node recovery when a failed node rejoins the cluster",
+            "✅ How to test read/write splitting through HAProxy",
+            "✅ What HA features you can and cannot test on a single VM",
+            "✅ Best practices for resource limits, port maps, and data persistence"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "prerequisites",
+      "title": "Prerequisites",
+      "content": [
+        "Before starting, make sure your environment meets these requirements."
+      ],
+      "items": [
+        {
+          "label": "System Requirements",
+          "table": {
+            "headers": ["Resource", "Minimum", "Recommended", "Notes"],
+            "rows": [
+              ["CPU", "4 cores", "8 cores", "Each PG instance needs CPU for WAL and replication"],
+              ["RAM", "8 GB", "16 GB", "PostgreSQL uses shared_buffers; 3 instances need ~3 GB minimum"],
+              ["Disk", "20 GB free", "50 GB SSD", "Each PG instance stores WAL and data separately"],
+              ["OS", "Ubuntu 22.04+ / Debian 12+", "Linux (any distro)", "systemd recommended for service management"]
+            ]
+          }
+        },
+        {
+          "label": "Software Requirements",
+          "text": [
+            "• PostgreSQL 17/18 — install via apt from the official PostgreSQL APT repository",
+            "• etcd 3.5 — install via apt or download the binary from GitHub",
+            "• HAProxy 2.9 — install via apt",
+            "• Python 3.10+ and pip — for installing Patroni",
+            "• psql client (comes with PostgreSQL)",
+            "• curl and wget — for health checks"
+          ],
+          "code": "# Install prerequisites on Ubuntu/Debian:\n\n# Add PostgreSQL APT repository:\nsudo sh -c 'echo \"deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main\" > /etc/apt/sources.list.d/pgdg.list'\ncurl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg\n\n# Install PostgreSQL, HAProxy, etcd, and Python:\nsudo apt update\nsudo apt install -y postgresql-17 postgresql-17 postgresql-client-17 \\\n    haproxy etcd python3 python3-pip python3-venv\n\n# Install Patroni:\npip3 install patroni[etcd3]\n\n# Verify installations:\npsql --version\n# Expected: psql (PostgreSQL) 17.x\n\netcd --version\n# Expected: etcd Version: 3.5.x\n\nhaproxy -v\n# Expected: HAProxy version 2.9.x\n\npatroni --version\n# Expected: patroni 4.x"
+        },
+        {
+          "label": "Port Availability Check",
+          "text": [
+            "The HA stack uses these ports on your host. Make sure none are already in use:"
+          ],
+          "code": "# Check if ports are free on Linux:\nss -tulpn | grep -E '(5000|5001|5432|5433|5434|2379|2380|8008|8404)'\n\n# All should return no matches. If ports are in use, stop the conflicting services\n# or use different ports in the configuration files.\n\n# Also check if any systemd services are already running on these ports:\nsystemctl list-units --type=service --state=running | grep -E '(postgres|etcd|haproxy)'"
+        }
+      ]
+    },
+    {
+      "id": "architecture-overview",
+      "title": "Architecture Overview: How Multiple Instances Simulate Multiple Nodes",
+      "content": [
+        "A PostgreSQL HA cluster needs three things: multiple PostgreSQL instances with streaming replication, a distributed consensus store to coordinate leader election, and a load balancer for read/write routing. On separate VMs, each service runs on its own machine. On a single VM, each PostgreSQL instance runs as a separate process with its own port, data directory, and configuration.",
+        "The key insight is that PostgreSQL supports running multiple instances on the same host. Each instance uses a different port (5432, 5433, 5434), a different data directory (/var/lib/postgresql/17/main1, main2, main3), and separate systemd services. From Patroni's perspective, the instances are indistinguishable from separate VMs — Patroni communicates with each via its REST API on different ports (8008, 8009, 8010)."
+      ],
+      "items": [
+        {
+          "label": "Service Architecture Diagram",
+          "text": [
+            "Here is how the services map to system processes for the full Patroni-based approach:"
+          ],
+          "table": {
+            "headers": ["Service", "Executable", "Port (Listen)", "Port (Peer)", "Purpose"],
+            "rows": [
+              ["etcd1", "/usr/bin/etcd", "12379 (client)", "12380 (peer)", "ETCD node 1 — DCS quorum member"],
+              ["etcd2", "/usr/bin/etcd", "22379 (client)", "22380 (peer)", "ETCD node 2 — DCS quorum member"],
+              ["etcd3", "/usr/bin/etcd", "32379 (client)", "32380 (peer)", "ETCD node 3 — DCS quorum member"],
+              ["patroni1", "/usr/local/bin/patroni", "15432 (PG), 18081 (REST)", "—", "PostgreSQL node 1 — potential leader"],
+              ["patroni2", "/usr/local/bin/patroni", "15433 (PG), 18082 (REST)", "—", "PostgreSQL node 2 — replica"],
+              ["patroni3", "/usr/local/bin/patroni", "15434 (PG), 18083 (REST)", "—", "PostgreSQL node 3 — replica"],
+              ["haproxy", "/usr/sbin/haproxy", "5000 (write), 5001 (read), 8404 (stats)", "—", "Load balancer — single entry point for apps"]
+            ]
+          }
+        },
+        {
+          "label": "How It Works",
+          "text": [
+            "1. The three etcd processes form a 3-node distributed consensus cluster using the local host IP (127.0.0.1) with different ports. etcd stores the cluster state: who is the leader, what is the current timeline, and configuration.",
+            "2. The three Patroni processes each manage one PostgreSQL instance. Patroni monitors PostgreSQL health via its REST API and communicates with etcd to participate in leader election.",
+            "3. When the cluster starts, the three Patroni nodes elect a leader. The leader's PostgreSQL is writable. The other two become replicas and stream WAL from the leader.",
+            "4. HAProxy checks each Patroni node's REST API every 3 seconds. The write port (5000) goes to the leader only. The read port (5001) load-balances across replicas.",
+            "5. If the leader process crashes or is stopped, etcd detects the lock is lost. The remaining Patroni nodes hold a new election. One replica is promoted to leader. HAProxy detects the change and routes writes to the new leader."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "method-1-patroni",
+      "title": "Method 1: Patroni + etcd + HAProxy (Full HA Stack)",
+      "content": [
+        "This is the most complete and production-realistic testing approach. Patroni handles automated failover, etcd provides distributed consensus, and HAProxy gives you a stable connection endpoint. This is the same stack used by companies like GitLab, Zalando, and Postgres.ai.",
+        "We will set up 7 OS-level services: 3 etcd nodes, 3 Patroni-managed PostgreSQL instances, and 1 HAProxy load balancer. Everything runs as native systemd services or direct processes on a single Linux VM."
+      ],
+      "subsections": [
+        {
+          "title": "Step 1: Create Data Directories and Users",
+          "content": "Each PostgreSQL instance needs its own data directory, and each etcd node needs its own data directory.",
+          "items": [
+            {
+              "label": "Create directories for all services",
+              "code": "sudo mkdir -p /var/lib/etcd/{etcd1,etcd2,etcd3}\nsudo mkdir -p /var/lib/postgresql/{patroni1,patroni2,patroni3}\nsudo mkdir -p /etc/patroni\nsudo mkdir -p /etc/haproxy\n\n# Verify directories:\nls -la /var/lib/etcd/\nls -la /var/lib/postgresql/"
+            }
+          ]
+        },
+        {
+          "title": "Step 2: Configure the etcd Cluster (3 Nodes)",
+          "content": [
+            "We will run 3 etcd instances on different ports, all on localhost. Each instance gets its own configuration file and data directory."
+          ],
+          "items": [
+            {
+              "label": "Create etcd1 configuration",
+              "code": "sudo tee /etc/etcd1.conf.yml << 'EOF'\nname: etcd1\ndata-dir: /var/lib/etcd/etcd1\nlisten-peer-urls: http://127.0.0.1:12380\nlisten-client-urls: http://127.0.0.1:12379\nadvertise-client-urls: http://127.0.0.1:12379\ninitial-advertise-peer-urls: http://127.0.0.1:12380\ninitial-cluster: etcd1=http://127.0.0.1:12380,etcd2=http://127.0.0.1:22380,etcd3=http://127.0.0.1:32380\ninitial-cluster-token: pg-ha-cluster\ninitial-cluster-state: new\nEOF\n\necho \"Created /etc/etcd1.conf.yml\""
+            },
+            {
+              "label": "Create etcd2 configuration",
+              "code": "sudo tee /etc/etcd2.conf.yml << 'EOF'\nname: etcd2\ndata-dir: /var/lib/etcd/etcd2\nlisten-peer-urls: http://127.0.0.1:22380\nlisten-client-urls: http://127.0.0.1:22379\nadvertise-client-urls: http://127.0.0.1:22379\ninitial-advertise-peer-urls: http://127.0.0.1:22380\ninitial-cluster: etcd1=http://127.0.0.1:12380,etcd2=http://127.0.0.1:22380,etcd3=http://127.0.0.1:32380\ninitial-cluster-token: pg-ha-cluster\ninitial-cluster-state: new\nEOF\n\necho \"Created /etc/etcd2.conf.yml\""
+            },
+            {
+              "label": "Create etcd3 configuration",
+              "code": "sudo tee /etc/etcd3.conf.yml << 'EOF'\nname: etcd3\ndata-dir: /var/lib/etcd/etcd3\nlisten-peer-urls: http://127.0.0.1:32380\nlisten-client-urls: http://127.0.0.1:32379\nadvertise-client-urls: http://127.0.0.1:32379\ninitial-advertise-peer-urls: http://127.0.0.1:32380\ninitial-cluster: etcd1=http://127.0.0.1:12380,etcd2=http://127.0.0.1:22380,etcd3=http://127.0.0.1:32380\ninitial-cluster-token: pg-ha-cluster\ninitial-cluster-state: new\nEOF\n\necho \"Created /etc/etcd3.conf.yml\""
+            }
+          ]
+        },
+        {
+          "title": "Step 3: Create Patroni Configuration Files",
+          "content": [
+            "Each Patroni instance needs its own YAML configuration. The key differences are the PostgreSQL port, data directory, and REST API port."
+          ],
+          "items": [
+            {
+              "label": "Create patroni1.yml configuration",
+              "code": "sudo tee /etc/patroni/patroni1.yml << 'EOF'\nscope: pg-ha-cluster\nname: patroni1\n\nrestapi:\n  listen: 127.0.0.1:18081\n  connect_address: 127.0.0.1:18081\n\netcd3:\n  hosts:\n    - 127.0.0.1:12379\n    - 127.0.0.1:22379\n    - 127.0.0.1:32379\n\nbootstrap:\n  dcs:\n    ttl: 30\n    loop_wait: 10\n    retry_timeout: 10\n    maximum_lag_on_failover: 1048576\n    postgresql:\n      use_pg_rewind: true\n      use_slots: true\n      parameters:\n        max_connections: 50\n        shared_buffers: 256MB\n        wal_level: replica\n        hot_standby: on\n        max_wal_senders: 10\n        max_replication_slots: 10\n        wal_log_hints: on\n\n  initdb:\n    - encoding: UTF8\n    - data-checksums\n\n  pg_hba:\n    - host replication replicator 127.0.0.1/32 md5\n    - host all all 127.0.0.1/32 md5\n    - host all all 0.0.0.0/0 md5\n\npostgresql:\n  listen: 127.0.0.1:15432\n  connect_address: 127.0.0.1:15432\n  data_dir: /var/lib/postgresql/patroni1\n  bin_dir: /usr/lib/postgresql/17/bin\n  pgpass: /tmp/pgpass\n  authentication:\n    replication:\n      username: replicator\n      password: replpass\n    superuser:\n      username: postgres\n      password: super-pass-789\n    rewind:\n      username: replicator\n      password: replpass\n  parameters:\n    unix_socket_directories: /var/run/postgresql\n\ntags:\n  nofailover: false\n  noloadbalance: false\n  clonefrom: false\n  nosync: false\nEOF\n\necho \"Created /etc/patroni/patroni1.yml\""
+            },
+            {
+              "label": "Create patroni2.yml configuration",
+              "code": "sudo tee /etc/patroni/patroni2.yml << 'EOF'\nscope: pg-ha-cluster\nname: patroni2\n\nrestapi:\n  listen: 127.0.0.1:18082\n  connect_address: 127.0.0.1:18082\n\netcd3:\n  hosts:\n    - 127.0.0.1:12379\n    - 127.0.0.1:22379\n    - 127.0.0.1:32379\n\npostgresql:\n  listen: 127.0.0.1:15433\n  connect_address: 127.0.0.1:15433\n  data_dir: /var/lib/postgresql/patroni2\n  bin_dir: /usr/lib/postgresql/17/bin\n  pgpass: /tmp/pgpass\n  authentication:\n    replication:\n      username: replicator\n      password: replpass\n    superuser:\n      username: postgres\n      password: super-pass-789\n    rewind:\n      username: replicator\n      password: replpass\n  parameters:\n    unix_socket_directories: /var/run/postgresql\nEOF\n\necho \"Created /etc/patroni/patroni2.yml\""
+            },
+            {
+              "label": "Create patroni3.yml configuration",
+              "code": "sudo tee /etc/patroni/patroni3.yml << 'EOF'\nscope: pg-ha-cluster\nname: patroni3\n\nrestapi:\n  listen: 127.0.0.1:18083\n  connect_address: 127.0.0.1:18083\n\netcd3:\n  hosts:\n    - 127.0.0.1:12379\n    - 127.0.0.1:22379\n    - 127.0.0.1:32379\n\npostgresql:\n  listen: 127.0.0.1:15434\n  connect_address: 127.0.0.1:15434\n  data_dir: /var/lib/postgresql/patroni3\n  bin_dir: /usr/lib/postgresql/17/bin\n  pgpass: /tmp/pgpass\n  authentication:\n    replication:\n      username: replicator\n      password: replpass\n    superuser:\n      username: postgres\n      password: super-pass-789\n    rewind:\n      username: replicator\n      password: replpass\n  parameters:\n    unix_socket_directories: /var/run/postgresql\nEOF\n\necho \"Created /etc/patroni/patroni3.yml\""
+            }
+          ]
+        },
+        {
+          "title": "Step 4: Create the HAProxy Configuration",
+          "content": [
+            "HAProxy checks each Patroni node's REST API to determine which is the leader (port 8008 returns 200 if the node is primary). The write port (5000) points only to the leader, while the read port (5001) distributes across all replicas."
+          ],
+          "items": [
+            {
+              "label": "Create /etc/haproxy/haproxy.cfg",
+              "code": "sudo tee /etc/haproxy/haproxy.cfg << 'HAPROXY_EOF'\nglobal\n    maxconn 1000\n    log /dev/log local2\n    stats socket /var/run/haproxy.sock mode 600 level admin\n    stats timeout 30s\n\ndefaults\n    mode tcp\n    log global\n    option tcplog\n    timeout connect 5000ms\n    timeout client 50000ms\n    timeout server 50000ms\n    timeout check 2000ms\n\n# HAProxy Statistics Dashboard\nlisten stats\n    mode http\n    bind *:8404\n    stats enable\n    stats uri /\n    stats refresh 5s\n    stats auth admin:admin\n\n# PostgreSQL Write (Primary) - Port 5000\nlisten pg-write\n    bind *:5000\n    mode tcp\n    option httpchk GET /primary\n    http-check expect status 200\n    default-server inter 3s fall 3 rise 2 on-marked-down shutdown-sessions\n\n    server patroni1 127.0.0.1:15432 check port 18081\n    server patroni2 127.0.0.1:15433 check port 18082\n    server patroni3 127.0.0.1:15434 check port 18083\n\n# PostgreSQL Read (Replicas) - Port 5001\nlisten pg-read\n    bind *:5001\n    mode tcp\n    balance roundrobin\n    option httpchk GET /replica\n    http-check expect status 200\n    default-server inter 3s fall 3 rise 2\n\n    server patroni1 127.0.0.1:15432 check port 18081\n    server patroni2 127.0.0.1:15433 check port 18082\n    server patroni3 127.0.0.1:15434 check port 18083\nHAPROXY_EOF\n\necho \"Created /etc/haproxy/haproxy.cfg\""
+            }
+          ]
+        },
+        {
+          "title": "Step 5: Create systemd Service Files",
+          "content": [
+            "We will create systemd service files for each etcd and Patroni instance so they can be managed with `systemctl`."
+          ],
+          "items": [
+            {
+              "label": "Create etcd service files",
+              "code": "# etcd1 service\nsudo tee /etc/systemd/system/etcd1.service << 'EOF'\n[Unit]\nDescription=etcd1 - distributed consensus\nDocumentation=https://etcd.io/docs\nAfter=network.target\n\n[Service]\nType=notify\nExecStart=/usr/bin/etcd --config-file /etc/etcd1.conf.yml\nRestart=always\nRestartSec=5\nLimitNOFILE=40000\n\n[Install]\nWantedBy=multi-user.target\nEOF\n\n# etcd2 service\nsudo tee /etc/systemd/system/etcd2.service << 'EOF'\n[Unit]\nDescription=etcd2 - distributed consensus\nDocumentation=https://etcd.io/docs\nAfter=network.target\n\n[Service]\nType=notify\nExecStart=/usr/bin/etcd --config-file /etc/etcd2.conf.yml\nRestart=always\nRestartSec=5\nLimitNOFILE=40000\n\n[Install]\nWantedBy=multi-user.target\nEOF\n\n# etcd3 service\nsudo tee /etc/systemd/system/etcd3.service << 'EOF'\n[Unit]\nDescription=etcd3 - distributed consensus\nDocumentation=https://etcd.io/docs\nAfter=network.target\n\n[Service]\nType=notify\nExecStart=/usr/bin/etcd --config-file /etc/etcd3.conf.yml\nRestart=always\nRestartSec=5\nLimitNOFILE=40000\n\n[Install]\nWantedBy=multi-user.target\nEOF\n\necho \"Created etcd1, etcd2, etcd3 systemd services\""
+            },
+            {
+              "label": "Create Patroni service files",
+              "code": "# patroni1 service\nsudo tee /etc/systemd/system/patroni1.service << 'EOF'\n[Unit]\nDescription=Patroni1 - PostgreSQL HA manager\nAfter=etcd1.service etcd2.service etcd3.service network.target\nRequires=etcd1.service etcd2.service etcd3.service\n\n[Service]\nType=simple\nUser=postgres\nGroup=postgres\nExecStart=/usr/local/bin/patroni /etc/patroni/patroni1.yml\nKillMode=process\nRestart=always\nRestartSec=30\nLimitNOFILE=65536\n\n[Install]\nWantedBy=multi-user.target\nEOF\n\n# patroni2 service\nsudo tee /etc/systemd/system/patroni2.service << 'EOF'\n[Unit]\nDescription=Patroni2 - PostgreSQL HA manager\nAfter=etcd1.service etcd2.service etcd3.service network.target\nRequires=etcd1.service etcd2.service etcd3.service\n\n[Service]\nType=simple\nUser=postgres\nGroup=postgres\nExecStart=/usr/local/bin/patroni /etc/patroni/patroni2.yml\nKillMode=process\nRestart=always\nRestartSec=30\nLimitNOFILE=65536\n\n[Install]\nWantedBy=multi-user.target\nEOF\n\n# patroni3 service\nsudo tee /etc/systemd/system/patroni3.service << 'EOF'\n[Unit]\nDescription=Patroni3 - PostgreSQL HA manager\nAfter=etcd1.service etcd2.service etcd3.service network.target\nRequires=etcd1.service etcd2.service etcd3.service\n\n[Service]\nType=simple\nUser=postgres\nGroup=postgres\nExecStart=/usr/local/bin/patroni /etc/patroni/patroni3.yml\nKillMode=process\nRestart=always\nRestartSec=30\nLimitNOFILE=65536\n\n[Install]\nWantedBy=multi-user.target\nEOF\n\necho \"Created patroni1, patroni2, patroni3 systemd services\""
+            }
+          ]
+        },
+        {
+          "title": "Step 6: Set Permissions and Start the Stack",
+          "content": [
+            "Set the correct ownership on all data directories, reload systemd, and start every service in the right order."
+          ],
+          "items": [
+            {
+              "label": "Set permissions",
+              "code": "# Set ownership for etcd data:\nsudo chown -R etcd:etcd /var/lib/etcd\n\n# Set ownership for PostgreSQL data:\nsudo chown -R postgres:postgres /var/lib/postgresql\n\n# Reload systemd to pick up new services:\nsudo systemctl daemon-reload"
+            },
+            {
+              "label": "Start the etcd cluster first",
+              "code": "# Start all 3 etcd nodes:\nsudo systemctl start etcd1\nsudo systemctl start etcd2\nsudo systemctl start etcd3\n\n# Wait for the cluster to form:\nsleep 5\n\n# Verify etcd cluster health:\netcdctl --endpoints=http://127.0.0.1:12379 endpoint health --cluster --write-out=table\n\n# Expected:\n# +-----------------------------+-----------+-------------+-------+\n# |          ENDPOINT           |  HEALTH   |   TOOK      | ERROR |\n# +-----------------------------+-----------+-------------+-------+\n# | http://127.0.0.1:12379      |   true    |  5.2ms      |       |\n# | http://127.0.0.1:22379      |   true    |  6.1ms      |       |\n# | http://127.0.0.1:32379      |   true    |  5.8ms      |       |\n# +-----------------------------+-----------+-------------+-------+\n\n# List etcd members:\netcdctl --endpoints=http://127.0.0.1:12379 member list --write-out=table\n\n# Expected:\n# +------------------+---------+-------+-------------------------------+-------------------------------+\n# |        ID        | STATUS  | NAME  |         PEER ADDRS            |        CLIENT ADDRS           |\n# +------------------+---------+-------+-------------------------------+-------------------------------+\n# | 123abc...        | started | etcd1 | http://127.0.0.1:12380        | http://127.0.0.1:12379        |\n# | 456def...        | started | etcd2 | http://127.0.0.1:22380        | http://127.0.0.1:22379        |\n# | 789ghi...        | started | etcd3 | http://127.0.0.1:32380        | http://127.0.0.1:32379        |\n# +------------------+---------+-------+-------------------------------+-------------------------------+"
+            },
+            {
+              "label": "Start Patroni instances (they will initialize PostgreSQL)",
+              "code": "# Start all 3 Patroni instances:\nsudo systemctl start patroni1\nsudo systemctl start patroni2\nsudo systemctl start patroni3\n\n# The first start takes 1-2 minutes as Patroni runs initdb and creates\n# the PostgreSQL data directories. Watch the logs:\nsudo journalctl -u patroni1 -f --no-tail &\n\n# Wait for all nodes to initialize:\necho \"Waiting 60 seconds for Patroni cluster to form...\"\nsleep 60\n\n# Check the cluster state:\nsudo -u postgres patronictl -c /etc/patroni/patroni1.yml list\n\n# Expected:\n# + Cluster: pg-ha-cluster ----------+---------+-----------+----+-----------+\n# | Member   | Host             | Role    | State     | TL | Lag in MB |\n# +----------+------------------+---------+-----------+----+-----------+\n# | patroni1 | 127.0.0.1:15432  | Leader  | running   |  1 |           |\n# | patroni2 | 127.0.0.1:15433  | Replica | streaming |  1 |         0 |\n# | patroni3 | 127.0.0.1:15434  | Replica | streaming |  1 |         0 |\n# +----------+------------------+---------+-----------+----+-----------+"
+            },
+            {
+              "label": "Start HAProxy",
+              "code": "# Start HAProxy:\nsudo systemctl start haproxy\n\n# Enable all services to start on boot (optional):\nsudo systemctl enable etcd1 etcd2 etcd3 patroni1 patroni2 patroni3 haproxy\n\n# Verify all services are running:\nsudo systemctl status etcd1 etcd2 etcd3 patroni1 patroni2 patroni3 haproxy --no-pager\n\n# Check HAProxy stats:\ncurl -s -u admin:admin http://localhost:8404/ | grep -E '(UP|DOWN|MAINT|status)' | head -20\n\n# Expected: the pg-write backend shows one server UP (the leader)\n# and two servers DOWN. The pg-read backend shows all three UP."
+            }
+          ]
+        },
+        {
+          "title": "Step 7: Verify Cluster Health",
+          "content": "Run these checks to make sure everything is working correctly.",
+          "items": [
+            {
+              "label": "Check Patroni REST API on each node",
+              "code": "# Check each node's role and state:\necho \"=== patroni1 (expected: primary) ===\"\ncurl -s http://127.0.0.1:18081/health | python3 -c \"import sys,json; d=json.load(sys.stdin); print(f'State: {d[\\\"state\\\"]}, Role: {d[\\\"role\\\"]}')\"\n\necho \"=== patroni2 (expected: replica) ===\"\ncurl -s http://127.0.0.1:18082/health | python3 -c \"import sys,json; d=json.load(sys.stdin); print(f'State: {d[\\\"state\\\"]}, Role: {d[\\\"role\\\"]}')\"\n\necho \"=== patroni3 (expected: replica) ===\"\ncurl -s http://127.0.0.1:18083/health | python3 -c \"import sys,json; d=json.load(sys.stdin); print(f'State: {d[\\\"state\\\"]}, Role: {d[\\\"role\\\"]}')\"\n\n# Expected output (approximate):\n# === patroni1 ===\n# State: running, Role: primary\n# === patroni2 ===\n# State: running, Role: replica\n# === patroni3 ===\n# State: running, Role: replica"
+            }
+          ]
+        },
+        {
+          "title": "Step 8: Create Test Data",
+          "content": "Create a test database with some data so we can verify it survives failover.",
+          "items": [
+            {
+              "label": "Connect to PostgreSQL through HAProxy and create test data",
+              "code": "# Connect to the write port (5000) — always goes to the leader:\npsql -h localhost -p 5000 -U postgres -d postgres\n\n# Inside psql, enter these commands:\n# Password: super-pass-789\n\nCREATE DATABASE ha_test;\n\\c ha_test\n\nCREATE TABLE users (\n    id SERIAL PRIMARY KEY,\n    name VARCHAR(100),\n    email VARCHAR(100),\n    created_at TIMESTAMP DEFAULT NOW()\n);\n\nINSERT INTO users (name, email) VALUES\n    ('Alice', 'alice@example.com'),\n    ('Bob', 'bob@example.com'),\n    ('Charlie', 'charlie@example.com');\n\nSELECT * FROM users;\n\n# Expected:\n#  id |  name   |       email        |         created_at\n# ----+---------+--------------------+----------------------------\n#   1 | Alice   | alice@example.com  | 2026-05-21 10:00:00.123456\n#   2 | Bob     | bob@example.com    | bob@example.com\n#   3 | Charlie | charlie@example.com | charlie@example.com\n# (3 rows)\n\n\\q"
+            }
+          ]
+        },
+        {
+          "title": "Step 9: Test Automatic Failover (Kill the Leader)",
+          "content": [
+            "This is the most important test. We simulate a server crash by stopping the leader process. Patroni should detect the failure, hold a leader election, and promote a replica — all automatically."
+          ],
+          "items": [
+            {
+              "label": "Step 9a: Identify the current leader",
+              "code": "# Find which node is the leader:\nsudo -u postgres patronictl -c /etc/patroni/patroni1.yml list\n\n# Example output (yours may differ):\n# + Member   | Role    | State     |\n# +----------+---------+-----------+\n# | patroni1 | Leader  | running   |\n# | patroni2 | Replica | streaming |\n# | patroni3 | Replica | streaming |\n\n# NOTE: If your leader is different (e.g., patroni2 or patroni3),\n# replace 'patroni1' in the stop command below accordingly."
+            },
+            {
+              "label": "Step 9b: Stop the leader process (simulate crash)",
+              "code": "# STOP THE LEADER — simulate a crash:\nsudo systemctl stop patroni1\n\n# Expected:\n# (no output — run the next command to check status)\n\n# Verify it stopped:\nsudo systemctl status patroni1 --no-pager | grep Active\n# Expected: Active: inactive (dead)\n\n# What just happened:\n# 1. Patroni on patroni1 stopped heartbeating to etcd\n# 2. After ~10 seconds (loop_wait), the other Patroni nodes detect the lock is stale\n# 3. etcd releases the leader lock\n# 4. The remaining Patroni nodes hold a new election\n# 5. One replica is promoted to leader\n# 6. HAProxy detects the new leader via /primary health check"
+            },
+            {
+              "label": "Step 9c: Verify the cluster auto-recovered",
+              "code": "# Wait 15 seconds for failover to complete:\necho \"Waiting 15 seconds for failover...\"\nsleep 15\n\n# Check the new cluster state:\nsudo -u postgres patronictl -c /etc/patroni/patroni2.yml list\n\n# Expected:\n# + Cluster: pg-ha-cluster ----------+---------+-----------+----+-----------+\n# | Member   | Host             | Role    | State     | TL | Lag in MB |\n# +----------+------------------+---------+-----------+----+-----------+\n# | patroni1 | 127.0.0.1:15432  |         | stopped   |  1 |           |\n# | patroni2 | 127.0.0.1:15433  | Leader  | running   |  2 |           |\n# | patroni3 | 127.0.0.1:15434  | Replica | streaming |  2 |         0 |\n# +----------+------------------+---------+-----------+----+-----------+\n\n# KEY OBSERVATIONS:\n# • patroni2 was promoted from Replica to Leader\n# • Timeline advanced from 1 to 2 (each failover creates a new timeline)\n# • patroni3 is still streaming from the new leader (patroni2)\n# • patroni1 shows as 'stopped' — it was the old leader"
+            },
+            {
+              "label": "Step 9d: Verify data survived the failover",
+              "code": "# Connect to the NEW leader through HAProxy (still on port 5000):\npsql -h localhost -p 5000 -U postgres -d ha_test\n\n# Password: super-pass-789\n\n-- Check our data is still there:\nSELECT * FROM users;\n\n# Expected:\n#  id |  name   |       email        |         created_at\n# ----+---------+--------------------+----------------------------\n#   1 | Alice   | alice@example.com  | 2026-05-21 10:00:00.123456\n#   2 | Bob     | bob@example.com    | bob@example.com\n#   3 | Charlie | charlie@example.com | charlie@example.com\n# (3 rows)\n\n-- Verify we are indeed on the new leader:\nSELECT pg_is_in_recovery();\n\n# Expected:\n#  pg_is_in_recovery\n# -------------------\n#  f\n# (1 row)\n\n-- Add more data on the new leader:\nINSERT INTO users (name, email) VALUES ('Dave', 'dave@example.com');\n\n\\q"
+            },
+            {
+              "label": "Step 9e: Test HAProxy read port still works",
+              "code": "# Connect to the read port (5001) — load-balanced to replicas:\npsql -h localhost -p 5001 -U postgres -d ha_test\n\n# Password: super-pass-789\n\nSELECT * FROM users;\n\n# Expected: all 4 rows including Dave\n\nSELECT pg_is_in_recovery();\n\n# Expected: 't' (true = this is a replica, read-only)\n\n\\q"
+            }
+          ]
+        },
+        {
+          "title": "Step 10: Test Node Recovery (Rejoin Old Leader)",
+          "content": [
+            "When a failed node comes back, Patroni should automatically rejoin it as a replica. Patroni uses pg_rewind to synchronize the old leader's data with the new leader's timeline."
+          ],
+          "items": [
+            {
+              "label": "Step 10a: Bring back the old leader service",
+              "code": "# Start the previously stopped Patroni service:\nsudo systemctl start patroni1\n\n# Expected:\n# (no output — check with status)\n\n# Verify it started:\nsudo systemctl status patroni1 --no-pager | grep Active\n# Expected: Active: active (running)"
+            },
+            {
+              "label": "Step 10b: Watch it rejoin the cluster",
+              "code": "# Wait 20 seconds for Patroni to initialize and rejoin:\necho \"Waiting 20 seconds for recovery...\"\nsleep 20\n\n# Check cluster state:\nsudo -u postgres patronictl -c /etc/patroni/patroni2.yml list\n\n# Expected:\n# + Cluster: pg-ha-cluster ----------+---------+-----------+----+-----------+\n# | Member   | Host             | Role    | State     | TL | Lag in MB |\n# +----------+------------------+---------+-----------+----+-----------+\n# | patroni1 | 127.0.0.1:15432  | Replica | streaming |  2 |         0 |\n# | patroni2 | 127.0.0.1:15433  | Leader  | running   |  2 |           |\n# | patroni3 | 127.0.0.1:15434  | Replica | streaming |  2 |         0 |\n# +----------+------------------+---------+-----------+----+-----------+\n\n# KEY OBSERVATIONS:\n# • patroni1 rejoined as a 'Replica' (not as Leader)\n# • patroni2 remains the Leader\n# • patroni1 caught up on timeline 2 (it was on timeline 1 when it crashed)\n# • pg_rewind automatically synchronized the old leader's data"
+            },
+            {
+              "label": "Step 10c: Verify the recovered node has all data",
+              "code": "# Connect directly to the recovered node (patroni1 on port 15432):\npsql -h localhost -p 15432 -U postgres -d ha_test\n\n# Password: super-pass-789\n\nSELECT * FROM users;\n\n# Expected: all 4 rows including 'Dave' (inserted while patroni1 was down)\n# This proves WAL streaming caught it up to the new leader\n\nSELECT pg_is_in_recovery();\n\n# Expected: 't' (it is now a replica)\n\n\\q"
+            }
+          ]
+        },
+        {
+          "title": "Step 11: Test Graceful Switchover (Planned Maintenance)",
+          "content": [
+            "Switchover is a controlled leader change, unlike failover which is unplanned. Use this for patching, upgrades, or hardware maintenance."
+          ],
+          "items": [
+            {
+              "label": "Step 11a: Check current leader",
+              "code": "# Before switchover:\nsudo -u postgres patronictl -c /etc/patroni/patroni2.yml list\n\n# Current leader (let us assume it is patroni2 after the failover test)\n# We will switch from patroni2 to patroni3"
+            },
+            {
+              "label": "Step 11b: Perform the switchover",
+              "code": "# Graceful switchover: move leader role from patroni2 to patroni3:\nsudo -u postgres patronictl -c /etc/patroni/patroni2.yml switchover --leader patroni2 --candidate patroni3 --force\n\n# Expected output:\n# Success: data is now consistent across the cluster\n# Lock owner: patroni3; I am now following a different leader.\n# patroni3: promoted\n# + Cluster: pg-ha-cluster ----------+---------+-----------+----+-----------+\n# | Member   | Host             | Role    | State     | TL | Lag      |\n# +----------+------------------+---------+-----------+----+-----------+\n# | patroni1 | 127.0.0.1:15432  | Replica | streaming |  3 |        0 |\n# | patroni2 | 127.0.0.1:15433  | Replica | streaming |  3 |        0 |\n# | patroni3 | 127.0.0.1:15434  | Leader  | running   |  3 |          |\n# +----------+------------------+---------+-----------+----+-----------+"
+            },
+            {
+              "label": "Step 11c: Verify no data loss after switchover",
+              "code": "# Connect through HAProxy write port:\npsql -h localhost -p 5000 -U postgres -d ha_test\n\n# Password: super-pass-789\n\nSELECT * FROM users;\n# Should still show all 4 rows\n\n-- Verify we are on the new leader (patroni3):\nSELECT inet_server_addr(), inet_server_port();\n# Expected: (127.0.0.1, 15434)\n\n\\q"
+            }
+          ]
+        },
+        {
+          "title": "Step 12: Test Read/Write Splitting",
+          "content": [
+            "One of the key benefits of HAProxy is read/write splitting. Writes always go to the leader. Reads can be distributed across all replicas for load balancing."
+          ],
+          "items": [
+            {
+              "label": "Test write routing (port 5000)",
+              "code": "# Write port should always connect to the leader:\nfor i in 1 2 3; do\n    psql -h localhost -p 5000 -U postgres -d ha_test -t -c \"SELECT inet_server_addr(), inet_server_port(), 'write' as port_type;\"\ndone\n\n# Expected: all 3 queries return the same server (the current leader)\n# Example:\n#  127.0.0.1 | 15434 | write  (patroni3 is the leader)\n#  127.0.0.1 | 15434 | write\n#  127.0.0.1 | 15434 | write"
+            },
+            {
+              "label": "Test read routing (port 5001)",
+              "code": "# Read port should round-robin across replicas:\nfor i in 1 2 3; do\n    psql -h localhost -p 5001 -U postgres -d ha_test -t -c \"SELECT inet_server_addr(), inet_server_port(), 'read' as port_type;\"\ndone\n\n# Expected: queries return different servers in round-robin order\n# Example:\n#  127.0.0.1 | 15432 | read  (patroni1)\n#  127.0.0.1 | 15433 | read  (patroni2)\n#  127.0.0.1 | 15434 | read  (patroni3 — leader also serves reads)\n\n# NOTE: The leader also returns HTTP 200 on /replica endpoint,\n# so it participates in read load-balancing too."
+            },
+            {
+              "label": "Verify writes fail on read port (important safety check)",
+              "code": "# Try writing to the read-only port:\npsql -h localhost -p 5001 -U postgres -d ha_test -c \"INSERT INTO users (name, email) VALUES ('Eve', 'eve@example.com');\"\n\n# Expected:\n# ERROR:  cannot execute INSERT in a read-only transaction\n\n# This confirms the read port correctly routes to replicas,\n# which reject writes. Write safety is enforced by PostgreSQL itself."
+            }
+          ]
+        },
+        {
+          "title": "Step 13: View HAProxy Stats Dashboard",
+          "content": "HAProxy includes a real-time statistics dashboard that shows the status of every backend server.",
+          "items": [
+            {
+              "label": "Open the stats dashboard",
+              "code": "# Option 1: Command line\ncurl -s -u admin:admin http://localhost:8404/ | grep -E '(UP|DOWN|MAINT|status)' | head -20\n\n# Option 2: Open in browser\n# Navigate to: http://localhost:8404/\n# Username: admin\n# Password: admin\n\n# The dashboard shows:\n# • pg-write backend: one server UP (the leader), two servers DOWN\n# • pg-read backend: all three servers UP\n# • Session rates, bytes in/out, connection counts"
+            }
+          ]
+        },
+        {
+          "title": "Clean Up",
+          "content": "When you are done testing, stop and clean up the lab environment.",
+          "items": [
+            {
+              "label": "Stop all services and remove data",
+              "code": "# Stop all services:\nsudo systemctl stop patroni1 patroni2 patroni3 haproxy etcd1 etcd2 etcd3\n\n# Disable services (optional):\nsudo systemctl disable patroni1 patroni2 patroni3 haproxy etcd1 etcd2 etcd3\n\n# Remove data directories (WARNING: destroys all data):\nsudo rm -rf /var/lib/postgresql/patroni*\nsudo rm -rf /var/lib/etcd/etcd*\n\n# Remove configuration files:\nsudo rm -rf /etc/patroni\nsudo rm -f /etc/etcd{1,2,3}.conf.yml\n\n# Remove service files:\nsudo rm -f /etc/systemd/system/patroni{1,2,3}.service\nsudo rm -f /etc/systemd/system/etcd{1,2,3}.service\nsudo systemctl daemon-reload"
+            }
+          ]
+        }
+      ]
+    },
+
+
+    {
+      "id": "method-2-pg-auto-failover",
+      "title": "Method 2: pg_auto_failover (Simpler Alternative)",
+      "content": [
+        "pg_auto_failover is a PostgreSQL extension and service developed by Microsoft's Citus team. It provides automated failover with a simpler architecture than Patroni: just a monitor node and PostgreSQL data nodes. There is no separate etcd cluster — the monitor itself handles coordination.",
+        "This approach is great for testing because the setup requires fewer components (no etcd, no HAProxy), yet it still provides real automated failover with synchronous replication."
+      ],
+      "subsections": [
+        {
+          "title": "Architecture: How pg_auto_failover Works",
+          "content": [
+            "pg_auto_failover uses a three-node architecture: one monitor and two (or more) PostgreSQL data nodes. The monitor runs a lightweight PostgreSQL instance that tracks the state of all data nodes. Each data node runs a 'keeper' process that reports its health to the monitor and executes the monitor's commands (promote, demote, etc.).",
+            "By default, pg_auto_failover uses synchronous replication, which means every write waits for at least one replica to acknowledge it. This provides stronger data protection than Patroni's default async replication."
+          ],
+          "items": [
+            {
+              "label": "pg_auto_failover Architecture",
+              "table": {
+                "headers": ["Component", "Purpose", "Port"],
+                "rows": [
+                  ["Monitor", "Coordinates failover, tracks node states", "15432 (PG)"],
+                  ["Node 1 (primary)", "Runs PostgreSQL, accepts writes", "15433"],
+                  ["Node 2 (standby)", "Streaming replica, takes over on failover", "15434"],
+                  ["Application", "Connects to primary for writes, standby for reads", "Via libpq multi-host"]
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "title": "Step 1: Install pg_auto_failover",
+          "content": [
+            "pg_auto_failover is available as a PostgreSQL extension package. Install it alongside PostgreSQL 17."
+          ],
+          "items": [
+            {
+              "label": "Install the pg_auto_failover extension",
+              "code": "# Install pg_auto_failover package:\nsudo apt install -y postgresql-17-pg-auto-failover\n\n# Verify installation:\npg_autoctl --version\n# Expected: pg_autoctl 2.x\n\n# Check that the extension is available:\nsudo -u postgres psql -c \"SELECT * FROM pg_available_extensions WHERE name = 'pgautofailover';\"\n# Expected: one row showing pgautofailover extension"
+            }
+          ]
+        },
+        {
+          "title": "Step 2: Initialize the Monitor Node",
+          "content": "The monitor uses its own PostgreSQL instance to track cluster state.",
+          "items": [
+            {
+              "label": "Create and start the monitor",
+              "code": "# Create the monitor data directory:\nsudo mkdir -p /var/lib/postgresql/pgaf-monitor\nsudo chown postgres:postgres /var/lib/postgresql/pgaf-monitor\n\n# Initialize the monitor:\nsudo -u postgres pg_autoctl create monitor \\\n    --pgdata /var/lib/postgresql/pgaf-monitor \\\n    --pgport 15432 \\\n    --auth trust \\\n    --ssl-self-signed \\\n    --run\n\n# Expected output:\n# 12:34:56 INFO  Creating monitor in /var/lib/postgresql/pgaf-monitor\n# 12:34:58 INFO  Monitor is ready\n# 12:34:58 INFO  pg_autoctl is running in the foreground\n\n# Press Ctrl+C to stop (we will set it up as a background service in the next step)"
+            },
+            {
+              "label": "Start the monitor as a background service",
+              "code": "# Run the monitor in the background as a service:\nsudo -u postgres pg_autoctl run \\\n    --pgdata /var/lib/postgresql/pgaf-monitor \\\n    --pgport 15432 &\n\n# Wait for it to start:\nsleep 5\n\n# Verify it is running:\npsql -h localhost -p 15432 -U monitor -d monitor -c \"SELECT 1;\"\n# Expected: (1 row)"
+            }
+          ]
+        },
+        {
+          "title": "Step 3: Initialize and Start the Data Nodes",
+          "content": [
+            "Node 1 starts as the primary. Node 2 starts as a standby (secondary) and will be promoted if the primary fails."
+          ],
+          "items": [
+            {
+              "label": "Create Node 1 (primary)",
+              "code": "# Create the node 1 data directory:\nsudo mkdir -p /var/lib/postgresql/pgaf-node1\nsudo chown postgres:postgres /var/lib/postgresql/pgaf-node1\n\n# Initialize node 1 as a PostgreSQL data node:\nsudo -u postgres pg_autoctl create postgres \\\n    --pgdata /var/lib/postgresql/pgaf-node1 \\\n    --pgport 15433 \\\n    --name node1 \\\n    --auth trust \\\n    --ssl-self-signed \\\n    --monitor \"postgresql://autoctl_node@localhost:15432/pg_auto_failover?sslmode=require\" \\\n    --run\n\n# Expected:\n# 12:35:00 INFO  Creating postgres in /var/lib/postgresql/pgaf-node1\n# 12:35:10 INFO  PostgreSQL is ready\n# 12:35:10 INFO  This node is the primary\n# 12:35:10 INFO  pg_autoctl is running in the foreground\n\n# Press Ctrl+C and run it in background instead:"
+            },
+            {
+              "label": "Run Node 1 in the background",
+              "code": "sudo -u postgres pg_autoctl run \\\n    --pgdata /var/lib/postgresql/pgaf-node1 \\\n    --pgport 15433 &\n\nsleep 5\n\n# Verify it is primary:\npsql -h localhost -p 15433 -U pgaf_test -d pgaf_test -c \"SELECT pg_is_in_recovery();\"\n# Expected: f (false = primary)"
+            },
+            {
+              "label": "Create Node 2 (standby)",
+              "code": "# Create the node 2 data directory:\nsudo mkdir -p /var/lib/postgresql/pgaf-node2\nsudo chown postgres:postgres /var/lib/postgresql/pgaf-node2\n\n# Initialize node 2 as a standby:\nsudo -u postgres pg_autoctl create postgres \\\n    --pgdata /var/lib/postgresql/pgaf-node2 \\\n    --pgport 15434 \\\n    --name node2 \\\n    --auth trust \\\n    --ssl-self-signed \\\n    --monitor \"postgresql://autoctl_node@localhost:15432/pg_auto_failover?sslmode=require\" \\\n    --run\n\n# Expected:\n# 12:36:00 INFO  Creating postgres in /var/lib/postgresql/pgaf-node2\n# 12:36:10 INFO  Synchronous streaming is active\n# 12:36:10 INFO  This node is a secondary\n# 12:36:10 INFO  pg_autoctl is running in the foreground\n\n# Press Ctrl+C and run it in background:"
+            },
+            {
+              "label": "Run Node 2 in the background",
+              "code": "sudo -u postgres pg_autoctl run \\\n    --pgdata /var/lib/postgresql/pgaf-node2 \\\n    --pgport 15434 &\n\nsleep 5\n\n# Verify it is a standby:\npsql -h localhost -p 15434 -U pgaf_test -d pgaf_test -c \"SELECT pg_is_in_recovery();\"\n# Expected: t (true = standby)"
+            }
+          ]
+        },
+        {
+          "title": "Step 4: Check Cluster Status",
+          "items": [
+            {
+              "label": "View cluster state",
+              "code": "# Check the full cluster state:\nsudo -u postgres pg_autoctl show state --pgdata /var/lib/postgresql/pgaf-node1\n\n# Expected:\n#  Name |  Node |      Host:Port       |  TLI |  Health   |       Role\n# ------+-------+----------------------+------+-----------+------------------\n# node1 |     1 | localhost:15433      |    1 |      good |           primary\n# node2 |     2 | localhost:15434      |    1 |      good |          secondary\n# ------+-------+----------------------+------+-----------+------------------\n# monitor|       | localhost:15432      |      |           |              n/a"
+            }
+          ]
+        },
+        {
+          "title": "Step 5: Create Test Data",
+          "items": [
+            {
+              "label": "Insert data on the primary",
+              "code": "# Connect to node1 (the primary on port 15433):\npsql -h localhost -p 15433 -U pgaf_test -d pgaf_test\n\nCREATE TABLE failover_test (\n    id SERIAL PRIMARY KEY,\n    message TEXT,\n    ts TIMESTAMP DEFAULT NOW()\n);\n\nINSERT INTO failover_test (message) VALUES\n    ('Before failover - row 1'),\n    ('Before failover - row 2'),\n    ('Before failover - row 3');\n\nSELECT * FROM failover_test;\n\n\\q"
+            }
+          ]
+        },
+        {
+          "title": "Step 6: Test Automatic Failover",
+          "items": [
+            {
+              "label": "Trigger a switchover (controlled failover test)",
+              "code": "# pg_auto_failover supports graceful switchover without stopping anything:\nsudo -u postgres pg_autoctl perform switchover --pgdata /var/lib/postgresql/pgaf-node1\n\n# Expected output:\n# 12:34:56 INFO  Switchover to node2 completed\n\n# Check the new state:\nsudo -u postgres pg_autoctl show state --pgdata /var/lib/postgresql/pgaf-node2\n\n# Expected:\n#  Name |  Node |      Host:Port       |  TLI |  Health   |       Role\n# ------+-------+----------------------+------+-----------+------------------\n# node1 |     1 | localhost:15433      |    2 |      good |          secondary\n# node2 |     2 | localhost:15434      |    2 |      good |           primary"
+            },
+            {
+              "label": "Verify data survives switchover",
+              "code": "# Connect to the new primary (node2, port 15434):\npsql -h localhost -p 15434 -U pgaf_test -d pgaf_test -c \"SELECT * FROM failover_test;\"\n\n# Expected: all 3 rows are still there\n\n# Insert more data:\npsql -h localhost -p 15434 -U pgaf_test -d pgaf_test -c \"INSERT INTO failover_test (message) VALUES ('After switchover!');\"\n\n# Verify the old primary (now standby) gets the new data:\npsql -h localhost -p 15433 -U pgaf_test -d pgaf_test -c \"SELECT * FROM failover_test;\"\n# Expected: 4 rows, including 'After switchover!'"
+            }
+          ]
+        },
+        {
+          "title": "Step 7: Test Crash Recovery (Stop the Primary)",
+          "items": [
+            {
+              "label": "Stop the primary process",
+              "code": "# Find the PID of the primary (node2) and stop it to simulate a crash:\nNODE2_PID=$(sudo -u postgres pg_autoctl show state --pgdata /var/lib/postgresql/pgaf-node2 --json | python3 -c \"import sys,json; print(json.load(sys.stdin)['nodes'][0]['pid'])\")\nsudo kill -9 $NODE2_PID\n\n# Wait for failover:\necho \"Waiting 15 seconds for automatic failover...\"\nsleep 15\n\n# Check state via the monitor:\nsudo -u postgres pg_autoctl show state --pgdata /var/lib/postgresql/pgaf-node1\n# Expected: node1 has been promoted to primary"
+            },
+            {
+              "label": "Restart the failed node and bring it back",
+              "code": "# Restart node2 as a standby:\nsudo -u postgres pg_autoctl run \\\n    --pgdata /var/lib/postgresql/pgaf-node2 \\\n    --pgport 15434 &\n\nsleep 15\n\n# Check state:\nsudo -u postgres pg_autoctl show state --pgdata /var/lib/postgresql/pgaf-node1\n\n# Expected: node2 rejoins as secondary\n#  node1 | primary\n#  node2 | secondary\n# The monitor automatically reintegrates the recovered node"
+            }
+          ]
+        },
+        {
+          "title": "Clean Up pg_auto_failover",
+          "items": [
+            {
+              "label": "Stop and remove all data",
+              "code": "# Stop all pg_autoctl processes:\nsudo pkill -f pg_autoctl\n\n# Remove data directories:\nsudo rm -rf /var/lib/postgresql/pgaf-*\n\necho \"pg_auto_failover lab cleaned up\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "method-3-manual-streaming-replication",
+      "title": "Method 3: Manual Streaming Replication (Lightweight)",
+      "content": [
+        "For the simplest possible HA test, you can set up streaming replication between two native PostgreSQL instances manually. This approach has no automatic failover — you promote a replica manually — but it is excellent for learning how PostgreSQL replication actually works under the hood.",
+        "This is the fastest to set up, uses only the PostgreSQL you already installed, and requires the least configuration."
+      ],
+      "subsections": [
+        {
+          "title": "Step 1: Create Data Directories and Configuration",
+          "content": [
+            "We will create two PostgreSQL instances: primary (port 15435) and standby (port 15436). Each gets its own data directory, configuration, and systemd service."
+          ],
+          "items": [
+            {
+              "label": "Create directories for both instances",
+              "code": "sudo mkdir -p /var/lib/postgresql/primary\nsudo mkdir -p /var/lib/postgresql/standby\nsudo chown postgres:postgres /var/lib/postgresql/primary /var/lib/postgresql/standby"
+            },
+            {
+              "label": "Initialize the primary data directory",
+              "code": "# Initialize the primary instance:\nsudo -u postgres /usr/lib/postgresql/17/bin/initdb \\\n    -D /var/lib/postgresql/primary \\\n    --encoding=UTF8 \\\n    --data-checksums\n\n# Expected:\n# Success. You can now start the database server..."
+            },
+            {
+              "label": "Configure primary for replication",
+              "code": "# Edit postgresql.conf on the primary:\nsudo -u postgres tee -a /var/lib/postgresql/primary/postgresql.conf << 'EOF'\nlisten_addresses = '*'\nport = 15435\nwal_level = replica\nmax_wal_senders = 5\nwal_keep_size = 256\nhot_standby = on\nmax_connections = 50\nEOF\n\n# Add replication user to pg_hba.conf:\nsudo -u postgres tee -a /var/lib/postgresql/primary/pg_hba.conf << 'EOF'\nhost replication replicator 127.0.0.1/32 md5\nhost all replicator 127.0.0.1/32 md5\nhost all all 127.0.0.1/32 md5\nEOF"
+            },
+            {
+              "label": "Start the primary PostgreSQL instance",
+              "code": "# Start the primary:\nsudo -u postgres /usr/lib/postgresql/17/bin/pg_ctl start \\\n    -D /var/lib/postgresql/primary \\\n    -l /var/lib/postgresql/primary/logfile\n\n# Expected:\n# waiting for server to start.... done\n# server started\n\n# Verify it is running:\npsql -h localhost -p 15435 -U postgres -c \"SELECT 1;\"\n# Expected: (1 row)"
+            },
+            {
+              "label": "Create replication user and test data",
+              "code": "# Create a dedicated replication role:\npsql -h localhost -p 15435 -U postgres -c \"CREATE ROLE replicator WITH REPLICATION LOGIN PASSWORD 'replpass';\"\n\n# Create a test database and table:\npsql -h localhost -p 15435 -U postgres -c \"CREATE DATABASE testdb;\"\npsql -h localhost -p 15435 -U postgres -d testdb << 'SQL'\nCREATE TABLE items (\n    id SERIAL PRIMARY KEY,\n    name TEXT NOT NULL,\n    value INTEGER DEFAULT 0,\n    created_at TIMESTAMP DEFAULT NOW()\n);\nINSERT INTO items (name, value) VALUES\n    ('Alpha', 100),\n    ('Beta',  200),\n    ('Gamma', 300);\nSQL\n\n# Verify:\npsql -h localhost -p 15435 -U postgres -d testdb -c \"SELECT * FROM items;\"\n# Expected: Alpha, Beta, Gamma"
+            }
+          ]
+        },
+        {
+          "title": "Step 2: Create a Replication Slot",
+          "content": "A replication slot ensures the primary retains WAL segments until the standby has received them.",
+          "items": [
+            {
+              "label": "Create a physical replication slot",
+              "code": "# Create a replication slot for the standby:\npsql -h localhost -p 15435 -U postgres -c \"SELECT pg_create_physical_replication_slot('standby_slot');\"\n\n# Expected:\n#  pg_create_physical_replication_slot\n# -------------------------------------\n#  (standby_slot,)\n# (1 row)\n\n# Verify:\npsql -h localhost -p 15435 -U postgres -c \"SELECT slot_name, slot_type, active FROM pg_replication_slots;\"\n# Expected:\n#   slot_name    | slot_type | active\n# ----------------+-----------+--------\n#  standby_slot  | physical  | f"
+            }
+          ]
+        },
+        {
+          "title": "Step 3: Set Up the Standby with pg_basebackup",
+          "content": [
+            "We clone the primary's data directory using pg_basebackup, which creates a ready-to-use standby."
+          ],
+          "items": [
+            {
+              "label": "Clone primary data to standby directory",
+              "code": "# Clone the primary using pg_basebackup:\nsudo -u postgres /usr/lib/postgresql/17/bin/pg_basebackup \\\n    -h localhost -p 15435 -U replicator \\\n    -D /var/lib/postgresql/standby \\\n    -Fp -Xs -R -P -v \\\n    --slot=standby_slot\n\n# When prompted for password, type: replpass\n\n# Expected output:\n# Password:\n# pg_basebackup: initiating base backup, waiting for checkpoint to complete\n# pg_basebackup: checkpoint completed\n# pg_basebackup: write-ahead log start point: 0/2000028 on timeline 1\n# pg_basebackup: starting background WAL receiver\n# pg_basebackup: base backup completed\n\n# The -R flag creates standby.signal and writes primary_conninfo automatically."
+            },
+            {
+              "label": "Configure standby port",
+              "code": "# The -R flag creates standby.signal but we need to set the port:\nsudo -u postgres tee -a /var/lib/postgresql/standby/postgresql.conf << 'EOF'\nport = 15436\nlisten_addresses = '*'\nmax_connections = 50\nEOF\n\n# Check the primary_conninfo was written:\nsudo cat /var/lib/postgresql/standby/postgresql.auto.conf\n# Expected: primary_conninfo = '...' with host=localhost port=15435"
+            },
+            {
+              "label": "Start the standby PostgreSQL instance",
+              "code": "# Start the standby:\nsudo -u postgres /usr/lib/postgresql/17/bin/pg_ctl start \\\n    -D /var/lib/postgresql/standby \\\n    -l /var/lib/postgresql/standby/logfile\n\n# Expected:\n# waiting for server to start.... done\n# server started\n\n# Wait for it to connect and start streaming:\nsleep 5"
+            },
+            {
+              "label": "Verify replication is working",
+              "code": "# Check replication status on the primary:\npsql -h localhost -p 15435 -U postgres -c \"\\x\" -c \"SELECT * FROM pg_stat_replication;\"\n\n# Expected (expanded display):\n# -[ RECORD 1 ]----+------------------------------\n# pid              | 12345\n# usename          | replicator\n# application_name | walreceiver\n# state            | streaming\n# sync_state       | async\n\n# Verify the standby has our test data:\npsql -h localhost -p 15436 -U postgres -d testdb -c \"SELECT * FROM items;\"\n# Expected: Alpha, Beta, Gamma\n\n# Check standby is in recovery:\npsql -h localhost -p 15436 -U postgres -c \"SELECT pg_is_in_recovery();\"\n# Expected: t (true)"
+            }
+          ]
+        },
+        {
+          "title": "Step 4: Test Manual Failover (Promote Standby)",
+          "content": [
+            "Without Patroni or pg_auto_failover, failover is manual. You promote the standby to primary using pg_ctl promote."
+          ],
+          "items": [
+            {
+              "label": "Step 4a: Insert more data on primary",
+              "code": "psql -h localhost -p 15435 -U postgres -d testdb -c \"INSERT INTO items (name, value) VALUES ('Delta', 400);\"\n\n# Wait for WAL to be sent:\nsleep 2"
+            },
+            {
+              "label": "Step 4b: Promote the standby to primary",
+              "code": "# Simulate primary failure by stopping it:\nsudo -u postgres /usr/lib/postgresql/17/bin/pg_ctl stop \\\n    -D /var/lib/postgresql/primary\n\n# Expected:\n# waiting for server to shut down.... done\n# server stopped\n\n# Promote the standby:\nsudo -u postgres /usr/lib/postgresql/17/bin/pg_ctl promote \\\n    -D /var/lib/postgresql/standby\n\n# Expected:\n# waiting for server to promote.... done\n# server promoted\n\n# Verify the standby is now writable:\npsql -h localhost -p 15436 -U postgres -c \"SELECT pg_is_in_recovery();\"\n# Expected: f (false = now primary)\n\n# Check our data:\npsql -h localhost -p 15436 -U postgres -d testdb -c \"SELECT * FROM items;\"\n# Expected: Alpha, Beta, Gamma, Delta (4 rows)"
+            },
+            {
+              "label": "Step 4c: Insert data on the new primary",
+              "code": "psql -h localhost -p 15436 -U postgres -d testdb -c \"INSERT INTO items (name, value) VALUES ('Epsilon', 500);\"\n\npsql -h localhost -p 15436 -U postgres -d testdb -c \"SELECT * FROM items;\"\n# Expected: 5 rows including Epsilon"
+            }
+          ]
+        },
+        {
+          "title": "Step 5: Reconfigure Old Primary as Standby",
+          "items": [
+            {
+              "label": "Make the old primary a standby of the new primary",
+              "code": "# Remove old primary's data:\nsudo -u postgres rm -rf /var/lib/postgresql/primary/*\n\n# Re-clone from the new primary (now on port 15436):\nsudo -u postgres /usr/lib/postgresql/17/bin/pg_basebackup \\\n    -h localhost -p 15436 -U replicator \\\n    -D /var/lib/postgresql/primary \\\n    -Fp -Xs -R -P -v\n\n# When prompted for password, type: replpass\n\n# Set the port for the old primary (now a standby):\nsudo -u postgres tee -a /var/lib/postgresql/primary/postgresql.conf << 'EOF'\nport = 15435\nlisten_addresses = '*'\nmax_connections = 50\nEOF\n\n# Start it as a standby:\nsudo -u postgres /usr/lib/postgresql/17/bin/pg_ctl start \\\n    -D /var/lib/postgresql/primary \\\n    -l /var/lib/postgresql/primary/logfile\n\nsleep 5\n\n# Verify it catches up:\npsql -h localhost -p 15435 -U postgres -d testdb -c \"SELECT * FROM items;\"\n# Expected: 5 rows (catches up with the new primary)\n\npsql -h localhost -p 15435 -U postgres -c \"SELECT pg_is_in_recovery();\"\n# Expected: t (now a standby)"
+            }
+          ]
+        },
+        {
+          "title": "Clean Up Manual Replication Lab",
+          "items": [
+            {
+              "label": "Stop and remove all data",
+              "code": "# Stop both instances:\nsudo -u postgres /usr/lib/postgresql/17/bin/pg_ctl stop -D /var/lib/postgresql/primary\nsudo -u postgres /usr/lib/postgresql/17/bin/pg_ctl stop -D /var/lib/postgresql/standby\n\n# Remove data directories:\nsudo rm -rf /var/lib/postgresql/primary /var/lib/postgresql/standby\n\necho \"Manual replication lab cleaned up\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "comparison",
+      "title": "Approach Comparison: Which Method Should You Use?",
+      "content": [
+        "Each approach serves a different purpose. Here is a comparison to help you choose."
+      ],
+      "items": [
+        {
+          "label": "Feature Comparison Table",
+          "table": {
+            "headers": ["Feature", "Patroni+etcd+HAProxy", "pg_auto_failover", "Manual Streaming Replication"],
+            "rows": [
+              ["Automatic failover", "✅ Yes", "✅ Yes", "❌ Manual"],
+              ["Graceful switchover", "✅ Yes", "✅ Yes", "❌ Manual"],
+              ["Auto-rejoin on recovery", "✅ Yes (pg_rewind)", "✅ Yes", "❌ Must re-clone"],
+              ["Read/write splitting", "✅ Via HAProxy", "❌ App-level only", "❌ Manual"],
+              ["Sync replication by default", "❌ Async (configurable)", "✅ Sync (configurable)", "❌ Async"],
+              ["Distributed consensus (DCS)", "✅ etcd (3 nodes)", "✅ Built-in monitor", "❌ None"],
+              ["Connection pooling", "✅ Via HAProxy or PgBouncer", "❌", "❌"],
+              ["Setup complexity", "⭐⭐⭐ Medium", "⭐⭐ Easy", "⭐ Simple"],
+              ["Production realism", "⭐⭐⭐⭐⭐ Very high", "⭐⭐⭐⭐ High", "⭐⭐ Low"],
+              ["Resource usage (services)", "7 services", "3 services", "2 services"],
+              ["Best for", "Full HA learning, production simulation", "Quick HA testing, simplicity", "Learning replication internals"]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "what-you-can-test",
+      "title": "What You CAN and CANNOT Test on a Single VM",
+      "content": [
+        "A single VM with multiple native PostgreSQL instances is excellent for testing the logical behavior of HA — failover timing, leader election, read/write routing, and node recovery. However, it cannot simulate certain physical infrastructure failures. Understanding these limitations is critical before you move to production."
+      ],
+      "items": [
+        {
+          "label": "✅ CAN Test",
+          "table": {
+            "headers": ["Test", "How to Simulate", "What It Validates"],
+            "rows": [
+              ["Process crash", "systemctl stop patroni1 (or kill -9 the PG process)", "Patroni detects missing heartbeat, promotes replica"],
+              ["Kill PostgreSQL directly", "kill -9 PID of postgres process", "Patroni auto-restarts PostgreSQL within loop_wait (10s)"],
+              ["Leader election", "Stop leader, observe which replica wins", "Distributed consensus via etcd works correctly"],
+              ["Replication lag", "Pause the standby (pg_ctl pause)", "Patroni reports lag, blocks promotion if beyond threshold"],
+              ["pg_rewind (old leader rejoin)", "Stop leader, failover, restart old leader", "Old leader resyncs using pg_rewind, no data corruption"],
+              ["Switchover (planned)", "patronictl switchover", "Leader transitions with zero data loss, minimal downtime"],
+              ["Read/write routing", "Connect via HAProxy ports 5000/5001", "Writes go to leader, reads load-balanced across replicas"],
+              ["Parallel connections", "Open 10+ concurrent psql sessions", "HAProxy handles connection pooling, PG handles max_connections"],
+              ["Configuration changes", "Change Patroni parameters, reload", "Dynamic config propagation across cluster"],
+              ["Re-sync after process recovery", "Kill standby process, restart it", "Replica catches up using WAL streaming"]
+            ]
+          }
+        },
+        {
+          "label": "❌ CANNOT Test on a Single VM",
+          "table": {
+            "headers": ["Test", "Why It Fails", "How to Test It Properly"],
+            "rows": [
+              ["True network partition", "All instances share the same loopback interface on 127.0.0.1. You can stop one process, but can't split the network.", "Use separate VMs with iptables to simulate partition, or use tools like Toxiproxy (see note below)."],
+              ["Disk failure", "All instances share the same host filesystem (even with separate directories, they are on the same physical disk).", "Use separate VMs with different storage devices, or use a cloud provider's fault injection service."],
+              ["Memory pressure", "All processes share the host kernel's memory. OOM behavior differs from separate machines.", "Use systemd memory limits (MemoryMax=) combined with stress tests."],
+              ["CPU contention", "All processes compete for the same CPU cores. Replication lag may be artificially high or low.", "Use separate VMs with dedicated CPUs, or systemd CPUAccounting for better isolation."],
+              ["Full node outage (power loss)", "All processes stop at once when the host shuts down.", "Test with actual hardware or cloud instances with dedicated power management."],
+              ["Storage latency spikes", "All processes use the same I/O stack. One instance's slow I/O affects others.", "Use separate disks or cloud volumes with different performance profiles."],
+              ["Split-brain scenarios", "Difficult to create because all processes share the same network and storage.", "Requires complex network manipulation (e.g., iptables rules on the host, traffic shaping)."],
+              ["Realistic timing/performance", "Latency between processes on localhost is microseconds, not milliseconds.", "Use traffic shaping tools (tc) to add latency, but results are still artificial."]
+            ]
+          }
+        },
+        {
+          "label": "💡 Tip: Better Isolation for Advanced Testing",
+          "text": [
+            "If you need to test network partitions or latency more realistically on a single machine, consider:",
+            "",
+            "1. Toxiproxy (https://github.com/Shopify/toxiproxy) — proxy that injects failures: latency, disconnects, bandwidth limits. Great for testing how Patroni handles network degradation.",
+            "2. systemd resource controls: use `MemoryMax`, `CPUQuota`, and `IOWeight` in service files to limit individual services.",
+            "3. iptables on the host: use `iptables -A INPUT -s <IP> -j DROP` to simulate network failures between processes on different ports.",
+            "",
+            "These tools help bridge the gap between single-VM testing and production behavior."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "best-practices",
+      "title": "Best Practices for Single-VM HA Testing",
+      "content": [
+        "Follow these practices to get the most out of your single-VM HA testing."
+      ],
+      "items": [
+        {
+          "label": "1. Set Resource Limits on Services",
+          "text": [
+            "Without resource limits, one PostgreSQL instance can consume all host memory and cause other processes to be OOM-killed. This creates false failures that do not reflect real HA behavior.",
+            "Use systemd resource controls to limit each service:"
+          ],
+          "code": "# Add these to each patroni service file under [Service]:\n[Service]\nMemoryMax=2G\nCPUQuota=200%\nIOWeight=100\n\n# Also set PostgreSQL memory parameters in Patroni YAML:\npostgresql:\n  parameters:\n    shared_buffers: 256MB\n    effective_cache_size: 768MB\n    work_mem: 32MB\n    maintenance_work_mem: 64MB\n    max_connections: 50\n\n# For etcd services:\n[Service]\nMemoryMax=256M\nCPUQuota=50%"
+        },
+        {
+          "label": "2. Use Separate Data Directories",
+          "text": [
+            "Each PostgreSQL instance must use its own data directory. Never share a data directory between instances."
+          ],
+          "code": "# Correct — separate directories:\n/var/lib/postgresql/patroni1/\n/var/lib/postgresql/patroni2/\n/var/lib/postgresql/patroni3/\n\n# Incorrect — all nodes sharing one dir (data corruption risk):\n/var/lib/postgresql/shared/  # NEVER do this"
+        },
+        {
+          "label": "3. Avoid Port Conflicts",
+          "text": [
+            "On a single VM, every process needs unique ports. Use different ports for each PostgreSQL and Patroni instance. Keep a mapping table."
+          ],
+          "table": {
+            "headers": ["Service", "Port", "Configuration"],
+            "rows": [
+              ["Patroni 1 PG", "15432", "postgresql.listen: 127.0.0.1:15432"],
+              ["Patroni 2 PG", "15433", "postgresql.listen: 127.0.0.1:15433"],
+              ["Patroni 3 PG", "15434", "postgresql.listen: 127.0.0.1:15434"],
+              ["Patroni 1 REST", "18081", "restapi.listen: 127.0.0.1:18081"],
+              ["Patroni 2 REST", "18082", "restapi.listen: 127.0.0.1:18082"],
+              ["Patroni 3 REST", "18083", "restapi.listen: 127.0.0.1:18083"],
+              ["etcd 1 client", "12379", "listen-client-urls: http://127.0.0.1:12379"],
+              ["etcd 2 client", "22379", "listen-client-urls: http://127.0.0.1:22379"],
+              ["etcd 3 client", "32379", "listen-client-urls: http://127.0.0.1:32379"],
+              ["HAProxy write", "5000", "bind *:5000"],
+              ["HAProxy read", "5001", "bind *:5001"],
+              ["HAProxy stats", "8404", "bind *:8404"]
+            ]
+          }
+        },
+        {
+          "label": "4. Use systemd for Service Management",
+          "text": [
+            "Systemd service files make it easy to start, stop, and monitor each component. Enable journald logging for centralized log access."
+          ],
+          "code": "# Check status of all services:\nsudo systemctl status patroni1 patroni2 patroni3 etcd1 etcd2 etcd3 haproxy --no-pager\n\n# View logs for a specific service:\nsudo journalctl -u patroni1 -f\n\n# Filter failover events:\nsudo journalctl -u patroni1 | grep -iE \"(leader|lock|election|promote|failover)\"\nsudo journalctl -u etcd1 | grep -iE \"(leader|election|raft)\""
+        },
+        {
+          "label": "5. Test with Automation Scripts",
+          "text": [
+            "Write scripts that automate the failover tests so you can repeat them consistently."
+          ],
+          "code": "#!/bin/bash\n# test-failover.sh — automated failover test\n\nset -euo pipefail\n\nLEADER_BEFORE=$(sudo -u postgres patronictl -c /etc/patroni/patroni1.yml list | grep Leader | awk '{print $2}')\necho \"Current leader: $LEADER_BEFORE\"\n\necho \"=== Test 1: Stopping leader ===\"\nsudo systemctl stop \"$LEADER_BEFORE\"\nsleep 15\n\nLEADER_AFTER=$(sudo -u postgres patronictl -c /etc/patroni/patroni2.yml list | grep Leader | awk '{print $2}')\necho \"New leader: $LEADER_AFTER\"\n\nif [ \"$LEADER_BEFORE\" = \"$LEADER_AFTER\" ]; then\n    echo \"FAIL: Leader did not change!\"\n    exit 1\nfi\necho \"PASS: Failover completed successfully\"\n\necho \"=== Test 2: Restart old leader ===\"\nsudo systemctl start \"$LEADER_BEFORE\"\nsleep 20\n\nREJOINED=$(sudo -u postgres patronictl -c /etc/patroni/patroni2.yml list | grep \"$LEADER_BEFORE\" | awk '{print $3}')\necho \"$LEADER_BEFORE role: $REJOINED\"\n\nif [ \"$REJOINED\" != \"Replica\" ]; then\n    echo \"FAIL: Old leader did not rejoin as replica!\"\n    exit 1\nfi\necho \"PASS: Old leader rejoined as replica\"\n\necho \"=== All tests passed! ===\""
+        },
+        {
+          "label": "6. Monitor Process Logs",
+          "text": [
+            "When testing failover, watch process logs in real time to understand what Patroni is doing."
+          ],
+          "code": "# Watch Patroni logs during failover:\nsudo journalctl -u patroni1 -u patroni2 -u patroni3 -f\n\n# Filter for failover-related events:\nsudo journalctl -u patroni1 | grep -iE \"(leader|lock|election|promote|failover)\"\n\n# Watch etcd for lock changes:\nsudo journalctl -u etcd1 | grep -iE \"(leader|election|raft)\""
+        },
+        {
+          "label": "7. Clean Up Regularly",
+          "text": [
+            "PostgreSQL data directories accumulate WAL files over time. Regular cleanup prevents disk exhaustion."
+          ],
+          "code": "# Stop all services:\nsudo systemctl stop patroni1 patroni2 patroni3 haproxy etcd1 etcd2 etcd3\n\n# Remove all data:\nsudo rm -rf /var/lib/postgresql/patroni*\nsudo rm -rf /var/lib/etcd/etcd*\n\n# Check disk usage:\ndf -h /var/lib/postgresql /\ndu -sh /var/lib/postgresql/*"
+        }
+      ]
+    },
+    {
+      "id": "troubleshooting",
+      "title": "Troubleshooting Common Issues",
+      "content": [
+        "Here are the most common issues when testing PostgreSQL HA on a single VM with native services."
+      ],
+      "items": [
+        {
+          "label": "Issue 1: Patroni fails to start with 'Failed to bootstrap cluster'",
+          "text": [
+            "Cause: Wrong bin_dir or missing PostgreSQL binaries.",
+            "Solution: Check the PostgreSQL version installed. The bin_dir must match:",
+            "",
+            "  PostgreSQL 16 → /usr/lib/postgresql/16/bin",
+            "  PostgreSQL 17 → /usr/lib/postgresql/17/bin",
+            "  PostgreSQL 18 → /usr/lib/postgresql/18/bin",
+            "",
+            "Fix by setting the correct bin_dir in your patroni YAML configuration."
+          ]
+        },
+        {
+          "label": "Issue 2: ETCD cluster fails to form (only see 1 member)",
+          "text": [
+            "Cause: ETCD nodes cannot reach each other. On a single VM this is usually because:",
+            "  • The initial-cluster has incorrect port numbers",
+            "  • A previous cluster left stale data in the data directory",
+            "  • Port conflicts with another service",
+            "",
+            "Solution:",
+            "  1. Verify each etcd config uses a unique data-dir and ports",
+            "  2. Remove old data: sudo rm -rf /var/lib/etcd/etcd*",
+            "  3. Verify: etcdctl --endpoints=http://127.0.0.1:12379 member list",
+            "  4. Check logs: sudo journalctl -u etcd1 --no-pager | tail -30"
+          ]
+        },
+        {
+          "label": "Issue 3: HAProxy shows all servers DOWN",
+          "text": [
+            "Cause: HAProxy cannot reach Patroni REST API.",
+            "Solution:",
+            "  1. Verify Patroni REST API is accessible: curl -s http://127.0.0.1:18081/health",
+            "  2. Check HAProxy config has correct IP:port for each server",
+            "  3. Ensure Patroni is running: sudo systemctl status patroni1",
+            "  4. Check HAProxy logs: sudo journalctl -u haproxy --no-pager | tail -20"
+          ]
+        },
+        {
+          "label": "Issue 4: Replication lag is high or growing",
+          "text": [
+            "Cause: Insufficient resources. On a single VM with 3 PostgreSQL instances, the CPUs and I/O are shared.",
+            "",
+            "Solutions:",
+            "  • Reduce shared_buffers and work_mem in each PostgreSQL instance",
+            "  • Limit max_connections (e.g., 50 per node instead of 200)",
+            "  • Set wal_keep_size to a smaller value (e.g., 128MB)",
+            "  • Use systemd CPUQuota and MemoryMax to prevent resource starvation",
+            "  • Monitor with: sudo -u postgres patronictl -c /etc/patroni/patroni1.yml list"
+          ]
+        },
+        {
+          "label": "Issue 5: Disk runs out of space",
+          "text": [
+            "Cause: PostgreSQL WAL files accumulate in each data directory.",
+            "Solution:",
+            "  • Set wal_keep_size to a reasonable value (256MB is enough for testing)",
+            "  • Regularly clean up old data directories",
+            "  • Monitor disk usage: df -h && du -sh /var/lib/postgresql/*",
+            "  • Archive old test data before running new experiments"
+          ]
+        },
+        {
+          "label": "Issue 6: Cannot connect to psql",
+          "text": [
+            "Cause: PostgreSQL authentication rejects the connection, or the service is not running.",
+            "Solution:",
+            "  1. Verify the service is running: sudo systemctl status patroni1",
+            "  2. Check pg_hba.conf allows connections from 127.0.0.1",
+            "  3. Verify password: psql -h localhost -p 15432 -U postgres -W",
+            "  4. Check Patroni logs: sudo journalctl -u patroni1 --no-pager | tail -30",
+            "  5. Try connecting via local socket: sudo -u postgres psql -p 15432"
+          ]
+        },
+        {
+          "label": "Issue 7: pg_auto_failover monitor fails to start",
+          "text": [
+            "Cause: The monitor's PostgreSQL instance fails to initialize, usually due to port conflicts or data directory permissions.",
+            "Solution:",
+            "  1. Check logs: sudo journalctl -u pgaf-monitor --no-pager | tail -30",
+            "  2. Ensure no other PostgreSQL is running on port 15432",
+            "  3. Remove old data: sudo rm -rf /var/lib/postgresql/pgaf-*",
+            "  4. Try again with clean state"
+          ]
+        },
+        {
+          "label": "Issue 8: Patroni keeps restarting (crash loop)",
+          "text": [
+            "Cause: Patroni finds a stale lock in etcd from a previous cluster state.",
+            "Solution:",
+            "  • Remove etcd data and restart clean: sudo systemctl stop etcd{1,2,3}; sudo rm -rf /var/lib/etcd/etcd*; sudo systemctl start etcd{1,2,3}",
+            "  • Or clear just the Patroni keys in etcd: etcdctl --endpoints=http://127.0.0.1:12379 del /db/pg-ha-cluster --prefix"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "summary",
+      "title": "Summary",
+      "content": [
+        "You now have three different ways to test PostgreSQL High Availability on a single VM using native OS services. Each approach builds on the same core concepts — streaming replication, leader election, failover, and recovery — but at different levels of complexity and production realism.",
+        "On a single VM you can fully validate the logical behavior of HA: automatic failover, switchover, node recovery, and read/write routing. You cannot simulate physical infrastructure failures like network partitions or disk failures, but with tools like Toxiproxy and systemd resource controls you can get closer. Running services natively is the most direct way to learn PostgreSQL HA — what you see is what you get, without any container abstraction layer."
+      ],
+      "items": [
+        {
+          "label": "Key Takeaways",
+          "text": [
+            "✅ You can run a full Patroni + etcd + HAProxy cluster on a single VM using 7 systemd services — no separate VMs needed",
+            "✅ Automatic failover works: kill the leader process, and a replica is promoted within ~15 seconds",
+            "✅ Node recovery works: restart the old leader, and it rejoins as a replica via pg_rewind",
+            "✅ Graceful switchover works: use patronictl switchover for planned maintenance with zero data loss",
+            "✅ Read/write splitting works: HAProxy routes writes to the leader (port 5000) and reads across replicas (port 5001)",
+            "✅ pg_auto_failover offers a simpler alternative with synchronous replication and built-in monitoring",
+            "✅ Manual streaming replication is the lightest option and teaches you the fundamentals of PostgreSQL replication",
+            "❌ You cannot test true network partitions, disk failures, or realistic timing on a single VM — use separate VMs or cloud instances for that"
+          ]
+        },
+        {
+          "label": "Command Quick Reference",
+          "table": {
+            "headers": ["Action", "Command"],
+            "rows": [
+              ["Start Patroni stack", "sudo systemctl start etcd1 etcd2 etcd3 patroni1 patroni2 patroni3 haproxy"],
+              ["Check cluster state", "sudo -u postgres patronictl -c /etc/patroni/patroni1.yml list"],
+              ["Check etcd health", "etcdctl --endpoints=http://127.0.0.1:12379 endpoint health --cluster"],
+              ["Check HAProxy stats", "curl -u admin:admin http://localhost:8404/"],
+              ["Connect to write port", "psql -h localhost -p 5000 -U postgres"],
+              ["Connect to read port", "psql -h localhost -p 5001 -U postgres"],
+              ["Test failover", "sudo systemctl stop <leader> && sleep 15 && patronictl -c /etc/patroni/patroni2.yml list"],
+              ["Test switchover", "sudo -u postgres patronictl -c /etc/patroni/patroni2.yml switchover --force"],
+              ["Recover old leader", "sudo systemctl start <old-leader>"],
+              ["View Patroni logs", "sudo journalctl -u patroni1 -f"],
+              ["Stop everything", "sudo systemctl stop patroni1 patroni2 patroni3 haproxy etcd1 etcd2 etcd3"],
+              ["Full cleanup", "sudo rm -rf /var/lib/postgresql/patroni* /var/lib/etcd/etcd*"],
+              ["Start pg_auto_failover", "sudo -u postgres pg_autoctl run --pgdata /var/lib/postgresql/pgaf-node1 --pgport 15433 &"],
+              ["Start manual replication", "sudo -u postgres pg_ctl start -D /var/lib/postgresql/primary"]
+            ]
+          }
+        },
+        {
+          "label": "Next Steps",
+          "text": [
+            "After mastering single-VM HA testing, here is what to explore next:",
+            "",
+            "1. Add PgBouncer for connection pooling — install alongside HAProxy for production-grade connection management",
+            "2. Set up pgBackRest backup and WAL archiving — test Point-in-Time Recovery (PITR) alongside HA",
+            "3. Deploy the same stack to separate VMs or cloud instances — you will see how real network latency affects replication",
+            "4. Add monitoring with Prometheus + Grafana + postgres_exporter — visualize replication lag, connections, and failover events",
+            "5. Try chaos engineering with Toxiproxy — simulate network latency, disconnects, and bandwidth limits",
+            "6. Test with real traffic — use pgbench (built into PostgreSQL) to generate load and observe HA behavior under pressure"
+          ],
+          "code": "# Quick pgbench test to generate load:\n# Create a test database:\npsql -h localhost -p 5000 -U postgres -c \"CREATE DATABASE pgbench_test;\"\n\n# Initialize with 100,000 rows:\npgbench -h localhost -p 5000 -U postgres -i -s 10 pgbench_test\n\n# Run a 60-second benchmark:\npgbench -h localhost -p 5000 -U postgres -T 60 -c 10 pgbench_test\n\n# While pgbench is running, fail over the leader and watch transactions continue"
+        }
+      ]
+    }
+  ]
+}

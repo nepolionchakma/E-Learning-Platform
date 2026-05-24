@@ -54,5 +54,12 @@
     "content": "A comprehensive end-to-end guide to React Native from fundamentals to production. Covers core components, styling, flexbox/Yoga, navigation, state management, networking, data persistence, device APIs (camera, location, permissions), animations (Reanimated, Animated API), gestures, forms, debugging, testing, push notifications, performance optimization, TypeScript, publishing to app stores, security, CI/CD, and production best practices.",
     "author": "E-Learning Platform",
     "date": "2026-05-21"
+  },
+  {
+    "slug": "postgresql-ha-single-vm",
+    "title": "Testing PostgreSQL High Availability on a Single VM: The Complete Docker Guide",
+    "content": "Learn how to set up and test a full PostgreSQL High Availability cluster — including Patroni, etcd, and HAProxy — on just one machine using Docker containers. Covers automatic failover, graceful switchover, node recovery, read/write splitting, and three different HA approaches with step-by-step instructions, real commands, and expected outputs.",
+    "author": "E-Learning Platform",
+    "date": "2026-05-21"
   }
 ]
