@@ -734,12 +734,108 @@
               "code": "# Connect through HAProxy:\npsql -h 192.168.68.200 -p 5001 -U postgres -d postgres\n\npostgres=# SELECT inet_server_addr(), inet_server_port();\n# Expected: shows a replica's IP (e.g. 192.168.68.201) and port 5432\n# Run twice — with round-robin you'll see different replicas\n\npostgres=# \\q"
             }
           ]
-        }
-      ]
-    },
-    {
-      "id": "testing-failover",
-      "title": "Part 8: Testing High Availability (Failover)",
+        },
+        {
+          "title": "Connect Your Application Through HAProxy",
+          "content": "Your application connects to Node 0's IP on port 5000 (write) or 5001 (read). HAProxy handles routing to the correct PostgreSQL node transparently.",
+          "items": [
+            {
+              "label": "Connection endpoints summary",
+              "table": {
+                "headers": [
+                  "Purpose",
+                  "Host",
+                  "Port",
+                  "Description"
+                ],
+                "rows": [
+                  [
+                    "Write (Primary)",
+                    "192.168.68.200",
+                    "5000",
+                    "All INSERT/UPDATE/DELETE go here"
+                  ],
+                  [
+                    "Read (Replica)",
+                    "192.168.68.200",
+                    "5001",
+                    "SELECT queries load-balanced across replicas"
+                  ],
+                  [
+                    "Cluster B Write",
+                    "192.168.68.200",
+                    "6000",
+                    "Second cluster write endpoint"
+                  ],
+                  [
+                    "Cluster B Read",
+                    "192.168.68.200",
+                    "6001",
+                    "Second cluster read endpoint"
+                  ]
+                ]
+              }
+            },
+            {
+              "label": "Connection strings by language",
+              "code": "# ---------- PostgreSQL URI format ----------\n# Write:\npostgresql://postgres:super-pass-789@192.168.68.200:5000/postgres\n# Read:\npostgresql://postgres:super-pass-789@192.168.68.200:5001/postgres\n\n# ---------- Node.js (pg) ----------\nconst { Pool } = require('pg');\nconst writePool = new Pool({\n  host: '192.168.68.200',\n  port: 5000,\n  user: 'postgres',\n  password: 'super-pass-789',\n  database: 'myapp'\n});\nconst readPool = new Pool({\n  host: '192.168.68.200',\n  port: 5001,\n  user: 'postgres',\n  password: 'super-pass-789',\n  database: 'myapp'\n});\n// Writes: await writePool.query('INSERT INTO ...')\n// Reads:  await readPool.query('SELECT ...')\n\n# ---------- Python (psycopg2) ----------\nimport psycopg2\nwrite_conn = psycopg2.connect(\n    host='192.168.68.200', port=5000,\n    user='postgres', password='super-pass-789',\n    dbname='myapp'\n)\nread_conn = psycopg2.connect(\n    host='192.168.68.200', port=5001,\n    user='postgres', password='super-pass-789',\n    dbname='myapp'\n)\n\n# ---------- Java (JDBC) ----------\n// Write:\nString writeUrl = \"jdbc:postgresql://192.168.68.200:5000/myapp\";\n// Read:\nString readUrl = \"jdbc:postgresql://192.168.68.200:5001/myapp\";\n\n# ---------- .NET (Npgsql) ----------\n// Write:\n\"Host=192.168.68.200;Port=5000;Database=myapp;Username=postgres;Password=super-pass-789\"\n// Read:\n\"Host=192.168.68.200;Port=5001;Database=myapp;Username=postgres;Password=super-pass-789\"\n\n# ---------- Ruby (pg gem) ----------\n# Write:\nPG.connect(host: '192.168.68.200', port: 5000, user: 'postgres', password: 'super-pass-789', dbname: 'myapp')\n\n# ---------- Go (pgx) ----------\n// Write:\nconnStr := \"postgres://postgres:super-pass-789@192.168.68.200:5000/myapp\"\n// Read:\nconnStr := \"postgres://postgres:super-pass-789@192.168.68.200:5001/myapp\"\n\n# ---------- PHP (PDO) ----------\n// Write:\n$pdo = new PDO('pgsql:host=192.168.68.200;port=5000;dbname=myapp', 'postgres', 'super-pass-789');\n\n# ---------- Environment variables (recommended) ----------\nPGHOST=192.168.68.200\nPGPORT_WRITE=5000\nPGPORT_READ=5001\nPGUSER=postgres\nPGPASSWORD=super-pass-789\nPGDATABASE=myapp\n\n# ---------- Read/write splitting pattern ----------\n# In your app, route queries based on type:\n#   if query is SELECT → use read pool (port 5001)\n#   if query is INSERT/UPDATE/DELETE → use write pool (port 5000)"
+            },
+            {
+              "label": "Important notes for production",
+              "text": [
+                "• Never embed passwords in code — use environment variables or a secrets manager",
+                "• For production, replace 192.168.68.200 with a DNS name or VIP (Virtual IP)",
+                "• Consider running HAProxy on multiple nodes with keepalived for redundancy",
+                "• Monitor HAProxy stats at http://192.168.68.200:7000/stats (user: admin, password: admin-pass-123)",
+                "• Test failover regularly — your app should retry connections on failure",
+                "• Use connection pooling libraries (PgBouncer, Pgpool-II) for high connection counts"
+              ]
+            }
+           ]
+         },
+         {
+           "title": "Load Balancing Explained & How to Test It",
+           "content": "A load balancer distributes incoming connections across multiple backend servers. It does NOT automatically increase capacity — that depends on your PostgreSQL config, CPU, RAM, disk I/O, and query patterns. What it does do is spread the connection load so no single node is overwhelmed.",
+           "items": [
+             {
+               "label": "What HAProxy does and doesn't do",
+               "text": [
+                 "What HAProxy DOES:",
+                 "  • Routes each new connection to an available backend (round-robin or leastconn)",
+                 "  • Detects failed nodes via health checks and stops sending traffic to them",
+                 "  • Splits read vs write traffic to different backends",
+                 "  • Provides a single endpoint your app connects to (simplifies configuration)",
+                 "",
+                 "What HAProxy does NOT do:",
+                 "  • Increase query capacity — that's determined by PostgreSQL config (shared_buffers, work_mem, max_connections, etc.)",
+                 "  • Cache queries or results",
+                 "  • Replace proper indexing, vacuuming, or query optimization",
+                 "  • Handle authentication or TLS termination (though it can be configured for it)",
+                 "",
+                 "Capacity planning rule of thumb:",
+                 "  • 3-node cluster with HAProxy handles roughly 2-3x the read capacity of a single node (replicas serve reads)",
+                 "  • Write capacity is limited to a single leader (replication is asynchronous)"
+               ]
+             },
+             {
+               "label": "Test load balancing with a bash loop",
+               "code": "# Run 10 queries through the read port (5001) and see which node handles each:\nfor i in $(seq 1 10); do\n  psql -h 192.168.68.200 -p 5001 -U postgres -d postgres -tA \\\n    -c \"SELECT 'Request $i -> ' || inet_server_addr()::text || ':' || inet_server_port()::text;\"\ndone\n\n# Expected output (round-robin distributes across replicas):\n#  Request 1 -> 192.168.68.201:5432\n#  Request 2 -> 192.168.68.202:5432\n#  Request 3 -> 192.168.68.200:5432   (leader also serves reads)\n#  Request 4 -> 192.168.68.201:5432\n#  Request 5 -> 192.168.68.202:5432\n#  ...\n\n# Test writes always go to the leader:\nfor i in $(seq 1 5); do\n  psql -h 192.168.68.200 -p 5000 -U postgres -d postgres -tA \\\n    -c \"SELECT 'Write $i -> ' || inet_server_addr()::text || ':' || inet_server_port()::text;\"\ndone\n# Expected: ALL requests show the leader's IP (e.g. 192.168.68.200:5432)"
+             },
+             {
+               "label": "Simulate load with pgbench (PostgreSQL's built-in benchmark)",
+               "code": "# Initialize a test database (run once):\npgbench -h 192.168.68.200 -p 5000 -U postgres -i -s 50 pgbench_test\n\n# Run read-only test through the read port (simulates SELECT traffic):\npgbench -h 192.168.68.200 -p 5001 -U postgres -c 10 -T 30 -S pgbench_test\n# -c 10  = 10 concurrent clients\n# -T 30  = run for 30 seconds\n# -S     = SELECT-only (read)\n\n# Run write test through the write port:\npgbench -h 192.168.68.200 -p 5000 -U postgres -c 10 -T 30 pgbench_test\n\n# Results show transactions per second (TPS).\n# Higher TPS = better throughput. Compare single-node vs cluster performance."
+             },
+             {
+               "label": "Monitor real-time HAProxy stats",
+               "code": "# Open HAProxy stats in browser:\n# http://192.168.68.200:7000/stats  (user: admin, pass: admin-pass-123)\n# Shows live connections per backend with UP/DOWN status\n\n# Or use curl for machine-readable CSV stats:\ncurl -u admin:admin-pass-123 'http://localhost:7000/stats;csv' | grep pg-\n\n# Columns: pxname, svname, qcur, qmax, scur, smax, slim, stot, bin, bout, status\n# Focus on 'scur' (current sessions) and 'stot' (total sessions) per server\n\n# While pgbench runs, you'll see:\n# pg-read,node0-pg,...5,...150,...UP\n# pg-read,node1-pg,...3,...148,...UP\n# pg-read,node2-pg,...2,...152,...UP\n# (sessions are distributed across all 3 nodes)"
+             }
+           ]
+         }
+       ]
+     },
+     {
+       "id": "testing-failover",
+       "title": "Part 8: Testing High Availability (Failover)",
       "content": [
         "The most important test of any HA system is simulating a failure and verifying automatic recovery."
       ],
@@ -910,15 +1006,27 @@
             }
           ]
         },
-        {
-          "title": "Extended HAProxy for Both Clusters",
-          "items": [
-            {
-              "label": "Add Cluster B to /etc/haproxy/haproxy.cfg on Node 0",
-              "code": "sudo nano /etc/haproxy/haproxy.cfg\n\n# Add these sections AFTER the existing Cluster A config:\n\n# Cluster B Write\nlisten pg-cluster-b-write\n    bind *:6000\n    mode tcp\n    option httpchk GET /primary\n    http-check expect status 200\n    default-server inter 3s fall 3 rise 2 on-marked-down shutdown-sessions\n    server node0-cluster-b 192.168.68.200:5442 check port 8009\n    server node1-cluster-b 192.168.68.201:5443 check port 8009\n    server node2-cluster-b 192.168.68.202:5444 check port 8009\n\n# Cluster B Read\nlisten pg-cluster-b-read\n    bind *:6001\n    mode tcp\n    balance roundrobin\n    option httpchk GET /replica\n    http-check expect status 200\n    default-server inter 3s fall 3 rise 2\n    server node0-cluster-b 192.168.68.200:5442 check port 8009\n    server node1-cluster-b 192.168.68.201:5443 check port 8009\n    server node2-cluster-b 192.168.68.202:5444 check port 8009\n\n# Reload HAProxy:\nsudo systemctl reload haproxy\n\n# Test both clusters:\npsql -h localhost -p 5000 -U postgres -d postgres -c \"SELECT 'Cluster A Write OK'\"\npsql -h localhost -p 6000 -U postgres -d postgres -c \"SELECT 'Cluster B Write OK'\""
-            }
-          ]
-        }
+         {
+           "title": "Extended HAProxy for Both Clusters",
+           "items": [
+             {
+               "label": "Add Cluster B to /etc/haproxy/haproxy.cfg on Node 0",
+               "code": "sudo nano /etc/haproxy/haproxy.cfg\n\n# Add these sections AFTER the existing Cluster A config:\n\n# Cluster B Write\nlisten pg-cluster-b-write\n    bind *:6000\n    mode tcp\n    option httpchk GET /primary\n    http-check expect status 200\n    default-server inter 3s fall 3 rise 2 on-marked-down shutdown-sessions\n    server node0-cluster-b 192.168.68.200:5442 check port 8009\n    server node1-cluster-b 192.168.68.201:5443 check port 8009\n    server node2-cluster-b 192.168.68.202:5444 check port 8009\n\n# Cluster B Read\nlisten pg-cluster-b-read\n    bind *:6001\n    mode tcp\n    balance roundrobin\n    option httpchk GET /replica\n    http-check expect status 200\n    default-server inter 3s fall 3 rise 2\n    server node0-cluster-b 192.168.68.200:5442 check port 8009\n    server node1-cluster-b 192.168.68.201:5443 check port 8009\n    server node2-cluster-b 192.168.68.202:5444 check port 8009"
+             },
+             {
+               "label": "IMPORTANT: HAProxy backend ports must match your actual PostgreSQL ports",
+               "code": "# ⚠️ The :5442/:5443/:5444 in HAProxy config are the PostgreSQL ports\n# from your Patroni config. They MUST match exactly.\n#\n# Correct example (different port per node):\n#   Patroni config: port: 5442  →  HAProxy: 192.168.68.200:5442\n#   Patroni config: port: 5443  →  HAProxy: 192.168.68.201:5443\n#   Patroni config: port: 5444  →  HAProxy: 192.168.68.202:5444\n#\n# Alternative (same port on all nodes, e.g. 5433):\n#   Patroni config: port: 5433  →  HAProxy: 192.168.68.200:5433\n#   Patroni config: port: 5433  →  HAProxy: 192.168.68.201:5433\n#   Patroni config: port: 5433  →  HAProxy: 192.168.68.202:5433\n#\n# How to verify your port:\nsudo grep -E 'listen:|connect_address:|port:' /etc/patroni/patroni-cluster-b.yml"
+             },
+             {
+               "label": "Open port 8009 on ALL 3 NODES (Cluster B health checks)",
+               "code": "# Run on ALL 3 nodes:\nsudo ufw allow 8009/tcp\nsudo ufw reload\n\n# Verify from Node 0:\ncurl -s http://192.168.68.200:8009/health\ncurl -s http://192.168.68.201:8009/health\ncurl -s http://192.168.68.202:8009/health\n\n# All should return JSON with \"state\":\"running\""
+             },
+             {
+               "label": "Reload HAProxy and test Cluster B",
+               "code": "# Reload HAProxy on Node 0:\nsudo systemctl reload haproxy\n\n# Check backend status via stats CSV:\ncurl -u admin:admin-pass-123 'http://localhost:7000/stats;csv' | grep cluster-b\n# Expected: all 3 servers show UP\n\n# Test write (port 6000):\npsql -h 192.168.68.200 -p 6000 -U postgres -d postgres -c \"SELECT 'Cluster B Write OK'\"\n\n# Test read (port 6001):\npsql -h 192.168.68.200 -p 6001 -U postgres -d postgres -c \"SELECT 'Cluster B Read OK'\"\n\n# If connection fails with 'server closed the connection unexpectedly':\n# → Check HAProxy stats at http://192.168.68.200:7000/stats\n# → If all servers DOWN, port 8009 is likely blocked (fix above)\n# → If servers UP but connection fails, check port mismatch (fix above)"
+             }
+           ]
+         }
       ]
     },
     {
@@ -1094,7 +1202,7 @@
           "items": [
             {
               "label": "Open port 8008 on all nodes",
-              "code": "# Run on ALL 3 nodes:\nsudo ufw allow 8008/tcp\nsudo ufw reload\n\n# Verify from Node 0:\ncurl -s http://192.168.68.200:8008/health\ncurl -s http://192.168.68.201:8008/health\ncurl -s http://192.168.68.202:8008/health\n\n# All should return JSON with \"state\":\"running\"\n\n# Reload HAProxy:\nsudo systemctl reload haproxy\n\n# Check HAProxy stats:\necho \"show stat\" | sudo socat stdio /var/run/haproxy.sock | grep pg-"
+               "code": "# Run on ALL 3 nodes:\nsudo ufw allow 8008/tcp\nsudo ufw reload\n\n# Verify from Node 0:\ncurl -s http://192.168.68.200:8008/health\ncurl -s http://192.168.68.201:8008/health\ncurl -s http://192.168.68.202:8008/health\n\n# All should return JSON with \"state\":\"running\"\n\n# Reload HAProxy:\nsudo systemctl reload haproxy\n\n# Check HAProxy stats:\ncurl -u admin:admin-pass-123 'http://localhost:7000/stats;csv' | grep pg-"
             }
           ]
         },
