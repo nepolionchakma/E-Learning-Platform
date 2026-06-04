@@ -239,7 +239,7 @@
           "items": [
             {
               "label": "Run this on ALL 3 NODES",
-              "code": "# ---------- NODE 0 (192.168.68.200) ----------\nnode0:~$ sudo apt update\nnode0:~$ sudo apt install etcd -y\nnode0:~$ sudo systemctl stop etcd\nnode0:~$ sudo systemctl disable etcd\nnode0:~$ etcd --version\n\n# ---------- NODE 1 (192.168.68.201) ----------\nnode1:~$ sudo apt update\nnode1:~$ sudo apt install etcd -y\nnode1:~$ sudo systemctl stop etcd\nnode1:~$ sudo systemctl disable etcd\nnode1:~$ etcd --version\n\n# ---------- NODE 2 (192.168.68.202) ----------\nnode2:~$ sudo apt update\nnode2:~$ sudo apt install etcd -y\nnode2:~$ sudo systemctl stop etcd\nnode2:~$ sudo systemctl disable etcd\nnode2:~$ etcd --version\n\n# Why stop & disable? apt auto-starts etcd with defaults (listen on 127.0.0.1 only).\n# We need to configure it first, then start it properly."
+              "code": "# ---------- NODE 0 (192.168.68.200) ----------\nsudo apt update\nsudo apt install etcd -y\nsudo systemctl stop etcd\nsudo systemctl disable etcd\netcd --version\n\n# ---------- NODE 1 (192.168.68.201) ----------\nsudo apt update\nsudo apt install etcd -y\nsudo systemctl stop etcd\nsudo systemctl disable etcd\netcd --version\n\n# ---------- NODE 2 (192.168.68.202) ----------\nsudo apt update\nsudo apt install etcd -y\nsudo systemctl stop etcd\nsudo systemctl disable etcd\netcd --version\n\n# Why stop & disable? apt auto-starts etcd with defaults (listen on 127.0.0.1 only).\n# We need to configure it first, then start it properly."
             },
             {
               "label": "Verify: Check which config file ETCD actually reads",
@@ -274,6 +274,10 @@
             {
               "label": "Node 2 ETCD configuration (/etc/default/etcd)",
               "code": "sudo nano /etc/default/etcd\n\n# Paste the following (change IP to your actual Node 2 IP):\nETCD_NAME=\"node2\"\nETCD_DATA_DIR=\"/var/lib/etcd\"\nETCD_LISTEN_PEER_URLS=\"http://192.168.68.202:2380\"\nETCD_LISTEN_CLIENT_URLS=\"http://192.168.68.202:2379,http://127.0.0.1:2379\"\nETCD_ADVERTISE_PEER_URLS=\"http://192.168.68.202:2380\"\nETCD_ADVERTISE_CLIENT_URLS=\"http://192.168.68.202:2379\"\nETCD_INITIAL_ADVERTISE_PEER_URLS=\"http://192.168.68.202:2380\"\nETCD_INITIAL_CLUSTER=\"node0=http://192.168.68.200:2380,node1=http://192.168.68.201:2380,node2=http://192.168.68.202:2380\"\nETCD_INITIAL_CLUSTER_TOKEN=\"pg-ha-etcd\"\nETCD_INITIAL_CLUSTER_STATE=\"new\""
+            },
+            {
+              "label": "Check etcdctl version",
+              "code": "nepo@node0:~$ etcdctl version\n\n\netcdctl version: 3.3.25\nAPI version: 2\n\n\n#If the etcdctl version is mismatch with etcd like 'etcdctl version: 3.3.25' 'API version: 2' then change it to match etcd version\n\n\nsudo echo 'export ETCDCTL_API=3' >> ~/.bashrc && source ~/.bashrc\n\n\n# etcdctl version\n# etcdctl version: 3.3.25\n# API version: 3.3\n"
             }
           ]
         },
@@ -283,18 +287,22 @@
           "items": [
             {
               "label": "Step 5a: Open firewall ports on ALL 3 NODES",
-              "code": "# ---------- NODE 0 ----------\nsudo ufw allow 2379/tcp\nsudo ufw allow 2380/tcp\nsudo ufw reload\nsudo ufw status | grep -E '2379|2380'\n\n# ---------- NODE 1 ----------\nsudo ufw allow 2379/tcp\nsudo ufw allow 2380/tcp\nsudo ufw reload\nsudo ufw status | grep -E '2379|2380'\n\n# ---------- NODE 2 ----------\nsudo ufw allow 2379/tcp\nsudo ufw allow 2380/tcp\nsudo ufw reload\nsudo ufw status | grep -E '2379|2380'\n\n# Also allow Patroni REST API port (needed later):\nsudo ufw allow 8008/tcp\nsudo ufw reload\n\n# Expected output: both 2379/tcp and 2380/tcp listed as ALLOW"
+              "code": "# ---------- NODE 0 ----------\nsudo ufw allow 22/tcp\nsudo ufw allow 2379/tcp\nsudo ufw allow 2380/tcp\nsudo ufw allow 8008/tcp\nsudo ufw allow 5432/tcp\nsudo ufw reload\nsudo ufw status | grep -E '2379|2380'\n\n# ---------- NODE 1 ----------\nsudo ufw allow 22/tcp\nsudo ufw allow 2379/tcp\nsudo ufw allow 8008/tcp\nsudo ufw allow 5432/tcp\nsudo ufw allow 2380/tcp\nsudo ufw reload\nsudo ufw status | grep -E '2379|2380'\n\n# ---------- NODE 2 ----------\nsudo ufw allow 22/tcp\nsudo ufw allow 2379/tcp\nsudo ufw allow 8008/tcp\nsudo ufw allow 5432/tcp\nsudo ufw allow 2380/tcp\nsudo ufw reload\nsudo ufw status | grep -E '2379|2380'\n\n# Also allow Patroni REST API port (needed later):\nsudo ufw allow 8008/tcp\nsudo ufw reload\n\n# Expected output: both 2379/tcp and 2380/tcp listed as ALLOW"
             },
             {
-              "label": "Step 5b: Start ETCD on all 3 nodes (within 2 minutes!)",
+              "label": "Step 5b: Create etcd directory if not available",
+              "code": "\n# ---------- NODE 0 ----------\nsudo ls -l /var/lib/etcd (Check first then create)\n\n\nsudo mkdir -p /var/lib/etcd\n\n#Then permission the directory\nsudo chown -R etcd:etcd /var/lib/etcd\nsudo chmod -R 700 /var/lib/etcd\n\n# ---------- NODE 1 ----------\nsudo mkdir -p /var/lib/etcd\nsudo chown -R etcd:etcd /var/lib/etcd\nsudo chmod -R 700 /var/lib/etcd\n\n# ---------- NODE 2 ----------\nsudo mkdir -p /var/lib/etcd\nsudo chown -R etcd:etcd /var/lib/etcd\nsudo chmod -R 700 /var/lib/etcd"
+            },
+            {
+              "label": "Step 5c: Start ETCD on all 3 nodes (within 2 minutes!)",
               "code": "# Start all 3 nodes quickly — the cluster forms when they see each other\n\n# ---------- NODE 0 ----------\nsudo systemctl enable etcd\nsudo systemctl start etcd\n\n# ---------- NODE 1 ----------\nsudo systemctl enable etcd\nsudo systemctl start etcd\n\n# ---------- NODE 2 ----------\nsudo systemctl enable etcd\nsudo systemctl start etcd\n\n# ⚠️ If you wait too long between starting nodes, the first node will time out\n# and form a single-node cluster. Stop, delete data, and retry if that happens."
             },
             {
-              "label": "Step 5c: Verify ETCD is listening on the right IP (not just 127.0.0.1)",
+              "label": "Step 5d: Verify ETCD is listening on the right IP (not just 127.0.0.1)",
               "code": "# On each node, check that ETCD bound to your VM's IP:\nss -tulpn | grep etcd\n\n# GOOD - Node 0 example:\n# tcp  LISTEN  192.168.68.200:2379   0.0.0.0:*   users:((\"etcd\",pid=1234))\n# tcp  LISTEN  192.168.68.200:2380   0.0.0.0:*   users:((\"etcd\",pid=1234))\n# tcp  LISTEN  127.0.0.1:2379       0.0.0.0:*   users:((\"etcd\",pid=1234))\n#\n# BAD - only shows 127.0.0.1:2379, no external IP\n# This means ETCD is NOT reading your config - check /etc/default/etcd\n#\n# Also verify the ETCD name:\nps aux | grep etcd | grep -v grep\n# Expected output includes: etcd --name=node0 (or node1/node2)"
             },
             {
-              "label": "Step 5d: Verify cluster health",
+              "label": "Step 5e: Verify cluster health",
               "code": "# Run this on ANY node:\netcdctl endpoint health --cluster --write-out=table\n\n# Expected - all 3 show health=true:\n# +-----------------------------+-----------+-------------+-------+\n# |         ENDPOINT            |  HEALTH   |   TOOK      | ERROR |\n# +-----------------------------+-----------+-------------+-------+\n# | http://192.168.68.200:2379  |   true    | 8.472ms     |       |\n# | http://192.168.68.201:2379  |   true    | 9.103ms     |       |\n# | http://192.168.68.202:2379  |   true    | 7.891ms     |       |\n# +-----------------------------+-----------+-------------+-------+\n\n# List cluster members:\netcdctl member list --write-out=table\n\n# Expected:\n# +------------------+---------+-------+----------------------------+----------------------------+------------+\n# |        ID        | STATUS  | NAME  |         PEER ADDRS         |        CLIENT ADDRS        | IS LEARNER |\n# +------------------+---------+-------+----------------------------+----------------------------+------------+\n# | abc123...        | started | node0 | http://192.168.68.200:2380 | http://192.168.68.200:2379 |      false |\n# | def456...        | started | node1 | http://192.168.68.201:2380 | http://192.168.68.201:2379 |      false |\n# | ghi789...        | started | node2 | http://192.168.68.202:2380 | http://192.168.68.202:2379 |      false |\n# +------------------+---------+-------+----------------------------+----------------------------+------------+"
             },
             {
@@ -358,7 +366,7 @@
           "items": [
             {
               "label": "View running PostgreSQL clusters",
-              "code": "# Check which PostgreSQL clusters are currently running:\npg_lsclusters\n\n# The postgresql-18 package creates a default 'main' cluster on port 5432.\n\n# Verify port 5432 is free:\nss -tulpn | grep 5432"
+              "code": "# Check which PostgreSQL clusters are currently running:\npg_lsclusters\n\n# The postgresql-18 package creates a default 'main' cluster on port 5432.\n\n# Verify port 5432 is free:\nss -tulpn | grep 5432\n\n\n# Verify /data/patroni\nls -la /data/ | grep patroni\n\n# drwxr-xr-x  4 patroni postgres 4096 Jun  3 20:46 .\n# drwxr-x--- 19 patroni postgres 4096 Jun  3 21:14 patroni\n# drwxr-xr-x  5 patroni postgres 4096 Jun  3 20:46 pg"
             }
           ]
         }
@@ -791,51 +799,51 @@
                 "• Use connection pooling libraries (PgBouncer, Pgpool-II) for high connection counts"
               ]
             }
-           ]
-         },
-         {
-           "title": "Load Balancing Explained & How to Test It",
-           "content": "A load balancer distributes incoming connections across multiple backend servers. It does NOT automatically increase capacity — that depends on your PostgreSQL config, CPU, RAM, disk I/O, and query patterns. What it does do is spread the connection load so no single node is overwhelmed.",
-           "items": [
-             {
-               "label": "What HAProxy does and doesn't do",
-               "text": [
-                 "What HAProxy DOES:",
-                 "  • Routes each new connection to an available backend (round-robin or leastconn)",
-                 "  • Detects failed nodes via health checks and stops sending traffic to them",
-                 "  • Splits read vs write traffic to different backends",
-                 "  • Provides a single endpoint your app connects to (simplifies configuration)",
-                 "",
-                 "What HAProxy does NOT do:",
-                 "  • Increase query capacity — that's determined by PostgreSQL config (shared_buffers, work_mem, max_connections, etc.)",
-                 "  • Cache queries or results",
-                 "  • Replace proper indexing, vacuuming, or query optimization",
-                 "  • Handle authentication or TLS termination (though it can be configured for it)",
-                 "",
-                 "Capacity planning rule of thumb:",
-                 "  • 3-node cluster with HAProxy handles roughly 2-3x the read capacity of a single node (replicas serve reads)",
-                 "  • Write capacity is limited to a single leader (replication is asynchronous)"
-               ]
-             },
-             {
-               "label": "Test load balancing with a bash loop",
-               "code": "# Run 10 queries through the read port (5001) and see which node handles each:\nfor i in $(seq 1 10); do\n  psql -h 192.168.68.200 -p 5001 -U postgres -d postgres -tA \\\n    -c \"SELECT 'Request $i -> ' || inet_server_addr()::text || ':' || inet_server_port()::text;\"\ndone\n\n# Expected output (round-robin distributes across replicas):\n#  Request 1 -> 192.168.68.201:5432\n#  Request 2 -> 192.168.68.202:5432\n#  Request 3 -> 192.168.68.200:5432   (leader also serves reads)\n#  Request 4 -> 192.168.68.201:5432\n#  Request 5 -> 192.168.68.202:5432\n#  ...\n\n# Test writes always go to the leader:\nfor i in $(seq 1 5); do\n  psql -h 192.168.68.200 -p 5000 -U postgres -d postgres -tA \\\n    -c \"SELECT 'Write $i -> ' || inet_server_addr()::text || ':' || inet_server_port()::text;\"\ndone\n# Expected: ALL requests show the leader's IP (e.g. 192.168.68.200:5432)"
-             },
-             {
-               "label": "Simulate load with pgbench (PostgreSQL's built-in benchmark)",
-               "code": "# Initialize a test database (run once):\npgbench -h 192.168.68.200 -p 5000 -U postgres -i -s 50 pgbench_test\n\n# Run read-only test through the read port (simulates SELECT traffic):\npgbench -h 192.168.68.200 -p 5001 -U postgres -c 10 -T 30 -S pgbench_test\n# -c 10  = 10 concurrent clients\n# -T 30  = run for 30 seconds\n# -S     = SELECT-only (read)\n\n# Run write test through the write port:\npgbench -h 192.168.68.200 -p 5000 -U postgres -c 10 -T 30 pgbench_test\n\n# Results show transactions per second (TPS).\n# Higher TPS = better throughput. Compare single-node vs cluster performance."
-             },
-             {
-               "label": "Monitor real-time HAProxy stats",
-               "code": "# Open HAProxy stats in browser:\n# http://192.168.68.200:7000/stats  (user: admin, pass: admin-pass-123)\n# Shows live connections per backend with UP/DOWN status\n\n# Or use curl for machine-readable CSV stats:\ncurl -u admin:admin-pass-123 'http://localhost:7000/stats;csv' | grep pg-\n\n# Columns: pxname, svname, qcur, qmax, scur, smax, slim, stot, bin, bout, status\n# Focus on 'scur' (current sessions) and 'stot' (total sessions) per server\n\n# While pgbench runs, you'll see:\n# pg-read,node0-pg,...5,...150,...UP\n# pg-read,node1-pg,...3,...148,...UP\n# pg-read,node2-pg,...2,...152,...UP\n# (sessions are distributed across all 3 nodes)"
-             }
-           ]
-         }
-       ]
-     },
-     {
-       "id": "testing-failover",
-       "title": "Part 8: Testing High Availability (Failover)",
+          ]
+        },
+        {
+          "title": "Load Balancing Explained & How to Test It",
+          "content": "A load balancer distributes incoming connections across multiple backend servers. It does NOT automatically increase capacity — that depends on your PostgreSQL config, CPU, RAM, disk I/O, and query patterns. What it does do is spread the connection load so no single node is overwhelmed.",
+          "items": [
+            {
+              "label": "What HAProxy does and doesn't do",
+              "text": [
+                "What HAProxy DOES:",
+                "  • Routes each new connection to an available backend (round-robin or leastconn)",
+                "  • Detects failed nodes via health checks and stops sending traffic to them",
+                "  • Splits read vs write traffic to different backends",
+                "  • Provides a single endpoint your app connects to (simplifies configuration)",
+                "",
+                "What HAProxy does NOT do:",
+                "  • Increase query capacity — that's determined by PostgreSQL config (shared_buffers, work_mem, max_connections, etc.)",
+                "  • Cache queries or results",
+                "  • Replace proper indexing, vacuuming, or query optimization",
+                "  • Handle authentication or TLS termination (though it can be configured for it)",
+                "",
+                "Capacity planning rule of thumb:",
+                "  • 3-node cluster with HAProxy handles roughly 2-3x the read capacity of a single node (replicas serve reads)",
+                "  • Write capacity is limited to a single leader (replication is asynchronous)"
+              ]
+            },
+            {
+              "label": "Test load balancing with a bash loop",
+              "code": "# Run 10 queries through the read port (5001) and see which node handles each:\nfor i in $(seq 1 10); do\n  psql -h 192.168.68.200 -p 5001 -U postgres -d postgres -tA \\\n    -c \"SELECT 'Request $i -> ' || inet_server_addr()::text || ':' || inet_server_port()::text;\"\ndone\n\n# Expected output (round-robin distributes across replicas):\n#  Request 1 -> 192.168.68.201:5432\n#  Request 2 -> 192.168.68.202:5432\n#  Request 3 -> 192.168.68.200:5432   (leader also serves reads)\n#  Request 4 -> 192.168.68.201:5432\n#  Request 5 -> 192.168.68.202:5432\n#  ...\n\n# Test writes always go to the leader:\nfor i in $(seq 1 5); do\n  psql -h 192.168.68.200 -p 5000 -U postgres -d postgres -tA \\\n    -c \"SELECT 'Write $i -> ' || inet_server_addr()::text || ':' || inet_server_port()::text;\"\ndone\n# Expected: ALL requests show the leader's IP (e.g. 192.168.68.200:5432)"
+            },
+            {
+              "label": "Simulate load with pgbench (PostgreSQL's built-in benchmark)",
+              "code": "# Initialize a test database (run once):\npgbench -h 192.168.68.200 -p 5000 -U postgres -i -s 50 pgbench_test\n\n# Run read-only test through the read port (simulates SELECT traffic):\npgbench -h 192.168.68.200 -p 5001 -U postgres -c 10 -T 30 -S pgbench_test\n# -c 10  = 10 concurrent clients\n# -T 30  = run for 30 seconds\n# -S     = SELECT-only (read)\n\n# Run write test through the write port:\npgbench -h 192.168.68.200 -p 5000 -U postgres -c 10 -T 30 pgbench_test\n\n# Results show transactions per second (TPS).\n# Higher TPS = better throughput. Compare single-node vs cluster performance."
+            },
+            {
+              "label": "Monitor real-time HAProxy stats",
+              "code": "# Open HAProxy stats in browser:\n# http://192.168.68.200:7000/stats  (user: admin, pass: admin-pass-123)\n# Shows live connections per backend with UP/DOWN status\n\n# Or use curl for machine-readable CSV stats:\ncurl -u admin:admin-pass-123 'http://localhost:7000/stats;csv' | grep pg-\n\n# Columns: pxname, svname, qcur, qmax, scur, smax, slim, stot, bin, bout, status\n# Focus on 'scur' (current sessions) and 'stot' (total sessions) per server\n\n# While pgbench runs, you'll see:\n# pg-read,node0-pg,...5,...150,...UP\n# pg-read,node1-pg,...3,...148,...UP\n# pg-read,node2-pg,...2,...152,...UP\n# (sessions are distributed across all 3 nodes)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "testing-failover",
+      "title": "Part 8: Testing High Availability (Failover)",
       "content": [
         "The most important test of any HA system is simulating a failure and verifying automatic recovery."
       ],
@@ -948,7 +956,7 @@
             },
             {
               "label": "Create a secondary test cluster on port 5433 (optional)",
-              "code": "# Useful for testing replication or validating config before deploying Cluster B:\nsudo pg_createcluster 18 secondary\n\n#OR specific port\n\nsudo pg_createcluster 18 secondary --port 5433 --start\n\n# Verify:\npg_lsclusters\npsql -p 5433 -d postgres -c \"SELECT version();\""
+              "code": "# Useful for testing replication or validating config before deploying Cluster B:\nsudo pg_createcluster 18 secondary\n\n# Start cluster\n\nsudo pg_ctlcluster 18 secondary start\n\n# Verify:\npg_lsclusters\npsql -p 5433 -d postgres -c \"SELECT version();\""
             }
           ]
         },
@@ -1006,27 +1014,27 @@
             }
           ]
         },
-         {
-           "title": "Extended HAProxy for Both Clusters",
-           "items": [
-             {
-               "label": "Add Cluster B to /etc/haproxy/haproxy.cfg on Node 0",
-               "code": "sudo nano /etc/haproxy/haproxy.cfg\n\n# Add these sections AFTER the existing Cluster A config:\n\n# Cluster B Write\nlisten pg-cluster-b-write\n    bind *:6000\n    mode tcp\n    option httpchk GET /primary\n    http-check expect status 200\n    default-server inter 3s fall 3 rise 2 on-marked-down shutdown-sessions\n    server node0-cluster-b 192.168.68.200:5442 check port 8009\n    server node1-cluster-b 192.168.68.201:5443 check port 8009\n    server node2-cluster-b 192.168.68.202:5444 check port 8009\n\n# Cluster B Read\nlisten pg-cluster-b-read\n    bind *:6001\n    mode tcp\n    balance roundrobin\n    option httpchk GET /replica\n    http-check expect status 200\n    default-server inter 3s fall 3 rise 2\n    server node0-cluster-b 192.168.68.200:5442 check port 8009\n    server node1-cluster-b 192.168.68.201:5443 check port 8009\n    server node2-cluster-b 192.168.68.202:5444 check port 8009"
-             },
-             {
-               "label": "IMPORTANT: HAProxy backend ports must match your actual PostgreSQL ports",
-               "code": "# ⚠️ The :5442/:5443/:5444 in HAProxy config are the PostgreSQL ports\n# from your Patroni config. They MUST match exactly.\n#\n# Correct example (different port per node):\n#   Patroni config: port: 5442  →  HAProxy: 192.168.68.200:5442\n#   Patroni config: port: 5443  →  HAProxy: 192.168.68.201:5443\n#   Patroni config: port: 5444  →  HAProxy: 192.168.68.202:5444\n#\n# Alternative (same port on all nodes, e.g. 5433):\n#   Patroni config: port: 5433  →  HAProxy: 192.168.68.200:5433\n#   Patroni config: port: 5433  →  HAProxy: 192.168.68.201:5433\n#   Patroni config: port: 5433  →  HAProxy: 192.168.68.202:5433\n#\n# How to verify your port:\nsudo grep -E 'listen:|connect_address:|port:' /etc/patroni/patroni-cluster-b.yml"
-             },
-             {
-               "label": "Open port 8009 on ALL 3 NODES (Cluster B health checks)",
-               "code": "# Run on ALL 3 nodes:\nsudo ufw allow 8009/tcp\nsudo ufw reload\n\n# Verify from Node 0:\ncurl -s http://192.168.68.200:8009/health\ncurl -s http://192.168.68.201:8009/health\ncurl -s http://192.168.68.202:8009/health\n\n# All should return JSON with \"state\":\"running\""
-             },
-             {
-               "label": "Reload HAProxy and test Cluster B",
-               "code": "# Reload HAProxy on Node 0:\nsudo systemctl reload haproxy\n\n# Check backend status via stats CSV:\ncurl -u admin:admin-pass-123 'http://localhost:7000/stats;csv' | grep cluster-b\n# Expected: all 3 servers show UP\n\n# Test write (port 6000):\npsql -h 192.168.68.200 -p 6000 -U postgres -d postgres -c \"SELECT 'Cluster B Write OK'\"\n\n# Test read (port 6001):\npsql -h 192.168.68.200 -p 6001 -U postgres -d postgres -c \"SELECT 'Cluster B Read OK'\"\n\n# If connection fails with 'server closed the connection unexpectedly':\n# → Check HAProxy stats at http://192.168.68.200:7000/stats\n# → If all servers DOWN, port 8009 is likely blocked (fix above)\n# → If servers UP but connection fails, check port mismatch (fix above)"
-             }
-           ]
-         }
+        {
+          "title": "Extended HAProxy for Both Clusters",
+          "items": [
+            {
+              "label": "Add Cluster B to /etc/haproxy/haproxy.cfg on Node 0",
+              "code": "sudo nano /etc/haproxy/haproxy.cfg\n\n# Add these sections AFTER the existing Cluster A config:\n\n# Cluster B Write\nlisten pg-cluster-b-write\n    bind *:6000\n    mode tcp\n    option httpchk GET /primary\n    http-check expect status 200\n    default-server inter 3s fall 3 rise 2 on-marked-down shutdown-sessions\n    server node0-cluster-b 192.168.68.200:5442 check port 8009\n    server node1-cluster-b 192.168.68.201:5443 check port 8009\n    server node2-cluster-b 192.168.68.202:5444 check port 8009\n\n# Cluster B Read\nlisten pg-cluster-b-read\n    bind *:6001\n    mode tcp\n    balance roundrobin\n    option httpchk GET /replica\n    http-check expect status 200\n    default-server inter 3s fall 3 rise 2\n    server node0-cluster-b 192.168.68.200:5442 check port 8009\n    server node1-cluster-b 192.168.68.201:5443 check port 8009\n    server node2-cluster-b 192.168.68.202:5444 check port 8009"
+            },
+            {
+              "label": "IMPORTANT: HAProxy backend ports must match your actual PostgreSQL ports",
+              "code": "# ⚠️ The :5442/:5443/:5444 in HAProxy config are the PostgreSQL ports\n# from your Patroni config. They MUST match exactly.\n#\n# Correct example (different port per node):\n#   Patroni config: port: 5442  →  HAProxy: 192.168.68.200:5442\n#   Patroni config: port: 5443  →  HAProxy: 192.168.68.201:5443\n#   Patroni config: port: 5444  →  HAProxy: 192.168.68.202:5444\n#\n# Alternative (same port on all nodes, e.g. 5433):\n#   Patroni config: port: 5433  →  HAProxy: 192.168.68.200:5433\n#   Patroni config: port: 5433  →  HAProxy: 192.168.68.201:5433\n#   Patroni config: port: 5433  →  HAProxy: 192.168.68.202:5433\n#\n# How to verify your port:\nsudo grep -E 'listen:|connect_address:|port:' /etc/patroni/patroni-cluster-b.yml"
+            },
+            {
+              "label": "Open port 8009 on ALL 3 NODES (Cluster B health checks)",
+              "code": "# Run on ALL 3 nodes:\nsudo ufw allow 8009/tcp\nsudo ufw reload\n\n# Verify from Node 0:\ncurl -s http://192.168.68.200:8009/health\ncurl -s http://192.168.68.201:8009/health\ncurl -s http://192.168.68.202:8009/health\n\n# All should return JSON with \"state\":\"running\""
+            },
+            {
+              "label": "Reload HAProxy and test Cluster B",
+              "code": "# Reload HAProxy on Node 0:\nsudo systemctl reload haproxy\n\n# Check backend status via stats CSV:\ncurl -u admin:admin-pass-123 'http://localhost:7000/stats;csv' | grep cluster-b\n# Expected: all 3 servers show UP\n\n# Test write (port 6000):\npsql -h 192.168.68.200 -p 6000 -U postgres -d postgres -c \"SELECT 'Cluster B Write OK'\"\n\n# Test read (port 6001):\npsql -h 192.168.68.200 -p 6001 -U postgres -d postgres -c \"SELECT 'Cluster B Read OK'\"\n\n# If connection fails with 'server closed the connection unexpectedly':\n# → Check HAProxy stats at http://192.168.68.200:7000/stats\n# → If all servers DOWN, port 8009 is likely blocked (fix above)\n# → If servers UP but connection fails, check port mismatch (fix above)"
+            }
+          ]
+        }
       ]
     },
     {
@@ -1202,7 +1210,7 @@
           "items": [
             {
               "label": "Open port 8008 on all nodes",
-               "code": "# Run on ALL 3 nodes:\nsudo ufw allow 8008/tcp\nsudo ufw reload\n\n# Verify from Node 0:\ncurl -s http://192.168.68.200:8008/health\ncurl -s http://192.168.68.201:8008/health\ncurl -s http://192.168.68.202:8008/health\n\n# All should return JSON with \"state\":\"running\"\n\n# Reload HAProxy:\nsudo systemctl reload haproxy\n\n# Check HAProxy stats:\ncurl -u admin:admin-pass-123 'http://localhost:7000/stats;csv' | grep pg-"
+              "code": "# Run on ALL 3 nodes:\nsudo ufw allow 8008/tcp\nsudo ufw reload\n\n# Verify from Node 0:\ncurl -s http://192.168.68.200:8008/health\ncurl -s http://192.168.68.201:8008/health\ncurl -s http://192.168.68.202:8008/health\n\n# All should return JSON with \"state\":\"running\"\n\n# Reload HAProxy:\nsudo systemctl reload haproxy\n\n# Check HAProxy stats:\ncurl -u admin:admin-pass-123 'http://localhost:7000/stats;csv' | grep pg-"
             }
           ]
         },
@@ -1242,6 +1250,74 @@
             {
               "label": "Add missing pgpass to cluster B config",
               "code": "# Symptom:\nsudo journalctl -u patroni-cluster-b -n 20\n# ERROR: Permission denied: '/home/patroni'\n# '/home/patroni' is defined in postgresql.pgpass, couldn't create the directory\n\n# Cause: Node 0's /etc/patroni/patroni-cluster-b.yml has 'pgpass: /tmp/pgpass-cluster-b'\n# but Nodes 1 and 2 are missing this line. Patroni tries /home/patroni/.pgpass\n# by default and can't create the /home/patroni directory.\n\n# Fix: Add pgpass to the config on Nodes 1 and 2:\nsudo nano /etc/patroni/patroni-cluster-b.yml\n\n# Add this line after 'bin_dir':\n#   pgpass: /tmp/pgpass-cluster-b\n\n# Then restart:\nsudo systemctl restart patroni-cluster-b"
+            }
+          ]
+        },
+        {
+          "title": "If replica need more time or Receive LSN 'UNKNOWN' & Replay LSN 'UNKNOWN'  check following things",
+          "content": "If a replica remains in 'creating replica' for longer than expected, run the checks below on the replica and the leader.",
+          "items": [
+            {
+              "label": "Cluster status example",
+              "code": "nepo@node1:~$ sudo patronictl -c /etc/patroni/patroni.yml list\n+ Cluster: pg-ha-cluster (7647187732339144131) ----------+----+-------------+-----+------------+-----+\n| Member   | Host           | Role    | State            | TL | Receive LSN | Lag | Replay LSN | Lag |\n+----------+----------------+---------+------------------+----+-------------+-----+------------+-----+\n| node0-pg | 192.168.68.200 | Leader  | running          |  1 |             |     |            |     |\n| node1-pg | 192.168.68.201 | Replica | creating replica |    |     unknown |     |    unknown |     |\n| node2-pg | 192.168.68.202 | Replica | creating replica |    |     unknown |     |    unknown |     |\n+----------+----------------+---------+------------------+----+-------------+-----+------------+-----+"
+            },
+            {
+              "label": "1. Quick connectivity checks (run on node2)",
+              "code": "# Test basic reachability:\nsudo ping -c 4 192.168.68.200\n\n# Test TCP connection to Postgres port:\n# If nc is installed:\nsudo nc -vz 192.168.68.200 5432\n\n# If nc is not available, run:\ntimeout 5 bash -c \"cat < /dev/tcp/192.168.68.200/5432\" && echo open || echo closed\n\n# What to expect:\n# - \"open\" / \"succeeded\" => network can reach the port.\n# - \"Connection timed out\" => packets are being dropped (firewall / route).\n# - \"Connection refused\" => remote host reachable but nothing listening on that port."
+            },
+            {
+              "label": "2. Verify leader is listening on the right address (run on node0)",
+              "code": "# Check what Postgres is bound to:\nsudo ss -ltnp | grep 5432 || sudo netstat -plnt | grep 5432\n\n# Confirm Postgres listen_addresses and port:\nsudo -u postgres psql -c \"SHOW listen_addresses; SHOW port;\"\n\n# If listen_addresses is only 127.0.0.1, Postgres is not accepting remote connections — change the Patroni config (postgresql.listen / connect_address) or postgresql.conf so Postgres listens on the leader's IP (or 0.0.0.0), then restart/reload Patroni on the leader."
+            },
+            {
+              "label": "3. Check for a firewall blocking port 5432 (run on node0 and node2)",
+              "code": "# Common checks:\nsudo ufw status verbose\nsudo iptables -L INPUT -n --line-numbers\nsudo firewall-cmd --list-all   (on systems using firewalld)\n\n# If the firewall is blocking, add a rule allowing the replica subnetwork to connect to 5432 (example for ufw / 192.168.68.0/24):\nsudo ufw allow from 192.168.68.0/24 to any port 5432 proto tcp\n\n# Only open what you need; prefer limiting to the replica subnet."
+            },
+            {
+              "label": "4. Fix the permission problem on node2 (stop Patroni first)",
+              "code": "# Stop Patroni so it isn't racing with your modifications:\nsudo systemctl stop patroni\n\n# Check the owner/perm of the data dir:\nls -ld /data/patroni\nstat -c '%U:%G %a %n' /data/patroni\n\n# Find which user the patroni service runs as (empty means root):\nsudo systemctl show -p User --value patroni\n\n# Fix ownership (most common is postgres:postgres; if patroni service runs as a different user, use that user):\nsudo chown -R postgres:postgres /data/patroni\nsudo chmod 700 /data/patroni\n\n# If you want Patroni to do a clean bootstrap, remove or move the existing dir:\nsudo mv /data/patroni /data/patroni.bak\nsudo mkdir -p /data/patroni\nsudo chown -R postgres:postgres /data/patroni\nsudo chmod 700 /data/patroni"
+            },
+            {
+              "label": "5. Start Patroni (node2) and watch logs",
+              "code": "sudo systemctl start patroni\nsudo journalctl -u patroni -f\n\n# Also re-run on the primary:\nsudo -u postgres psql -c \"SELECT * FROM pg_stat_progress_basebackup;\"  (to see basebackup progress)\n\n# And check the cluster view:\nsudo patronictl -c /etc/patroni/patroni.yml list"
+            },
+            {
+              "label": "6. If connection still times out after step 3",
+              "code": "# Confirm there is no intermediate network device blocking (switch/router/security group).\n# From any other host on the 192.168.68.0/24 network try connecting to 192.168.68.200:5432 to narrow whether it’s node2-specific or leader-specific.\n\n# If anything fails or you want me to review outputs, paste:\n# - The results of the connectivity tests from node2 (ping and nc / dev/tcp).\n# - The output of ss/netstat from node0 showing whether postgres is listening.\n# - ls -ld /data/patroni and the systemctl User output from node2."
+            }
+          ]
+        },
+        {
+          "title": "ETCD: Unhealthy member ('context deadline exceeded') — remove and rejoin",
+          "content": "If an ETCD endpoint shows 'context deadline exceeded' the member is unhealthy and should be removed from the cluster and rejoined. Follow these safe steps.",
+          "items": [
+            {
+              "label": "1) Diagnose (run on any healthy node)",
+              "code": "# Check endpoint health for the whole cluster:\nsudo ETCDCTL_API=3 etcdctl endpoint health --cluster --write-out=table\n\n# Example output when one node is unhealthy:\n{\"level\":\"warn\",\"ts\":\"2026-06-04T17:57:23.207+0600\",\"caller\":\"clientv3/retry_interceptor.go:62\",\"msg\":\"retrying of unary invoker failed\",\"target\":\"endpoint://client-88273e75-dd0e-406c-b5dc-e11e8e2e8245/192.168.68.202:2379\",\"attempt\":0,\"error\":\"rpc error: code = DeadlineExceeded desc = latest balancer error: all SubConns are in TransientFailure, latest connection error: connection error: desc = \\\"transport: Error while dialing dial tcp 192.168.68.202:2379: connect: connection refused\\\"\"}\n\n+----------------------------+--------+--------------+---------------------------+\n|          ENDPOINT          | HEALTH |     TOOK     |           ERROR           |\n+----------------------------+--------+--------------+---------------------------+\n| http://192.168.68.201:2379 |   true |  17.801953ms |                           |\n| http://192.168.68.200:2379 |   true |  22.211842ms |                           |\n| http://192.168.68.202:2379 |  false | 5.002984223s | context deadline exceeded |\n+----------------------------+--------+--------------+---------------------------+\nError: unhealthy cluster\n\n# Interpretation: any endpoint with HEALTH=false and an ERROR of 'context deadline exceeded' is unreachable and should be removed and rejoined."
+            },
+            {
+              "label": "2) Find the member ID(s)",
+              "code": "# List members and IDs (run on a healthy node):\nsudo ETCDCTL_API=3 etcdctl member list -w table\n\n# Example output:\n+------------------+---------+-------+----------------------------+----------------------------+\n|        ID        | STATUS  | NAME  |         PEER ADDRS         |        CLIENT ADDRS        |\n+------------------+---------+-------+----------------------------+----------------------------+\n| 4ffd664e21ab119c | started | node2 | http://192.168.68.202:2380 | http://192.168.68.202:2379 |\n| 58e1f06468c522bf | started | node0 | http://192.168.68.200:2380 | http://192.168.68.200:2379 |\n| a7fc2203c54a8ba7 | started | node1 | http://192.168.68.201:2380 | http://192.168.68.201:2379 |\n+------------------+---------+-------+----------------------------+----------------------------+\n\n# Note the ID for the unhealthy member (example: 4ffd664e21ab119c)."
+            },
+            {
+              "label": "3) Remove the unhealthy member from the cluster (from a healthy node)",
+              "code": "# Remove the member by ID (safe to run from any healthy member):\nsudo ETCDCTL_API=3 etcdctl member remove 4ffd664e21ab119c\n\n# Example response:\n# Member 4ffd664e21ab119c removed from cluster bd61aa184b629729\n\n# After removal, the cluster will continue operating with remaining members (quorum preserved)."
+            },
+            {
+              "label": "4) Prepare the removed node to rejoin (on the removed node)",
+              "code": "# On the removed node: stop ETCD and wipe local data (only if you plan to rejoin)\nsudo systemctl stop etcd\nsudo rm -rf /var/lib/etcd/*\n\n# IMPORTANT: when rejoining an existing cluster, the node's config must have:\n# ETCD_INITIAL_CLUSTER_STATE=existing\n# If it says 'new' you MUST change it to 'existing' before starting ETCD.\n# Edit /etc/default/etcd and ensure ETCD_NAME, ETCD_LISTEN_PEER_URLS, and ETCD_INITIAL_CLUSTER include the full cluster."
+            },
+            {
+              "label": "5) Re-add (join) the node to the cluster",
+              "code": "# From any healthy node run 'member add' and note the output (it contains the info the removed node needs):\nsudo ETCDCTL_API=3 etcdctl member add node1 --peer-urls=http://192.168.68.201:2380\n\n# The command prints environment variables / instructions to use on the joining node.\n# On the removed node, make sure /etc/default/etcd matches those values and ETCD_INITIAL_CLUSTER_STATE=existing.\n# Then start ETCD on the rejoining node:\nsudo systemctl daemon-reload\nsudo systemctl start etcd\nsudo systemctl status etcd"
+            },
+            {
+              "label": "6) Verify cluster health after rejoin",
+              "code": "# Run endpoint health again until all endpoints show HEALTH=true:\nsudo ETCDCTL_API=3 etcdctl endpoint health --cluster --write-out=table\n\n# Expected: all endpoints show HEALTH=true and no 'context deadline exceeded' errors."
+            },
+            {
+              "label": "Notes & warnings",
+              "code": "# - Removing a member is a cluster-level change. Only remove members you know are genuinely unreachable.\n# - Do NOT run 'rm -rf /var/lib/etcd/*' on a healthy member. Only wipe data on the removed/failing node before rejoining.\n# - If you cannot bring the removed node back, update your monitoring/automation to avoid restarting it until it's fixed."
             }
           ]
         }
