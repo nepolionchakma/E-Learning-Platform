@@ -124,12 +124,15 @@ function parseRawTerminal(text: string) {
       const last = blocks[blocks.length - 1];
       if (last.bg === "bg-zinc-50 dark:bg-zinc-900" && !last.textColor.includes("green")) {
         last.lines.push(line);
+        // keep the copy content in sync when we append lines
+        last.copy = (last.copy ? last.copy + "\n" : "") + line;
       } else {
         blocks.push({
           lines: [line],
           bg: "bg-zinc-50 dark:bg-zinc-900",
           textColor: "text-zinc-500 dark:text-zinc-400",
-          copy: "",
+          // make output blocks copyable by default
+          copy: line,
         });
       }
     } else {
@@ -137,7 +140,8 @@ function parseRawTerminal(text: string) {
         lines: [line],
         bg: "bg-zinc-50 dark:bg-zinc-900",
         textColor: "text-zinc-500 dark:text-zinc-400",
-        copy: "",
+        // make output blocks copyable by default
+        copy: line,
       });
     }
   }

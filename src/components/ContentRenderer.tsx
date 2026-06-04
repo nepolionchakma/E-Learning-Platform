@@ -4,6 +4,7 @@ import { useState } from "react";
 import Accordion from "./Accordion";
 import CopyButton from "./CopyButton";
 import TerminalBlock from "@/components/TerminalBlock";
+import LinuxTerminal from "@/components/LinuxTerminal";
 import site from "@/data/site.json";
 
 interface CommandRow {
@@ -51,7 +52,7 @@ export default function ContentRenderer({
   return null;
 }
 
-function CommandGroup({ cmd }: { cmd: CommandRow }) {
+function CommandGroup({ cmd, topic }: { cmd: CommandRow; topic?: string }) {
   const [showDetails, setShowDetails] = useState(false)
 
   return (
@@ -89,7 +90,7 @@ function CommandGroup({ cmd }: { cmd: CommandRow }) {
               </thead>
               <tbody className="text-zinc-600 dark:text-zinc-300">
                 {cmd.rows?.map((row, ri) => (
-                  <TableRow key={ri} row={row} />
+                  <TableRow key={ri} row={row} topic={topic} />
                 ))}
               </tbody>
             </table>
@@ -118,7 +119,7 @@ function renderStages(stages: Stage[], topicSlug: string) {
         >
           <div className="space-y-5">
             {stage.commands.map((cmd, ci) => (
-              <CommandGroup key={ci} cmd={cmd} />
+              <CommandGroup key={ci} cmd={cmd} topic={topicSlug} />
             ))}
           </div>
         </Accordion>
@@ -218,12 +219,21 @@ function renderTerminalSections(text: string) {
       const last = blocks[blocks.length - 1];
       if (last.bg === "bg-zinc-50 dark:bg-zinc-900" && !last.textColor.includes("green")) {
         last.lines.push(line);
+        // keep copy content in sync when appending output lines
+        // so users can copy command output blocks
+        // (mirrors TerminalBlock.parseRawTerminal behavior)
+        // note: last.copy may be empty for some cases, handle accordingly
+        // and preserve newlines
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        last.copy = (last.copy ? last.copy + "\n" : "") + line;
       } else {
         blocks.push({
           lines: [line],
           bg: "bg-zinc-50 dark:bg-zinc-900",
           textColor: "text-zinc-500 dark:text-zinc-400",
-          copy: ""
+          // make output blocks copyable by default
+          copy: line
         });
       }
     } else {
@@ -231,12 +241,15 @@ function renderTerminalSections(text: string) {
         lines: [line],
         bg: "bg-zinc-50 dark:bg-zinc-900",
         textColor: "text-zinc-500 dark:text-zinc-400",
-        copy: ""
+        // make output blocks copyable by default
+        copy: line
       });
     }
   }
 
   return (
+    // Use the LinuxTerminal wrapper when rendering full terminal text so
+    // linux-specific customizations can live in a single component.
     <div className="space-y-0">
       {blocks.filter(b => b.lines.length > 0 || b.lines[0] !== "").map((block, i) => (
         <SectionBlock
@@ -251,7 +264,7 @@ function renderTerminalSections(text: string) {
   );
 }
 
-function TableRow({ row }: { row: string[] }) {
+function TableRow({ row, topic }: { row: string[]; topic?: string }) {
   const [showResult, setShowResult] = useState(false);
   const hasResult = row[3] !== undefined;
 
@@ -300,17 +313,23 @@ function TableRow({ row }: { row: string[] }) {
         <tr>
           <td colSpan={4} className="p-0">
             <div className="border-t-2 border-teal-400 dark:border-teal-500/60 mx-3" />
-            <div className="bg-zinc-100 dark:bg-zinc-900 text-xs font-mono leading-relaxed mx-3 mb-3 mt-1 rounded-lg overflow-hidden border border-zinc-300 dark:border-zinc-700 shadow-lg">
-              <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-zinc-300 dark:border-zinc-700 bg-zinc-200 dark:bg-zinc-800/60">
-                <span className="w-2 h-2 rounded-full bg-red-500" />
-                <span className="w-2 h-2 rounded-full bg-yellow-500" />
-                <span className="w-2 h-2 rounded-full bg-green-500" />
-                <span className="text-zinc-400 dark:text-zinc-500 text-[10px] ml-2">
-                  terminal output
-                </span>
+            {topic === "linux" ? (
+              <div className="mx-3 mb-3 mt-1">
+                <LinuxTerminal raw={row[3]} />
               </div>
-              {renderTerminalSections(row[3])}
-            </div>
+            ) : (
+              <div className="bg-zinc-100 dark:bg-zinc-900 text-xs font-mono leading-relaxed mx-3 mb-3 mt-1 rounded-lg overflow-hidden border border-zinc-300 dark:border-zinc-700 shadow-lg">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-zinc-300 dark:border-zinc-700 bg-zinc-200 dark:bg-zinc-800/60">
+                  <span className="w-2 h-2 rounded-full bg-red-500" />
+                  <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                  <span className="w-2 h-2 rounded-full bg-green-500" />
+                  <span className="text-zinc-400 dark:text-zinc-500 text-[10px] ml-2">
+                    terminal output
+                  </span>
+                </div>
+                {renderTerminalSections(row[3])}
+              </div>
+            )}
           </td>
         </tr>
       )}
