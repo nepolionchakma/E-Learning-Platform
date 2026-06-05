@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import TerminalBlock from '@/components/TerminalBlock';
+import LinuxTerminal from '@/components/LinuxTerminal';
 import BlogActions from '@/components/BlogActions';
 import CommentSection from '@/components/CommentSection';
 
@@ -116,8 +117,18 @@ function DataTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
   );
 }
 
-function ContentItem({ item }: { item: any }) {
+function ContentItem({ item, slug }: { item: any; slug?: string }) {
   if (item.code) {
+    // For the PostgreSQL HA blog post we prefer the LinuxTerminal wrapper so
+    // terminal examples render with the same chrome as the linux topic.
+    if (slug === 'postgresql-high-availability') {
+      return (
+        <div className="mb-4">
+          {item.label && <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2 uppercase tracking-wide">{item.label}</p>}
+          <LinuxTerminal raw={item.code} />
+        </div>
+      );
+    }
     const blocks = parseCodeBlocks(item.code);
     return (
       <div className="mb-4">
@@ -166,7 +177,7 @@ function ContentItem({ item }: { item: any }) {
   return null;
 }
 
-function SectionRenderer({ section }: { section: Section }) {
+function SectionRenderer({ section, slug }: { section: Section; slug?: string }) {
   return (
     <section id={section.id} className="mb-8 sm:mb-12 scroll-mt-24">
       <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-3 sm:mb-4">
@@ -204,7 +215,11 @@ function SectionRenderer({ section }: { section: Section }) {
 
       {/* syntaxTerminal */}
       {section.syntaxTerminal && (
-        <TerminalBlock command={section.syntaxTerminal.command} explanation={section.syntaxTerminal.explanation} />
+        slug === 'postgresql-high-availability' ? (
+          <LinuxTerminal raw={section.syntaxTerminal.command} />
+        ) : (
+          <TerminalBlock command={section.syntaxTerminal.command} explanation={section.syntaxTerminal.explanation} />
+        )
       )}
 
       {/* tables */}
@@ -223,7 +238,7 @@ function SectionRenderer({ section }: { section: Section }) {
 
       {/* items[] (standard format) */}
       {section.items?.map((item, ii) => (
-        <ContentItem key={ii} item={item} />
+        <ContentItem key={ii} item={item} slug={slug} />
       ))}
 
       {/* subsections */}
@@ -236,18 +251,26 @@ function SectionRenderer({ section }: { section: Section }) {
           {/* subsection content (text) */}
           {sub.content && <p className="mb-3 text-sm sm:text-base">{sub.content}</p>}
 
-          {/* subsection terminals[] */}
-          {sub.terminals?.map((t: any, ti: number) => (
-            <TerminalBlock key={ti} command={t.command} output={t.output} explanation={t.explanation} />
-          ))}
+           {/* subsection terminals[] */}
+           {sub.terminals?.map((t: any, ti: number) => (
+             slug === 'postgresql-high-availability' ? (
+               <LinuxTerminal key={ti} raw={[t.command, t.output].filter(Boolean).join('\n')} />
+             ) : (
+               <TerminalBlock key={ti} command={t.command} output={t.output} explanation={t.explanation} />
+             )
+           ))}
 
           {/* subsection contentAfter */}
           {sub.contentAfter && <p className="mb-3 mt-4 text-sm sm:text-base">{sub.contentAfter}</p>}
 
-          {/* subsection terminalsAfter[] */}
-          {sub.terminalsAfter?.map((t: any, ti: number) => (
-            <TerminalBlock key={ti} command={t.command} output={t.output} explanation={t.explanation} />
-          ))}
+           {/* subsection terminalsAfter[] */}
+           {sub.terminalsAfter?.map((t: any, ti: number) => (
+             slug === 'postgresql-high-availability' ? (
+               <LinuxTerminal key={ti} raw={[t.command, t.output].filter(Boolean).join('\n')} />
+             ) : (
+               <TerminalBlock key={ti} command={t.command} output={t.output} explanation={t.explanation} />
+             )
+           ))}
 
           {/* subsection steps[] */}
           {sub.steps && (
@@ -258,10 +281,10 @@ function SectionRenderer({ section }: { section: Section }) {
             </ol>
           )}
 
-          {/* subsection items[] (standard format) */}
-          {sub.items?.map((item: any, ii: number) => (
-            <ContentItem key={ii} item={item} />
-          ))}
+           {/* subsection items[] (standard format) */}
+           {sub.items?.map((item: any, ii: number) => (
+             <ContentItem key={ii} item={item} slug={slug} />
+           ))}
         </div>
       ))}
     </section>
@@ -384,7 +407,7 @@ export default function BlogPostLayout({ data, slug, heroColor = "from-indigo-50
         {/* Main Content */}
         <article className="flex-1 min-w-0 text-zinc-700 dark:text-zinc-300 leading-relaxed">
           {data.sections.map((section) => (
-            <SectionRenderer key={section.id} section={section} />
+            <SectionRenderer key={section.id} section={section} slug={slug} />
           ))}
           <BlogActions slug={slug} title={data.title} />
           <CommentSection slug={slug} />
