@@ -1,10 +1,35 @@
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import ContentRenderer from '@/components/ContentRenderer'
 import topicsData from '@/data/topics.json'
+import site from '@/data/site.json'
 import { loadTopicData } from '@/lib/loadData'
 
 export async function generateStaticParams() {
   return topicsData.map((t) => ({ topic: t.slug }))
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ topic: string }> }): Promise<Metadata> {
+  const { topic } = await params
+  const topicMeta = topicsData.find((t) => t.slug === topic)
+  if (!topicMeta) return {}
+
+  const canonicalUrl = `${site.url}/${topic}`
+
+  return {
+    title: `${topicMeta.title} - Learn ${topicMeta.title}`,
+    description: topicMeta.description,
+    alternates: { canonical: canonicalUrl },
+    openGraph: {
+      title: `${topicMeta.title} - E-Learning Platform`,
+      description: topicMeta.description,
+      url: canonicalUrl,
+    },
+    twitter: {
+      title: `${topicMeta.title} - E-Learning Platform`,
+      description: topicMeta.description,
+    },
+  }
 }
 
 export default async function TopicPage({ params }: { params: Promise<{ topic: string }> }) {

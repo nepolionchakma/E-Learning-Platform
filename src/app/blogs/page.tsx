@@ -1,6 +1,8 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { promises as fs } from 'fs'
 import path from 'path'
+import site from '@/data/site.json'
 
 interface Blog {
   slug: string
@@ -20,6 +22,20 @@ async function getBlogs(): Promise<Blog[]> {
   } catch {
     return []
   }
+}
+
+export const metadata: Metadata = {
+  title: 'Blogs',
+  description: 'Read articles and tutorials about programming, DevOps, databases, and more.',
+  openGraph: {
+    title: 'Blogs - E-Learning Platform',
+    description: 'Read articles and tutorials about programming, DevOps, databases, and more.',
+    url: `${site.url}/blogs`,
+  },
+  twitter: {
+    title: 'Blogs - E-Learning Platform',
+    description: 'Read articles and tutorials about programming, DevOps, databases, and more.',
+  },
 }
 
 export default async function BlogsPage() {
