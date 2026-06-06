@@ -4,7 +4,6 @@ import { useState } from "react";
 import Accordion from "./Accordion";
 import CopyButton from "./CopyButton";
 import TerminalBlock from "@/components/TerminalBlock";
-import LinuxTerminal from "@/components/LinuxTerminal";
 import site from "@/data/site.json";
 
 interface CommandRow {
@@ -70,12 +69,7 @@ function CommandGroup({ cmd, topic }: { cmd: CommandRow; topic?: string }) {
         )}
       </h4>
       {cmd.type === "codeblock" ? (
-        <div className="relative group">
-          <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-            <CopyButton text={cmd.code || ""} />
-          </div>
-          <pre className="text-sm bg-zinc-900 text-zinc-100 p-4 rounded-lg overflow-x-auto border border-zinc-700">{cmd.code}</pre>
-        </div>
+        <TerminalBlock raw={cmd.code || ""} />
       ) : (
         <>
           <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
@@ -129,141 +123,6 @@ function renderStages(stages: Stage[], topicSlug: string) {
   );
 }
 
-function SectionBlock({
-  lines,
-  bg,
-  textColor,
-  copyContent,
-}: {
-  lines: string[];
-  bg: string;
-  textColor: string;
-  copyContent: string;
-}) {
-  const [copied, setCopied] = useState(false)
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(copyContent)
-    } catch {
-      const ta = document.createElement('textarea')
-      ta.value = copyContent
-      document.body.appendChild(ta)
-      ta.select()
-      document.execCommand('copy')
-      document.body.removeChild(ta)
-    }
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1500)
-  }
-
-  return (
-    <div className="group relative">
-      <div className={`px-3 py-1 ${bg} ${textColor} whitespace-pre-wrap`}>
-        {lines.map((l, i) => (
-          <div key={i}>{l || "\u00A0"}</div>
-        ))}
-      </div>
-      <button
-        onClick={handleCopy}
-        className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 text-zinc-500 hover:text-indigo-600 hover:border-indigo-400 shadow-sm cursor-pointer"
-        title="Copy this block"
-      >
-        {copied ? (
-          <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-          </svg>
-        ) : (
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-          </svg>
-        )}
-      </button>
-    </div>
-  );
-}
-
-function stripPrompt(line: string): string {
-  return line.replace(/^\S+@\S+[:~#\$] /, "").trim();
-}
-
-function renderTerminalSections(text: string) {
-  const lines = text.split("\n");
-  const blocks: { lines: string[]; bg: string; textColor: string; copy: string }[] = [];
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const isPrompt = /^\S+@\S+[:~#\$]/.test(line);
-
-    if (isPrompt) {
-      blocks.push({
-        lines: [line],
-        bg: "bg-zinc-200 dark:bg-zinc-800/60",
-        textColor: "text-green-600 dark:text-green-400",
-        copy: stripPrompt(line)
-      });
-      continue;
-    }
-
-    if (line.startsWith("#!/") || line.startsWith("# ")) {
-      blocks.push({
-        lines: [line],
-        bg: "bg-zinc-50 dark:bg-zinc-900",
-        textColor: "text-zinc-700 dark:text-zinc-100",
-        copy: line
-      });
-      continue;
-    }
-
-    if (blocks.length > 0 && !isPrompt) {
-      const last = blocks[blocks.length - 1];
-      if (last.bg === "bg-zinc-50 dark:bg-zinc-900" && !last.textColor.includes("green")) {
-        last.lines.push(line);
-        // keep copy content in sync when appending output lines
-        // so users can copy command output blocks
-        // (mirrors TerminalBlock.parseRawTerminal behavior)
-        // note: last.copy may be empty for some cases, handle accordingly
-        // and preserve newlines
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        last.copy = (last.copy ? last.copy + "\n" : "") + line;
-      } else {
-        blocks.push({
-          lines: [line],
-          bg: "bg-zinc-50 dark:bg-zinc-900",
-          textColor: "text-zinc-500 dark:text-zinc-400",
-          // make output blocks copyable by default
-          copy: line
-        });
-      }
-    } else {
-      blocks.push({
-        lines: [line],
-        bg: "bg-zinc-50 dark:bg-zinc-900",
-        textColor: "text-zinc-500 dark:text-zinc-400",
-        // make output blocks copyable by default
-        copy: line
-      });
-    }
-  }
-
-  return (
-    // Use the LinuxTerminal wrapper when rendering full terminal text so
-    // linux-specific customizations can live in a single component.
-    <div className="space-y-0">
-      {blocks.filter(b => b.lines.length > 0 || b.lines[0] !== "").map((block, i) => (
-        <SectionBlock
-          key={i}
-          lines={block.lines}
-          bg={block.bg}
-          textColor={block.textColor}
-          copyContent={block.copy}
-        />
-      ))}
-    </div>
-  );
-}
-
 function TableRow({ row, topic }: { row: string[]; topic?: string }) {
   const [showResult, setShowResult] = useState(false);
   const hasResult = row[3] !== undefined;
@@ -313,23 +172,9 @@ function TableRow({ row, topic }: { row: string[]; topic?: string }) {
         <tr>
           <td colSpan={4} className="p-0">
             <div className="border-t-2 border-teal-400 dark:border-teal-500/60 mx-3" />
-            {topic === "linux" ? (
-              <div className="mx-3 mb-3 mt-1">
-                <LinuxTerminal raw={row[3]} />
-              </div>
-            ) : (
-              <div className="bg-zinc-100 dark:bg-zinc-900 text-xs font-mono leading-relaxed mx-3 mb-3 mt-1 rounded-lg overflow-hidden border border-zinc-300 dark:border-zinc-700 shadow-lg">
-                <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-zinc-300 dark:border-zinc-700 bg-zinc-200 dark:bg-zinc-800/60">
-                  <span className="w-2 h-2 rounded-full bg-red-500" />
-                  <span className="w-2 h-2 rounded-full bg-yellow-500" />
-                  <span className="w-2 h-2 rounded-full bg-green-500" />
-                  <span className="text-zinc-400 dark:text-zinc-500 text-[10px] ml-2">
-                    terminal output
-                  </span>
-                </div>
-                {renderTerminalSections(row[3])}
-              </div>
-            )}
+            <div className="mx-3 mb-3 mt-1">
+              <TerminalBlock raw={row[3]} />
+            </div>
           </td>
         </tr>
       )}
