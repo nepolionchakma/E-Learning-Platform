@@ -243,7 +243,7 @@
             },
             {
               "label": "Verify: Check which config file ETCD actually reads",
-              "code": "systemctl cat etcd\n\n# Look for: EnvironmentFile=-/etc/default/etcd\n# This confirms the service reads from /etc/default/etcd (not /etc/etcd/etcd.conf.yml)\n# Output should show:\n#   [Service]\n#   EnvironmentFile=-/etc/default/etcd\n#   ExecStart=/usr/bin/etcd $ETCD_OPTS"
+              "code": "nepo@node0:~$ systemctl cat etcd\n\n# Look for: EnvironmentFile=-/etc/default/etcd\n# This confirms the service reads from /etc/default/etcd (not /etc/etcd/etcd.conf.yml)\n# Output should show:\n#   [Service]\n#   EnvironmentFile=-/etc/default/etcd\n#   ExecStart=/usr/bin/etcd $ETCD_OPTS"
             }
           ]
         },
@@ -277,7 +277,7 @@
             },
             {
               "label": "Check etcdctl version",
-              "code": "nepo@node0:~$ etcdctl version\netcdctl version: 3.3.25\nAPI version: 2\n\n# If the etcdctl version is mismatch with etcd like 'etcdctl version: 3.3.25' 'API version: 2' then change it to match etcd version\nnepo@node0:~$ sudo echo 'export ETCDCTL_API=3' >> ~/.bashrc && source ~/.bashrc\netcdctl version\netcdctl version: 3.3.25\nAPI version: 3.3"
+              "code": "nepo@node0:~$ etcdctl version\netcdctl version: 3.3.25\nAPI version: 2\n\n# If the etcdctl version is mismatch with etcd like 'etcdctl version: 3.3.25' 'API version: 2' then change it to match etcd version\nnepo@node0:~$ sudo echo 'export ETCDCTL_API=3' >> ~/.bashrc && source ~/.bashrc\netcdctl version: 3.3.25\nAPI version: 3.3"
             }
           ]
         },
@@ -303,7 +303,7 @@
             },
             {
               "label": "Step 5e: Verify cluster health",
-              "code": "# Run this on ANY node:\nnepo@node0:~$ etcdctl endpoint health --cluster --write-out=table\n\n# Expected - all 3 show health=true:\n +-----------------------------+-----------+-------------+-------+\n |         ENDPOINT            |  HEALTH   |   TOOK      | ERROR |\n +-----------------------------+-----------+-------------+-------+\n | http://192.168.68.200:2379  |   true    | 8.472ms     |       |\n | http://192.168.68.201:2379  |   true    | 9.103ms     |       |\n | http://192.168.68.202:2379  |   true    | 7.891ms     |       |\n +-----------------------------+-----------+-------------+-------+\n\n# List cluster members:\nenepo@node0:~$ tcdctl member list --write-out=table\n\n# Expected:\n +------------------+---------+-------+----------------------------+----------------------------+------------+\n |        ID        | STATUS  | NAME  |         PEER ADDRS         |        CLIENT ADDRS        | IS LEARNER |\n +------------------+---------+-------+----------------------------+----------------------------+------------+\n | abc123...        | started | node0 | http://192.168.68.200:2380 | http://192.168.68.200:2379 |      false |\n | def456...        | started | node1 | http://192.168.68.201:2380 | http://192.168.68.201:2379 |      false |\n | ghi789...        | started | node2 | http://192.168.68.202:2380 | http://192.168.68.202:2379 |      false |\n +------------------+---------+-------+----------------------------+----------------------------+------------+"
+              "code": "# Run this on ANY node:\nnepo@node0:~$ etcdctl endpoint health --cluster --write-out=table\n# Expected - all 3 show health=true:\n +-----------------------------+-----------+-------------+-------+\n |         ENDPOINT            |  HEALTH   |   TOOK      | ERROR |\n +-----------------------------+-----------+-------------+-------+\n | http://192.168.68.200:2379  |   true    | 8.472ms     |       |\n | http://192.168.68.201:2379  |   true    | 9.103ms     |       |\n | http://192.168.68.202:2379  |   true    | 7.891ms     |       |\n +-----------------------------+-----------+-------------+-------+\n# List cluster members:\nenepo@node0:~$ tcdctl member list --write-out=table\n# Expected:\n +------------------+---------+-------+----------------------------+----------------------------+------------+\n |        ID        | STATUS  | NAME  |         PEER ADDRS         |        CLIENT ADDRS        | IS LEARNER |\n +------------------+---------+-------+----------------------------+----------------------------+------------+\n | abc123...        | started | node0 | http://192.168.68.200:2380 | http://192.168.68.200:2379 |      false |\n | def456...        | started | node1 | http://192.168.68.201:2380 | http://192.168.68.201:2379 |      false |\n | ghi789...        | started | node2 | http://192.168.68.202:2380 | http://192.168.68.202:2379 |      false |\n +------------------+---------+-------+----------------------------+----------------------------+------------+"
             },
             {
               "label": "❗ Fix: ETCD cluster didn't form (only see localhost or single node)",
@@ -366,7 +366,7 @@
           "items": [
             {
               "label": "View running PostgreSQL clusters",
-              "code": "# Check which PostgreSQL clusters are currently running:\nnepo@node0:~$ pg_lsclusters\n The postgresql-18 package creates a default 'main' cluster on port 5432.\n Verify port 5432 is free:\nnepo@node0:~$ ss -tulpn | grep 5432\nVerify /data/patroni\nnepo@node0:~$ ls -la /data/ | grep patroni\ndrwxr-xr-x  4 patroni postgres 4096 Jun  3 20:46 .\ndrwxr-x--- 19 patroni postgres 4096 Jun  3 21:14 patroni\ndrwxr-xr-x  5 patroni postgres 4096 Jun  3 20:46 pg"
+              "code": "# Check which PostgreSQL clusters are currently running:\nnepo@node0:~$ pg_lsclusters\n The postgresql-18 package creates a default 'main' cluster on port 5432.\n Verify port 5432 is free:\nnepo@node0:~$ ss -tulpn | grep 5432\n\n# Verify /data/patroni\nnepo@node0:~$ ls -la /data/ | grep patroni\ndrwxr-xr-x  4 patroni postgres 4096 Jun  3 20:46 .\ndrwxr-x--- 19 patroni postgres 4096 Jun  3 21:14 patroni\ndrwxr-xr-x  5 patroni postgres 4096 Jun  3 20:46 pg"
             }
           ]
         }
@@ -612,7 +612,7 @@
             },
             {
               "label": "Start Node 0 FIRST (becomes leader), then Nodes 1 & 2",
-              "code": "# ⚠️ IMPORTANT ORDER: Node 0 → wait 30s → Node 1 → Node 2\n\n# ---------- NODE 0 (LEADER) ----------\nsudo systemctl daemon-reload\nsudo systemctl enable patroni\nsudo systemctl start patroni\n\n# Wait 30 seconds for Node 0 to bootstrap:\nsudo journalctl -u patroni -n 30 --no-pager\n# Look for: \"no action. I am (node0-pg), the leader with the lock\"\n\n# ---------- NODE 1 ----------\nsudo systemctl daemon-reload\nsudo systemctl enable patroni\nsudo systemctl start patroni\n\n# ---------- NODE 2 ----------\nsudo systemctl daemon-reload\nsudo systemctl enable patroni\nsudo systemctl start patroni"
+              "code": "# ⚠️ IMPORTANT ORDER: Node 0 → wait 30s → Node 1 → Node 2\n\n# ---------- NODE 0 (LEADER) ----------\nsudo systemctl daemon-reload\nsudo systemctl enable patroni\nsudo systemctl start patroni\n\n# Wait 30 seconds for Node 0 to bootstrap:\nnepo@node0:~$ sudo journalctl -u patroni -n 30 --no-pager\n# Look for: \"no action. I am (node0-pg), the leader with the lock\"\n\n# ---------- NODE 1 ----------\nsudo systemctl daemon-reload\nsudo systemctl enable patroni\nsudo systemctl start patroni\n\n# ---------- NODE 2 ----------\nsudo systemctl daemon-reload\nsudo systemctl enable patroni\nsudo systemctl start patroni"
             }
           ]
         },
@@ -644,7 +644,7 @@
         },
         {
           "label": "Check cluster topology (shows replication tree)",
-          "code": "nepo@node0:~$ sudo patronictl -c /etc/patroni/patroni.yml topology\n\n# + Cluster: pg-ha-cluster ----------+---------+----+-----------+----+\n | Member   | Host           | Role    | State     | TL | Lag |\n +----------+----------------+---------+-----------+----+-----+\n | node0-pg | 192.168.68.200 | Leader  | running   |  1 |     |\n   + node1-pg | 192.168.68.201 | Replica | streaming |  1 |   0 |\n   + node2-pg | 192.168.68.202 | Replica | streaming |  1 |   0 |\n +----------+----------------+---------+-----------+----+-----+"
+          "code": "nepo@node0:~$ sudo patronictl -c /etc/patroni/patroni.yml topology\n\n# + Cluster: pg-ha-cluster ----------+---------+----+-----------+----+\n | Member   | Host           | Role    | State     | TL | Lag |\n +----------+----------------+---------+-----------+----+-----+\n | node0-pg | 192.168.68.200 | Leader  | running   |  1 |     |\n  + node1-pg | 192.168.68.201 | Replica | streaming |  1 |   0 |\n  + node2-pg | 192.168.68.202 | Replica | streaming |  1 |   0 |\n +----------+----------------+---------+-----------+----+-----+"
         },
         {
           "label": "Manual switchover (graceful leader change)",
@@ -716,7 +716,7 @@
           "items": [
             {
               "label": "Enable, start, and verify HAProxy",
-              "code": "sudo systemctl enable haproxy\nsudo systemctl start haproxy\nsudo systemctl status haproxy\n# Expected: Active: active (running)\n# Check the HAProxy stats:\nnepo@node0:~$ curl -u admin:admin-pass-123 http://localhost:7000/stats"
+              "code": "sudo systemctl enable haproxy\nsudo systemctl start haproxy\nsudo systemctl status haproxy\n# Expected: Active: active (running)\n# Check the HAProxy stats:\nnepo@node0:~$ curl -u admin:admin-pass-123 http://localhost:7000/stats\nYou will get a response"
             }
           ]
         },
@@ -1019,11 +1019,11 @@
           "items": [
             {
               "label": "Add Cluster B to /etc/haproxy/haproxy.cfg on Node 0",
-              "code": "nepo@node0:~$ sudo nano /etc/haproxy/haproxy.cfg\n# Add these sections AFTER the existing Cluster A config:\n\n# Cluster B Write\nlisten pg-cluster-b-write\n    bind *:6000\n    mode tcp\n    option httpchk GET /primary\n    http-check expect status 200\n    default-server inter 3s fall 3 rise 2 on-marked-down shutdown-sessions\n    server node0-cluster-b 192.168.68.200:5442 check port 8009\n    server node1-cluster-b 192.168.68.201:5443 check port 8009\n    server node2-cluster-b 192.168.68.202:5444 check port 8009\n\n# Cluster B Read\nlisten pg-cluster-b-read\n    bind *:6001\n    mode tcp\n    balance roundrobin\n    option httpchk GET /replica\n    http-check expect status 200\n    default-server inter 3s fall 3 rise 2\n    server node0-cluster-b 192.168.68.200:5442 check port 8009\n    server node1-cluster-b 192.168.68.201:5443 check port 8009\n    server node2-cluster-b 192.168.68.202:5444 check port 8009"
+              "code": "nepo@node0:~$ sudo nano /etc/haproxy/haproxy.cfg\n# Add these sections AFTER the existing Cluster A config:\n\n# Cluster B Write\nlisten pg-cluster-b-write\n    bind *:6000\n    mode tcp\n    option httpchk GET /primary\n    http-check expect status 200\n    default-server inter 3s fall 3 rise 2 on-marked-down shutdown-sessions\n    server node0-cluster-b 192.168.68.200:5433 check port 8009\n    server node1-cluster-b 192.168.68.201:5433 check port 8009\n    server node2-cluster-b 192.168.68.202:5433 check port 8009\n\n# Cluster B Read\nlisten pg-cluster-b-read\n    bind *:6001\n    mode tcp\n    balance roundrobin\n    option httpchk GET /replica\n    http-check expect status 200\n    default-server inter 3s fall 3 rise 2\n    server node0-cluster-b 192.168.68.200:5433 check port 8009\n    server node1-cluster-b 192.168.68.201:5433 check port 8009\n    server node2-cluster-b 192.168.68.202:5433 check port 8009"
             },
             {
               "label": "IMPORTANT: HAProxy backend ports must match your actual PostgreSQL ports",
-              "code": "# ⚠️ The :5442/:5443/:5444 in HAProxy config are the PostgreSQL ports\n# from your Patroni config. They MUST match exactly.\n#\n# Correct example (different port per node):\n#   Patroni config: port: 5442  →  HAProxy: 192.168.68.200:5442\n#   Patroni config: port: 5443  →  HAProxy: 192.168.68.201:5443\n#   Patroni config: port: 5444  →  HAProxy: 192.168.68.202:5444\n#\n# Alternative (same port on all nodes, e.g. 5433):\n#   Patroni config: port: 5433  →  HAProxy: 192.168.68.200:5433\n#   Patroni config: port: 5433  →  HAProxy: 192.168.68.201:5433\n#   Patroni config: port: 5433  →  HAProxy: 192.168.68.202:5433\n#\n# How to verify your port:\nnepo@node0:~$ sudo grep -E 'listen:|connect_address:|port:' /etc/patroni/patroni-cluster-b.yml"
+              "code": "# ⚠️ The 5433 is in HAProxy config are the PostgreSQL port\n# from your Patroni config. They MUST match exactly.\n#\n# Correct example (same port on all nodes, e.g. 5433):\n#   Patroni config: port: 5433  →  HAProxy: 192.168.68.200:5433\n#   Patroni config: port: 5433  →  HAProxy: 192.168.68.201:5433\n#   Patroni config: port: 5433  →  HAProxy: 192.168.68.202:5433\n#\n# Alternative (different port per node):\n#   Patroni config: port: 5442  →  HAProxy: 192.168.68.200:5442\n#   Patroni config: port: 5443  →  HAProxy: 192.168.68.201:5443\n#   Patroni config: port: 5444  →  HAProxy: 192.168.68.202:5444\n#\n# How to verify your port:\nnepo@node0:~$ sudo grep -E 'listen:|connect_address:|port:' /etc/patroni/patroni-cluster-b.yml\nlisten: 192.168.68.200:8009\n connect_address: 192.168.68.200: 8009\n listen: 192.168.68.200: 5433\n connect_address: 192.168.68.200: 5433\n port: 5433"
             },
             {
               "label": "Open port 8009 on ALL 3 NODES (Cluster B health checks)",
