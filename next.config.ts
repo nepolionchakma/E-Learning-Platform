@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   /* config options here */
   // allowedDevOrigins: ["192.168.68.200:3000", "192.168.68.200"],
   // allowedDevOrigins: ["*"],
+  output: "standalone",
 };
 
 export default nextConfig;

@@ -4,13 +4,13 @@
   "description": "A comprehensive end-to-end guide to NGINX covering installation, configuration, reverse proxying, load balancing, SSL/TLS, caching, security hardening, performance tuning, Docker deployment, monitoring, troubleshooting, and production best practices — for beginners and advanced users alike.",
   "author": "E-Learning Platform",
   "date": "2026-05-19",
-  "readTime": "35 min read",
+  "readTime": "40 min read",
   "heroImage": "/images/nginx-hero.svg",
   "heroAlt": "NGINX reverse proxy and load balancer architecture diagram showing client traffic flowing through NGINX to backend application servers and static file storage",
   "sections": [
     {
       "id": "what-is-nginx",
-      "title": "What is NGINX?",
+      "title": "1. What is NGINX?",
       "description": "Understanding the high-performance web server, reverse proxy, and load balancer.",
       "items": [
         {
@@ -37,15 +37,47 @@
         {
           "label": "NGINX vs Apache",
           "table": {
-            "headers": ["Feature", "NGINX", "Apache"],
+            "headers": [
+              "Feature",
+              "NGINX",
+              "Apache"
+            ],
             "rows": [
-              ["Architecture", "Event-driven, async, non-blocking", "Process/thread-based (mpm_prefork, mpm_worker)"],
-              ["Concurrency", "Thousands per worker", "Limited by threads/processes"],
-              ["Memory per connection", "~2.5 KB", "~5–10 KB"],
-              ["Static file serving", "Excellent (sendfile + async I/O)", "Good (file-based)"],
-              ["Dynamic content", "Proxy to external processors", "Native (.htaccess, mod_php, mod_wsgi)"],
-              ["Configuration", "Central (nginx.conf)", ".htaccess per-directory + central"],
-              ["Load balancing", "Built-in (round-robin, least_conn, ip_hash)", "Requires mod_proxy_balancer"]
+              [
+                "Architecture",
+                "Event-driven, async, non-blocking",
+                "Process/thread-based (mpm_prefork, mpm_worker)"
+              ],
+              [
+                "Concurrency",
+                "Thousands per worker",
+                "Limited by threads/processes"
+              ],
+              [
+                "Memory per connection",
+                "~2.5 KB",
+                "~5–10 KB"
+              ],
+              [
+                "Static file serving",
+                "Excellent (sendfile + async I/O)",
+                "Good (file-based)"
+              ],
+              [
+                "Dynamic content",
+                "Proxy to external processors",
+                "Native (.htaccess, mod_php, mod_wsgi)"
+              ],
+              [
+                "Configuration",
+                "Central (nginx.conf)",
+                ".htaccess per-directory + central"
+              ],
+              [
+                "Load balancing",
+                "Built-in (round-robin, least_conn, ip_hash)",
+                "Requires mod_proxy_balancer"
+              ]
             ]
           }
         }
@@ -53,7 +85,7 @@
     },
     {
       "id": "installation",
-      "title": "Installation",
+      "title": "2. Installation",
       "description": "Installing NGINX on various Linux distributions and via Docker.",
       "items": [
         {
@@ -76,7 +108,7 @@
     },
     {
       "id": "configuration-structure",
-      "title": "Configuration Structure (nginx.conf)",
+      "title": "3. Configuration Structure (nginx.conf)",
       "description": "Understanding the NGINX configuration file layout, context hierarchy, and syntax.",
       "items": [
         {
@@ -88,18 +120,58 @@
           "text": "NGINX follows a strict directive inheritance model. Directives in outer contexts apply to all inner contexts unless overridden:\n\nmain \u2192 http \u2192 server \u2192 location\n\nDirectives placed in the http block affect all servers; directives in a server block override http defaults for that virtual host; location blocks override their parent server.\n\nThere is NO .htaccess equivalent \u2014 all configuration lives in the central files. Changes require a reload:\n\nsudo nginx -t          # Test configuration syntax\nsudo systemctl reload nginx  # Graceful reload (no dropped connections)"
         },
         {
+          "label": "Directory Structure Convention",
+          "text": "NGINX follows a standard directory layout:\n\n/etc/nginx/\n\u251c\u2500\u2500 nginx.conf              # Main configuration file\n\u251c\u2500\u2500 conf.d/                 # Additional config snippets\n\u251c\u2500\u2500 sites-available/        # Available virtual host configs\n\u251c\u2500\u2500 sites-enabled/          # Symlinks to enabled sites (from sites-available)\n\u251c\u2500\u2500 snippets/               # Reusable config fragments (ssl-params.conf, etc.)\n\u251c\u2500\u2500 modules/                # Dynamic module binaries\n\u251c\u2500\u2500 mime.types              # MIME type mappings\n\u2514\u2500\u2500 fastcgi.conf            # FastCGI parameters\n\nThe 'sites-available / sites-enabled' pattern allows you to disable sites without deleting their config \u2014 just remove the symlink and reload."
+        },
+        {
           "label": "Common Directives Reference",
           "table": {
-            "headers": ["Directive", "Context", "Description"],
+            "headers": [
+              "Directive",
+              "Context",
+              "Description"
+            ],
             "rows": [
-              ["worker_processes", "main", "Number of worker processes; use 'auto' to match CPU cores"],
-              ["worker_connections", "events", "Max simultaneous connections per worker"],
-              ["sendfile", "http / server / location", "Enable zero-copy file transfer"],
-              ["tcp_nopush", "http / server / location", "Send headers in one packet (reduces overhead)"],
-              ["keepalive_timeout", "http / server / location", "Timeout for keep-alive connections"],
-              ["client_max_body_size", "http / server / location", "Max request body size (default 1MB)"],
-              ["server_tokens", "http / server / location", "Hide NGINX version in response headers"],
-              ["reset_timedout_connection", "http / server / location", "Close timed-out connections"]
+              [
+                "worker_processes",
+                "main",
+                "Number of worker processes; use 'auto' to match CPU cores"
+              ],
+              [
+                "worker_connections",
+                "events",
+                "Max simultaneous connections per worker"
+              ],
+              [
+                "sendfile",
+                "http / server / location",
+                "Enable zero-copy file transfer"
+              ],
+              [
+                "tcp_nopush",
+                "http / server / location",
+                "Send headers in one packet (reduces overhead)"
+              ],
+              [
+                "keepalive_timeout",
+                "http / server / location",
+                "Timeout for keep-alive connections"
+              ],
+              [
+                "client_max_body_size",
+                "http / server / location",
+                "Max request body size (default 1MB)"
+              ],
+              [
+                "server_tokens",
+                "http / server / location",
+                "Hide NGINX version in response headers"
+              ],
+              [
+                "reset_timedout_connection",
+                "http / server / location",
+                "Close timed-out connections"
+              ]
             ]
           }
         }
@@ -107,7 +179,7 @@
     },
     {
       "id": "firewall-essentials",
-      "title": "Firewall Essentials for NGINX",
+      "title": "4. Firewall Essentials for NGINX",
       "description": "Opening the necessary ports for NGINX to serve traffic.",
       "items": [
         {
@@ -126,16 +198,12 @@
     },
     {
       "id": "server-blocks",
-      "title": "Server Blocks (Virtual Hosts)",
+      "title": "5. Server Blocks (Virtual Hosts)",
       "description": "Hosting multiple websites on a single NGINX instance using server blocks.",
       "items": [
         {
           "label": "Creating a Server Block",
-          "code": "# Create the site directory\nuser@server:~$ sudo mkdir -p /var/www/example.com/html\nuser@server:~$ sudo chown -R $USER:$USER /var/www/example.com/html\n\n# Create a sample index page\nuser@server:~$ echo '<html><head><title>Welcome to Example!</title></head><body><h1>Success! example.com is live.</h1></body></html>' | sudo tee /var/www/example.com/html/index.html\n\n# Create the server block config\nuser@server:~$ sudo nano /etc/nginx/sites-available/example.com\n\nserver {\n    listen 80;\n    listen [::]:80;\n\n    server_name example.com www.example.com;\n\n    root /var/www/example.com/html;\n    index index.html index.htm;\n\n    location / {\n        try_files $uri $uri/ =404;\n    }\n}\n\n# Enable the site\nuser@server:~$ sudo ln -s /etc/nginx/sites-available/example.com /etc/nginx/sites-enabled/\nuser@server:~$ sudo nginx -t\nnginx: the configuration file /etc/nginx/nginx.conf syntax is ok\nnginx: configuration file /etc/nginx/nginx.conf test is successful\nuser@server:~$ sudo systemctl reload nginx"
-        },
-        {
-          "label": "Directory Structure Convention",
-          "text": "NGINX follows a standard directory layout:\n\n/etc/nginx/\n\u251c\u2500\u2500 nginx.conf              # Main configuration file\n\u251c\u2500\u2500 conf.d/                 # Additional config snippets\n\u251c\u2500\u2500 sites-available/        # Available virtual host configs\n\u251c\u2500\u2500 sites-enabled/          # Symlinks to enabled sites (from sites-available)\n\u251c\u2500\u2500 snippets/               # Reusable config fragments (ssl-params.conf, etc.)\n\u251c\u2500\u2500 modules/                # Dynamic module binaries\n\u251c\u2500\u2500 mime.types              # MIME type mappings\n\u2514\u2500\u2500 fastcgi.conf            # FastCGI parameters\n\nThe 'sites-available / sites-enabled' pattern allows you to disable sites without deleting their config \u2014 just remove the symlink and reload."
+          "code": "# Create the site directory\n# Example: sudo mkdir -p /var/www/{site_name}\nuser@server:~$ sudo mkdir -p /var/www/hebang\n# Create a sample index page\nuser@server:~$ echo '<html><head><title>Welcome to Example!</title></head><body><h1>Success! hebang is live.</h1></body></html>' | sudo tee /var/www/hebang/index.html\n\n# Create the server block config\nuser@server:~$ sudo nano /etc/nginx/sites-available/hebang\n\nserver {\n    listen 80;\n    listen [::]:80;\n\n    server_name hebang www.hebang;\n\n    root /var/www/hebang;\n    index index.html index.htm;\n\n    location / {\n        try_files $uri $uri/ =404;\n    }\n}\n\n# Enable the site\nuser@server:~$ sudo ln -s /etc/nginx/sites-available/hebang /etc/nginx/sites-enabled/\nuser@server:~$ sudo nginx -t\nnginx: the configuration file /etc/nginx/nginx.conf syntax is ok\nnginx: configuration file /etc/nginx/nginx.conf test is successful\nuser@server:~$ sudo systemctl reload nginx"
         },
         {
           "label": "Default Server & Wildcards",
@@ -144,8 +212,275 @@
       ]
     },
     {
+      "id": "location-blocks",
+      "title": "6. Location Blocks Deep Dive",
+      "description": "Understanding how NGINX location blocks match and prioritize.",
+      "items": [
+        {
+          "label": "Location Modifiers Reference",
+          "table": {
+            "headers": [
+              "Modifier",
+              "Example",
+              "Description"
+            ],
+            "rows": [
+              [
+                "none",
+                "location /api",
+                "Prefix match \u2014 matches any URI starting with /api"
+              ],
+              [
+                "=",
+                "location = /login",
+                "Exact match \u2014 highest priority, stops searching immediately"
+              ],
+              [
+                "~",
+                "location ~ \\.php$",
+                "Case-sensitive regex match"
+              ],
+              [
+                "~*",
+                "location ~* \\.(jpg|png)$",
+                "Case-insensitive regex match"
+              ],
+              [
+                "^~",
+                "location ^~ /static/",
+                "Preferential prefix \u2014 if matched, skip regex checking"
+              ],
+              [
+                "@",
+                "location @fallback",
+                "Named location (internal use only)"
+              ]
+            ]
+          }
+        },
+        {
+          "label": "Location Matching Order",
+          "text": "NGINX evaluates location blocks in this precise order:\n\n1. Exact match (= /path) \u2014 if found, use it immediately.\n2. Preferential prefix (^~ /path) \u2014 longest match wins; if matched, skip regex phase.\n3. Longest prefix match (no modifier) \u2014 stored as candidate.\n4. Regex matches (~ and ~*) \u2014 checked in order of appearance; first match wins.\n5. If step 3 had a candidate, use it. Otherwise, return 404.\n\nKey insight: prefix matches happen first, but regex matches override them unless ^~ or = is used. To force a prefix match over regex, use ^~."
+        },
+        {
+          "label": "Common Location Patterns",
+          "code": "server {\n    root /var/www/html;\n\n    # Exact match \u2014 highest priority\n    location = / {\n        index index.html;\n    }\n\n    # Preferential prefix \u2014 skip regex\n    location ^~ /static/ {\n        expires 365d;\n        add_header Cache-Control \"public, immutable\";\n    }\n\n    # Case-insensitive regex for image files\n    location ~* \\.(jpg|jpeg|png|gif|ico|webp)$ {\n        expires 30d;\n    }\n\n    # PHP processing\n    location ~ \\.php$ {\n        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;\n        fastcgi_index index.php;\n        include fastcgi_params;\n    }\n\n    # API proxy\n    location /api/ {\n        proxy_pass http://backend_api;\n        proxy_set_header Host $host;\n    }\n\n    # Deny hidden files\n    location ~ /\\. {\n        deny all;\n        access_log off;\n        log_not_found off;\n    }\n\n    # Named location for error fallback\n    location @error_404 {\n        root /var/www/errors;\n        try_files /404.html =404;\n    }\n    error_page 404 @error_404;\n}"
+        }
+      ]
+    },
+    {
+      "id": "static-site-deployment",
+      "title": "7. Practical Deployment: Static Website",
+      "description": "Step-by-step guide to deploying a production-ready static HTML/CSS/JS website with NGINX.",
+      "items": [
+        {
+          "label": "1. Create the Project",
+          "text": "Create the directory structure for your static site and add your HTML, CSS, and JavaScript files. For this example, we will build a simple landing page."
+        },
+        {
+          "code": "user@server:~$ sudo mkdir -p /var/www/mysite/{css,js,img}\nuser@server:~$ sudo chown -R $USER:$USER /var/www/mysite\nuser@server:~$ cat > /var/www/mysite/index.html << 'EOF'\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>My Static Site</title>\n    <link rel=\"stylesheet\" href=\"css/style.css\">\n</head>\n<body>\n    <h1>Welcome to My Static Site</h1>\n    <p>This site is served by NGINX.</p>\n    <script src=\"js/main.js\"></script>\n</body>\n</html>\nEOF\nuser@server:~$ echo 'body { font-family: system-ui, sans-serif; max-width: 720px; margin: 4rem auto; text-align: center; }' > /var/www/mysite/css/style.css\nuser@server:~$ echo 'console.log(\"Site loaded\");' > /var/www/mysite/js/main.js\nuser@server:~$ ls -R /var/www/mysite\n/var/www/mysite:\ncss  img  index.html  js\n\n/var/www/mysite/css:\nstyle.css\n\n/var/www/mysite/js:\nmain.js"
+        },
+        {
+          "label": "2. Configure the Server Block",
+          "text": "Create a server block that points to your site directory. The try_files directive ensures NGINX serves the correct file or returns a 404 if it does not exist."
+        },
+        {
+          "code": "user@server:~$ sudo nano /etc/nginx/sites-available/mysite\n\nserver {\n    listen 80;\n    listen [::]:80;\n    server_name mysite.example.com;\n\n    root /var/www/mysite;\n    index index.html;\n\n    location / {\n        try_files $uri $uri/ =404;\n    }\n}\n\nuser@server:~$ sudo ln -s /etc/nginx/sites-available/mysite /etc/nginx/sites-enabled/\nuser@server:~$ sudo nginx -t\nnginx: the configuration file /etc/nginx/nginx.conf syntax is ok\nnginx: configuration file /etc/nginx/nginx.conf test is successful\nuser@server:~$ sudo systemctl reload nginx\nuser@server:~$ curl -I http://mysite.example.com\nHTTP/1.1 200 OK\nServer: nginx/1.24.0\nContent-Type: text/html"
+        },
+        {
+          "label": "3. Enable Gzip Compression",
+          "text": "Enable gzip compression to reduce bandwidth usage by 60\u201380%. Add these directives to your server block or globally in nginx.conf."
+        },
+        {
+          "code": "server {\n    listen 80;\n    server_name mysite.example.com;\n    root /var/www/mysite;\n    index index.html;\n\n    # Gzip compression\n    gzip on;\n    gzip_vary on;\n    gzip_proxied any;\n    gzip_comp_level 6;\n    gzip_min_length 256;\n    gzip_types\n        text/plain\n        text/css\n        text/javascript\n        application/javascript\n        application/json\n        image/svg+xml;\n\n    location / {\n        try_files $uri $uri/ =404;\n    }\n}\n\n# Verify compression:\nuser@server:~$ curl -H \"Accept-Encoding: gzip\" -I http://mysite.example.com/css/style.css\nHTTP/1.1 200 OK\nContent-Encoding: gzip\nVary: Accept-Encoding"
+        },
+        {
+          "label": "4. Add Browser Caching",
+          "text": "Set far-future expiry headers on static assets so returning visitors load your site instantly. Use the immutable directive for content-hashed filenames."
+        },
+        {
+          "code": "server {\n    listen 80;\n    server_name mysite.example.com;\n    root /var/www/mysite;\n    index index.html;\n\n    gzip on;\n    gzip_vary on;\n    gzip_comp_level 6;\n    gzip_types text/plain text/css application/javascript image/svg+xml;\n\n    # Cache static assets for 1 year\n    location ~* \\.(css|js|svg|woff2?)$ {\n        expires 1y;\n        add_header Cache-Control \"public, immutable\";\n        access_log off;\n    }\n\n    # Cache images for 30 days\n    location ~* \\.(jpg|jpeg|png|gif|ico|webp)$ {\n        expires 30d;\n        add_header Cache-Control \"public, immutable\";\n        access_log off;\n    }\n\n    # Never cache HTML\n    location ~* \\.html$ {\n        expires -1;\n        add_header Cache-Control \"no-store, no-cache, must-revalidate\";\n    }\n\n    location / {\n        try_files $uri $uri/ =404;\n    }\n}"
+        },
+        {
+          "label": "5. Add Security Headers",
+          "text": "Security headers protect your users from common attacks. Add these to your server block to prevent clickjacking, MIME sniffing, XSS, and protocol downgrades."
+        },
+        {
+          "code": "server {\n    listen 80;\n    server_name mysite.example.com;\n    root /var/www/mysite;\n    index index.html;\n\n    # Security headers\n    add_header X-Frame-Options \"SAMEORIGIN\" always;\n    add_header X-Content-Type-Options \"nosniff\" always;\n    add_header Referrer-Policy \"strict-origin-when-cross-origin\" always;\n    add_header Permissions-Policy \"camera=(), microphone=(), geolocation=()\" always;\n    add_header X-XSS-Protection \"1; mode=block\" always;\n    server_tokens off;\n\n    gzip on;\n    gzip_vary on;\n    gzip_comp_level 6;\n    gzip_types text/plain text/css application/javascript image/svg+xml;\n\n    location ~* \\.(css|js|svg|woff2?)$ {\n        expires 1y;\n        add_header Cache-Control \"public, immutable\";\n        access_log off;\n    }\n\n    location ~* \\.(jpg|jpeg|png|gif|ico|webp)$ {\n        expires 30d;\n        add_header Cache-Control \"public, immutable\";\n        access_log off;\n    }\n\n    location / {\n        try_files $uri $uri/ =404;\n    }\n}"
+        },
+        {
+          "label": "6. Enable HTTPS with Let's Encrypt",
+          "text": "Secure your site with a free SSL certificate from Let's Encrypt. Certbot's NGINX plugin handles the configuration automatically."
+        },
+        {
+          "code": "# Install Certbot\nuser@server:~$ sudo apt install certbot python3-certbot-nginx -y\n\n# Obtain and install certificate (auto-configures NGINX)\nuser@server:~$ sudo certbot --nginx -d mysite.example.com -d www.mysite.example.com\nSaving debug log to /var/log/letsencrypt/letsencrypt.log\n\nWhich names would you like to activate HTTPS for?\n- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n1: mysite.example.com\n2: www.mysite.example.com\n- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\nSelect the appropriate numbers [Enter to activate all]:\n\nCongratulations! You have successfully enabled https://mysite.example.com\n\n# Test auto-renewal\nuser@server:~$ sudo certbot renew --dry-run\nCongratulations, all simulated renewals succeeded!"
+        },
+        {
+          "label": "7. Complete Production Configuration",
+          "text": "Here is the final, combined server block with all optimizations applied. This is a production-ready configuration for any static website."
+        },
+        {
+          "code": "# HTTP -> HTTPS redirect\nserver {\n    listen 80;\n    listen [::]:80;\n    server_name mysite.example.com www.mysite.example.com;\n    return 301 https://$server_name$request_uri;\n}\n\n# HTTPS server block\nserver {\n    listen 443 ssl http2;\n    listen [::]:443 ssl http2;\n    server_name mysite.example.com www.mysite.example.com;\n\n    ssl_certificate     /etc/letsencrypt/live/mysite.example.com/fullchain.pem;\n    ssl_certificate_key /etc/letsencrypt/live/mysite.example.com/privkey.pem;\n    ssl_protocols TLSv1.2 TLSv1.3;\n    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;\n    ssl_prefer_server_ciphers off;\n    ssl_session_cache shared:SSL:10m;\n    ssl_session_timeout 1d;\n\n    root /var/www/mysite;\n    index index.html;\n\n    # Security headers\n    add_header X-Frame-Options \"SAMEORIGIN\" always;\n    add_header X-Content-Type-Options \"nosniff\" always;\n    add_header Referrer-Policy \"strict-origin-when-cross-origin\" always;\n    add_header Permissions-Policy \"camera=(), microphone=(), geolocation=()\" always;\n    add_header Strict-Transport-Security \"max-age=63072000; includeSubDomains; preload\" always;\n    server_tokens off;\n\n    # Gzip compression\n    gzip on;\n    gzip_vary on;\n    gzip_proxied any;\n    gzip_comp_level 6;\n    gzip_min_length 256;\n    gzip_types\n        text/plain\n        text/css\n        text/javascript\n        application/javascript\n        application/json\n        image/svg+xml;\n\n    # Cache static assets\n    location ~* \\.(css|js|svg|woff2?)$ {\n        expires 1y;\n        add_header Cache-Control \"public, immutable\";\n        access_log off;\n    }\n\n    location ~* \\.(jpg|jpeg|png|gif|ico|webp)$ {\n        expires 30d;\n        add_header Cache-Control \"public, immutable\";\n        access_log off;\n    }\n\n    location ~* \\.html$ {\n        expires -1;\n        add_header Cache-Control \"no-store, no-cache, must-revalidate\";\n    }\n\n    location / {\n        try_files $uri $uri/ =404;\n    }\n\n    # Deny hidden files\n    location ~ /\\. {\n        deny all;\n        access_log off;\n        log_not_found off;\n    }\n\n    access_log /var/log/nginx/mysite.access.log;\n    error_log  /var/log/nginx/mysite.error.log;\n}"
+        }
+      ]
+    },
+    {
+      "id": "react-spa-deployment",
+      "title": "8. Practical Deployment: React SPA",
+      "description": "Step-by-step guide to deploying a React single-page application with NGINX, covering client-side routing, API proxying, and cache invalidation.",
+      "items": [
+        {
+          "label": "1. Build the React Application",
+          "text": "A standard React app (Create React App, Vite, or any React framework) produces static files when built. The output directory (build/ or dist/) contains HTML, JS, CSS, and assets ready to be served by NGINX."
+        },
+        {
+          "code": "# Build your React app on your local machine or CI server\nuser@local:~$ npm run build\n> my-react-app@1.0.0 build\n> react-scripts build\n\nCreating an optimized production build...\nCompiled successfully.\n\nFile sizes after gzip:\n  152.34 KB  build/static/js/main.a3f9c2d1.js\n  36.78 KB   build/static/css/main.e1c2b3a4.css\n  1.24 KB    build/index.html\n\nuser@local:~$ ls build/\nasset-manifest.json  favicon.ico  index.html  robots.txt  static/\n\n# Upload to your server\nuser@local:~$ scp -r build/ /var/www/my-react-app/\n\n# Or on the server directly:\nuser@server:~$ sudo mkdir -p /var/www/my-react-app\nuser@server:~$ sudo chown -R $USER:$USER /var/www/my-react-app\nuser@server:~$ # copy your build/ contents here"
+        },
+        {
+          "label": "2. The SPA Routing Problem",
+          "text": "React apps use client-side routing (React Router). When a user navigates to /about, React changes the URL without a server request. But if the user refreshes the page or visits /about directly, the browser sends a request to NGINX for that path. NGINX looks for a file called 'about' \u2014 it does not exist \u2014 and returns a 404.\n\nThe solution: configure NGINX to serve index.html for every path that does not match a real file. React loads, reads the URL from window.location, and React Router renders the correct page.\n\nThis is done with a single directive:\n\ntry_files $uri $uri/ /index.html;\n\nHow it works:\n1. Try to serve the exact file requested ($uri).\n2. Try to serve it as a directory ($uri/).\n3. If both fail, fall back to /index.html so React Router can handle the route.\n\nWithout this, every direct URL visit or page refresh on any route other than / returns a 404 error."
+        },
+        {
+          "label": "3. Configure Server Block with try_files",
+          "text": "Create a server block for your React app. The try_files directive is the critical piece that makes client-side routing work."
+        },
+        {
+          "code": "user@server:~$ sudo nano /etc/nginx/sites-available/my-react-app\n\nserver {\n    listen 80;\n    listen [::]:80;\n    server_name myapp.example.com;\n\n    root /var/www/my-react-app;\n    index index.html;\n\n    location / {\n        try_files $uri $uri/ /index.html;\n    }\n}\n\nuser@server:~$ sudo ln -s /etc/nginx/sites-available/my-react-app /etc/nginx/sites-enabled/\nuser@server:~$ sudo nginx -t\nnginx: the configuration file /etc/nginx/nginx.conf syntax is ok\nnginx: configuration file /etc/nginx/nginx.conf test is successful\nuser@server:~$ sudo systemctl reload nginx\n\n# Test that SPA routing works\nuser@server:~$ curl -I http://myapp.example.com/about\nHTTP/1.1 200 OK\n# Returns index.html instead of 404!"
+        },
+        {
+          "label": "4. Static Asset Caching",
+          "text": "Modern build tools (Vite, CRA, Webpack) add content hashes to filenames (e.g., main.a3f9c2d1.js). This means you can cache these files forever \u2014 if the content changes, the filename changes, so the old cached version is never stale.\n\nKey caching strategy:\n- JS/CSS/fonts with hashes: cache 1 year, immutable\n- Images: cache 30 days\n- index.html: NEVER cache (it references the latest hashed filenames)"
+        },
+        {
+          "code": "server {\n    listen 80;\n    server_name myapp.example.com;\n    root /var/www/my-react-app;\n    index index.html;\n\n    # JavaScript and CSS (hashed filenames) \u2014 cache forever\n    location ~* \\.(js|css)$ {\n        expires 1y;\n        add_header Cache-Control \"public, immutable\";\n        access_log off;\n    }\n\n    # Images and fonts\n    location ~* \\.(png|jpg|jpeg|gif|ico|svg|webp|avif|woff|woff2|ttf|eot)$ {\n        expires 1y;\n        add_header Cache-Control \"public, immutable\";\n        access_log off;\n    }\n\n    # Service worker \u2014 never cache\n    location = /service-worker.js {\n        expires off;\n        add_header Cache-Control \"no-cache, no-store, must-revalidate\";\n    }\n\n    # index.html \u2014 never cache (always serve latest build)\n    location = /index.html {\n        expires -1;\n        add_header Cache-Control \"no-cache, no-store, must-revalidate\";\n    }\n\n    # SPA routing fallback\n    location / {\n        try_files $uri $uri/ /index.html;\n    }\n}"
+        },
+        {
+          "label": "5. API Reverse Proxy",
+          "text": "Many React apps communicate with a backend API. NGINX can proxy API requests to your backend server while serving the React app directly. This avoids CORS issues because everything comes from the same domain."
+        },
+        {
+          "code": "server {\n    listen 80;\n    server_name myapp.example.com;\n    root /var/www/my-react-app;\n    index index.html;\n\n    # API proxy \u2014 must come BEFORE the catch-all location\n    location /api/ {\n        proxy_pass http://127.0.0.1:3000/;\n        proxy_http_version 1.1;\n        proxy_set_header Host $host;\n        proxy_set_header X-Real-IP $remote_addr;\n        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n        proxy_set_header X-Forwarded-Proto $scheme;\n        proxy_read_timeout 60s;\n        proxy_connect_timeout 10s;\n    }\n\n    # WebSocket support (for real-time features)\n    location /ws/ {\n        proxy_pass http://127.0.0.1:3000;\n        proxy_http_version 1.1;\n        proxy_set_header Upgrade $http_upgrade;\n        proxy_set_header Connection \"upgrade\";\n        proxy_set_header Host $host;\n        proxy_read_timeout 86400s;\n    }\n\n    # SPA routing fallback\n    location / {\n        try_files $uri $uri/ /index.html;\n    }\n}"
+        },
+        {
+          "label": "6. Add Security Headers",
+          "text": "Apply the same security headers as the static site. For SPAs with external dependencies (analytics, CDN scripts, Google Fonts), you may need to relax the Content Security Policy."
+        },
+        {
+          "code": "server {\n    listen 80;\n    server_name myapp.example.com;\n    root /var/www/my-react-app;\n    index index.html;\n\n    # Security headers\n    add_header X-Frame-Options \"SAMEORIGIN\" always;\n    add_header X-Content-Type-Options \"nosniff\" always;\n    add_header Referrer-Policy \"strict-origin-when-cross-origin\" always;\n    add_header Permissions-Policy \"camera=(), microphone=(), geolocation=()\" always;\n    add_header Strict-Transport-Security \"max-age=63072000; includeSubDomains; preload\" always;\n    add_header Content-Security-Policy \"default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.example.com;\" always;\n    server_tokens off;\n\n    # API proxy\n    location /api/ {\n        proxy_pass http://127.0.0.1:3000/;\n        proxy_http_version 1.1;\n        proxy_set_header Host $host;\n        proxy_set_header X-Real-IP $remote_addr;\n        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n        proxy_set_header X-Forwarded-Proto $scheme;\n    }\n\n    location ~* \\.(js|css)$ {\n        expires 1y;\n        add_header Cache-Control \"public, immutable\";\n        access_log off;\n    }\n\n    location ~* \\.(png|jpg|jpeg|gif|ico|svg|webp|woff|woff2|ttf|eot)$ {\n        expires 1y;\n        add_header Cache-Control \"public, immutable\";\n        access_log off;\n    }\n\n    location = /index.html {\n        expires -1;\n        add_header Cache-Control \"no-cache, no-store, must-revalidate\";\n    }\n\n    location / {\n        try_files $uri $uri/ /index.html;\n    }\n}"
+        },
+        {
+          "label": "7. Enable HTTPS",
+          "code": "user@server:~$ sudo certbot --nginx -d myapp.example.com -d www.myapp.example.com\n\n# Certbot will modify your server block to add SSL directives\n# and redirect HTTP to HTTPS automatically."
+        },
+        {
+          "label": "8. Complete Production Configuration",
+          "text": "Here is the full production-ready configuration combining SSL, security headers, caching, API proxy, WebSocket support, and SPA routing."
+        },
+        {
+          "code": "# HTTP -> HTTPS redirect\nserver {\n    listen 80;\n    listen [::]:80;\n    server_name myapp.example.com www.myapp.example.com;\n    return 301 https://$server_name$request_uri;\n}\n\n# HTTPS server block\nserver {\n    listen 443 ssl http2;\n    listen [::]:443 ssl http2;\n    server_name myapp.example.com www.myapp.example.com;\n\n    ssl_certificate     /etc/letsencrypt/live/myapp.example.com/fullchain.pem;\n    ssl_certificate_key /etc/letsencrypt/live/myapp.example.com/privkey.pem;\n    ssl_protocols TLSv1.2 TLSv1.3;\n    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;\n    ssl_prefer_server_ciphers off;\n    ssl_session_cache shared:SSL:10m;\n    ssl_session_timeout 1d;\n\n    root /var/www/my-react-app;\n    index index.html;\n\n    # Security headers\n    add_header X-Frame-Options \"SAMEORIGIN\" always;\n    add_header X-Content-Type-Options \"nosniff\" always;\n    add_header Referrer-Policy \"strict-origin-when-cross-origin\" always;\n    add_header Permissions-Policy \"camera=(), microphone=(), geolocation=()\" always;\n    add_header Strict-Transport-Security \"max-age=63072000; includeSubDomains; preload\" always;\n    add_header Content-Security-Policy \"default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.example.com;\" always;\n    server_tokens off;\n\n    # Gzip compression\n    gzip on;\n    gzip_vary on;\n    gzip_proxied any;\n    gzip_comp_level 6;\n    gzip_min_length 256;\n    gzip_types\n        text/plain\n        text/css\n        application/json\n        application/javascript\n        text/javascript\n        image/svg+xml;\n\n    # API reverse proxy\n    location /api/ {\n        proxy_pass http://127.0.0.1:3000/;\n        proxy_http_version 1.1;\n        proxy_set_header Host $host;\n        proxy_set_header X-Real-IP $remote_addr;\n        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n        proxy_set_header X-Forwarded-Proto $scheme;\n        proxy_read_timeout 60s;\n        proxy_connect_timeout 10s;\n    }\n\n    # WebSocket proxy\n    location /ws/ {\n        proxy_pass http://127.0.0.1:3000;\n        proxy_http_version 1.1;\n        proxy_set_header Upgrade $http_upgrade;\n        proxy_set_header Connection \"upgrade\";\n        proxy_set_header Host $host;\n        proxy_read_timeout 86400s;\n    }\n\n    # Cache static assets with hashed filenames\n    location ~* \\.(js|css)$ {\n        expires 1y;\n        add_header Cache-Control \"public, immutable\";\n        access_log off;\n    }\n\n    location ~* \\.(png|jpg|jpeg|gif|ico|svg|webp|avif|woff|woff2|ttf|eot)$ {\n        expires 1y;\n        add_header Cache-Control \"public, immutable\";\n        access_log off;\n    }\n\n    # index.html \u2014 never cache\n    location = /index.html {\n        expires -1;\n        add_header Cache-Control \"no-cache, no-store, must-revalidate\";\n    }\n\n    # Service worker \u2014 never cache\n    location = /service-worker.js {\n        expires off;\n        add_header Cache-Control \"no-cache, no-store, must-revalidate\";\n    }\n\n    # SPA routing \u2014 CRITICAL: fall back to index.html for all routes\n    location / {\n        try_files $uri $uri/ /index.html;\n    }\n\n    # Health check endpoint\n    location /health {\n        access_log off;\n        add_header Content-Type text/plain;\n        return 200 \"OK\";\n    }\n\n    # Deny access to hidden files\n    location ~ /\\. {\n        deny all;\n        access_log off;\n        log_not_found off;\n    }\n\n    access_log /var/log/nginx/my-react-app.access.log;\n    error_log  /var/log/nginx/my-react-app.error.log;\n}"
+        },
+        {
+          "label": "9. Automated Deployment with GitHub Actions (Optional)",
+          "text": "Manually uploading build files gets tedious. Use GitHub Actions to build and deploy automatically on every push to main."
+        },
+        {
+          "code": "# .github/workflows/deploy.yml\nname: Deploy React App\n\non:\n  push:\n    branches: [main]\n\njobs:\n  deploy:\n    runs-on: ubuntu-latest\n\n    steps:\n      - uses: actions/checkout@v4\n\n      - name: Set up Node.js\n        uses: actions/setup-node@v4\n        with:\n          node-version: '20'\n          cache: 'npm'\n\n      - name: Install dependencies\n        run: npm ci\n\n      - name: Build\n        run: npm run build\n\n      - name: Deploy to server\n        uses: appleboy/scp-action@v0.1.7\n        with:\n          host: ${{ secrets.SERVER_IP }}\n          username: ${{ secrets.SSH_USER }}\n          key: ${{ secrets.SSH_PRIVATE_KEY }}\n          source: \"build/\"\n          target: \"/var/www/my-react-app\"\n          strip_components: 1\n\n      - name: Reload NGINX\n        uses: appleboy/ssh-action@v1.0.3\n        with:\n          host: ${{ secrets.SERVER_IP }}\n          username: ${{ secrets.SSH_USER }}\n          key: ${{ secrets.SSH_PRIVATE_KEY }}\n          script: sudo systemctl reload nginx\n\n# Add these secrets in your GitHub repo settings:\n# - SERVER_IP: your server's IP address\n# - SSH_USER: your SSH username\n# - SSH_PRIVATE_KEY: your SSH private key"
+        }
+      ]
+    },
+    {
+      "id": "nextjs-deployment",
+      "title": "9. Practical Deployment: Next.js Application",
+      "description": "Step-by-step guide to deploying a Next.js application with NGINX as a reverse proxy, covering SSR, API routes, and static asset optimization.",
+      "items": [
+        {
+          "label": "1. Build the Next.js Application",
+          "text": "Next.js applications run as Node.js servers in production. You can use the default build or enable standalone mode (output: 'standalone' in next.config.js) for a self-contained deployment folder. NGINX sits in front as a reverse proxy, forwarding dynamic requests to the Next.js server while serving static assets directly from disk for optimal performance."
+        },
+        {
+          "code": "# Build your Next.js app\nuser@local:~$ npm run build\n\n# Copy the build to your server (standalone mode example)\nuser@local:~$ scp -r .next/standalone/ /var/www/my-next-app/\nuser@local:~$ scp -r .next/static/ /var/www/my-next-app/.next/static/\nuser@local:~$ scp -r public/ /var/www/my-next-app/\n\n# Create a .env file on the server\nuser@server:~$ sudo nano /var/www/my-next-app/.env\nNODE_ENV=production\nPORT=3000\n# ... add your env vars here"
+        },
+        {
+          "label": "2. Run the Next.js Server with PM2",
+          "text": "Next.js needs a persistent Node.js process. Use PM2 for process management \u2014 it handles auto-restart, log management, and keeps your app alive across reboots."
+        },
+        {
+          "code": "# Install PM2 globally\nuser@server:~$ sudo npm install -g pm2\n\n# Start Next.js (standalone mode:\nuser@server:~$ cd /var/www/my-next-app\nuser@server:~$ pm2 start server.js --name my-next-app\n[PM2] Starting /var/www/my-next-app/server.js in fork_mode\n[PM2] Done.\n\n# For default build (next start):\n# pm2 start npm --name my-next-app -- start\n\n# Save process list for auto-restart on reboot\nuser@server:~$ pm2 save\nuser@server:~$ pm2 startup\n\n# Verify it is running\nuser@server:~$ curl -I http://localhost:3000\nHTTP/1.1 200 OK\n# Next.js is running locally on port 3000"
+        },
+        {
+          "label": "3. Configure NGINX as Reverse Proxy",
+          "text": "NGINX proxies all requests to the Next.js server, except for static assets which it serves directly from disk for maximum performance. This is the key difference from a React SPA \u2014 Next.js needs a Node.js backend."
+        },
+        {
+          "code": "user@server:~$ sudo nano /etc/nginx/sites-available/my-next-app\n\nserver {\n    listen 80;\n    server_name mynextapp.example.com;\n\n    root /var/www/my-next-app;\n\n    # Serve Next.js build artifacts directly (bypass Node.js)\n    location /_next/static/ {\n        alias /var/www/my-next-app/.next/static/;\n        expires 1y;\n        add_header Cache-Control \"public, immutable\";\n        access_log off;\n    }\n\n    # Serve public/ assets directly\n    location /static/ {\n        alias /var/www/my-next-app/public/;\n        expires 30d;\n        add_header Cache-Control \"public, immutable\";\n        access_log off;\n    }\n\n    # Favicon\n    location = /favicon.ico {\n        root /var/www/my-next-app/public;\n        access_log off;\n        log_not_found off;\n    }\n\n    # All other requests go to Next.js server\n    location / {\n        proxy_pass http://127.0.0.1:3000;\n        proxy_http_version 1.1;\n        proxy_set_header Upgrade $http_upgrade;\n        proxy_set_header Connection 'upgrade';\n        proxy_set_header Host $host;\n        proxy_set_header X-Real-IP $remote_addr;\n        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n        proxy_set_header X-Forwarded-Proto $scheme;\n        proxy_read_timeout 60s;\n        proxy_connect_timeout 10s;\n    }\n\n    access_log /var/log/nginx/my-next-app.access.log;\n    error_log  /var/log/nginx/my-next-app.error.log;\n}\n\nuser@server:~$ sudo ln -s /etc/nginx/sites-available/my-next-app /etc/nginx/sites-enabled/\nuser@server:~$ sudo nginx -t\nnginx: the configuration file /etc/nginx/nginx.conf syntax is ok\nnginx: configuration file /etc/nginx/nginx.conf test is successful\nuser@server:~$ sudo systemctl reload nginx"
+        },
+        {
+          "label": "4. Add Security Headers",
+          "code": "server {\n    listen 80;\n    server_name mynextapp.example.com;\n    root /var/www/my-next-app;\n\n    # Security headers\n    add_header X-Frame-Options \"SAMEORIGIN\" always;\n    add_header X-Content-Type-Options \"nosniff\" always;\n    add_header Referrer-Policy \"strict-origin-when-cross-origin\" always;\n    add_header Permissions-Policy \"camera=(), microphone=(), geolocation=()\" always;\n    add_header X-XSS-Protection \"1; mode=block\" always;\n    server_tokens off;\n\n    location /_next/static/ {\n        alias /var/www/my-next-app/.next/static/;\n        expires 1y;\n        add_header Cache-Control \"public, immutable\";\n        access_log off;\n    }\n\n    location / {\n        proxy_pass http://127.0.0.1:3000;\n        proxy_http_version 1.1;\n        proxy_set_header Upgrade $http_upgrade;\n        proxy_set_header Connection 'upgrade';\n        proxy_set_header Host $host;\n        proxy_set_header X-Real-IP $remote_addr;\n        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n        proxy_set_header X-Forwarded-Proto $scheme;\n    }\n}"
+        },
+        {
+          "label": "5. Enable HTTPS",
+          "code": "user@server:~$ sudo certbot --nginx -d mynextapp.example.com -d www.mynextapp.example.com\n\n# Certbot modifies your server block to add SSL and HTTP-to-HTTPS redirect automatically."
+        },
+        {
+          "label": "6. Complete Production Configuration",
+          "text": "Full production-ready NGINX configuration for a Next.js application with SSL, security headers, gzip, static asset caching, and reverse proxy to the Node.js server."
+        },
+        {
+          "code": "# HTTP -> HTTPS redirect\nserver {\n    listen 80;\n    listen [::]:80;\n    server_name mynextapp.example.com www.mynextapp.example.com;\n    return 301 https://$server_name$request_uri;\n}\n\n# HTTPS server block\nserver {\n    listen 443 ssl http2;\n    listen [::]:443 ssl http2;\n    server_name mynextapp.example.com www.mynextapp.example.com;\n\n    ssl_certificate     /etc/letsencrypt/live/mynextapp.example.com/fullchain.pem;\n    ssl_certificate_key /etc/letsencrypt/live/mynextapp.example.com/privkey.pem;\n    ssl_protocols TLSv1.2 TLSv1.3;\n    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;\n    ssl_prefer_server_ciphers off;\n    ssl_session_cache shared:SSL:10m;\n    ssl_session_timeout 1d;\n\n    root /var/www/my-next-app;\n\n    # Security headers\n    add_header X-Frame-Options \"SAMEORIGIN\" always;\n    add_header X-Content-Type-Options \"nosniff\" always;\n    add_header Referrer-Policy \"strict-origin-when-cross-origin\" always;\n    add_header Permissions-Policy \"camera=(), microphone=(), geolocation=()\" always;\n    add_header Strict-Transport-Security \"max-age=63072000; includeSubDomains; preload\" always;\n    server_tokens off;\n\n    # Gzip compression\n    gzip on;\n    gzip_vary on;\n    gzip_proxied any;\n    gzip_comp_level 6;\n    gzip_min_length 256;\n    gzip_types\n        text/plain\n        text/css\n        application/json\n        application/javascript\n        text/javascript\n        image/svg+xml;\n\n    # Serve Next.js build artifacts directly\n    location /_next/static/ {\n        alias /var/www/my-next-app/.next/static/;\n        expires 1y;\n        add_header Cache-Control \"public, immutable\";\n        access_log off;\n    }\n\n    # Serve public/ assets directly\n    location /static/ {\n        alias /var/www/my-next-app/public/;\n        expires 30d;\n        add_header Cache-Control \"public, immutable\";\n        access_log off;\n    }\n\n    # Favicon\n    location = /favicon.ico {\n        root /var/www/my-next-app/public;\n        access_log off;\n        log_not_found off;\n    }\n\n    # Reverse proxy all other requests to Next.js\n    location / {\n        proxy_pass http://127.0.0.1:3000;\n        proxy_http_version 1.1;\n        proxy_set_header Upgrade $http_upgrade;\n        proxy_set_header Connection 'upgrade';\n        proxy_set_header Host $host;\n        proxy_set_header X-Real-IP $remote_addr;\n        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n        proxy_set_header X-Forwarded-Proto $scheme;\n        proxy_read_timeout 60s;\n        proxy_connect_timeout 10s;\n    }\n\n    # Health check\n    location /health {\n        access_log off;\n        add_header Content-Type text/plain;\n        return 200 \"OK\";\n    }\n\n    # Deny hidden files\n    location ~ /\\. {\n        deny all;\n        access_log off;\n        log_not_found off;\n    }\n\n    access_log /var/log/nginx/my-next-app.access.log;\n    error_log  /var/log/nginx/my-next-app.error.log;\n}"
+        },
+        {
+          "label": "7. Next.js vs React SPA: Key Differences",
+          "table": {
+            "headers": [
+              "Aspect",
+              "React SPA",
+              "Next.js"
+            ],
+            "rows": [
+              [
+                "Serving method",
+                "Static files (NGINX serves directly)",
+                "Node.js server (NGINX reverse proxy)"
+              ],
+              [
+                "Runtime required",
+                "None (web server only)",
+                "Node.js process (PM2/systemd)"
+              ],
+              [
+                "Static assets",
+                "Served by NGINX from build/",
+                "Served by NGINX from .next/static/"
+              ],
+              [
+                "Page routing",
+                "Client-side via React Router (try_files)",
+                "Server-side + client-side (Next.js Router)"
+              ],
+              [
+                "API routes",
+                "Separate backend server",
+                "Built-in API routes in Next.js"
+              ],
+              [
+                "Caching strategy",
+                "Cache all hashed files forever",
+                "Cache _next/static forever; proxy HTML"
+              ],
+              [
+                "Build output",
+                "Static build/ folder",
+                "Server + .next/ folder"
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    {
       "id": "static-content",
-      "title": "Serving Static Content",
+      "title": "10. Serving Static Content",
       "description": "Optimizing NGINX to serve static files efficiently with caching and access control.",
       "items": [
         {
@@ -163,37 +498,8 @@
       ]
     },
     {
-      "id": "location-blocks",
-      "title": "Location Blocks Deep Dive",
-      "description": "Understanding how NGINX location blocks match and prioritize.",
-      "items": [
-        {
-          "label": "Location Modifiers Reference",
-          "table": {
-            "headers": ["Modifier", "Example", "Description"],
-            "rows": [
-              ["none", "location /api", "Prefix match \u2014 matches any URI starting with /api"],
-              ["=", "location = /login", "Exact match \u2014 highest priority, stops searching immediately"],
-              ["~", "location ~ \\.php$", "Case-sensitive regex match"],
-              ["~*", "location ~* \\.(jpg|png)$", "Case-insensitive regex match"],
-              ["^~", "location ^~ /static/", "Preferential prefix \u2014 if matched, skip regex checking"],
-              ["@", "location @fallback", "Named location (internal use only)"]
-            ]
-          }
-        },
-        {
-          "label": "Location Matching Order",
-          "text": "NGINX evaluates location blocks in this precise order:\n\n1. Exact match (= /path) \u2014 if found, use it immediately.\n2. Preferential prefix (^~ /path) \u2014 longest match wins; if matched, skip regex phase.\n3. Longest prefix match (no modifier) \u2014 stored as candidate.\n4. Regex matches (~ and ~*) \u2014 checked in order of appearance; first match wins.\n5. If step 3 had a candidate, use it. Otherwise, return 404.\n\nKey insight: prefix matches happen first, but regex matches override them unless ^~ or = is used. To force a prefix match over regex, use ^~."
-        },
-        {
-          "label": "Common Location Patterns",
-          "code": "server {\n    root /var/www/html;\n\n    # Exact match \u2014 highest priority\n    location = / {\n        index index.html;\n    }\n\n    # Preferential prefix \u2014 skip regex\n    location ^~ /static/ {\n        expires 365d;\n        add_header Cache-Control \"public, immutable\";\n    }\n\n    # Case-insensitive regex for image files\n    location ~* \\.(jpg|jpeg|png|gif|ico|webp)$ {\n        expires 30d;\n    }\n\n    # PHP processing\n    location ~ \\.php$ {\n        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;\n        fastcgi_index index.php;\n        include fastcgi_params;\n    }\n\n    # API proxy\n    location /api/ {\n        proxy_pass http://backend_api;\n        proxy_set_header Host $host;\n    }\n\n    # Deny hidden files\n    location ~ /\\. {\n        deny all;\n        access_log off;\n        log_not_found off;\n    }\n\n    # Named location for error fallback\n    location @error_404 {\n        root /var/www/errors;\n        try_files /404.html =404;\n    }\n    error_page 404 @error_404;\n}"
-        }
-      ]
-    },
-    {
       "id": "reverse-proxy",
-      "title": "Reverse Proxy Configuration",
+      "title": "11. Reverse Proxy Configuration",
       "description": "Forwarding requests to backend application servers with proper headers and timeouts.",
       "items": [
         {
@@ -203,13 +509,37 @@
         {
           "label": "Proxy Headers Explained",
           "table": {
-            "headers": ["Header", "Purpose", "Example Value"],
+            "headers": [
+              "Header",
+              "Purpose",
+              "Example Value"
+            ],
             "rows": [
-              ["Host", "Original host requested by client", "app.example.com"],
-              ["X-Real-IP", "Client's real IP address", "203.0.113.42"],
-              ["X-Forwarded-For", "Chain of IPs the request passed through", "203.0.113.42, 10.0.0.1"],
-              ["X-Forwarded-Proto", "Original protocol (http or https)", "https"],
-              ["X-Forwarded-Host", "Original hostname (behind proxies)", "app.example.com"]
+              [
+                "Host",
+                "Original host requested by client",
+                "app.example.com"
+              ],
+              [
+                "X-Real-IP",
+                "Client's real IP address",
+                "203.0.113.42"
+              ],
+              [
+                "X-Forwarded-For",
+                "Chain of IPs the request passed through",
+                "203.0.113.42, 10.0.0.1"
+              ],
+              [
+                "X-Forwarded-Proto",
+                "Original protocol (http or https)",
+                "https"
+              ],
+              [
+                "X-Forwarded-Host",
+                "Original hostname (behind proxies)",
+                "app.example.com"
+              ]
             ]
           }
         },
@@ -225,7 +555,7 @@
     },
     {
       "id": "load-balancing",
-      "title": "Load Balancing",
+      "title": "12. Load Balancing",
       "description": "Distributing traffic across multiple backend servers for scale and redundancy.",
       "items": [
         {
@@ -239,14 +569,42 @@
         {
           "label": "Upstream Server Parameters",
           "table": {
-            "headers": ["Parameter", "Description", "Default"],
+            "headers": [
+              "Parameter",
+              "Description",
+              "Default"
+            ],
             "rows": [
-              ["weight=N", "Weight for load balancing (round-robin)", "1"],
-              ["max_conns=N", "Max simultaneous connections to this server", "0 (unlimited)"],
-              ["max_fails=N", "Number of failures before marking as down", "1"],
-              ["fail_timeout=time", "Time to consider a failure; how long server stays down", "10s"],
-              ["backup", "Server is a backup \u2014 only used when others are down", "\u2014"],
-              ["down", "Server is permanently unavailable (maintenance)", "\u2014"]
+              [
+                "weight=N",
+                "Weight for load balancing (round-robin)",
+                "1"
+              ],
+              [
+                "max_conns=N",
+                "Max simultaneous connections to this server",
+                "0 (unlimited)"
+              ],
+              [
+                "max_fails=N",
+                "Number of failures before marking as down",
+                "1"
+              ],
+              [
+                "fail_timeout=time",
+                "Time to consider a failure; how long server stays down",
+                "10s"
+              ],
+              [
+                "backup",
+                "Server is a backup \u2014 only used when others are down",
+                "\u2014"
+              ],
+              [
+                "down",
+                "Server is permanently unavailable (maintenance)",
+                "\u2014"
+              ]
             ]
           }
         },
@@ -258,7 +616,7 @@
     },
     {
       "id": "ssl-tls",
-      "title": "SSL/TLS with Let's Encrypt",
+      "title": "13. SSL/TLS with Let's Encrypt",
       "description": "Securing your sites with free SSL certificates from Let's Encrypt.",
       "items": [
         {
@@ -285,7 +643,7 @@
     },
     {
       "id": "http2-http3",
-      "title": "HTTP/2 and HTTP/3",
+      "title": "14. HTTP/2 and HTTP/3",
       "description": "Enabling modern HTTP protocols for better performance.",
       "items": [
         {
@@ -299,77 +657,129 @@
         {
           "label": "Protocol Comparison",
           "table": {
-            "headers": ["Feature", "HTTP/1.1", "HTTP/2", "HTTP/3 (QUIC)"],
+            "headers": [
+              "Feature",
+              "HTTP/1.1",
+              "HTTP/2",
+              "HTTP/3 (QUIC)"
+            ],
             "rows": [
-              ["Transport", "TCP", "TCP", "QUIC (UDP)"],
-              ["Multiplexing", "No (sequential)", "Yes (stream multiplexing)", "Yes (native multiplexing)"],
-              ["Head-of-line blocking", "Yes (request level)", "Yes (TCP level)", "No (UDP, per-stream)"],
-              ["Connection setup", "3-way handshake + TLS", "3-way handshake + TLS", "0-RTT / 1-RTT"],
-              ["Header compression", "No", "Yes (HPACK)", "Yes (QPACK)"],
-              ["Encryption required", "No", "Yes (de facto)", "Yes (mandatory)"]
+              [
+                "Transport",
+                "TCP",
+                "TCP",
+                "QUIC (UDP)"
+              ],
+              [
+                "Multiplexing",
+                "No (sequential)",
+                "Yes (stream multiplexing)",
+                "Yes (native multiplexing)"
+              ],
+              [
+                "Head-of-line blocking",
+                "Yes (request level)",
+                "Yes (TCP level)",
+                "No (UDP, per-stream)"
+              ],
+              [
+                "Connection setup",
+                "3-way handshake + TLS",
+                "3-way handshake + TLS",
+                "0-RTT / 1-RTT"
+              ],
+              [
+                "Header compression",
+                "No",
+                "Yes (HPACK)",
+                "Yes (QPACK)"
+              ],
+              [
+                "Encryption required",
+                "No",
+                "Yes (de facto)",
+                "Yes (mandatory)"
+              ]
             ]
           }
         }
       ]
     },
     {
-      "id": "gzip-compression",
-      "title": "Gzip & Brotli Compression",
-      "description": "Reducing bandwidth usage with response compression.",
+      "id": "security-headers",
+      "title": "15. Security Headers",
+      "description": "Adding essential security headers to protect your users.",
       "items": [
         {
-          "label": "Gzip Configuration",
-          "code": "http {\n    gzip on;\n    gzip_vary on;\n    gzip_proxied any;\n    gzip_comp_level 5;\n    gzip_min_length 256;\n    gzip_disable \"msie6\";\n    gzip_types\n        text/plain\n        text/css\n        text/xml\n        text/javascript\n        application/json\n        application/javascript\n        application/xml\n        application/rss+xml\n        image/svg+xml\n        font/woff\n        font/woff2;\n\n    # Serve pre-compressed files if available\n    gzip_static on;\n}\n\n# Test compression:\nuser@server:~$ curl -H \"Accept-Encoding: gzip\" -I http://example.com/styles.css\nHTTP/1.1 200 OK\nContent-Encoding: gzip\nVary: Accept-Encoding\n\n# Pre-compress static files:\nuser@server:~$ find /var/www -type f \\( -name '*.css' -o -name '*.js' -o -name '*.html' \\) -exec gzip -kf {} \\;"
+          "label": "Security Headers Snippet",
+          "code": "# /etc/nginx/snippets/security-headers.conf\n# Include in server block: include snippets/security-headers.conf;\n\nadd_header Strict-Transport-Security \"max-age=63072000; includeSubDomains; preload\" always;\nadd_header X-Frame-Options \"SAMEORIGIN\" always;\nadd_header X-Content-Type-Options \"nosniff\" always;\nadd_header X-XSS-Protection \"1; mode=block\" always;\nadd_header Referrer-Policy \"strict-origin-when-cross-origin\" always;\nadd_header Permissions-Policy \"camera=(), microphone=(), geolocation=()\" always;\nadd_header Cross-Origin-Embedder-Policy \"require-corp\" always;\nadd_header Cross-Origin-Opener-Policy \"same-origin\" always;\n\n# Content Security Policy (customize per application)\nadd_header Content-Security-Policy \"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; form-action 'self'; frame-ancestors 'self'; object-src 'none'\" always;\n\n# Cache control for sensitive pages\nlocation /account/ {\n    add_header Cache-Control \"no-store, no-cache, must-revalidate, private\" always;\n}"
         },
         {
-          "label": "Compression Comparison",
+          "label": "CSP Directive Reference",
           "table": {
-            "headers": ["Format", "Compression Ratio", "CPU Usage", "Browser Support"],
+            "headers": [
+              "Directive",
+              "Purpose",
+              "Example"
+            ],
             "rows": [
-              ["No compression", "1:1 (baseline)", "None", "100%"],
-              ["Gzip (level 1)", "~3:1", "Low", "99%+"],
-              ["Gzip (level 6)", "~5:1", "Medium", "99%+"],
-              ["Gzip (level 9)", "~5.5:1", "High", "99%+"],
-              ["Brotli (level 4)", "~5:1", "Medium", "85%+"],
-              ["Brotli (level 11)", "~7:1", "Very High", "85%+"]
+              [
+                "default-src",
+                "Fallback for all resource types",
+                "'self'"
+              ],
+              [
+                "script-src",
+                "Allowed script sources",
+                "'self' 'unsafe-inline' https://cdn.example.com"
+              ],
+              [
+                "style-src",
+                "Allowed CSS sources",
+                "'self' 'unsafe-inline'"
+              ],
+              [
+                "img-src",
+                "Allowed image sources",
+                "'self' data: https:"
+              ],
+              [
+                "connect-src",
+                "Allowed fetch/XMLHttpRequest origins",
+                "'self' https://api.example.com"
+              ],
+              [
+                "font-src",
+                "Allowed font sources",
+                "'self' data:"
+              ],
+              [
+                "frame-src",
+                "Allowed iframe sources",
+                "'none'"
+              ],
+              [
+                "frame-ancestors",
+                "Controls iframe embedding",
+                "'self'"
+              ],
+              [
+                "form-action",
+                "Allowed form submission targets",
+                "'self'"
+              ]
             ]
           }
-        }
-      ]
-    },
-    {
-      "id": "caching",
-      "title": "Caching (Proxy Cache & FastCGI Cache)",
-      "description": "Caching upstream responses to reduce backend load and improve latency.",
-      "items": [
-        {
-          "label": "Proxy Cache Configuration",
-          "code": "http {\n    proxy_cache_path /var/cache/nginx/proxy levels=1:2 keys_zone=mycache:10m max_size=10g inactive=60m use_temp_path=off;\n\n    server {\n        location / {\n            proxy_pass http://backend;\n            proxy_cache mycache;\n            proxy_cache_valid 200 302 60m;\n            proxy_cache_valid 404 1m;\n            proxy_cache_valid any 5m;\n            proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;\n            proxy_cache_background_update on;\n            proxy_cache_lock on;\n\n            proxy_cache_key \"$scheme$request_method$host$request_uri\";\n\n            proxy_no_cache $cookie_nocache $arg_nocache;\n            proxy_cache_bypass $cookie_nocache $arg_nocache;\n\n            add_header X-Cache-Status $upstream_cache_status;\n        }\n    }\n}\n\nuser@server:~$ sudo mkdir -p /var/cache/nginx/proxy\nuser@server:~$ sudo chown -R nginx:nginx /var/cache/nginx"
         },
         {
-          "label": "FastCGI Cache (PHP/WordPress)",
-          "code": "http {\n    fastcgi_cache_path /var/cache/nginx/fastcgi levels=1:2 keys_zone=phpcache:10m max_size=1g inactive=60m;\n\n    server {\n        location ~ \\.php$ {\n            fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;\n            fastcgi_index index.php;\n            include fastcgi_params;\n            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;\n\n            fastcgi_cache phpcache;\n            fastcgi_cache_valid 200 60m;\n            fastcgi_cache_use_stale error timeout updating;\n            fastcgi_cache_lock on;\n\n            fastcgi_no_cache $cookie_wordpress_logged_in;\n            fastcgi_cache_bypass $cookie_wordpress_logged_in;\n\n            fastcgi_cache_key \"$scheme$request_method$host$request_uri\";\n            add_header X-Cache-Status $upstream_cache_status;\n        }\n    }\n}"
-        }
-      ]
-    },
-    {
-      "id": "rate-limiting",
-      "title": "Rate Limiting",
-      "description": "Protecting your backends from abuse with request and connection rate limits.",
-      "items": [
-        {
-          "label": "Request Rate Limiting",
-          "code": "http {\n    limit_req_zone $binary_remote_addr zone=ip_limit:10m rate=10r/s;\n    limit_req_zone $request_uri zone=url_limit:10m rate=5r/s;\n\n    server {\n        location /api/ {\n            limit_req zone=ip_limit burst=20 nodelay;\n            limit_req_status 429;\n            error_page 429 /rate-limit.html;\n            proxy_pass http://backend_api;\n        }\n\n        # Strict limit on login (prevent brute force)\n        location /login {\n            limit_req zone=ip_limit burst=3 nodelay;\n            proxy_pass http://backend_auth;\n        }\n    }\n}\n\n# Test:\nuser@server:~$ for i in {1..15}; do curl -s -o /dev/null -w \"%{http_code}\\n\" http://example.com/api/test; done\n200\n200\n200\n200\n200\n200\n200\n200\n200\n200\n429\n429\n429\n429\n429"
-        },
-        {
-          "label": "Connection Rate & Bandwidth Limiting",
-          "code": "http {\n    limit_conn_zone $binary_remote_addr zone=conn_per_ip:10m;\n    limit_conn_zone $server_name zone=conn_per_server:10m;\n\n    server {\n        limit_conn conn_per_ip 10;\n        limit_conn conn_per_server 1000;\n        limit_conn_status 503;\n\n        location / {\n            proxy_pass http://backend;\n        }\n\n        location /downloads/ {\n            limit_conn conn_per_ip 3;\n            limit_rate 500k;\n            limit_rate_after 10m;\n        }\n    }\n}"
+          "label": "Verify Security Headers",
+          "code": "user@server:~$ curl -s -I https://example.com | grep -i 'strict-transport\\|x-frame\\|x-content\\|content-security\\|referrer-policy'\nstrict-transport-security: max-age=63072000; includeSubDomains; preload\nx-frame-options: SAMEORIGIN\nx-content-type-options: nosniff\ncontent-security-policy: default-src 'self'\nreferrer-policy: strict-origin-when-cross-origin\n\n# Test with online tools:\n# - https://securityheaders.com (Qualys SSL Labs)\n# - https://observatory.mozilla.org"
         }
       ]
     },
     {
       "id": "access-control",
-      "title": "Access Control & Authentication",
+      "title": "16. Access Control & Authentication",
       "description": "Restricting access based on IP, geolocation, or credentials.",
       "items": [
         {
@@ -387,8 +797,166 @@
       ]
     },
     {
+      "id": "gzip-compression",
+      "title": "17. Gzip & Brotli Compression",
+      "description": "Reducing bandwidth usage with response compression.",
+      "items": [
+        {
+          "label": "Gzip Configuration",
+          "code": "http {\n    gzip on;\n    gzip_vary on;\n    gzip_proxied any;\n    gzip_comp_level 5;\n    gzip_min_length 256;\n    gzip_disable \"msie6\";\n    gzip_types\n        text/plain\n        text/css\n        text/xml\n        text/javascript\n        application/json\n        application/javascript\n        application/xml\n        application/rss+xml\n        image/svg+xml\n        font/woff\n        font/woff2;\n\n    # Serve pre-compressed files if available\n    gzip_static on;\n}\n\n# Test compression:\nuser@server:~$ curl -H \"Accept-Encoding: gzip\" -I http://example.com/styles.css\nHTTP/1.1 200 OK\nContent-Encoding: gzip\nVary: Accept-Encoding\n\n# Pre-compress static files:\nuser@server:~$ find /var/www -type f \\( -name '*.css' -o -name '*.js' -o -name '*.html' \\) -exec gzip -kf {} \\;"
+        },
+        {
+          "label": "Compression Comparison",
+          "table": {
+            "headers": [
+              "Format",
+              "Compression Ratio",
+              "CPU Usage",
+              "Browser Support"
+            ],
+            "rows": [
+              [
+                "No compression",
+                "1:1 (baseline)",
+                "None",
+                "100%"
+              ],
+              [
+                "Gzip (level 1)",
+                "~3:1",
+                "Low",
+                "99%+"
+              ],
+              [
+                "Gzip (level 6)",
+                "~5:1",
+                "Medium",
+                "99%+"
+              ],
+              [
+                "Gzip (level 9)",
+                "~5.5:1",
+                "High",
+                "99%+"
+              ],
+              [
+                "Brotli (level 4)",
+                "~5:1",
+                "Medium",
+                "85%+"
+              ],
+              [
+                "Brotli (level 11)",
+                "~7:1",
+                "Very High",
+                "85%+"
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "caching",
+      "title": "18. Caching (Proxy Cache & FastCGI Cache)",
+      "description": "Caching upstream responses to reduce backend load and improve latency.",
+      "items": [
+        {
+          "label": "Proxy Cache Configuration",
+          "code": "http {\n    proxy_cache_path /var/cache/nginx/proxy levels=1:2 keys_zone=mycache:10m max_size=10g inactive=60m use_temp_path=off;\n\n    server {\n        location / {\n            proxy_pass http://backend;\n            proxy_cache mycache;\n            proxy_cache_valid 200 302 60m;\n            proxy_cache_valid 404 1m;\n            proxy_cache_valid any 5m;\n            proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;\n            proxy_cache_background_update on;\n            proxy_cache_lock on;\n\n            proxy_cache_key \"$scheme$request_method$host$request_uri\";\n\n            proxy_no_cache $cookie_nocache $arg_nocache;\n            proxy_cache_bypass $cookie_nocache $arg_nocache;\n\n            add_header X-Cache-Status $upstream_cache_status;\n        }\n    }\n}\n\nuser@server:~$ sudo mkdir -p /var/cache/nginx/proxy\nuser@server:~$ sudo chown -R nginx:nginx /var/cache/nginx"
+        },
+        {
+          "label": "FastCGI Cache (PHP/WordPress)",
+          "code": "http {\n    fastcgi_cache_path /var/cache/nginx/fastcgi levels=1:2 keys_zone=phpcache:10m max_size=1g inactive=60m;\n\n    server {\n        location ~ \\.php$ {\n            fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;\n            fastcgi_index index.php;\n            include fastcgi_params;\n            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;\n\n            fastcgi_cache phpcache;\n            fastcgi_cache_valid 200 60m;\n            fastcgi_cache_use_stale error timeout updating;\n            fastcgi_cache_lock on;\n\n            fastcgi_no_cache $cookie_wordpress_logged_in;\n            fastcgi_cache_bypass $cookie_wordpress_logged_in;\n\n            fastcgi_cache_key \"$scheme$request_method$host$request_uri\";\n            add_header X-Cache-Status $upstream_cache_status;\n        }\n    }\n}"
+        }
+      ]
+    },
+    {
+      "id": "performance-tuning",
+      "title": "19. Performance Tuning & Benchmarking",
+      "description": "Optimizing NGINX for maximum throughput and measuring performance.",
+      "items": [
+        {
+          "label": "Worker & Connection Tuning",
+          "code": "# /etc/nginx/nginx.conf \u2014 Performance tuning\n\nworker_processes auto;\n\nevents {\n    worker_connections  4096;\n    multi_accept on;\n    accept_mutex on;\n    accept_mutex_delay 100ms;\n    use epoll;\n}\n\nhttp {\n    sendfile on;\n    sendfile_max_chunk 1m;\n    tcp_nopush on;\n    tcp_nodelay on;\n\n    keepalive_requests 1000;\n    keepalive_timeout 65s;\n\n    client_body_buffer_size 128k;\n    client_max_body_size 10m;\n    client_header_buffer_size 1k;\n    large_client_header_buffers 4 8k;\n\n    output_buffers 32 32k;\n    postpone_output 1460;\n\n    open_file_cache max=2000 inactive=20s;\n    open_file_cache_valid 30s;\n    open_file_cache_min_uses 2;\n    open_file_cache_errors on;\n}\n\n# Max connections = worker_processes \u00d7 worker_connections\n# 4 workers \u00d7 4096 = 16,384 concurrent connections"
+        },
+        {
+          "label": "Upstream Keepalive Pooling",
+          "code": "upstream backend {\n    server 10.0.0.10:3000;\n    server 10.0.0.11:3000;\n    keepalive 32;                    # Keep 32 idle connections to upstreams\n    keepalive_requests 100;\n    keepalive_timeout 60s;\n}\n\nserver {\n    location / {\n        proxy_pass http://backend;\n        proxy_http_version 1.1;      # Required for keepalive\n        proxy_set_header Connection \"\";\n    }\n}"
+        },
+        {
+          "label": "Benchmarking with ab / wrk / hey",
+          "code": "# Install tools\nuser@server:~$ sudo apt install apache2-utils -y   # ab\nuser@server:~$ sudo snap install hey               # hey\n\n# Apache Bench: 10,000 requests, 100 concurrent\nuser@server:~$ ab -n 10000 -c 100 http://example.com/\nServer Software:        nginx/1.24.0\nServer Hostname:        example.com\nServer Port:            80\n\nConcurrency Level:      100\nTime taken for tests:   2.345 seconds\nComplete requests:      10000\nFailed requests:        0\nRequests per second:    4264.39 [#/sec] (mean)\nTime per request:       23.450 [ms] (mean)\nTransfer rate:          3102.56 [Kbytes/sec] received\n\nConnection Times (ms)\n              min  mean[+/-sd] median   max\nConnect:        0    0   0.1      0       1\nProcessing:     5   23   8.3     22      67\nTotal:          5   23   8.3     22      67\n\nPercentage of the requests served within a certain time (ms)\n  50%     22\n  66%     25\n  75%     27\n  90%     33\n  95%     39\n  98%     48\n  99%     55\n 100%     67 (longest request)"
+        },
+        {
+          "label": "Performance Targets",
+          "table": {
+            "headers": [
+              "Metric",
+              "Good",
+              "Great",
+              "Elite"
+            ],
+            "rows": [
+              [
+                "Requests per second",
+                "> 5,000",
+                "> 20,000",
+                "> 50,000"
+              ],
+              [
+                "Latency (P50)",
+                "< 50ms",
+                "< 20ms",
+                "< 5ms"
+              ],
+              [
+                "Latency (P99)",
+                "< 200ms",
+                "< 100ms",
+                "< 50ms"
+              ],
+              [
+                "Concurrent connections",
+                "> 1,000",
+                "> 10,000",
+                "> 50,000"
+              ],
+              [
+                "Transfer rate",
+                "> 50 MB/s",
+                "> 200 MB/s",
+                "> 1 GB/s"
+              ],
+              [
+                "Error rate",
+                "< 1%",
+                "< 0.1%",
+                "< 0.01%"
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "rate-limiting",
+      "title": "20. Rate Limiting",
+      "description": "Protecting your backends from abuse with request and connection rate limits.",
+      "items": [
+        {
+          "label": "Request Rate Limiting",
+          "code": "http {\n    limit_req_zone $binary_remote_addr zone=ip_limit:10m rate=10r/s;\n    limit_req_zone $request_uri zone=url_limit:10m rate=5r/s;\n\n    server {\n        location /api/ {\n            limit_req zone=ip_limit burst=20 nodelay;\n            limit_req_status 429;\n            error_page 429 /rate-limit.html;\n            proxy_pass http://backend_api;\n        }\n\n        # Strict limit on login (prevent brute force)\n        location /login {\n            limit_req zone=ip_limit burst=3 nodelay;\n            proxy_pass http://backend_auth;\n        }\n    }\n}\n\n# Test:\nuser@server:~$ for i in {1..15}; do curl -s -o /dev/null -w \"%{http_code}\\n\" http://example.com/api/test; done\n200\n200\n200\n200\n200\n200\n200\n200\n200\n200\n429\n429\n429\n429\n429"
+        },
+        {
+          "label": "Connection Rate & Bandwidth Limiting",
+          "code": "http {\n    limit_conn_zone $binary_remote_addr zone=conn_per_ip:10m;\n    limit_conn_zone $server_name zone=conn_per_server:10m;\n\n    server {\n        limit_conn conn_per_ip 10;\n        limit_conn conn_per_server 1000;\n        limit_conn_status 503;\n\n        location / {\n            proxy_pass http://backend;\n        }\n\n        location /downloads/ {\n            limit_conn conn_per_ip 3;\n            limit_rate 500k;\n            limit_rate_after 10m;\n        }\n    }\n}"
+        }
+      ]
+    },
+    {
       "id": "rewrites-redirects",
-      "title": "Rewrites & Redirects",
+      "title": "21. Rewrites & Redirects",
       "description": "URL rewriting and redirection rules.",
       "items": [
         {
@@ -402,8 +970,19 @@
       ]
     },
     {
+      "id": "websocket-proxy",
+      "title": "22. WebSocket Proxying",
+      "description": "Configuring NGINX to proxy WebSocket connections for real-time apps.",
+      "items": [
+        {
+          "label": "WebSocket Proxy Configuration",
+          "code": "map $http_upgrade $connection_upgrade {\n    default  \"upgrade\";\n    \"\"      \"close\";\n}\n\nupstream ws_backend {\n    ip_hash;\n    server 10.0.0.10:8080;\n    server 10.0.0.11:8080;\n    server 10.0.0.12:8080;\n}\n\nserver {\n    listen 443 ssl http2;\n    server_name ws.example.com;\n\n    ssl_certificate     /etc/letsencrypt/live/ws.example.com/fullchain.pem;\n    ssl_certificate_key /etc/letsencrypt/live/ws.example.com/privkey.pem;\n\n    location /ws/ {\n        proxy_pass http://ws_backend;\n        proxy_http_version 1.1;\n\n        proxy_set_header Upgrade $http_upgrade;\n        proxy_set_header Connection $connection_upgrade;\n        proxy_set_header Host $host;\n        proxy_set_header X-Real-IP $remote_addr;\n        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n\n        proxy_read_timeout 86400s;\n        proxy_send_timeout 86400s;\n        proxy_connect_timeout 30s;\n\n        proxy_buffering off;\n    }\n}\n\n# Test WebSocket with wscat:\nuser@server:~$ npm install -g wscat\nuser@server:~$ wscat -c wss://ws.example.com/ws/chat\nConnected (press CTRL+C to quit)\n> {\"type\":\"ping\"}\n< {\"type\":\"pong\",\"timestamp\":\"2026-05-19T10:00:00Z\"}"
+        }
+      ]
+    },
+    {
       "id": "logging",
-      "title": "Logging Configuration",
+      "title": "23. Logging Configuration",
       "description": "Configuring access logs, error logs, and custom log formats.",
       "items": [
         {
@@ -417,51 +996,8 @@
       ]
     },
     {
-      "id": "security-headers",
-      "title": "Security Headers",
-      "description": "Adding essential security headers to protect your users.",
-      "items": [
-        {
-          "label": "Security Headers Snippet",
-          "code": "# /etc/nginx/snippets/security-headers.conf\n# Include in server block: include snippets/security-headers.conf;\n\nadd_header Strict-Transport-Security \"max-age=63072000; includeSubDomains; preload\" always;\nadd_header X-Frame-Options \"SAMEORIGIN\" always;\nadd_header X-Content-Type-Options \"nosniff\" always;\nadd_header X-XSS-Protection \"1; mode=block\" always;\nadd_header Referrer-Policy \"strict-origin-when-cross-origin\" always;\nadd_header Permissions-Policy \"camera=(), microphone=(), geolocation=()\" always;\nadd_header Cross-Origin-Embedder-Policy \"require-corp\" always;\nadd_header Cross-Origin-Opener-Policy \"same-origin\" always;\n\n# Content Security Policy (customize per application)\nadd_header Content-Security-Policy \"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; form-action 'self'; frame-ancestors 'self'; object-src 'none'\" always;\n\n# Cache control for sensitive pages\nlocation /account/ {\n    add_header Cache-Control \"no-store, no-cache, must-revalidate, private\" always;\n}"
-        },
-        {
-          "label": "CSP Directive Reference",
-          "table": {
-            "headers": ["Directive", "Purpose", "Example"],
-            "rows": [
-              ["default-src", "Fallback for all resource types", "'self'"],
-              ["script-src", "Allowed script sources", "'self' 'unsafe-inline' https://cdn.example.com"],
-              ["style-src", "Allowed CSS sources", "'self' 'unsafe-inline'"],
-              ["img-src", "Allowed image sources", "'self' data: https:"],
-              ["connect-src", "Allowed fetch/XMLHttpRequest origins", "'self' https://api.example.com"],
-              ["font-src", "Allowed font sources", "'self' data:"],
-              ["frame-src", "Allowed iframe sources", "'none'"],
-              ["frame-ancestors", "Controls iframe embedding", "'self'"],
-              ["form-action", "Allowed form submission targets", "'self'"]
-            ]
-          }
-        },
-        {
-          "label": "Verify Security Headers",
-          "code": "user@server:~$ curl -s -I https://example.com | grep -i 'strict-transport\\|x-frame\\|x-content\\|content-security\\|referrer-policy'\nstrict-transport-security: max-age=63072000; includeSubDomains; preload\nx-frame-options: SAMEORIGIN\nx-content-type-options: nosniff\ncontent-security-policy: default-src 'self'\nreferrer-policy: strict-origin-when-cross-origin\n\n# Test with online tools:\n# - https://securityheaders.com (Qualys SSL Labs)\n# - https://observatory.mozilla.org"
-        }
-      ]
-    },
-    {
-      "id": "websocket-proxy",
-      "title": "WebSocket Proxying",
-      "description": "Configuring NGINX to proxy WebSocket connections for real-time apps.",
-      "items": [
-        {
-          "label": "WebSocket Proxy Configuration",
-          "code": "map $http_upgrade $connection_upgrade {\n    default  \"upgrade\";\n    \"\"      \"close\";\n}\n\nupstream ws_backend {\n    ip_hash;\n    server 10.0.0.10:8080;\n    server 10.0.0.11:8080;\n    server 10.0.0.12:8080;\n}\n\nserver {\n    listen 443 ssl http2;\n    server_name ws.example.com;\n\n    ssl_certificate     /etc/letsencrypt/live/ws.example.com/fullchain.pem;\n    ssl_certificate_key /etc/letsencrypt/live/ws.example.com/privkey.pem;\n\n    location /ws/ {\n        proxy_pass http://ws_backend;\n        proxy_http_version 1.1;\n\n        proxy_set_header Upgrade $http_upgrade;\n        proxy_set_header Connection $connection_upgrade;\n        proxy_set_header Host $host;\n        proxy_set_header X-Real-IP $remote_addr;\n        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n\n        proxy_read_timeout 86400s;\n        proxy_send_timeout 86400s;\n        proxy_connect_timeout 30s;\n\n        proxy_buffering off;\n    }\n}\n\n# Test WebSocket with wscat:\nuser@server:~$ npm install -g wscat\nuser@server:~$ wscat -c wss://ws.example.com/ws/chat\nConnected (press CTRL+C to quit)\n> {\"type\":\"ping\"}\n< {\"type\":\"pong\",\"timestamp\":\"2026-05-19T10:00:00Z\"}"
-        }
-      ]
-    },
-    {
       "id": "monitoring",
-      "title": "Monitoring with stub_status",
+      "title": "24. Monitoring with stub_status",
       "description": "Tracking NGINX performance metrics in real-time.",
       "items": [
         {
@@ -480,7 +1016,7 @@
     },
     {
       "id": "docker-deployment",
-      "title": "Docker & Container Deployment",
+      "title": "25. Docker & Container Deployment",
       "description": "Running NGINX in Docker containers for portable deployments.",
       "items": [
         {
@@ -494,41 +1030,8 @@
       ]
     },
     {
-      "id": "performance-tuning",
-      "title": "Performance Tuning & Benchmarking",
-      "description": "Optimizing NGINX for maximum throughput and measuring performance.",
-      "items": [
-        {
-          "label": "Worker & Connection Tuning",
-          "code": "# /etc/nginx/nginx.conf \u2014 Performance tuning\n\nworker_processes auto;\n\nevents {\n    worker_connections  4096;\n    multi_accept on;\n    accept_mutex on;\n    accept_mutex_delay 100ms;\n    use epoll;\n}\n\nhttp {\n    sendfile on;\n    sendfile_max_chunk 1m;\n    tcp_nopush on;\n    tcp_nodelay on;\n\n    keepalive_requests 1000;\n    keepalive_timeout 65s;\n\n    client_body_buffer_size 128k;\n    client_max_body_size 10m;\n    client_header_buffer_size 1k;\n    large_client_header_buffers 4 8k;\n\n    output_buffers 32 32k;\n    postpone_output 1460;\n\n    open_file_cache max=2000 inactive=20s;\n    open_file_cache_valid 30s;\n    open_file_cache_min_uses 2;\n    open_file_cache_errors on;\n}\n\n# Max connections = worker_processes \u00d7 worker_connections\n# 4 workers \u00d7 4096 = 16,384 concurrent connections"
-        },
-        {
-          "label": "Upstream Keepalive Pooling",
-          "code": "upstream backend {\n    server 10.0.0.10:3000;\n    server 10.0.0.11:3000;\n    keepalive 32;                    # Keep 32 idle connections to upstreams\n    keepalive_requests 100;\n    keepalive_timeout 60s;\n}\n\nserver {\n    location / {\n        proxy_pass http://backend;\n        proxy_http_version 1.1;      # Required for keepalive\n        proxy_set_header Connection \"\";\n    }\n}"
-        },
-        {
-          "label": "Benchmarking with ab / wrk / hey",
-          "code": "# Install tools\nuser@server:~$ sudo apt install apache2-utils -y   # ab\nuser@server:~$ sudo snap install hey               # hey\n\n# Apache Bench: 10,000 requests, 100 concurrent\nuser@server:~$ ab -n 10000 -c 100 http://example.com/\nServer Software:        nginx/1.24.0\nServer Hostname:        example.com\nServer Port:            80\n\nConcurrency Level:      100\nTime taken for tests:   2.345 seconds\nComplete requests:      10000\nFailed requests:        0\nRequests per second:    4264.39 [#/sec] (mean)\nTime per request:       23.450 [ms] (mean)\nTransfer rate:          3102.56 [Kbytes/sec] received\n\nConnection Times (ms)\n              min  mean[+/-sd] median   max\nConnect:        0    0   0.1      0       1\nProcessing:     5   23   8.3     22      67\nTotal:          5   23   8.3     22      67\n\nPercentage of the requests served within a certain time (ms)\n  50%     22\n  66%     25\n  75%     27\n  90%     33\n  95%     39\n  98%     48\n  99%     55\n 100%     67 (longest request)"
-        },
-        {
-          "label": "Performance Targets",
-          "table": {
-            "headers": ["Metric", "Good", "Great", "Elite"],
-            "rows": [
-              ["Requests per second", "> 5,000", "> 20,000", "> 50,000"],
-              ["Latency (P50)", "< 50ms", "< 20ms", "< 5ms"],
-              ["Latency (P99)", "< 200ms", "< 100ms", "< 50ms"],
-              ["Concurrent connections", "> 1,000", "> 10,000", "> 50,000"],
-              ["Transfer rate", "> 50 MB/s", "> 200 MB/s", "> 1 GB/s"],
-              ["Error rate", "< 1%", "< 0.1%", "< 0.01%"]
-            ]
-          }
-        }
-      ]
-    },
-    {
       "id": "troubleshooting",
-      "title": "Troubleshooting",
+      "title": "26. Troubleshooting",
       "description": "Diagnosing and fixing common NGINX issues.",
       "items": [
         {
@@ -538,15 +1041,47 @@
         {
           "label": "HTTP Error Codes & Fixes",
           "table": {
-            "headers": ["Error", "Cause", "Solution"],
+            "headers": [
+              "Error",
+              "Cause",
+              "Solution"
+            ],
             "rows": [
-              ["400 Bad Request", "Malformed request or too large headers", "Increase large_client_header_buffers"],
-              ["403 Forbidden", "Directory index missing or denied access", "Check root/index directives; check permissions"],
-              ["404 Not Found", "File does not exist or wrong root path", "Check root/alias paths; check try_files chain"],
-              ["502 Bad Gateway", "Upstream server is down or unreachable", "Check backend service; check proxy_pass URL"],
-              ["503 Service Unavailable", "No available upstreams or rate-limited", "Check upstream servers; check limit_req zones"],
-              ["504 Gateway Timeout", "Upstream took too long to respond", "Increase proxy_read_timeout; optimize backend"],
-              ["413 Request Entity Too Large", "Request body exceeds client_max_body_size", "Increase client_max_body_size (default 1MB)"]
+              [
+                "400 Bad Request",
+                "Malformed request or too large headers",
+                "Increase large_client_header_buffers"
+              ],
+              [
+                "403 Forbidden",
+                "Directory index missing or denied access",
+                "Check root/index directives; check permissions"
+              ],
+              [
+                "404 Not Found",
+                "File does not exist or wrong root path",
+                "Check root/alias paths; check try_files chain"
+              ],
+              [
+                "502 Bad Gateway",
+                "Upstream server is down or unreachable",
+                "Check backend service; check proxy_pass URL"
+              ],
+              [
+                "503 Service Unavailable",
+                "No available upstreams or rate-limited",
+                "Check upstream servers; check limit_req zones"
+              ],
+              [
+                "504 Gateway Timeout",
+                "Upstream took too long to respond",
+                "Increase proxy_read_timeout; optimize backend"
+              ],
+              [
+                "413 Request Entity Too Large",
+                "Request body exceeds client_max_body_size",
+                "Increase client_max_body_size (default 1MB)"
+              ]
             ]
           }
         },
@@ -558,7 +1093,7 @@
     },
     {
       "id": "best-practices",
-      "title": "Best Practices & Production Checklist",
+      "title": "27. Best Practices & Production Checklist",
       "description": "Production-proven recommendations for running NGINX securely and reliably.",
       "items": [
         {
@@ -598,7 +1133,7 @@
     },
     {
       "id": "summary",
-      "title": "Summary & Next Steps",
+      "title": "28. Summary & Next Steps",
       "description": "Key takeaways and what to explore next.",
       "items": [
         {
