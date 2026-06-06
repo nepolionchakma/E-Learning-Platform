@@ -600,6 +600,26 @@
             {
               "label": "Stop system PostgreSQL on ALL 3 NODES",
               "code": "# ---------- NODE 0 ----------\nsudo systemctl stop postgresql\nsudo systemctl disable postgresql\nsudo systemctl mask postgresql\n\n# ---------- NODE 1 ----------\nsudo systemctl stop postgresql\nsudo systemctl disable postgresql\nsudo systemctl mask postgresql\n\n# ---------- NODE 2 ----------\nsudo systemctl stop postgresql\nsudo systemctl disable postgresql\nsudo systemctl mask postgresql\n\n# Verify: sudo ss -tulpn | grep 5432 (should show nothing)"
+            },
+            {
+              "label": "How Patroni & ETCD Manage PostgreSQL Independently of systemd",
+              "text": [
+                "After running stop + disable + mask, the OS-level systemd service for PostgreSQL is completely deactivated — systemd will never start, restart, or manage PostgreSQL on its own. Yet Patroni will still fully control PostgreSQL. Here's how:",
+                "",
+                "1. Patroni bypasses systemd entirely — It does NOT use systemctl to manage PostgreSQL. Instead, Patroni calls the PostgreSQL binaries directly (pg_ctl via its internal Python code) to start, stop, and reload the postgres process. Patroni spawns postgres as its own child process, not a systemd service.",
+                "",
+                "2. Patroni manages the full lifecycle — When Patroni starts (via sudo systemctl start patroni), it checks if PostgreSQL is already running on its configured port and data directory. If not, Patroni runs initdb to bootstrap a fresh data directory (if leader) or runs pg_basebackup to clone from the leader (if replica). It then starts postgres directly — all without involving the postgresql systemd service.",
+                "",
+                "3. ETCD provides the coordination layer — Patroni writes its leader lock and cluster state to ETCD (port 2379). ETDC has nothing to do with managing the PostgreSQL process itself — it's a distributed key-value store that Patroni uses for leader election and consensus. When the leader fails, replicas detect the expired lock in ETCD and hold a new election; the winner promotes itself by calling pg_ctl promote directly, again bypassing systemd.",
+                "",
+                "4. masking is intentional and safe — By masking postgresql.service, you prevent any other service, administrator command, or accidental reboot from starting the OS-managed PostgreSQL instance. This ensures only Patroni controls PostgreSQL, eliminating the risk of two PostgreSQL instances fighting over the same port or data directory.",
+                "",
+                "Think of it this way: the postgresql systemd unit is the OS-level packaging service that APT installed. Patroni is the HA orchestration layer that needs exclusive control. Stopping + disabling + masking the OS service is like disabling your car's built-in cruise control so your aftermarket autonomous driving system can take over completely — both can steer, but only one should at a time.",
+                "",
+                "Verification: after masking, start Patroni and check that the postgres process is running under Patroni's supervision:",
+                "  ps aux | grep -E 'patroni|postgres'  → postgres processes run as child of patroni, not systemd",
+                "  systemctl status postgresql  → shows 'masked', but PostgreSQL is running via Patroni"
+              ]
             }
           ]
         },
@@ -1023,7 +1043,7 @@
             },
             {
               "label": "IMPORTANT: HAProxy backend ports must match your actual PostgreSQL ports",
-              "code": "# ⚠️ The 5433 is in HAProxy config are the PostgreSQL port\n# from your Patroni config. They MUST match exactly.\n#\n# Correct example (same port on all nodes, e.g. 5433):\n#   Patroni config: port: 5433  →  HAProxy: 192.168.68.200:5433\n#   Patroni config: port: 5433  →  HAProxy: 192.168.68.201:5433\n#   Patroni config: port: 5433  →  HAProxy: 192.168.68.202:5433\n#\n# Alternative (different port per node):\n#   Patroni config: port: 5442  →  HAProxy: 192.168.68.200:5442\n#   Patroni config: port: 5443  →  HAProxy: 192.168.68.201:5443\n#   Patroni config: port: 5444  →  HAProxy: 192.168.68.202:5444\n#\n# How to verify your port:\nnepo@node0:~$ sudo grep -E 'listen:|connect_address:|port:' /etc/patroni/patroni-cluster-b.yml\nlisten: 192.168.68.200:8009\n connect_address: 192.168.68.200: 8009\n listen: 192.168.68.200: 5433\n connect_address: 192.168.68.200: 5433\n port: 5433"
+              "code": "# ⚠️ The 5433 is in HAProxy config are the PostgreSQL port\n# from your Patroni config. They MUST match exactly.\n#\n# Correct example (same port on all nodes, e.g. 5433):\n#   Patroni config: port: 5433  →  HAProxy: 192.168.68.200:5433\n#   Patroni config: port: 5433  →  HAProxy: 192.168.68.201:5433\n#   Patroni config: port: 5433  →  HAProxy: 192.168.68.202:5433\n#\n# Alternative (different port per node):\n#   Patroni config: port: 5442  →  HAProxy: 192.168.68.200:5442\n#   Patroni config: port: 5443  →  HAProxy: 192.168.68.201:5443\n#   Patroni config: port: 5444  →  HAProxy: 192.168.68.202:5444\n#\n# How to verify your port:\nnepo@node0:~$ sudo grep -E 'listen:|connect_address:|port:' /etc/patroni/patroni-cluster-b.yml\n listen: 192.168.68.200:8009\n connect_address: 192.168.68.200: 8009\n listen: 192.168.68.200: 5433\n connect_address: 192.168.68.200: 5433\n port: 5433"
             },
             {
               "label": "Open port 8009 on ALL 3 NODES (Cluster B health checks)",
