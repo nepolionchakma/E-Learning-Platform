@@ -94,7 +94,12 @@ function StripedBlock({
 
 function parseRawTerminal(text: string) {
   const lines = text.split("\n");
-  const blocks: { lines: string[]; bg: string; textColor: string; copy: string }[] = [];
+  const blocks: {
+    lines: string[];
+    bg: string;
+    textColor: string;
+    copy: string;
+  }[] = [];
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -103,7 +108,7 @@ function parseRawTerminal(text: string) {
     if (isPrompt) {
       blocks.push({
         lines: [line],
-        bg: "bg-zinc-200 dark:bg-zinc-800/60",
+        bg: "bg-zinc-100 dark:bg-zinc-800/100",
         textColor: "text-green-600 dark:text-green-400",
         copy: line.replace(/^\S+@\S+[:~#\$] /, "").trim(),
       });
@@ -122,7 +127,10 @@ function parseRawTerminal(text: string) {
 
     if (blocks.length > 0 && !isPrompt) {
       const last = blocks[blocks.length - 1];
-      if (last.bg === "bg-zinc-50 dark:bg-zinc-900" && !last.textColor.includes("green")) {
+      if (
+        last.bg === "bg-zinc-50 dark:bg-zinc-900" &&
+        !last.textColor.includes("green")
+      ) {
         last.lines.push(line);
         // keep the copy content in sync when we append lines
         last.copy = (last.copy ? last.copy + "\n" : "") + line;
@@ -149,7 +157,12 @@ function parseRawTerminal(text: string) {
   return blocks;
 }
 
-export default function TerminalBlock({ command, output, explanation, raw }: TerminalProps) {
+export default function TerminalBlock({
+  command,
+  output,
+  explanation,
+  raw,
+}: TerminalProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -176,18 +189,22 @@ export default function TerminalBlock({ command, output, explanation, raw }: Ter
           <span className="w-2 h-2 rounded-full bg-red-500" />
           <span className="w-2 h-2 rounded-full bg-yellow-500" />
           <span className="w-2 h-2 rounded-full bg-green-500" />
-          <span className="text-zinc-400 dark:text-zinc-500 text-[10px] ml-2">terminal output</span>
+          <span className="text-zinc-400 dark:text-zinc-500 text-[10px] ml-2">
+            terminal output
+          </span>
         </div>
         <div className="space-y-0">
-          {blocks.filter(b => b.lines.length > 0 || b.lines[0] !== "").map((block, i) => (
-            <StripedBlock
-              key={i}
-              lines={block.lines}
-              bg={block.bg}
-              textColor={block.textColor}
-              copyContent={block.copy}
-            />
-          ))}
+          {blocks
+            .filter((b) => b.lines.length > 0 || b.lines[0] !== "")
+            .map((block, i) => (
+              <StripedBlock
+                key={i}
+                lines={block.lines}
+                bg={block.bg}
+                textColor={block.textColor}
+                copyContent={block.copy}
+              />
+            ))}
         </div>
         {explanation && (
           <div className="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 border-t border-blue-200 dark:border-blue-800 text-zinc-700 dark:text-zinc-300">

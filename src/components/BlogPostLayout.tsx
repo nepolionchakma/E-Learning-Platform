@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import TerminalBlock from "@/components/TerminalBlock";
-import LinuxTerminal from "@/components/LinuxTerminal";
 import BlogActions from "@/components/BlogActions";
 import CommentSection from "@/components/CommentSection";
 
@@ -40,43 +39,6 @@ interface BlogPostLayoutProps {
   };
   slug: string;
   heroColor?: string;
-}
-
-function parseCodeBlocks(code: string): { command: string; output?: string }[] {
-  const blocks: { command: string; output?: string }[] = [];
-  const lines = code.split(/\r?\n/);
-  const promptRe = /^\s*\S+@\S+[,:~#\$]\s*(.*)$/;
-  let current: { command: string; outputLines: string[] } | null = null;
-  for (const line of lines) {
-    const m = line.match(promptRe);
-    if (m) {
-      if (current) {
-        blocks.push({
-          command: current.command,
-          output: current.outputLines.join("\n").trim(),
-        });
-      }
-      current = { command: m[1] || "", outputLines: [] };
-    } else {
-      if (current) {
-        current.outputLines.push(line);
-      } else {
-        if (blocks.length === 0) {
-          blocks.push({ command: line });
-        } else {
-          const last = blocks[blocks.length - 1];
-          last.output = (last.output ? last.output + "\n" : "") + line;
-        }
-      }
-    }
-  }
-  if (current) {
-    blocks.push({
-      command: current.command,
-      output: current.outputLines.join("\n").trim(),
-    });
-  }
-  return blocks;
 }
 
 function InfoBox({ type, content }: { type: string; content: string }) {
@@ -138,21 +100,6 @@ function DataTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
 
 function ContentItem({ item, slug }: { item: any; slug?: string }) {
   if (item.code) {
-    // For the PostgreSQL HA blog post we prefer the LinuxTerminal wrapper so
-    // terminal examples render with the same chrome as the linux topic.
-    if (slug === "postgresql-high-availability") {
-      return (
-        <div className="mb-4">
-          {item.label && (
-            <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2 uppercase tracking-wide">
-              {item.label}
-            </p>
-          )}
-          <LinuxTerminal raw={item.code} />
-        </div>
-      );
-    }
-    const blocks = parseCodeBlocks(item.code);
     return (
       <div className="mb-4">
         {item.label && (
@@ -160,9 +107,7 @@ function ContentItem({ item, slug }: { item: any; slug?: string }) {
             {item.label}
           </p>
         )}
-        {blocks.map((b, bi) => (
-          <TerminalBlock key={bi} command={b.command} output={b.output} />
-        ))}
+        <TerminalBlock raw={item.code} />
       </div>
     );
   }
@@ -244,14 +189,12 @@ function SectionRenderer({
         {section.title}
       </h2>
 
-      {/* content[] array (iptables-tutorial format) */}
       {section.content?.map((p, i) => (
         <p key={i} className="mb-4 text-sm sm:text-base">
           {p}
         </p>
       ))}
 
-      {/* infoBox */}
       {section.infoBox && (
         <InfoBox
           type={section.infoBox.type}
@@ -259,7 +202,6 @@ function SectionRenderer({
         />
       )}
 
-      {/* cards grid */}
       {section.cards && (
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 mb-4">
           {section.cards.map((card, i) => (
@@ -278,7 +220,6 @@ function SectionRenderer({
         </div>
       )}
 
-      {/* section image */}
       {section.image && (
         <div className="mb-6 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-700">
           <img
@@ -289,18 +230,10 @@ function SectionRenderer({
         </div>
       )}
 
-      {/* syntaxTerminal */}
-      {section.syntaxTerminal &&
-        (slug === "postgresql-high-availability" ? (
-          <LinuxTerminal raw={section.syntaxTerminal.command} />
-        ) : (
-          <TerminalBlock
-            command={section.syntaxTerminal.command}
-            explanation={section.syntaxTerminal.explanation}
-          />
-        ))}
+      {section.syntaxTerminal && (
+        <TerminalBlock raw={section.syntaxTerminal.command} />
+      )}
 
-      {/* tables */}
       {section.tables && (
         <DataTable
           headers={section.tables.headers}
@@ -332,21 +265,14 @@ function SectionRenderer({
         />
       )}
 
-      {/* packetFlow */}
       {section.packetFlow && (
-        <div className="mb-4 p-4 rounded-lg bg-zinc-900 text-green-400 font-mono text-xs sm:text-sm space-y-1">
-          {section.packetFlow.map((line, i) => (
-            <div key={i}>{line}</div>
-          ))}
-        </div>
+        <TerminalBlock raw={section.packetFlow.join('\n')} />
       )}
 
-      {/* items[] (standard format) */}
       {section.items?.map((item, ii) => (
         <ContentItem key={ii} item={item} slug={slug} />
       ))}
 
-      {/* subsections */}
       {section.subsections?.map((sub: any, ssi: number) => (
         <div key={ssi} className="mt-6 sm:mt-8 ml-0 sm:ml-2">
           {sub.title && (
@@ -355,51 +281,28 @@ function SectionRenderer({
             </h3>
           )}
 
-          {/* subsection content (text) */}
           {sub.content && (
             <p className="mb-3 text-sm sm:text-base">{sub.content}</p>
           )}
 
-          {/* subsection terminals[] */}
-          {sub.terminals?.map((t: any, ti: number) =>
-            slug === "postgresql-high-availability" ? (
-              <LinuxTerminal
-                key={ti}
-                raw={[t.command, t.output].filter(Boolean).join("\n")}
-              />
-            ) : (
-              <TerminalBlock
-                key={ti}
-                command={t.command}
-                output={t.output}
-                explanation={t.explanation}
-              />
-            ),
-          )}
+          {sub.terminals?.map((t: any, ti: number) => (
+            <TerminalBlock
+              key={ti}
+              raw={[t.command, t.output].filter(Boolean).join("\n")}
+            />
+          ))}
 
-          {/* subsection contentAfter */}
           {sub.contentAfter && (
             <p className="mb-3 mt-4 text-sm sm:text-base">{sub.contentAfter}</p>
           )}
 
-          {/* subsection terminalsAfter[] */}
-          {sub.terminalsAfter?.map((t: any, ti: number) =>
-            slug === "postgresql-high-availability" ? (
-              <LinuxTerminal
-                key={ti}
-                raw={[t.command, t.output].filter(Boolean).join("\n")}
-              />
-            ) : (
-              <TerminalBlock
-                key={ti}
-                command={t.command}
-                output={t.output}
-                explanation={t.explanation}
-              />
-            ),
-          )}
+          {sub.terminalsAfter?.map((t: any, ti: number) => (
+            <TerminalBlock
+              key={ti}
+              raw={[t.command, t.output].filter(Boolean).join("\n")}
+            />
+          ))}
 
-          {/* subsection steps[] */}
           {sub.steps && (
             <ol className="list-decimal list-inside space-y-2 mb-4 text-sm sm:text-base">
               {sub.steps.map((step: string, sti: number) => (
@@ -408,7 +311,6 @@ function SectionRenderer({
             </ol>
           )}
 
-          {/* subsection items[] (standard format) */}
           {sub.items?.map((item: any, ii: number) => (
             <ContentItem key={ii} item={item} slug={slug} />
           ))}
@@ -477,7 +379,6 @@ export default function BlogPostLayout({
         Back to Blogs
       </Link>
 
-      {/* Hero Section */}
       <div className="mb-8 sm:mb-10">
         {data.heroImage && !heroError ? (
           <div className="mb-4 sm:mb-6 rounded-xl sm:rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-700">
@@ -519,7 +420,6 @@ export default function BlogPostLayout({
         </div>
       </div>
 
-      {/* Mobile TOC Toggle */}
       <div className="lg:hidden mb-6">
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -571,7 +471,6 @@ export default function BlogPostLayout({
       </div>
 
       <div className="flex gap-6 lg:gap-8">
-        {/* Left Sidebar - Table of Contents */}
         <aside className="hidden lg:block w-56 xl:w-64 flex-shrink-0">
           <div className="sticky top-24 max-h-[calc(100vh-8rem)] overflow-y-auto">
             <h3 className="text-xs sm:text-sm font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide mb-3">
@@ -591,7 +490,6 @@ export default function BlogPostLayout({
           </div>
         </aside>
 
-        {/* Main Content */}
         <article className="flex-1 min-w-0 text-zinc-700 dark:text-zinc-300 leading-relaxed">
           {data.sections.map((section) => (
             <SectionRenderer key={section.id} section={section} slug={slug} />
