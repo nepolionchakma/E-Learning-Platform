@@ -113,11 +113,13 @@ function CommentItem({
   comment,
   depth = 0,
   onDelete,
+  onReplyPosted,
 }: {
   slug: string
   comment: CommentNode
   depth?: number
   onDelete: (id: string) => void
+  onReplyPosted?: () => void
 }) {
   const [showReply, setShowReply] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
@@ -206,7 +208,7 @@ function CommentItem({
               parentId={comment.id}
               onReplyPosted={() => {
                 setShowReply(false)
-                onDelete(comment.id)
+                onReplyPosted?.()
               }}
               onCancel={() => setShowReply(false)}
             />
@@ -222,6 +224,7 @@ function CommentItem({
                 comment={reply}
                 depth={depth + 1}
                 onDelete={onDelete}
+                onReplyPosted={onReplyPosted}
               />
             ))}
           </div>
@@ -375,6 +378,7 @@ export default function CommentSection({ slug }: CommentSectionProps) {
               slug={slug}
               comment={comment}
               onDelete={handleDelete}
+              onReplyPosted={() => fetchComments()}
             />
           ))}
         </div>

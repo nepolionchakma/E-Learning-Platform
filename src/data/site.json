@@ -1,4 +1,10 @@
 {
+  "url": "https://e-learning-platform.example.com",
+  "name": "E-Learning Platform",
+  "description": "Learn JavaScript, TypeScript, React, Linux, DevOps, Database, Machine Learning and more with practical examples and step-by-step guides.",
+  "ogImage": "/images/og-default.svg",
+  "twitterHandle": "@elearningplatform",
+  "author": "E-Learning Platform",
   "hero": {
     "title": "Master Technology",
     "subtitle": "Your all-in-one learning platform. Choose a topic below and start learning with practical examples, guides, and best practices."

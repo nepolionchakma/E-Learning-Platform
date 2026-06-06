@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="100" y2="100">
+      <stop offset="0%" stop-color="#4f46e5"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="eGrad" x1="0" y1="0" x2="0" y2="100">
+      <stop offset="0%" stop-color="#fff" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#e0e7ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="100" height="100" rx="22" fill="url(#bg)"/>
+  <!-- Modern E monogram with play triangle negative space -->
+  <g transform="translate(50,50)">
+    <!-- E vertical bar -->
+    <rect x="-30" y="-32" width="18" height="64" rx="4" fill="url(#eGrad)"/>
+    <!-- E top bar -->
+    <rect x="-12" y="-32" width="30" height="14" rx="4" fill="url(#eGrad)"/>
+    <!-- E middle bar (shorter) -->
+    <rect x="-12" y="-7" width="24" height="14" rx="4" fill="url(#eGrad)"/>
+    <!-- E bottom bar -->
+    <rect x="-12" y="18" width="30" height="14" rx="4" fill="url(#eGrad)"/>
+    <!-- Play triangle accent (learning/forward) -->
+    <polygon points="4,-2 16,7 4,16" fill="#4f46e5" opacity="0.5"/>
+  </g>
+</svg>

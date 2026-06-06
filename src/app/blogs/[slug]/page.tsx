@@ -1,7 +1,9 @@
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { promises as fs } from 'fs'
 import path from 'path'
 import BlogPostLayout from '@/components/BlogPostLayout'
+import site from '@/data/site.json'
 
 interface BlogMeta {
   slug: string
@@ -30,6 +32,43 @@ async function getBlogData(slug: string) {
     return JSON.parse(raw)
   } catch {
     return null
+  }
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}): Promise<Metadata> {
+  const { slug } = await params
+  const blogs = await getBlogs()
+  const blog = blogs.find((b) => b.slug === slug)
+  if (!blog) return {}
+
+  const blogData = await getBlogData(slug)
+  const description = blogData?.description || blog.content.slice(0, 160)
+  const ogImage = blogData?.heroImage || site.ogImage
+  const canonicalUrl = `${site.url}/blogs/${slug}`
+
+  return {
+    title: blog.title,
+    description,
+    alternates: { canonical: canonicalUrl },
+    openGraph: {
+      type: 'article',
+      title: blog.title,
+      description,
+      url: canonicalUrl,
+      images: [{ url: ogImage, width: 1200, height: 630 }],
+      publishedTime: blog.date,
+      authors: [blog.author],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: blog.title,
+      description,
+      images: [ogImage],
+    },
   }
 }
 
@@ -84,6 +123,26 @@ export default async function BlogPage({
         <BlogActions slug={blog.slug} title={blog.title} />
         <CommentSection slug={blog.slug} />
       </article>
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "TechArticle",
+            headline: blog.title,
+            description: blog.content.slice(0, 200),
+            author: { "@type": "Person", name: blog.author },
+            datePublished: blog.date,
+            publisher: {
+              "@type": "Organization",
+              name: site.name,
+              logo: { "@type": "ImageObject", url: `${site.url}/icon.svg` },
+            },
+            mainEntityOfPage: { "@type": "WebPage", "@id": `${site.url}/blogs/${slug}` },
+          }),
+        }}
+      />
     </div>
   )
 }
