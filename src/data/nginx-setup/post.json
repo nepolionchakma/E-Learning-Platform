@@ -394,18 +394,18 @@
       "description": "Step-by-step guide to deploying a Next.js application with NGINX as a reverse proxy, covering SSR, API routes, and static asset optimization.",
       "items": [
         {
-          "label": "1. Approach 1: Standalone Mode (Recommended)",
-          "text": "Set output: 'standalone' in next.config.js. The build produces a self-contained .next/standalone/ folder with server.js \u2014 no devDependencies needed on the server. Copy only the required files to the server."
-        },
-        {
-          "code": "# next.config.js\nmodule.exports = {\n  output: 'standalone',\n}\n\n# Step 1: Create .env.local with NEXT_PUBLIC_* vars (baked at build time)\nuser@local:~$ nano .env.local\nNEXT_PUBLIC_API_URL=https://api.example.com\n# ... other NEXT_PUBLIC_ vars\n\n# Step 2: Build\nuser@local:~$ npm run build\n\n# Step 3: Copy to server\nuser@local:~$ sudo scp -r .next/standalone/* /var/www/my-next-app/\nuser@local:~$ sudo mkdir -p /var/www/my-next-app/.next/static/\nuser@local:~$ sudo cp -r .next/static/* /var/www/my-next-app/.next/static/\nuser@local:~$ sudo cp -r public/* /var/www/my-next-app/\n\n# Step 4: Create .env on server with runtime vars\nuser@server:~$ sudo nano /var/www/my-next-app/.env\nNODE_ENV=production\nPORT=3000\n# ... runtime vars (DB, API keys, etc.)"
-        },
-        {
-          "label": "2. Approach 2: Default Mode (No File Copy)",
+          "label": "Approach 1: Default Mode (No File Copy)",
           "text": "No config change needed. Build and run directly on the server from your project directory \u2014 no scp or file copying required. NGINX proxies to the Next.js dev/production server running locally."
         },
         {
           "code": "# Step 1: Create .env FIRST (vars are read at build time)\nuser@server:~/my-next-app$ sudo nano .env\nNODE_ENV=production\nPORT=3000\nNEXT_PUBLIC_API_URL=https://api.example.com\n# ... add all your env vars here\n\n# Step 2: Build\nuser@server:~/my-next-app$ npm run build\n\n# Or with yarn:\nuser@server:~/my-next-app$ yarn build"
+        },
+        {
+          "label": "Approach 2: Standalone Mode (Recommended)",
+          "text": "Set output: 'standalone' in next.config.js. The build produces a self-contained .next/standalone/ folder with server.js \u2014 no devDependencies needed on the server. Copy only the required files to the server."
+        },
+        {
+          "code": "# next.config.js\nmodule.exports = {\n  output: 'standalone',\n}\n\n# Step 1: Create .env.local with NEXT_PUBLIC_* vars (baked at build time)\nuser@local:~$ nano .env.local\nNEXT_PUBLIC_API_URL=https://api.example.com\n# ... other NEXT_PUBLIC_ vars\n\n# Step 2: Build\nuser@local:~$ npm run build\n\n# Step 3: Copy to server\nuser@local:~$ sudo scp -r .next/standalone /var/www/my-next-app/\nuser@local:~$ sudo mkdir -p /var/www/my-next-app/.next/static/\nuser@local:~$ sudo cp -r .next/static /var/www/my-next-app/.next/static/\nuser@local:~$ sudo cp -r public /var/www/my-next-app/\n\n# Step 4: Create .env on server with runtime vars\nuser@server:~$ sudo nano /var/www/my-next-app/.env\nNODE_ENV=production\nPORT=3000\n# ... runtime vars (DB, API keys, etc.)"
         },
         {
           "label": "3. Run the Next.js Server with PM2",
