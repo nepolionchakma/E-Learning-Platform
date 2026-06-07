@@ -61,5 +61,12 @@
     "content": "Learn how to set up and test a full PostgreSQL High Availability cluster — including Patroni, etcd, and HAProxy — on just one machine using Docker containers. Covers automatic failover, graceful switchover, node recovery, read/write splitting, and three different HA approaches with step-by-step instructions, real commands, and expected outputs.",
     "author": "E-Learning Platform",
     "date": "2026-05-21"
+  },
+  {
+    "slug": "cloudflare-tunnel-guide",
+    "title": "Expose Your Local Web App to the Internet with Cloudflare Tunnel (Behind CGNAT / No Port Forwarding)",
+    "content": "A complete step-by-step guide to exposing your locally-hosted web application to the internet without port forwarding, without a static public IP, and even behind CGNAT. Using Cloudflare Tunnel (cloudflared), you get HTTPS, DDoS protection, and a secure tunnel — all for free.",
+    "author": "E-Learning Platform",
+    "date": "2026-06-07"
   }
 ]
