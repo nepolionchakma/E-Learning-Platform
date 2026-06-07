@@ -30,7 +30,7 @@
   {
     "slug": "nginx-setup",
     "title": "NGINX Setup & Configuration: The Complete A–Z Guide",
-    "content": "A step-by-step guide to NGINX covering installation, configuration, static website deployment, React SPA deployment with client-side routing, reverse proxying, load balancing, SSL/TLS, HTTP/2 & HTTP/3, caching, rate limiting, security headers, WebSocket proxying, Docker deployment, performance tuning, troubleshooting, and production best practices.",
+    "content": "A step-by-step guide to NGINX covering installation, configuration, static website deployment, React SPA deployment with client-side routing, Next.js deployment (standalone + default mode), reverse proxying, load balancing, SSL/TLS, HTTP/2 & HTTP/3, caching, rate limiting, security headers, WebSocket proxying, Docker deployment, performance tuning, troubleshooting, and production best practices.",
     "author": "E-Learning Platform",
     "date": "2026-05-19"
   },
