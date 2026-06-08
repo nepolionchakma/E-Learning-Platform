@@ -1,0 +1,484 @@
+{
+  "title": "IT Infrastructure: Concepts, Design, and Build",
+  "icon": "🏗️",
+  "description": "A comprehensive guide to IT infrastructure covering monolithic, two-tier, and three-tier/multi-tier architectures, network considerations, hardware and VM sizing, data storage strategies, and operating system selection — with practical design patterns, decision criteria, and production-ready best practices for architects, developers, and DevOps engineers.",
+  "author": "E-Learning Platform",
+  "date": "2026-06-08",
+  "readTime": "35 min read",
+  "heroImage": "/images/it-infrastructure-hero.svg",
+  "heroAlt": "IT Infrastructure architecture diagram showing Monolithic, Two-Tier, and Three-Tier architectures alongside networking concepts, hardware sizing, storage types, and operating system options",
+  "sections": [
+    {
+      "id": "introduction",
+      "title": "Introduction",
+      "description": "What IT infrastructure is and why architecture decisions matter.",
+      "items": [
+        {
+          "label": "What is IT Infrastructure?",
+          "text": "IT infrastructure refers to the composite hardware, software, network resources, and services required for the existence, operation, and management of an enterprise IT environment. It encompasses everything from physical servers and virtualization platforms to networking gear, storage systems, and the operating systems that tie them together.\n\nChoosing the right architecture pattern is one of the most consequential decisions in any software project. The architecture determines how components communicate, how the system scales, how it handles failures, and how teams can maintain and evolve it over time. A poor architecture choice at the start can lead to costly rewrites, operational nightmares, and brittle systems that collapse under load.\n\nThis guide covers the foundational architecture patterns — monolithic, two-tier, and three-tier/multi-tier — along with the critical infrastructure considerations around networking, hardware sizing, storage, and operating systems that bring these architectures to life in production."
+        },
+        {
+          "label": "Architecture Decision Factors",
+          "text": [
+            "Team size and skill set — Smaller teams often benefit from simpler monolithic architectures, while larger teams can manage distributed multi-tier systems.",
+            "Scalability requirements — Estimate traffic patterns. A monolithic app may handle thousands of users, but millions require horizontal scaling with multi-tier or microservices.",
+            "Deployment frequency — If you deploy multiple times daily, loose coupling between tiers is essential to avoid coordinated deployments.",
+            "Security and compliance — Multi-tier architectures enable network segmentation (e.g., database in a private subnet with no direct internet access).",
+            "Budget and timeline — Simpler architectures are faster and cheaper to build initially but may incur technical debt as the system grows.",
+            "Operational maturity — Distributed systems require monitoring, logging, alerting, and incident response automation — a significant operational investment."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "monolithic-architecture",
+      "title": "Monolithic Architecture",
+      "description": "The traditional single-unit application pattern — when it works, when it doesn't, and how to structure it for success.",
+      "items": [
+        {
+          "label": "What is a Monolithic Architecture?",
+          "text": "A monolithic architecture is a traditional software model where all components of an application — user interface, business logic, data access, authentication, and more — are packaged together as a single deployable unit. The entire application runs as a single process (or a small cluster of identical processes), shares a single database, and is deployed as one artifact.\n\nThis is the simplest and most intuitive architecture pattern. It's how most applications begin their life — as a single codebase that grows organically over time."
+        },
+        {
+          "label": "Characteristics of Monolithic Systems",
+          "text": [
+            "Single codebase — All functionality lives in one repository, one application binary (JAR, WAR, DLL, or executable).",
+            "Single deployable unit — A change to any part requires rebuilding and redeploying the entire application.",
+            "Shared memory — Components communicate via in-process function calls, not over a network — making them extremely fast.",
+            "Single database — All data access goes through one database schema, simplifying transactions and consistency.",
+            "Tight coupling — Modules within the monolith depend on each other directly. Changing one module may require changes in others.",
+            "Scaling by duplication — To scale, you run multiple copies of the entire application behind a load balancer."
+          ]
+        },
+        {
+          "label": "When to Choose Monolithic Architecture",
+          "table": {
+            "headers": ["Scenario", "Suitable?", "Why"],
+            "rows": [
+              ["Startup / MVP", "Yes ✓", "Fastest time-to-market, simplest deployment, single team"],
+              ["Small team (2-5 developers)", "Yes ✓", "Low coordination overhead, no inter-service communication complexity"],
+              ["Simple CRUD application", "Yes ✓", "No need for complex orchestration or event-driven patterns"],
+              ["Tight deadlines", "Yes ✓", "Fewer moving parts, easier to debug and test end-to-end"],
+              ["High-traffic global application", "No ✗", "Cannot scale components independently, limited fault isolation"],
+              ["Multiple specialized teams", "No ✗", "Merge conflicts, coordination bottlenecks, slow deployments"],
+              ["Requires polyglot technologies", "No ✗", "Monoliths use one stack — cannot mix Java + Python + Go in one deployable"],
+              ["Requires independent deployability", "No ✗", "A bug in any module blocks deployment of the entire application"]
+            ]
+          }
+        },
+        {
+          "label": "Structuring a Monolith for Success",
+          "text": "Even if you choose monolithic architecture, you can structure the codebase to avoid the worst pitfalls of tight coupling. The key is modularity within the monolith:",
+          "code": "# 📁 Modular Monolith Structure (example in Node.js/TypeScript)\nproject/\n  src/\n    modules/\n      users/              # Self-contained user module\n        controller.ts\n        service.ts\n        repository.ts\n        validators.ts\n        tests/\n      products/           # Self-contained product module\n        controller.ts\n        service.ts\n        repository.ts\n        validators.ts\n        tests/\n      orders/\n        controller.ts\n        service.ts\n        repository.ts\n        tests/\n    shared/                # Shared kernel (minimize this!)\n      types.ts\n      middleware.ts\n      errors.ts\n      logger.ts\n      db.ts\n    app.ts                 # Application entry point\n\n# ✅ DO: Modules communicate through well-defined interfaces (ports & adapters)\n# ✅ DO: Each module owns its database tables/schemas\n# ✅ DO: Use dependency injection for loose coupling\n# ❌ DON'T: Import module internals directly (e.g., users/repository from orders)\n# ❌ DON'T: Share mutable state between modules\n# ❌ DON'T: Let modules share database tables"
+        },
+        {
+          "label": "Monolithic Deployment Topology",
+          "code": "# Simple Monolithic Deployment\n# Architecture:\n#   [Load Balancer] → [App Instance 1] \\\n#                    → [App Instance 2]  → [Database]\n#                    → [App Instance 3] /\n#\n# nginx.conf - Load balance across monolith instances\nupstream monolith_cluster {\n    least_conn;\n    server 10.0.1.10:3000;\n    server 10.0.1.11:3000;\n    server 10.0.1.12:3000;\n}\n\nserver {\n    listen 443 ssl http2;\n    server_name app.example.com;\n\n    location / {\n        proxy_pass http://monolith_cluster;\n        proxy_http_version 1.1;\n        proxy_set_header Host $host;\n        proxy_set_header X-Real-IP $remote_addr;\n        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n        proxy_set_header X-Forwarded-Proto $scheme;\n    }\n\n    # Session affinity (sticky sessions) for in-memory state\n    # Alternatively: move sessions to Redis to avoid affinity requirement\n}"
+        },
+        {
+          "label": "Monolith Pros and Cons",
+          "table": {
+            "headers": ["Aspect", "Pros", "Cons"],
+            "rows": [
+              ["Development", "Simple setup, fast iteration, single IDE project", "Becomes complex as codebase grows (100k+ LOC)"],
+              ["Testing", "End-to-end tests are straightforward", "Tests become slow; small changes require full regression"],
+              ["Deployment", "One artifact to deploy, simple CI/CD pipeline", "Long build times, risky (any change deploys everything)"],
+              ["Scaling", "Scale by cloning — simple load balancer setup", "Cannot scale components independently (wastes resources)"],
+              ["Reliability", "Fewer network hops = fewer failure points", "A memory leak in one module crashes the entire app"],
+              ["Performance", "In-process calls are near-zero latency", "Cannot isolate resource-heavy modules independently"],
+              ["Team autonomy", "Single team, no coordination overhead", "Multiple teams conflict on the same codebase"]
+            ]
+          }
+        },
+        {
+          "label": "When to Refactor Away from a Monolith",
+          "text": "Monoliths are not wrong — they are the right starting point for most projects. Consider migrating to a multi-tier or microservices architecture when:\n\n• The codebase exceeds 500,000 lines and growing — developer productivity degrades significantly\n• The team has grown beyond 10-15 engineers — coordination overhead becomes a bottleneck\n• You need to scale different parts of the system independently (e.g., the API server needs more CPUs, but the background worker needs more memory)\n• Different components have different reliability requirements (e.g., the billing service needs 99.99% uptime, but the reporting service can tolerate downtime)\n• You need to adopt different technologies for different problems (e.g., Node.js for APIs, Python for ML, Go for high-throughput processing)\n• Deployment frequency has dropped to weekly or monthly releases because of the risk and complexity of deploying the monolith"
+        }
+      ]
+    },
+    {
+      "id": "two-tier-architecture",
+      "title": "Two-Tier Architecture",
+      "description": "The client-server model — direct communication between the presentation layer and the database.",
+      "items": [
+        {
+          "label": "What is Two-Tier Architecture?",
+          "text": "A two-tier architecture (also called client-server architecture) separates an application into two logical tiers: the client tier (presentation + application logic) and the data tier (database). Unlike a monolith, where everything runs in one process, the two-tier model splits the system across two layers that communicate over a network.\n\nThe client tier handles both the user interface and the business logic, connecting directly to the database server. This was the dominant architecture for desktop applications in the 1990s and early 2000s and is still relevant for certain internal tools and simple applications."
+        },
+        {
+          "label": "Architecture Flow",
+          "code": "# Two-Tier Architecture Pattern\n#          ┌──────────────────┐\n#          │   CLIENT TIER    │\n#          │  (Desktop / App) │\n#          │                  │\n#          │  ┌────────────┐  │\n#          │  │  UI Layer   │  │\n#          │  │  + Logic    │  │\n#          │  └────────────┘  │\n#          └────────┬─────────┘\n#                    │\n#           Network / VPN\n#                    │\n#          ┌────────▼─────────┐\n#          │   DATA TIER      │\n#          │  (Database)      │\n#          │                  │\n#          │  ┌────────────┐  │\n#          │  │ PostgreSQL  │  │\n#          │  │ MySQL       │  │\n#          │  │ MongoDB     │  │\n#          │  └────────────┘  │\n#          └──────────────────┘\n#\n# The client connects directly to the database using:\n# - JDBC (Java) / ODBC / ADO.NET\n# - Database drivers with connection strings\n# - Direct SQL queries embedded in client code"
+        },
+        {
+          "label": "When to Use Two-Tier Architecture",
+          "table": {
+            "headers": ["Use Case", "Suitable?", "Notes"],
+            "rows": [
+              ["Internal admin tools", "Yes ✓", "Small user base, controlled network, simple CRUD operations"],
+              ["Reporting dashboards", "Yes ✓", "Read-heavy workload, direct SQL access, simple deployment"],
+              ["Desktop applications with shared DB", "Yes ✓", "Accounting software, inventory management, POS systems"],
+              ["Rapid prototypes", "Yes ✓", "Fastest way to get a data-driven app running"],
+              ["Public web applications", "No ✗", "Security risk — exposing database credentials to clients"],
+              ["Mobile applications", "No ✗", "Unreliable network, cannot embed DB credentials safely"],
+              ["High-security environments", "No ✗", "Direct DB access violates least-privilege principle"],
+              ["Scalable cloud systems", "No ✗", "Cannot scale client and DB independently"]
+            ]
+          }
+        },
+        {
+          "label": "Two-Tier vs Monolithic",
+          "text": "The key difference between monolithic and two-tier architecture is the deployment boundary:\n\n• A monolith runs everything (UI + logic + data access) in a single process on one server, with the database potentially on the same machine or a separate one. The application server contains all the logic and connects to the database through an internal service layer.\n\n• A two-tier architecture puts the application logic and UI on the client machine (desktop app, thick client) and the database on a separate server. The client contains embedded SQL statements or calls stored procedures on the database server.\n\nIn modern web development, two-tier is rarely the right choice because exposing database credentials to clients is a security risk. However, it remains useful for internal enterprise tools where both the client and database are on the same secured network."
+        },
+        {
+          "label": "Security Risks of Two-Tier",
+          "text": [
+            "1. Database credentials are embedded in the client application — decompilation exposes them",
+            "2. Direct SQL access allows injection attacks if not carefully parameterized",
+            "3. No business logic layer to enforce authorization — clients can potentially access any data",
+            "4. Network-level security (VPN, firewall) is the only protection between client and database",
+            "5. Auditing and logging must be implemented at the database level, which lacks context (who is the user?)",
+            "6. Schema changes require updating all deployed clients — versioning becomes a challenge"
+          ]
+        },
+        {
+          "label": "Modern Take: Two-Tier with API Gateway",
+          "text": "While pure two-tier is rarely used for public-facing applications, a modern variant uses an API gateway or serverless function as a thin proxy between the client and database, providing authentication, rate limiting, and query validation without requiring a full application server:\n\nClient → API Gateway / Cloudflare Workers → Database\n\nThis pattern is popular for serverless applications where the \"application tier\" is handled by managed services or edge functions."
+        }
+      ]
+    },
+    {
+      "id": "three-tier-multi-tier-architecture",
+      "title": "Three-Tier / Multi-Tier Architecture",
+      "description": "The industry-standard pattern separating presentation, application, and data tiers for scalability, security, and maintainability.",
+      "items": [
+        {
+          "label": "What is Three-Tier Architecture?",
+          "text": "Three-tier architecture is the most widely adopted pattern for enterprise applications. It separates the system into three distinct logical and physical tiers:\n\n• Presentation Tier (Tier 1) — The user interface. Web browsers, mobile apps, desktop UIs, or API consumers. Handles user interaction, input validation, and rendering.\n\n• Application Tier (Tier 2) — The business logic layer. Contains all business rules, workflows, data transformation, authentication, and authorization. Often called the \"middle tier.\"\n\n• Data Tier (Tier 3) — The persistent storage layer. Databases, file systems, object stores, caches. Manages data storage, retrieval, and integrity.\n\nMulti-tier (N-tier) extends this pattern with additional tiers for caching (Redis/Memcached), message queuing (RabbitMQ/Kafka), CDN, search (Elasticsearch), and more."
+        },
+        {
+          "label": "Three-Tier Architecture Diagram",
+          "code": "# ┌─────────────────────────────────────────────────────────────────┐\n# │                   THREE-TIER ARCHITECTURE                        │\n# └─────────────────────────────────────────────────────────────────┘\n#\n# ┌──────────────────────┐     ┌──────────────────────┐\n# │  TIER 1: PRESENTATION│     │  TIER 1: PRESENTATION│\n# │  Web App (React)     │     │  Mobile App (React   │\n# │  Angular / Vue       │     │  Native / Flutter)   │\n# └──────────┬───────────┘     └──────────┬───────────┘\n#            │                             │\n#            └──────────┬──────────────────┘\n#                       │ HTTPS / REST / GraphQL\n# ┌──────────────────────▼──────────────────────────────────────────┐\n# │  TIER 2: APPLICATION                                             │\n# │                                                                  │\n# │  ┌──────────┐  ┌─────────┐  ┌─────────┐  ┌──────────────────┐  │\n# │  │ Auth     │  │ API     │  │ Business│  │ Background       │  │\n# │  │ Service  │  │ Gateway │  │ Logic   │  │ Workers / Jobs   │  │\n# │  └──────────┘  └─────────┘  └─────────┘  └──────────────────┘  │\n# │                                                                  │\n# │  ┌──────────┐  ┌─────────┐  ┌──────────────────────────────────┐│\n# │  │ Cache    │  │ Queue   │  │ Search (Elasticsearch)           ││\n# │  │ (Redis)  │  │ (Rabbit)│  │                                  ││\n# │  └──────────┘  └─────────┘  └──────────────────────────────────┘│\n# └──────────────────────┬──────────────────────────────────────────┘\n#                        │\n# ┌──────────────────────▼──────────────────────────────────────────┐\n# │  TIER 3: DATA                                                    │\n# │                                                                  │\n# │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐  │\n# │  │ Primary DB   │  │ Replica      │  │ Object Storage (S3)  │  │\n# │  │ PostgreSQL   │  │ PostgreSQL   │  │ File Storage         │  │\n# │  └──────────────┘  └──────────────┘  └──────────────────────┘  │\n# └──────────────────────────────────────────────────────────────────┘"
+        },
+        {
+          "label": "Key Principles of Multi-Tier Design",
+          "text": [
+            "1. Separation of concerns — Each tier has a well-defined responsibility. The presentation tier knows nothing about database schemas. The data tier knows nothing about UI state.",
+            "2. Tier independence — Tiers can be developed, tested, deployed, and scaled independently. You can replace the frontend framework without touching the backend, or migrate the database without changing the API.",
+            "3. Network boundaries — Tiers communicate over a network (typically HTTPS for presentation→application, database protocols for application→data). This introduces latency but enables loose coupling.",
+            "4. Security isolation — Each tier can be placed in its own network segment. The database tier can be in a private subnet with no direct internet access. Only the application tier can reach it.",
+            "5. Horizontal scalability — Each tier can scale independently. If the application tier is the bottleneck, add more app servers. If the database is the bottleneck, add read replicas."
+          ]
+        },
+        {
+          "label": "Multi-Tier (N-Tier) Extensions",
+          "table": {
+            "headers": ["Additional Tier", "Technology", "Purpose"],
+            "rows": [
+              ["Cache Tier", "Redis / Memcached / Varnish", "Reduce database load by caching frequently accessed data. TTL-based or write-through strategies."],
+              ["CDN Tier", "Cloudflare / Akamai / Fastly", "Serve static assets (images, CSS, JS) from edge locations close to users. Reduces latency and origin server load."],
+              ["Message Queue Tier", "RabbitMQ / Apache Kafka / AWS SQS", "Decouple synchronous request/response flows. Enable async processing, event-driven architecture, and background jobs."],
+              ["Search Tier", "Elasticsearch / Meilisearch / Algolia", "Full-text search, faceted search, and analytics. Offloads complex search queries from the primary database."],
+              ["API Gateway / Edge Tier", "NGINX / Kong / AWS API Gateway", "Centralized authentication, rate limiting, routing, request/response transformation, and canary deployments."],
+              ["Monitoring / Observability", "Prometheus / Grafana / Datadog", "Collect metrics, traces, and logs from all tiers. Enables alerting, dashboards, and incident response."]
+            ]
+          }
+        },
+        {
+          "label": "Production Deployment Topology",
+          "code": "# Production Three-Tier Deployment\n# Network Segmentation:\n#   Public Subnet   →  Load Balancer + CDN\n#   App Subnet      →  Application Servers + Cache\n#   Data Subnet     →  Database + Storage\n#\n# Security Groups / Firewall Rules:\n#   Internet → LB:   443 (HTTPS)\n#   LB → App Tier:   80 (HTTP, internal)\n#   App → Cache:     6379 (Redis)\n#   App → DB:        5432 (PostgreSQL)\n#   App → Queue:     5672 (RabbitMQ)\n#   App → Search:    9200 (Elasticsearch)\n#   DB:              No direct internet access\n#\n# Example: AWS VPC Configuration\n# VPC: 10.0.0.0/16\n#   Public Subnet A:  10.0.1.0/24  (ALB, NAT Gateway)\n#   Public Subnet B:  10.0.2.0/24  (ALB, NAT Gateway)\n#   App Subnet A:     10.0.10.0/24 (ECS/Fargate Tasks)\n#   App Subnet B:     10.0.11.0/24 (ECS/Fargate Tasks)\n#   Data Subnet A:    10.0.20.0/24 (RDS Primary, ElastiCache)\n#   Data Subnet B:    10.0.21.0/24 (RDS Standby, ElastiCache)"
+        },
+        {
+          "label": "Three-Tier vs Monolith: Migration Path",
+          "text": "Most successful multi-tier systems started as well-structured monoliths. The path looks like this:\n\nPhase 1 — Modular Monolith: Organize code into modules with clear interfaces. Deploy as one unit but think in terms of separate concerns.\n\nPhase 2 — Extract the API: Pull the presentation layer into a separate client (React/Vue SPA or mobile app). The monolith becomes a backend API server.\n\nPhase 3 — Extract Background Processing: Move long-running tasks (email sending, report generation, data processing) to a separate worker process with a message queue.\n\nPhase 4 — Extract High-Volume Services: If specific functionality (e.g., search, payments, notifications) has different scaling needs or failure requirements, extract it into a dedicated service.\n\nPhase 5 — Mature Multi-Tier / Microservices: Full separation of concerns with independent deployability, dedicated databases per service, and event-driven communication."
+        }
+      ]
+    },
+    {
+      "id": "network-considerations",
+      "title": "Network Considerations",
+      "description": "Designing network topology, segmentation, firewalls, load balancing, and DNS for multi-tier infrastructure.",
+      "items": [
+        {
+          "label": "Network Segmentation and Security",
+          "text": "Network segmentation is the practice of dividing a network into smaller, isolated segments (subnets) to contain traffic, enforce security policies, and limit the blast radius of a breach. In a multi-tier architecture, each tier resides in its own subnet with strictly controlled traffic flow between them.\n\nKey principles:\n\n• Least privilege routing — Only allow the minimum necessary traffic between tiers. The presentation tier should only talk to the application tier, never directly to the database.\n\n• Defense in depth — Combine network ACLs (stateless), security groups (stateful), and host-level firewalls (iptables, nftables) for overlapping protection.\n\n• Default deny — Block all inbound traffic by default, then explicitly allow only the required ports and protocols.\n\n• Private subnets for sensitive resources — Databases, caches, and internal services should reside in private subnets with no direct internet access."
+        },
+        {
+          "label": "Firewall Rules Reference",
+          "code": "# iptables Example: Multi-Tier Firewall Rules\n# ============================================\n\n# Default policies\nuser@fw:~$ sudo iptables -P INPUT DROP\nuser@fw:~$ sudo iptables -P FORWARD DROP\nuser@fw:~$ sudo iptables -P OUTPUT ACCEPT\n\n# Allow established connections\nuser@fw:~$ sudo iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\n\n# Allow loopback\nuser@fw:~$ sudo iptables -A INPUT -i lo -j ACCEPT\n\n# --- PUBLIC SUBNET (Load Balancer) ---\n# Allow HTTPS from anywhere\nuser@fw:~$ sudo iptables -A INPUT -p tcp --dport 443 -j ACCEPT\n# Allow HTTP redirect to HTTPS\nuser@fw:~$ sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT\n# Allow SSH from bastion host only\nuser@fw:~$ sudo iptables -A INPUT -p tcp --dport 22 -s 10.0.100.0/24 -j ACCEPT\n\n# --- APP SUBNET ---\n# Allow traffic from load balancer to app on port 3000\nuser@fw:~$ sudo iptables -A INPUT -p tcp --dport 3000 -s 10.0.1.0/24 -j ACCEPT\n# Allow app to talk to Redis (port 6379)\nuser@fw:~$ sudo iptables -A OUTPUT -p tcp --dport 6379 -d 10.0.20.0/24 -j ACCEPT\n# Allow app to talk to PostgreSQL (port 5432)\nuser@fw:~$ sudo iptables -A OUTPUT -p tcp --dport 5432 -d 10.0.20.0/24 -j ACCEPT\n# Allow app to talk to RabbitMQ (port 5672)\nuser@fw:~$ sudo iptables -A OUTPUT -p tcp --dport 5672 -d 10.0.20.0/24 -j ACCEPT\n\n# --- DATA SUBNET ---\n# Allow PostgreSQL only from app subnet\nuser@fw:~$ sudo iptables -A INPUT -p tcp --dport 5432 -s 10.0.10.0/24 -j ACCEPT\n\n# Log dropped packets (for debugging)\nuser@fw:~$ sudo iptables -A INPUT -j LOG --log-prefix \"FW-DROP: \" --log-level 4"
+        },
+        {
+          "label": "Load Balancing Strategies",
+          "text": "Load balancers distribute incoming traffic across multiple backend servers to ensure availability, scalability, and fault tolerance. They come in two main forms:\n\nLayer 4 (Network/Transport): Operates at the TCP/UDP level. Fast, simple, and works with any protocol. Examples: AWS NLB, HAProxy in TCP mode.\n\nLayer 7 (Application): Understands HTTP/HTTPS, can make routing decisions based on URL paths, headers, cookies, and content. Examples: AWS ALB, NGINX, HAProxy in HTTP mode.\n\nCommon algorithms:\n• Round Robin — Simple, distributes evenly assuming similar server capacity\n• Least Connections — Sends to the server with fewest active connections (good for varying request durations)\n• IP Hash — Ensures the same client hits the same server (session persistence)\n• Weighted — Assigns different weights to servers based on capacity"
+        },
+        {
+          "label": "Load Balancer Configuration (HAProxy)",
+          "code": "# /etc/haproxy/haproxy.cfg\n# Multi-tier load balancing with health checks\n\nglobal\n    log /dev/log local0\n    maxconn 4096\n    user haproxy\n    group haproxy\n\ndefaults\n    log global\n    mode http\n    option httplog\n    option dontlognull\n    timeout connect 5s\n    timeout client 30s\n    timeout server 30s\n    retries 3\n    option redispatch\n\n# Frontend: Accept incoming HTTPS traffic\nfrontend web_frontend\n    bind *:443 ssl crt /etc/ssl/certs/example.com.pem alpn h2,http/1.1\n    bind *:80\n    redirect scheme https code 301 if !{ ssl_fc }\n\n    # Route based on URL path\n    acl is_api path_beg /api/\n    acl is_static path_beg /static/ /images/ /css/ /js/\n    acl is_ws path_beg /ws/\n\n    # Rate limiting\n    stick-table type ip size 100k expire 30s store http_req_rate(10s)\n    http-request track-sc0 src\n    http-request deny deny_status 429 if { sc_http_req_rate(0) gt 100 }\n\n    use_backend api_servers if is_api\n    use_backend static_servers if is_static\n    use_backend ws_servers if is_ws\n    default_backend web_servers\n\n# Backend: Web application servers\nbackend web_servers\n    balance roundrobin\n    option httpchk GET /health\n    http-check expect status 200\n\n    server web1 10.0.10.10:3000 check weight 3\n    server web2 10.0.10.11:3000 check weight 3\n    server web3 10.0.10.12:3000 check weight 2\n    server web4 10.0.10.13:3000 check backup\n\n# Backend: API servers (separate pool)\nbackend api_servers\n    balance leastconn\n    option httpchk GET /api/health\n    http-check expect status 200\n\n    server api1 10.0.10.20:4000 check\n    server api2 10.0.10.21:4000 check\n\n# Backend: WebSocket servers\nbackend ws_servers\n    balance source  # Session persistence\n    option http-server-close\n    option forceclose\n\n    server ws1 10.0.10.30:5000 check\n    server ws2 10.0.10.31:5000 check\n\n# Backend: Static file servers\nbackend static_servers\n    balance roundrobin\n    option httpchk GET /health\n    server static1 10.0.10.40:80 check\n    server static2 10.0.10.41:80 check"
+        },
+        {
+          "label": "DNS Configuration and Best Practices",
+          "text": "DNS (Domain Name System) translates human-readable domain names to IP addresses. Proper DNS configuration is critical for availability, latency, and security.\n\nKey DNS record types for infrastructure:\n• A Record — Maps a domain to an IPv4 address (e.g., app.example.com → 203.0.113.42)\n• AAAA Record — Maps a domain to an IPv6 address\n• CNAME Record — Canonical name alias (e.g., www.example.com → example.com)\n• ALIAS/ANAME — Like CNAME but at the zone apex (example.com → load balancer DNS)\n• MX Record — Mail exchange server\n• TXT Record — Arbitrary text (SPF, DKIM, DMARC, domain verification)"
+        },
+        {
+          "label": "DNS and TTL Strategy",
+          "code": "# Recommended TTL Strategy\n# =========================\n\n# Production DNS records:\n#   A/AAAA records (for critical services):  TTL 60-300 seconds\n#   CNAME records:                           TTL 300-600 seconds\n#   MX records:                              TTL 3600 seconds (1 hour)\n#   TXT records:                             TTL 3600-86400 seconds\n#   NS records:                              TTL 86400 seconds (1 day, handled by registrar)\n\n# Why short TTLs for critical services?\n# - Enables fast failover when you need to change IPs\n# - Load balancer DNS names change during blue/green deployments\n# - Cloud provider IPs can change (especially for ALB, ELB, NLB)\n#\n# Trade-off: Shorter TTLs increase DNS query volume (and cost for high-traffic sites)\n#\n# DNS resolution flow:\n# Browser → OS Resolver → Recursive Resolver (ISP/8.8.8.8) →\n#   Root Nameserver → TLD Nameserver → Authoritative Nameserver\n#\n# dig example.com\n# ;; ANSWER SECTION:\n# example.com.        300     IN      A       93.184.216.34\n#                       ^^^ TTL in seconds"
+        },
+        {
+          "label": "Network Performance Metrics",
+          "table": {
+            "headers": ["Metric", "Description", "Good", "Warning", "Critical"],
+            "rows": [
+              ["Latency", "Round-trip time for a packet", "< 10 ms (LAN), < 50 ms (WAN)", "50-150 ms", "> 150 ms"],
+              ["Packet Loss", "Percentage of packets not delivered", "< 0.1%", "0.1-1%", "> 1%"],
+              ["Jitter", "Variation in latency over time", "< 5 ms", "5-20 ms", "> 20 ms"],
+              ["Throughput", "Data transfer rate (Mbps/Gbps)", "> 80% of link capacity", "50-80%", "< 50% or saturated"],
+              ["TCP Retransmits", "Percentage of TCP segments retransmitted", "< 0.5%", "0.5-2%", "> 2%"],
+              ["Connection Time", "Time to establish TCP connection", "< 50 ms", "50-200 ms", "> 200 ms"]
+            ]
+          }
+        },
+        {
+          "label": "CDN (Content Delivery Network)",
+          "text": "A CDN caches static content (HTML, CSS, JS, images, videos) at edge locations around the world, serving users from the closest edge node rather than the origin server. This dramatically reduces latency and origin server load.\n\nPopular CDN providers: Cloudflare, Amazon CloudFront, Fastly, Akamai, KeyCDN.\n\nBest practices:\n• Cache static assets with long TTLs (1 year) and use content hashing for cache busting\n• Use CDN for API responses when data is cacheable (e.g., product catalog, blog posts)\n• Configure origin shield to reduce load on your servers\n• Enable Brotli or Gzip compression at the CDN level\n• Use HTTP/2 and HTTP/3 for multiplexed connections"
+        }
+      ]
+    },
+    {
+      "id": "hardware-vm-sizing",
+      "title": "Hardware / VM Sizing",
+      "description": "Right-sizing compute, memory, and storage resources for each tier of the infrastructure.",
+      "items": [
+        {
+          "label": "Sizing Methodology",
+          "text": "Right-sizing infrastructure is the practice of matching resource allocation to actual workload requirements. Over-provisioning wastes money; under-provisioning causes performance degradation and outages.\n\nA systematic sizing approach:\n\n1. Baseline — Measure current resource utilization (CPU, memory, disk I/O, network) under normal and peak loads\n2. Profile — Identify the resource bottleneck for each workload (CPU-bound? Memory-bound? I/O-bound? Network-bound?)\n3. Forecast — Estimate growth over the next 6-12 months based on traffic trends and business projections\n4. Size — Select instance types/VM sizes that provide adequate headroom (typically 20-40% buffer above peak utilization)\n5. Validate — Load-test the chosen configuration before production deployment\n6. Iterate — Continuously monitor and adjust based on actual production metrics"
+        },
+        {
+          "label": "Workload Profiles and Sizing Guidance",
+          "table": {
+            "headers": ["Workload Type", "CPU", "RAM", "Storage", "Network", "Example"],
+            "rows": [
+              ["Web Server / Reverse Proxy", "2-4 vCPU", "4-8 GB", "20-50 GB SSD", "1-10 Gbps", "NGINX, HAProxy, Apache"],
+              ["Application Server (API)", "4-16 vCPU", "8-32 GB", "50-100 GB SSD", "1-10 Gbps", "Node.js, Java, Python, .NET"],
+              ["Database (Primary)", "8-32 vCPU", "32-256 GB", "100 GB - 4 TB SSD", "10-25 Gbps", "PostgreSQL, MySQL Primary"],
+              ["Database (Replica)", "4-16 vCPU", "16-128 GB", "100 GB - 4 TB SSD", "10 Gbps", "PostgreSQL Read Replica"],
+              ["Cache Server", "2-8 vCPU", "16-64 GB", "50-100 GB SSD", "1-10 Gbps", "Redis, Memcached, Valkey"],
+              ["Message Queue", "2-8 vCPU", "8-32 GB", "100-500 GB SSD", "1-10 Gbps", "RabbitMQ, Kafka Broker"],
+              ["Background Worker", "2-8 vCPU", "4-16 GB", "20-50 GB SSD", "1 Gbps", "Sidekiq, Celery, Bull"],
+              ["Search Engine", "8-32 vCPU", "16-64 GB", "500 GB - 4 TB SSD", "10-25 Gbps", "Elasticsearch Node"],
+              ["CI/CD Runner", "4-16 vCPU", "8-32 GB", "50-200 GB SSD", "1 Gbps", "GitHub Actions, GitLab Runner"],
+              ["Monitoring / Logging", "4-16 vCPU", "16-64 GB", "500 GB - 10 TB", "1-10 Gbps", "Prometheus, Grafana, ELK Stack"]
+            ]
+          }
+        },
+        {
+          "label": "Cloud Instance Families (AWS Example)",
+          "code": "# AWS EC2 Instance Families — Selection Guide\n# ==============================================\n\n# General Purpose (balanced CPU/memory/networking)\n#   t3 / t4g — Burstable (good for dev/test, variable workloads)\n#   m7g / m7i — Steady-state (production web/app servers)\n#   Example: m7g.xlarge (4 vCPU, 16 GB RAM, up to 12.5 Gbps)\n\n# Compute Optimized (high CPU-to-memory ratio)\n#   c7g / c7i — CPU-intensive workloads\n#   Example: c7g.2xlarge (8 vCPU, 16 GB RAM)\n\n# Memory Optimized (high memory-to-CPU ratio)\n#   r7g / r7i — Memory-intensive (databases, caches, in-memory analytics)\n#   x2gd / x2iedn — Extreme memory (SAP HANA, large in-memory DBs)\n#   Example: r7g.2xlarge (8 vCPU, 64 GB RAM)\n\n# Storage Optimized (high disk I/O)\n#   i4g / i4i — High IOPS (databases, OLTP, data warehousing)\n#   d3 / d3en — High throughput (big data, Hadoop, log processing)\n#   Example: i4i.large (2 vCPU, 16 GB RAM, 3.75 TB NVMe SSD)\n\n# Accelerated Computing (GPU / FPGA)\n#   p4d / p5 — Machine learning training\n#   g5 — ML inference, graphics, video processing\n#   Example: g5.xlarge (4 vCPU, 16 GB RAM, 1 GPU)\n\n# Sizing Heuristics:\n# - Production app server:   m7g.large or m7g.xlarge (2-4 vCPU, 8-16 GB)\n# - Production DB server:    r7g.large to r7g.2xlarge (2-8 vCPU, 16-64 GB)\n# - Development server:      t4g.medium or t4g.large (2-4 vCPU, 4-8 GB)\n# - Cache/Redis server:      r7g.large or r7g.xlarge (2-4 vCPU, 16-32 GB)\n# - CI/CD runner:            c7g.large or c7g.xlarge (2-4 vCPU, 4-8 GB)"
+        },
+        {
+          "label": "Vertical vs Horizontal Scaling",
+          "text": "Vertical Scaling (Scale Up): Add more resources (CPU, RAM, disk) to an existing server. Simple — no application changes needed. But there's a physical limit (the largest instance available). Cost increases super-linearly (a 64-CPU instance costs more than 8× a 8-CPU instance).\n\nHorizontal Scaling (Scale Out): Add more servers to the pool behind a load balancer. Requires application support (stateless design, distributed caching, shared session store). Virtually unlimited scaling; can use commodity hardware. Cost is linear. Better fault tolerance — losing one server doesn't crash the system.\n\nRule of thumb: Scale up first until you hit the largest practical instance size, then scale out. For most modern web applications, aim to scale out from the start by designing stateless application servers."
+        },
+        {
+          "label": "Capacity Planning Formula",
+          "code": "# Capacity Planning: Estimating Required Resources\n# ==================================================\n\n# Example: Web Application Server Sizing\n#\n# Traffic Estimate:\n#   Daily active users:     50,000\n#   Requests per user/day:   100\n#   Total daily requests:    5,000,000 (5M)\n#   Peak hour factor:        10% of daily traffic in peak hour\n#   Peak requests/hour:      500,000\n#   Peak requests/second:    ~139 RPS\n#\n# Per-Request Resource Usage (measured via profiling):\n#   CPU time per request:    50 ms\n#   Memory per request:      10 MB (transient, GC'd)\n#   DB queries per request:  3\n#   Response size:           5 KB\n#\n# Calculation:\n#   Required CPU cores: (139 RPS × 0.05s CPU) / 0.7 (70% utilization target)\n#                      = 6.95 / 0.7 ≈ 10 cores\n#\n#   Required memory:   Baseline (2 GB for OS + runtime) +\n#                      Peak concurrent connections (500) × 10 MB\n#                      = 2 GB + 5 GB = 7 GB\n#\n#   Recommended server: 4 servers × m7g.xlarge (4 vCPU, 16 GB each)\n#   Total capacity:     16 vCPU → comfortably handles 10 vCPU required\n#   Redundancy:         3 servers handle peak if 1 fails (12 vCPU > 10)\n#\n#   Network throughput: 139 RPS × 5 KB × 8 (bytes to bits) = ~5.6 Mbps\n#                        (trivial for modern NICs)\n#\n# Database Sizing:\n#   Write RPS:           139 × 0.3 (30% write ratio) = ~42 writes/sec\n#   Read RPS:            139 × 0.7 = ~97 reads/sec\n#   Storage per year:    50,000 users × 10 MB/user/year = 500 GB/year\n#   IOPS requirement:    97 reads + 42 writes = ~140 IOPS (very low —\n#                         modern SSDs handle 10,000+ IOPS easily)\n#\n# Conclusion: Start with 4 × m7g.xlarge app servers + 1 × r7g.xlarge DB"
+        },
+        {
+          "label": "VM Sizing for Virtualization Platforms",
+          "table": {
+            "headers": ["Platform", "Small", "Medium", "Large", "X-Large"],
+            "rows": [
+              ["VMware vSphere", "2 vCPU, 4 GB RAM, 40 GB", "4 vCPU, 16 GB RAM, 100 GB", "8 vCPU, 32 GB RAM, 500 GB", "16 vCPU, 128 GB RAM, 2 TB"],
+              ["Proxmox VE", "2 cores, 4 GB, 32 GB", "4 cores, 8 GB, 80 GB", "8 cores, 32 GB, 200 GB", "16 cores, 64 GB, 1 TB"],
+              ["KVM / Libvirt", "2 vCPU, 4 GB, 20 GB", "4 vCPU, 8 GB, 50 GB", "8 vCPU, 32 GB, 200 GB", "16 vCPU, 64 GB, 500 GB"],
+              ["Hyper-V", "2 vCPU, 4 GB, 40 GB", "4 vCPU, 8 GB, 80 GB", "8 vCPU, 32 GB, 300 GB", "16 vCPU, 64 GB, 1 TB"],
+              ["Docker Container", "0.5-1 CPU, 512 MB-2 GB", "1-2 CPU, 2-4 GB", "2-4 CPU, 4-8 GB", "4-8 CPU, 8-16 GB"]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "data-storage",
+      "title": "Data Storage",
+      "description": "Storage types, RAID configurations, backup strategies, and choosing the right storage for each workload.",
+      "items": [
+        {
+          "label": "Storage Types and Use Cases",
+          "text": "Data storage in IT infrastructure falls into three primary categories, each suited for different workloads:\n\nBlock Storage — Raw storage volumes that present as virtual hard drives (like a physical disk). Used for databases, operating systems, and any application requiring low-level disk access. Examples: AWS EBS, SAN, iSCSI, local NVMe SSDs.\n\nFile Storage — Network-attached storage that provides a shared file system accessible by multiple servers. Used for shared configuration, user uploads, home directories, and legacy applications. Examples: NFS, CIFS/SMB, AWS EFS.\n\nObject Storage — Flat address space where data is stored as objects with unique IDs and metadata. Highly scalable, typically cheaper, and accessible via HTTP/REST APIs. Used for backups, media files, logs, archives. Examples: AWS S3, MinIO, Ceph RGW, Google Cloud Storage."
+        },
+        {
+          "label": "Storage Characteristics Comparison",
+          "table": {
+            "headers": ["Characteristic", "Block Storage", "File Storage", "Object Storage"],
+            "rows": [
+              ["Access Protocol", "iSCSI, FC, NVMe-oF", "NFS, CIFS/SMB", "HTTP/HTTPS (S3 API)"],
+              ["Access Pattern", "Raw disk blocks", "File hierarchy (POSIX)", "Flat namespace (buckets/objects)"],
+              ["Performance", "Highest (microsecond latency)", "Medium (millisecond latency)", "Variable (10-100+ ms)"],
+              ["Scalability", "Limited (max volume size)", "Good (scale-out NAS)", "Virtually unlimited"],
+              ["Modification", "In-place (yes)", "In-place (yes)", "Immutable or replace entire object"],
+              ["Consistency", "Strong", "Strong (NFS) / Eventual (CIFS)", "Strong (read-after-write)"],
+              ["Cost per GB", "$$$ (SSD) / $$ (HDD)", "$$ - $$$", "$ - $$"],
+              ["Best for", "OS, DB, VMs", "Shared files, home dirs", "Backups, media, logs, big data"],
+              ["Examples", "SAN, EBS, Ceph RBD", "NFS, EFS, GlusterFS", "S3, MinIO, Ceph RGW"]
+            ]
+          }
+        },
+        {
+          "label": "RAID Levels Explained",
+          "code": "# RAID (Redundant Array of Independent Disks)\n# ==============================================\n\n# Which RAID level for which workload?\n#\n# RAID 0 — Striping (No Redundancy)\n#   Use: Temporary data, scratch space, high-performance cache\n#   Min drives: 2\n#   Capacity: 100% of total\n#   Read perf: Excellent (parallel reads)\n#   Fault tolerance: NONE — any disk failure loses ALL data\n#\n# RAID 1 — Mirroring\n#   Use: OS drives, critical logs, small databases\n#   Min drives: 2\n#   Capacity: 50% of total\n#   Write perf: Good (write to both)\n#   Read perf: Excellent (read from either)\n#   Fault tolerance: 1 disk failure\n#\n# RAID 5 — Striping with Parity\n#   Use: General-purpose storage, file servers, web servers\n#   Min drives: 3\n#   Capacity: (N-1)/N of total (e.g., 3 drives → 67%)\n#   Read perf: Excellent\n#   Write perf: Poor (parity calculation overhead)\n#   Fault tolerance: 1 disk failure\n#   Risk: URE (Unrecoverable Read Error) during rebuild\n#\n# RAID 6 — Striping with Double Parity\n#   Use: Large capacity, critical data, archive\n#   Min drives: 4\n#   Capacity: (N-2)/N of total (e.g., 4 drives → 50%)\n#   Read perf: Excellent\n#   Write perf: Worse than RAID 5 (double parity)\n#   Fault tolerance: 2 disk failures\n#\n# RAID 10 — Striped Mirrors (Best for databases)\n#   Use: Databases (PostgreSQL, MySQL), high-IOPS workloads\n#   Min drives: 4 (even number)\n#   Capacity: 50% of total\n#   Read perf: Excellent\n#   Write perf: Excellent (no parity)\n#   Fault tolerance: 1 per mirror set (up to N/2 total)\n#   Recommendation: Best choice for production databases!"
+        },
+        {
+          "label": "SSD vs HDD Selection Guide",
+          "table": {
+            "headers": ["Factor", "SSD (NVMe)", "SSD (SATA)", "HDD (Enterprise)"],
+            "rows": [
+              ["Read Latency", "0.01-0.1 ms", "0.1-0.2 ms", "3-12 ms"],
+              ["Write Latency", "0.01-0.1 ms", "0.1-0.3 ms", "3-15 ms"],
+              ["Sequential Read", "3,000-14,000 MB/s", "500-550 MB/s", "200-250 MB/s"],
+              ["Random IOPS (Read)", "500,000-1,000,000", "75,000-100,000", "100-200"],
+              ["Endurance (DWPD)", "1-3 (high-end)", "0.3-1", "N/A (magnetics)"],
+              ["Capacity (max)", "30 TB+", "8 TB", "24 TB+"],
+              ["Cost per GB", "$0.10-0.30", "$0.08-0.15", "$0.02-0.05"],
+              ["Power per TB", "0.5-1 W", "0.5-1 W", "5-10 W"],
+              ["Best for", "OS, DB, Cache, High-perf", "General VM storage", "Backup, Archive, Bulk"]
+            ]
+          }
+        },
+        {
+          "label": "Backup Strategy (3-2-1 Rule)",
+          "code": "# 3-2-1 Backup Rule\n# ===================\n# 3 copies of your data\n# 2 different storage media/types\n# 1 copy off-site (different physical location)\n#\n# Example Backup Implementation:\n#\n# Copy 1 (Primary): Production database on NVMe RAID 10\n# Copy 2 (Local backup): Daily pg_dump to NFS storage\n# Copy 3 (Off-site): Encrypted backup to S3/MinIO in another region\n#\n# Backup Schedule:\n#   Hourly:    WAL archive / transaction log shipping (PITR)\n#   Daily:     Full database dump + incremental file backup\n#   Weekly:    Full system backup (bare-metal recovery capable)\n#   Monthly:   Archived backup (retained for 12+ months)\n#\n# Recovery Time Objective (RTO): How fast you need to recover\n# Recovery Point Objective (RPO): How much data loss is acceptable\n#\n# Example RPO/RTO targets:\n#   Critical production DB:  RTO < 1 hour,  RPO < 5 minutes\n#   Internal tool:            RTO < 4 hours, RPO < 1 hour\n#   Archive data:             RTO < 24 hours, RPO < 1 week\n#\n# pg_dump example (PostgreSQL):\nuser@db:~$ pg_dump -Fc mydb > /backups/mydb_$(date +%Y%m%d_%H%M).dump\n#\n# Automated backup script:\nuser@db:~$ cat /usr/local/bin/backup-db.sh\n#!/bin/bash\nBACKUP_DIR=\"/backups/postgresql\"\nDB_NAME=\"mydb\"\nDATE=$(date +%Y-%m-%d_%H%M%S)\n\n# Create backup\ndocker exec postgres pg_dump -U postgres -Fc $DB_NAME > $BACKUP_DIR/$DB_NAME_$DATE.dump\n\n# Encrypt for off-site\ngpg --encrypt --recipient backup@company.com $BACKUP_DIR/$DB_NAME_$DATE.dump\n\n# Copy to off-site storage\naws s3 cp $BACKUP_DIR/$DB_NAME_$DATE.dump.gpg s3://company-backups/db/\n\n# Cleanup old backups (keep 30 days)\nfind $BACKUP_DIR -name \"*.dump\" -mtime +30 -delete\nfind $BACKUP_DIR -name \"*.gpg\" -mtime +90 -delete"
+        }
+      ]
+    },
+    {
+      "id": "operating-systems",
+      "title": "Operating Systems (OS)",
+      "description": "Linux distributions, Windows Server, container-optimized OS, and OS selection criteria for each infrastructure tier.",
+      "items": [
+        {
+          "label": "OS Selection Criteria",
+          "text": "Choosing the right operating system depends on several factors:\n\n• Application requirements — Does your application stack run natively on Linux? Does it require Windows-only features (Active Directory, .NET Framework, IIS)?\n\n• Team expertise — What OS is your operations team most comfortable managing? Inexperienced Linux administration can be more dangerous than an experienced Windows admin.\n\n• Ecosystem and package availability — The Linux ecosystem offers thousands of packages via apt/yum/dnf. Windows has fewer but enterprise-grade tools for certain domains (Exchange, SharePoint).\n\n• Licensing costs — Linux is free (open source). Windows Server requires per-core or per-VM licensing (CALs).\n\n• Security and compliance — Some regulatory frameworks have specific requirements around OS hardening (STIG, CIS benchmarks). Both Linux and Windows can be hardened, but the tooling differs.\n\n• Support lifecycle — Ubuntu LTS releases are supported for 5 years (10 with Ubuntu Pro). Windows Server has 10 years of mainstream + extended support. RHEL offers 10+ year support."
+        },
+        {
+          "label": "Linux Distributions Comparison",
+          "table": {
+            "headers": ["Distribution", "Package Manager", "Release Cycle", "Best For", "Support"],
+            "rows": [
+              ["Ubuntu LTS (22.04 / 24.04)", "apt (deb)", "2 years (LTS)", "General-purpose, cloud, Docker, Kubernetes", "5 years (10 with Ubuntu Pro)"],
+              ["Debian (12 / 13)", "apt (deb)", "~2 years (stable)", "Stability-focused servers, minimum churn", "3 years (5 with LTS)"],
+              ["RHEL 9", "dnf (rpm)", "~3 years (major)", "Enterprise production, compliance-heavy environments", "10 years (Full Support + Maintenance)"],
+              ["Rocky Linux 9", "dnf (rpm)", "Follows RHEL", "RHEL-compatible without subscription cost", "~10 years (community)"],
+              ["AlmaLinux 9", "dnf (rpm)", "Follows RHEL", "Drop-in RHEL replacement, community-driven", "~10 years (community)"],
+              ["Fedora Server", "dnf (rpm)", "~6 months", "Development, testing, bleeding-edge features", "~13 months"],
+              ["Alpine Linux", "apk", "~6 months", "Docker containers, minimal images, security", "~2 years"],
+              ["openSUSE Leap", "zypper (rpm)", "~3-4 years (major)", "Enterprise-alternative, YaST management", "~4 years"],
+              ["Arch Linux", "pacman", "Rolling release", "Development workstations, latest packages", "Rolling (community)"]
+            ]
+          }
+        },
+        {
+          "label": "Production Server OS Recommendations",
+          "text": "For production server workloads, here are the recommended distributions:\n\nWeb/App Servers: Ubuntu LTS (24.04) or Rocky Linux 9. Ubuntu offers the broadest package ecosystem, easiest Docker/Kubernetes integration, and the largest community. Rocky/Alma provide RHEL compatibility for enterprises.\n\nDatabases: Debian Stable or RHEL 9. Both prioritize stability over new features. Database vendors (PostgreSQL, MySQL, MongoDB) officially support these distributions. Debian's conservative package updates reduce the risk of regressions.\n\nContainers: Alpine Linux (for minimal Docker images, ~5 MB base) or Ubuntu LTS (for general-purpose containers). Alpine significantly reduces attack surface and image size.\n\nCI/CD / Build Servers: Ubuntu LTS or Fedora. Fedora provides newer toolchain versions (GCC, LLVM, Node.js, Python) which are beneficial for CI pipelines. Ubuntu balances stability with up-to-date packages.\n\nEdge / IoT: Alpine Linux or Ubuntu Core. Minimal footprint, immutable updates, and strong security postures."
+        },
+        {
+          "label": "Minimal OS Installation (Security Hardening)",
+          "code": "# Ubuntu 24.04 LTS — Minimal Server Installation\n# =================================================\n\n# Install only essential packages:\n# During installation: Select \"Ubuntu Server (minimal)\"\n# or use the netboot ISO with no desktop environment\n\n# Post-installation hardening steps:\n\n# 1. Update all packages\nuser@server:~$ sudo apt update && sudo apt upgrade -y\n\n# 2. Remove unnecessary packages\nuser@server:~$ sudo apt purge snapd cloud-init -y\nuser@server:~$ sudo apt autoremove -y\n\n# 3. Configure SSH (key-only, non-root, custom port)\nuser@server:~$ sudo nano /etc/ssh/sshd_config\nPort 2222                                   # Change from default 22\nPermitRootLogin no                           # Disable root SSH\nPasswordAuthentication no                    # Key-based auth only\nPubkeyAuthentication yes\nMaxAuthTries 3\nClientAliveInterval 300\nClientAliveCountMax 0\n\nuser@server:~$ sudo systemctl restart sshd\n\n# 4. Configure firewall\nuser@server:~$ sudo ufw default deny incoming\nuser@server:~$ sudo ufw default allow outgoing\nuser@server:~$ sudo ufw allow 2222/tcp       # SSH (custom port)\nuser@server:~$ sudo ufw allow 443/tcp        # HTTPS\nuser@server:~$ sudo ufw allow 80/tcp         # HTTP (redirect)\nuser@server:~$ sudo ufw enable\n\n# 5. Disable unused services\nuser@server:~$ sudo systemctl disable --now cups.service\nuser@server:~$ sudo systemctl disable --now avahi-daemon.service\nuser@server:~$ sudo systemctl disable --now bluetooth.service\n\n# 6. Set up automatic security updates\nuser@server:~$ sudo apt install unattended-upgrades -y\nuser@server:~$ sudo dpkg-reconfigure --priority=low unattended-upgrades\n\n# 7. Configure kernel parameters (sysctl)\nuser@server:~$ sudo nano /etc/sysctl.d/99-hardening.conf\n# IP Spoofing protection\nnet.ipv4.conf.all.rp_filter = 1\nnet.ipv4.conf.default.rp_filter = 1\n# Ignore ICMP redirects\nnet.ipv4.conf.all.accept_redirects = 0\nnet.ipv6.conf.all.accept_redirects = 0\n# Disable source packet routing\nnet.ipv4.conf.all.accept_source_route = 0\nnet.ipv6.conf.all.accept_source_route = 0\n# Enable execshield\nkernel.randomize_va_space = 2\n\n# 8. Install and configure fail2ban\nuser@server:~$ sudo apt install fail2ban -y\nuser@server:~$ sudo nano /etc/fail2ban/jail.local\n[sshd]\nenabled = true\nport = 2222\nmaxretry = 5\nbantime = 3600\nfindtime = 600"
+        },
+        {
+          "label": "Windows Server vs Linux for Infrastructure",
+          "table": {
+            "headers": ["Factor", "Linux", "Windows Server"],
+            "rows": [
+              ["Licensing Cost", "Free (open source)", "$$$ (per core + CALs)"],
+              ["Security Model", "POSIX permissions + SELinux/AppArmor", "NTFS ACLs + Active Directory"],
+              ["Container Support", "Native (Docker, Podman, containerd)", "Windows containers (limited ecosystem)"],
+              ["Scripting", "Bash, Python, Perl (mature ecosystem)", "PowerShell (excellent but Windows-only)"],
+              ["Management", "SSH + CLI (config files)", "RDP + GUI / PowerShell DSC"],
+              ["Package Management", "apt/yum/dnf (thousands of packages)", "Chocolatey / winget (smaller ecosystem)"],
+              ["AD / Domain", "No native (Samba AD possible)", "Native Active Directory (market leader)"],
+              ["IIS vs Nginx/Apache", "Nginx / Apache (open source, widely used)", "IIS (integrated with Windows ecosystem)"],
+              ["SQL Server", "Via Docker / Azure Edge", "Native (best performance / integration)"],
+              [".NET / C#", ".NET Core (cross-platform)", ".NET Framework + .NET Core"],
+              ["Desktop Environment", "No (CLI by default)", "Full GUI (higher resource usage)"],
+              ["Resource Overhead", "Minimal (256 MB RAM achievable)", "Higher (2-4 GB minimum)"],
+              ["Cloud Adoption", "Dominant (90%+ of cloud workloads)", "Significant (especially hybrid/enterprise)"],
+              ["Best for", "Web, cloud, containers, databases, microservices", "Enterprise apps, Active Directory, .NET, SQL Server"]
+            ]
+          }
+        },
+        {
+          "label": "Container-Optimized Operating Systems",
+          "text": "Container-optimized OSes strip away everything except the kernel and container runtime, providing minimal attack surfaces and resource footprints:\n\n• Alpine Linux (~5 MB base image) — The most popular base for Docker containers. Uses musl libc instead of glibc (some compatibility caveats). Package manager: apk.\n\n• Flatcar Container Linux — Immutable, auto-updating OS designed specifically for Kubernetes. No package manager — all applications run in containers. Based on Gentoo.\n\n• Bottlerocket (AWS) — Open-source Linux distribution optimized for running containers on AWS. Immutable filesystem, atomic updates, SELinux enforced by default.\n\n• Ubuntu Core — Snap-based immutable Ubuntu for IoT and embedded container deployments.\n\n• MicroOS (openSUSE) — Transactional-update based rolling release optimized for container workloads."
+        },
+        {
+          "label": "OS Selection Decision Matrix",
+          "table": {
+            "headers": ["Requirement", "Recommended OS", "Rationale"],
+            "rows": [
+              ["Web Application (Node.js/React/Python/Go)", "Ubuntu LTS 24.04", "Best package ecosystem, Docker support, cloud images, largest community"],
+              ["Enterprise Production (Compliance-heavy)", "RHEL 9 or Rocky Linux 9", "10-year support, CIS/STIG hardening guides, FedRAMP certified"],
+              ["PostgreSQL / MySQL Database", "Debian 12 Stable", "Conservative updates, long stability, official DB vendor support"],
+              ["Kubernetes Worker Node", "Flatcar or Ubuntu LTS", "Minimal footprint, atomic updates, kubeadm/cloud-init ready"],
+              ["CI/CD Runner / Build Server", "Ubuntu LTS or Fedora Server", "Latest toolchains, broad package availability, Docker-in-Docker support"],
+              ["Minimal Docker Image", "Alpine Linux 3.x", "~5 MB base, minimal attack surface, apk is fast and simple"],
+              ["Windows Enterprise App (.NET/SQL Server/AD)", "Windows Server 2022", "Native .NET, MSSQL, Active Directory, Group Policy"],
+              ["Edge / IoT Device", "Alpine or Ubuntu Core", "Small footprint, immutable updates, limited storage/RAM"],
+              ["Security / Network Appliance (Firewall/VPN)", "Alpine or Hardened Debian", "Minimal packages, grsecurity options, IPFire/OPNsense alternatives"]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "summary",
+      "title": "Summary and Best Practices",
+      "description": "Key takeaways, design principles, and next steps for building robust IT infrastructure.",
+      "items": [
+        {
+          "label": "Key Takeaways",
+          "text": [
+            "Start simple — Begin with a well-structured modular monolith. Extract tiers only when there's a clear need (scaling bottlenecks, team growth, independent deployability).",
+            "Segregate your network — Place each tier in its own subnet with strictly controlled firewall rules. The database tier should NEVER have direct internet access.",
+            "Right-size your hardware — Use monitoring data, not guesswork. Start with moderate sizing, monitor utilization, and scale up/out based on actual metrics.",
+            "Choose storage wisely — NVMe RAID 10 for databases, NFS for shared files, S3-compatible object storage for backups and media. Match the storage type to the workload.",
+            "Standardize your OS — Pick one distribution (Ubuntu LTS is the safest default) and standardize across your infrastructure. Use configuration management (Ansible, Puppet) for consistency.",
+            "Backup everything (3-2-1 rule) — Three copies, two media types, one off-site. Test your restore process regularly — untested backups are not backups.",
+            "Monitor everything — CPU, memory, disk I/O, network, application metrics, error rates, and latency. You cannot optimize what you do not measure.",
+            "Design for failure — Assume every component will fail. Load balance, replicate databases, use health checks, and practice failure drills (chaos engineering).",
+            "Document your architecture — Architecture Decision Records (ADRs), network diagrams, runbooks, and incident response playbooks are as important as the infrastructure itself.",
+            "Iterate and improve — Infrastructure is never \"done.\" Continuously review, optimize, and evolve based on changing requirements, new technologies, and lessons learned from incidents."
+          ]
+        },
+        {
+          "label": "Infrastructure Design Principles",
+          "text": [
+            "1. Redundancy — Eliminate single points of failure. Every critical component should have at least one backup (N+1 or N+2 redundancy).",
+            "2. Loose Coupling — Tiers should communicate through well-defined APIs. Changes to one tier should not require changes to another.",
+            "3. Security by Design — Apply the principle of least privilege at every layer: network, compute, data, and access.",
+            "4. Automation — Infrastructure as Code (Terraform, Ansible, CloudFormation). Manual changes are errors waiting to happen.",
+            "5. Observability — Metrics, logs, and traces from every component. Alerts that wake someone up at 3 AM must be actionable.",
+            "6. Scalability — Design for horizontal scaling. Stateless application servers make scaling trivial.",
+            "7. Cost Awareness — Monitor cloud costs. Right-size instances. Use reserved instances for baseline capacity, spot instances for variable workloads.",
+            "8. Operability — Choose technologies your team can operate effectively. The best architecture is worthless if nobody can maintain it."
+          ]
+        },
+        {
+          "label": "Architecture Decision Record (ADR) Template",
+          "code": "# Architecture Decision Record (ADR)\n# ===================================\n#\n# Title: [Short descriptive title]\n# Status: [Proposed | Accepted | Deprecated | Superseded]\n# Date: [YYYY-MM-DD]\n#\n# ## Context\n# [Describe the problem, constraints, and forces at play]\n# [Include relevant business requirements, technical constraints, and timeline]\n#\n# ## Decision\n# [Describe the chosen architecture pattern and rationale]\n#\n# ## Consequences\n# [Describe the trade-offs, risks, and mitigations]\n#\n# ## Alternatives Considered\n# - [Alternative 1]: [Why not chosen]\n# - [Alternative 2]: [Why not chosen]\n# - [Alternative 3]: [Why not chosen]\n#\n# ## References\n# - [Link to relevant documentation]\n# - [Link to related ADRs]\n#\n# ---\n# Example ADR:\n#\n# Title: Adopt Three-Tier Architecture for Customer Portal\n# Status: Accepted\n# Date: 2026-06-08\n#\n# Context:\n# The customer portal needs to serve 100,000+ users, support PCI-DSS\n# compliance, and be maintainable by two separate teams (frontend and backend).\n#\n# Decision:\n# Three-tier architecture with React SPA (presentation), Node.js API\n# (application), and PostgreSQL (data). API Gateway for auth and rate limiting.\n#\n# Consequences:\n# + Independent scaling of each tier\n# + Clear separation of concerns between teams\n# + Database can be isolated in private subnet\n# - Increased network latency between tiers\n# - Requires API versioning strategy\n# - More complex deployment (3 artifacts vs 1)\n#\n# Alternatives Considered:\n# - Monolithic: Not suitable for PCI-DSS network segmentation requirements\n# - Two-Tier: Security risk — cannot expose DB directly to clients\n# - Microservices: Overkill for current team size and complexity\n#\n# References:\n# - PCI-DSS Requirement 1: Install and maintain firewall configuration\n# - AWS Well-Architected Framework: Security Pillar"
+        },
+        {
+          "label": "Next Steps",
+          "text": [
+            "1. Assess your current architecture — Is it monolithic, two-tier, or multi-tier? Identify pain points and bottlenecks.",
+            "2. Design a target architecture — Use the ADR template to document your decisions. Draw network diagrams (draw.io, Lucidchart, Mermaid).",
+            "3. Implement network segmentation — Start with firewall rules. Place databases in private subnets. Use a bastion host for admin access.",
+            "4. Set up monitoring and observability — Prometheus/Grafana for metrics, ELK/Loki for logs, OpenTelemetry for traces.",
+            "5. Automate provisioning — Use Terraform for cloud resources, Ansible for configuration management, Packer for golden images.",
+            "6. Implement backup and disaster recovery — Automate backups. Test restore procedures quarterly. Document runbooks.",
+            "7. Practice failure scenarios — Kill a server, failover a database, simulate network partitions. Learn how your system behaves under stress.",
+            "8. Review and iterate — Schedule quarterly architecture reviews. Update ADRs as decisions evolve. Keep documentation current."
+          ]
+        }
+      ]
+    }
+  ]
+}

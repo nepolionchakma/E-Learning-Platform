@@ -68,5 +68,12 @@
     "content": "A complete step-by-step guide to exposing your locally-hosted web application to the internet without port forwarding, without a static public IP, and even behind CGNAT. Using Cloudflare Tunnel (cloudflared), you get HTTPS, DDoS protection, and a secure tunnel — all for free.",
     "author": "E-Learning Platform",
     "date": "2026-06-07"
+  },
+  {
+    "slug": "it-infrastructure",
+    "title": "IT Infrastructure: Concepts, Design, and Build",
+    "content": "A comprehensive guide to IT infrastructure covering monolithic, two-tier, and three-tier/multi-tier architectures, network considerations, hardware and VM sizing, data storage strategies, and operating system selection — with practical design patterns, decision criteria, and production-ready best practices for architects, developers, and DevOps engineers.",
+    "author": "E-Learning Platform",
+    "date": "2026-06-08"
   }
 ]
