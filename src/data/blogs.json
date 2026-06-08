@@ -75,5 +75,12 @@
     "content": "A comprehensive guide to IT infrastructure covering monolithic, two-tier, and three-tier/multi-tier architectures, network considerations, hardware and VM sizing, data storage strategies, and operating system selection — with practical design patterns, decision criteria, and production-ready best practices for architects, developers, and DevOps engineers.",
     "author": "E-Learning Platform",
     "date": "2026-06-08"
+  },
+  {
+    "slug": "redis-valkey",
+    "title": "Redis & Valkey: The Complete A–Z Guide",
+    "content": "A comprehensive end-to-end guide to Redis and Valkey — from fundamentals to production. Covers installation, all data types and commands, persistence, replication, Sentinel high availability, Redis Cluster, the Valkey fork, security (ACL/TLS), performance tuning, Redis Stack modules (JSON, Search, TimeSeries, Bloom), use cases (caching, sessions, rate limiting, queues, leaderboards), Docker/Kubernetes deployment, monitoring with Prometheus/Grafana, backups, troubleshooting, and production best practices.",
+    "author": "E-Learning Platform",
+    "date": "2026-06-08"
   }
 ]
