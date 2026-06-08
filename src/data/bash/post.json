@@ -53,7 +53,7 @@
               "ls /exists\necho \"Exit: $?\"",
               "Exit code",
               "0 = success",
-              "john@pc:~$ ls /\nbin  home  usr\njohn@pc:~$ echo \"Exit: $?\"\n0\njohn@pc:~$ ls /nonexist 2>/dev/null\necho \"Exit: $?\"\n2"
+              "john@pc:~$ ls /\nbin  home  usr\njohn@pc:~$ echo \"Exit: $?\"\n0\njohn@pc:~$ ls /nonexist 2>/dev/null\njohn@pc:~$ echo \"Exit: $?\"\n2"
             ],
             [
               "echo \"PID: $$\necho \"Bg PID: $!\"",
