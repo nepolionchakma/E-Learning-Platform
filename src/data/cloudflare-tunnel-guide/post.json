@@ -1,0 +1,438 @@
+{
+  "title": "Expose Your Local Web App to the Internet with Cloudflare Tunnel (Behind CGNAT / No Port Forwarding)",
+  "icon": "☁️",
+  "description": "A complete step-by-step guide to exposing your locally-hosted web application (Next.js, React, Nginx, or any service) to the internet — without port forwarding, without a static public IP, and even behind CGNAT. Using Cloudflare Tunnel (cloudflared), you get HTTPS, DDoS protection, and a secure tunnel — all for free.",
+  "author": "E-Learning Platform",
+  "date": "2026-06-07",
+  "readTime": "25 min read",
+  "heroImage": "/images/cloudflare-tunnel-hero.svg",
+  "heroAlt": "Architecture diagram showing a local server with a web app connecting through Cloudflare Tunnel to the internet, bypassing ISP CGNAT and router port forwarding restrictions",
+  "tableOfContents": [
+    "The Problem: Why Can't I Access My App from the Internet?",
+    "What is Cloudflare Tunnel?",
+    "Prerequisites",
+    "Step 1: Install cloudflared",
+    "Step 2: Authenticate with Cloudflare",
+    "Step 3: Create a Tunnel",
+    "Step 4: Configure the Tunnel",
+    "Step 5: Run the Tunnel",
+    "Step 6: Set Up DNS (Custom Domain)",
+    "Step 7: Run as a System Service",
+    "Quick Test Without a Domain (TryCloudflare)",
+    "Using Cloudflare Tunnel with Nginx (Reverse Proxy)",
+    "Troubleshooting",
+    "Security Best Practices",
+    "Summary"
+  ],
+  "sections": [
+    {
+      "id": "the-problem",
+      "title": "The Problem: Why Can't I Access My App from the Internet?",
+      "description": "Understanding CGNAT, ISP restrictions, and why traditional port forwarding may not work.",
+      "items": [
+        {
+          "label": "The Traditional Approach",
+          "text": "When you host a web app on your local machine or a VM on your home network, the standard way to make it accessible from the internet is:\n\n1. Get a public IP from your ISP\n2. Set up port forwarding on your router (e.g., TP-Link Deco)\n3. Allow the port through your firewall\n4. Access your app at http://<public-ip>:<port>\n\nThis works fine — until it doesn't."
+        },
+        {
+          "label": "CGNAT (Carrier-Grade NAT)",
+          "text": [
+            "Most ISPs in Bangladesh (and many other countries) use CGNAT (Carrier-Grade NAT). This means your router doesn't get a unique public IP — instead, hundreds of customers share one public IP. Your router gets a private IP like 100.x.x.x or 172.x.x.x.",
+            "With CGNAT, port forwarding is impossible. The ISP's router owns the public IP, not yours. Any incoming connection on port 80, 81, 3000, or any other port will never reach your machine.",
+            "How to check if you have CGNAT: Compare your public IP (what you see on https://api.ipify.org) with your router's WAN IP (check your TP-Link Deco app). If they're different, you're behind CGNAT."
+          ]
+        },
+        {
+          "label": "Other Common Obstacles",
+          "table": {
+            "headers": ["Obstacle", "Description", "Solution"],
+            "rows": [
+              ["CGNAT", "ISP shares one public IP among many customers", "Cloudflare Tunnel, ngrok, or request a public IP from ISP"],
+              ["ISP blocks ports", "Some ISPs block ports 80, 443, 25 for residential connections", "Use a non-standard port (e.g., 8080, 8443) or Cloudflare Tunnel"],
+              ["Dynamic IP", "Your public IP changes every time the router reboots", "DDNS service (like TP-Link Deco DDNS) or Cloudflare Tunnel"],
+              ["No static IP", "You don't have a fixed public IP address", "Cloudflare Tunnel (no IP needed), DDNS, or ngrok"],
+              ["Router limitations", "Some ISP-provided routers have limited or broken port forwarding", "Cloudflare Tunnel, or replace the router"]
+            ]
+          }
+        },
+        {
+          "label": "The Solution: Tunneling",
+          "text": "Instead of waiting for incoming connections (which requires an open port), tunneling works by having your machine initiate an outbound connection to a cloud service, which then forwards incoming requests back through that same connection. This bypasses NAT, CGNAT, firewalls, and port blocking — because outbound connections are always allowed.\n\nCloudflare Tunnel is the best free option. Let's set it up."
+        }
+      ]
+    },
+    {
+      "id": "what-is-cloudflare-tunnel",
+      "title": "What is Cloudflare Tunnel?",
+      "description": "Understanding how Cloudflare Tunnel works and why it's the best free tunneling solution.",
+      "items": [
+        {
+          "label": "How It Works",
+          "text": "Cloudflare Tunnel (previously named Argo Tunnel) creates an encrypted tunnel from your local machine to Cloudflare's edge network. Here's the flow:\n\n1. You run a lightweight daemon called cloudflared on your machine\n2. cloudflared establishes an outbound connection to Cloudflare's network\n3. You configure a domain or subdomain in Cloudflare's DNS\n4. When someone visits your domain, Cloudflare proxies the request through the tunnel to your local machine\n5. No ports need to be open on your router. No public IP needed. No firewall changes needed."
+        },
+        {
+          "label": "Key Benefits",
+          "text": [
+            "✓ No port forwarding required — works behind any NAT, CGNAT, or firewall",
+            "✓ Free — unlimited tunnels, unlimited traffic, no monthly cost",
+            "✓ HTTPS automatically — Cloudflare provides SSL/TLS certificates",
+            "✓ DDoS protection — Cloudflare's network absorbs attacks",
+            "✓ No public IP needed — your app stays on your local network",
+            "✓ Encrypted end-to-end — traffic is encrypted between visitor and Cloudflare, and between Cloudflare and your machine",
+            "✓ Always-on — runs as a system service, auto-reconnects on failure",
+            "✓ Custom domains supported — use your own domain (e.g., app.yourdomain.com)",
+            "✓ Quick testing without a domain — TryCloudflare gives you a random URL instantly"
+          ]
+        },
+        {
+          "label": "Cloudflare Tunnel vs Alternatives",
+          "table": {
+            "headers": ["Feature", "Cloudflare Tunnel", "ngrok", "Tailscale Funnel", "Pagekite", "LocalXpose"],
+            "rows": [
+              ["Free tier", "Unlimited tunnels & traffic", "1 tunnel, 40 req/min", "Limited", "1 domain, limited traffic", "Limited tunnels"],
+              ["Custom domain", "Yes (free)", "Paid only", "Paid only", "Paid only", "Paid only"],
+              ["HTTPS", "Automatic", "Automatic", "Automatic", "Manual", "Automatic"],
+              ["DDoS protection", "Yes (Cloudflare edge)", "No", "No", "No", "No"],
+              ["Self-hosted", "Yes", "No", "No", "Yes", "No"],
+              ["Bandwidth limit", "Unlimited", "Limited on free", "Limited", "Limited on free", "Limited on free"],
+              ["Setup complexity", "Medium", "Simple", "Simple", "Simple", "Simple"],
+              ["Best for", "Production, permanent exposure", "Quick testing", "Personal use", "Quick testing", "Quick testing"]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prerequisites",
+      "title": "Prerequisites",
+      "description": "What you need before starting.",
+      "items": [
+        {
+          "label": "Requirements",
+          "text": [
+            "1. A local web app running on your machine (Next.js, Nginx, React, etc.) — we'll use port 81 for this guide",
+            "2. A Linux server or VM (Ubuntu 22.04 recommended) — we'll install cloudflared on this",
+            "3. Internet connection — cloudflared needs outbound access to Cloudflare (ports 443, 7844, 80)",
+            "4. (Optional) A domain name managed in Cloudflare DNS — if you want a custom domain instead of a random URL",
+            "5. sudo/root access on the machine running cloudflared"
+          ]
+        },
+        {
+          "label": "Our Setup for This Guide",
+          "text": "Throughout this guide, we'll use this setup:\n\n• Local web app: Next.js (or any app) running on a Linux VM at 192.168.68.200:81\n• Host OS: Windows 11 with TP-Link Deco mesh router\n• VM: Ubuntu 22.04 on VMware/VirtualBox (Bridged network mode)\n• Cloudflare account: Free tier (sign up at https://dash.cloudflare.com/sign-up)\n\nNote: This works identically whether your app runs on Windows, Linux, macOS, or a Raspberry Pi. The cloudflared daemon is available for all platforms."
+        }
+      ]
+    },
+    {
+      "id": "install-cloudflared",
+      "title": "Step 1: Install cloudflared",
+      "description": "Install the Cloudflare Tunnel client on your machine.",
+      "items": [
+        {
+          "label": "On Linux (Ubuntu/Debian) — Recommended",
+          "code": "user@vm:~$ wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb\nuser@vm:~$ sudo dpkg -i cloudflared-linux-amd64.deb\n(Reading database ... 123456 files and directories currently installed.)\nPreparing to unpack cloudflared-linux-amd64.deb ...\nUnpacking cloudflared (2025.12.0) ...\nSetting up cloudflared (2025.12.0) ...\n\nuser@vm:~$ cloudflared version\ncloudflared version 2025.12.0 (built 2025-12-10)"
+        },
+        {
+          "label": "Verification",
+          "code": "user@vm:~$ which cloudflared\n/usr/local/bin/cloudflared\n\nuser@vm:~$ cloudflared --version\ncloudflared version 2025.12.0"
+        }
+      ],
+      "subsections": [
+        {
+          "title": "Alternative: Install on Windows (PowerShell)",
+          "description": "If you want to run cloudflared on Windows directly instead of the VM.",
+          "items": [
+            {
+              "label": "Install via winget",
+              "code": "PS C:\\Users\\NC> winget install cloudflare.cloudflared\nFound cloudflared [cloudflare.cloudflared]\nDownloading: https://github.com/cloudflare/cloudflared/releases/...\nSuccessfully installed"
+            },
+            {
+              "label": "Or download manually",
+              "code": "PS C:\\Users\\NC> curl.exe -L --output cloudflared.msi https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.msi\nPS C:\\Users\\NC> msiexec /i cloudflared.msi"
+            },
+            {
+              "label": "Verify installation",
+              "code": "PS C:\\Users\\NC> cloudflared version\ncloudflared version 2025.12.0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "authenticate",
+      "title": "Step 2: Authenticate with Cloudflare",
+      "description": "Link the cloudflared client to your Cloudflare account.",
+      "items": [
+        {
+          "label": "Run the login command",
+          "code": "user@vm:~$ cloudflared tunnel login\n\nA browser window should have opened at the following URL:\n\nhttps://dash.cloudflare.com/argotunnel?callback=...\n\nIf the browser failed to open, open the URL above in your browser\n\n2025-12-10T10:30:00Z INF Waiting for login...\n2025-12-10T10:30:15Z INF You have successfully logged in!\n2025-12-10T10:30:15Z INF A new certificate has been saved to /home/user/.cloudflared/cert.pem"
+        },
+        {
+          "label": "What happens",
+          "text": "This opens a browser tab asking you to log in to Cloudflare and select a domain. After authentication:\n\n• cloudflared saves a certificate at ~/.cloudflared/cert.pem\n• This cert allows cloudflared to manage tunnels and DNS on your behalf\n• You only need to do this once per machine"
+        }
+      ]
+    },
+    {
+      "id": "create-tunnel",
+      "title": "Step 3: Create a Tunnel",
+      "description": "Create a named tunnel that will connect your local app to Cloudflare.",
+      "items": [
+        {
+          "label": "Create the tunnel",
+          "code": "user@vm:~$ cloudflared tunnel create my-app\n\nTunnel credentials written to /home/user/.cloudflared/my-app.json\n\ncloudflared will choose the global region for this tunnel from the Cloudflare network.\nYou can configure your tunnel to run a specific service locally at any given hostname.\nFor more, see: https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/tunnel-guide/\n\nTunnel ID: abc12345-6789-def0-1234-56789abcdef0"
+        },
+        {
+          "label": "Verify the tunnel exists",
+          "code": "user@vm:~$ cloudflared tunnel list\n\nID                                   Name    Created\nabc12345-6789-def0-1234-56789abcdef0 my-app  2025-12-10T10:35:00Z\n\nuser@vm:~$ cat /home/user/.cloudflared/my-app.json\n{\n  \"AccountTag\": \"your-account-id\",\n  \"TunnelSecret\": \"base64-encoded-secret\",\n  \"TunnelID\": \"abc12345-6789-def0-1234-56789abcdef0\",\n  \"TunnelName\": \"my-app\"\n}"
+        },
+        {
+          "label": "Important files created",
+          "table": {
+            "headers": ["File", "Purpose"],
+            "rows": [
+              ["~/.cloudflared/cert.pem", "Your API certificate — authenticates cloudflared with Cloudflare"],
+              ["~/.cloudflared/<tunnel-id>.json", "Tunnel credentials — the secret key that proves your tunnel is genuine"],
+              ["~/.cloudflared/config.yml", "Tunnel configuration — defines which local services to proxy (we'll create this next)"]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "configure-tunnel",
+      "title": "Step 4: Configure the Tunnel",
+      "description": "Tell Cloudflare Tunnel which local service to forward traffic to.",
+      "items": [
+        {
+          "label": "Create the configuration file",
+          "text": "Create or edit ~/.cloudflared/config.yml:"
+        },
+        {
+          "label": "Config file content",
+          "code": "user@vm:~$ nano ~/.cloudflared/config.yml\n\n# Paste the following (replace with your tunnel ID):\n\ntunnel: abc12345-6789-def0-1234-56789abcdef0\ncredentials-file: /home/user/.cloudflared/abc12345-6789-def0-1234-56789abcdef0.json\n\n# Route traffic based on hostname or path\n# If you have a custom domain:\nigress:\n  - hostname: app.yourdomain.com\n    service: http://localhost:81\n  # Catch-all rule - must be last\n  - service: http_status:404"
+        },
+        {
+          "label": "Understanding ingress rules",
+          "text": "The ingress section defines how to route incoming requests:\n\n• hostname: Match requests for a specific domain (e.g., app.yourdomain.com)\n• service: The local address to forward requests to (http://localhost:81, http://192.168.68.200:3000, etc.)\n• Path prefix: You can also match by path (e.g., hostname: \"*.yourdomain.com\" path: \"/api/*\")\n• The last rule must be a catch-all (no hostname) — usually http_status:404 or http_status:403\n\nIf you don't have a custom domain yet, skip the hostname and use the quick test method in Step 6."
+        }
+      ],
+      "subsections": [
+        {
+          "title": "Multiple services example",
+          "description": "If you have multiple apps running on different ports:",
+          "items": [
+            {
+              "label": "Multi-app config",
+              "code": "tunnel: abc12345-6789-def0-1234-56789abcdef0\ncredentials-file: /home/user/.cloudflared/abc12345-6789-def0-1234-56789abcdef0.json\n\ningress:\n  - hostname: app.yourdomain.com\n    service: http://localhost:3000\n  - hostname: api.yourdomain.com\n    service: http://localhost:4000\n  - hostname: blog.yourdomain.com\n    service: http://localhost:81\n  - hostname: \"*.yourdomain.com\"\n    service: http://localhost:8080\n  - service: http_status:404"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "run-tunnel",
+      "title": "Step 5: Run the Tunnel",
+      "description": "Start the tunnel and verify it connects successfully.",
+      "items": [
+        {
+          "label": "Start the tunnel",
+          "code": "user@vm:~$ cloudflared tunnel run my-app\n\n2025-12-10T10:40:00Z INF Starting tunnel tunnelID=abc12345-6789-def0-1234-56789abcdef0\n2025-12-10T10:40:00Z INF Connection 0 registered connIndex=0\n2025-12-10T10:40:00Z INF Connection 1 registered connIndex=1\n2025-12-10T10:40:00Z INF Connection 2 registered connIndex=2\n2025-12-10T10:40:00Z INF Connection 3 registered connIndex=3"
+        },
+        {
+          "label": "What you should see",
+          "text": "If you see 4 connections registered (Connection 0-3), the tunnel is up and running. These are 4 redundant connections to Cloudflare's edge — if one drops, traffic seamlessly shifts to another.\n\nKeep this terminal open. If you close it, the tunnel stops. We'll set it up as a service later."
+        },
+        {
+          "label": "Avoid this common error",
+          "code": "ERR Unable to connect to the local service: dial tcp 127.0.0.1:81: connect: connection refused\n\n# This means your local service (e.g., Nginx on port 81) isn't running:\nuser@vm:~$ sudo systemctl status nginx\n● nginx.service - A high-performance web server and reverse proxy server\n     Loaded: loaded\n     Active: inactive (dead)\n\n# Start it:\nuser@vm:~$ sudo systemctl start nginx\nuser@vm:~$ sudo systemctl status nginx\n     Active: active (running)"
+        }
+      ]
+    },
+    {
+      "id": "setup-dns",
+      "title": "Step 6: Set Up DNS (Custom Domain)",
+      "description": "Configure your domain to route traffic through the Cloudflare Tunnel.",
+      "items": [
+        {
+          "label": "Route DNS through the tunnel",
+          "code": "user@vm:~$ cloudflared tunnel route dns my-app app.yourdomain.com\n\n2025-12-10T10:45:00Z INF Added CNAME record app.yourdomain.com → abc12345-6789-def0-1234-56789abcdef0.cfargotunnel.com"
+        },
+        {
+          "label": "What this does",
+          "text": [
+            "This creates a CNAME record in Cloudflare DNS:\n• app.yourdomain.com → abc12345-6789-def0-1234-56789abcdef0.cfargotunnel.com\n• The proxy (orange cloud) is automatically enabled\n• Traffic to app.yourdomain.com now flows through Cloudflare → your tunnel → localhost:81",
+            "You can also do this manually in the Cloudflare Dashboard:\n1. Go to Cloudflare Dashboard → your domain → DNS\n2. Add a CNAME record:\n   - Name: app\n   - Target: abc12345-6789-def0-1234-56789abcdef0.cfargotunnel.com\n   - Proxy status: Proxied (orange cloud)\n3. Click Save"
+          ]
+        },
+        {
+          "label": "Verify DNS propagation",
+          "code": "user@vm:~$ dig app.yourdomain.com +short\nabc12345-6789-def0-1234-56789abcdef0.cfargotunnel.com\n\n# Or on Windows:\nPS C:\\Users\\NC> nslookup app.yourdomain.com\nServer:  ...\nName:    app.yourdomain.com\nAddress: 104.16.x.x  (Cloudflare IP)"
+        }
+      ]
+    },
+    {
+      "id": "run-as-service",
+      "title": "Step 7: Run as a System Service",
+      "description": "Make the tunnel start automatically on boot and stay running permanently.",
+      "items": [
+        {
+          "label": "Install as a systemd service",
+          "code": "user@vm:~$ sudo cloudflared service install\n\n2025-12-10T10:50:00Z INF Installing systemd service for cloudflared\n2025-12-10T10:50:00Z INF Successfully installed as systemd service\n\nuser@vm:~$ sudo systemctl start cloudflared\nuser@vm:~$ sudo systemctl enable cloudflared\nCreated symlink /etc/systemd/system/multi-user.target.wants/cloudflared.service → /etc/systemd/system/cloudflared.service"
+        },
+        {
+          "label": "Check service status",
+          "code": "user@vm:~$ sudo systemctl status cloudflared\n● cloudflared.service - cloudflared\n     Loaded: loaded (/etc/systemd/system/cloudflared.service; enabled; vendor preset: enabled)\n     Active: active (running) since Wed 2025-12-10 10:50:30 BST; 1min ago\n   Main PID: 12345 (cloudflared)\n      Tasks: 10 (limit: 12345)\n     Memory: 15.2M\n        CPU: 0.456s\n     CGroup: /system.slice/cloudflared.service\n             └─12345 /usr/local/bin/cloudflared tunnel run"
+        },
+        {
+          "label": "Service management commands",
+          "code": "user@vm:~$ sudo systemctl stop cloudflared    # Stop the tunnel\nuser@vm:~$ sudo systemctl start cloudflared     # Start the tunnel\nuser@vm:~$ sudo systemctl restart cloudflared   # Restart the tunnel\nuser@vm:~$ sudo systemctl disable cloudflared   # Disable auto-start\nuser@vm:~$ sudo journalctl -u cloudflared -f    # View live logs"
+        }
+      ],
+      "subsections": [
+        {
+          "title": "Alternative: Windows Service",
+          "description": "If you installed cloudflared on Windows:",
+          "items": [
+            {
+              "label": "Install as Windows service",
+              "code": "PS C:\\Users\\NC> cloudflared service install\nPS C:\\Users\\NC> Start-Service cloudflared\nPS C:\\Users\\NC> Set-Service cloudflared -StartupType Automatic\n\n# Verify:\nPS C:\\Users\\NC> Get-Service cloudflared\n\nStatus   Name               DisplayName\n------   ----               -----------\nRunning  cloudflared        cloudflared"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quick-test",
+      "title": "Quick Test Without a Domain (TryCloudflare)",
+      "description": "Test your tunnel immediately using a temporary Cloudflare URL — no domain needed.",
+      "items": [
+        {
+          "label": "Run a one-off tunnel",
+          "code": "user@vm:~$ cloudflared tunnel --url http://localhost:81\n\n2025-12-10T11:00:00Z INF Requesting new quick tunnel on trycloudflare.com...\n2025-12-10T11:00:05Z INF Your quick Tunnel has been created! Visit it at:\n    https://random-words-1234.trycloudflare.com\n2025-12-10T11:00:05Z INF Cannot determine default ingress from the URL, using default\n2025-12-10T11:00:05Z INF Connection 0 registered connIndex=0\n2025-12-10T11:00:05Z INF Connection 1 registered connIndex=1\n2025-12-10T11:00:05Z INF Connection 2 registered connIndex=2\n2025-12-10T11:00:05Z INF Connection 3 registered connIndex=3"
+        },
+        {
+          "label": "Test it",
+          "text": "Open the URL (e.g., https://random-words-1234.trycloudflare.com) in any browser — on your phone (mobile data), a friend's computer, anywhere in the world.\n\nYour local web app at port 81 is now accessible globally. No router config, no port forwarding, no firewall changes.\n\nNote: TryCloudflare URLs are temporary — they last as long as the tunnel process runs. They're great for testing, demos, and short-term sharing."
+        }
+      ]
+    },
+    {
+      "id": "nginx-integration",
+      "title": "Using Cloudflare Tunnel with Nginx (Reverse Proxy)",
+      "description": "How to configure Cloudflare Tunnel when Nginx is running as a reverse proxy on your VM.",
+      "items": [
+        {
+          "label": "Common Nginx + Cloudflare Tunnel Setup",
+          "text": "Many users run Nginx as a reverse proxy on port 80/81, which in turn proxies to a Next.js app (or other service) on a different port. In this case, point cloudflared to Nginx's port (81)."
+        },
+        {
+          "label": "Nginx config example",
+          "code": "user@vm:~$ cat /etc/nginx/sites-available/e-learning\n\nserver {\n    listen 81;\n    server_name app.yourdomain.com;\n\n    location / {\n        proxy_pass http://127.0.0.1:3000;  # Next.js\n        proxy_http_version 1.1;\n        proxy_set_header Upgrade $http_upgrade;\n        proxy_set_header Connection 'upgrade';\n        proxy_set_header Host $host;\n        proxy_set_header X-Real-IP $remote_addr;\n        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n        proxy_set_header X-Forwarded-Proto $scheme;\n        proxy_cache_bypass $http_upgrade;\n    }\n}"
+        },
+        {
+          "label": "Restart Nginx",
+          "code": "user@vm:~$ sudo nginx -t\nnginx: the configuration file /etc/nginx/nginx.conf syntax is ok\nnginx: configuration file /etc/nginx/nginx.conf test is successful\n\nuser@vm:~$ sudo systemctl restart nginx\nuser@vm:~$ sudo systemctl status nginx\n● nginx.service - A high-performance web server and reverse proxy server\n     Loaded: loaded\n     Active: active (running)\n\n# Now point cloudflared to Nginx:\nuser@vm:~$ cloudflared tunnel run --url http://localhost:81\n# Or in config.yml:\n# service: http://localhost:81"
+        },
+        {
+          "label": "Performance tip",
+          "text": "With Cloudflare Tunnel, you can also disable direct port access (set Nginx to listen only on 127.0.0.1:81 instead of 0.0.0.0:81) — because all traffic comes through the tunnel. This improves security by ensuring your app is only accessible via Cloudflare."
+        }
+      ]
+    },
+    {
+      "id": "troubleshooting",
+      "title": "Troubleshooting",
+      "description": "Common issues and how to fix them.",
+      "items": [
+        {
+          "label": "Issue 1: Connection refused — local service not running",
+          "code": "ERR Unable to connect to the local service: dial tcp 127.0.0.1:81: connect: connection refused\n\n# Fix: Make sure your web app (Nginx, Next.js, etc.) is running and listening on the correct port.\nuser@vm:~$ sudo ss -tlnp | grep :81\nLISTEN 0      511         127.0.0.1:81       0.0.0.0:*    users:((\"nginx\",pid=1234,fd=6))\n\n# If nothing shows, start the service:\nuser@vm:~$ sudo systemctl start nginx"
+        },
+        {
+          "label": "Issue 2: Cloudflare shows 521/522/523 errors",
+          "text": "These errors mean Cloudflare can't reach your tunnel:\n\n• 521: Web server is down — your cloudflared isn't running\n• 522: Connection timed out — cloudflared can't connect to Cloudflare's edge (check your internet)\n• 523: Origin is unreachable — same as 522, network issue\n• 524: A timeout occurred — your app is slow; increase timeouts\n\nFix: Check that cloudflared is running: sudo systemctl status cloudflared. Check your internet connection."
+        },
+        {
+          "label": "Issue 3: DNS not propagating",
+          "code": "user@vm:~$ dig app.yourdomain.com +short\n# (no output) or returns an old IP\n\n# Fix: Ensure the CNAME points to the tunnel ID:\ncloudflared tunnel route dns my-app app.yourdomain.com\n\n# Wait a few minutes for DNS propagation\n# Verify the tunnel ID:\nuser@vm:~$ cloudflared tunnel info my-app\nNAME     ID                                   STATUS\nmy-app   abc12345-6789-def0-1234-56789abcdef0 active\n\n# The CNAME target should be:\n# abc12345-6789-def0-1234-56789abcdef0.cfargotunnel.com"
+        },
+        {
+          "label": "Issue 4: Can't access from mobile/outside",
+          "code": "# If you get ERR_CONNECTION_REFUSED or the page doesn't load:\n\n# Test your tunnel is running:\nuser@vm:~$ curl -I http://localhost:81\nHTTP/1.1 200 OK\n\n# Test your tunnel URL from inside the VM:\nuser@vm:~$ curl -I https://app.yourdomain.com\nHTTP/2 200\n\n# If the tunnel isn't running, start it:\nuser@vm:~$ sudo systemctl restart cloudflared\nuser@vm:~$ sudo journalctl -u cloudflared -n 20 --no-pager"
+        },
+        {
+          "label": "Issue 5: Want to check logs in real-time",
+          "code": "user@vm:~$ sudo journalctl -u cloudflared -f\n\n# Or run cloudflared manually in debug mode:\nuser@vm:~$ cloudflared tunnel run my-app --loglevel debug\n\n# This shows every request coming through the tunnel:\n2025-12-10T11:10:00Z DBG GET https://app.yourdomain.com/ -> 200 in 15ms"
+        },
+        {
+          "label": "Issue 6: Too many authentication failures",
+          "code": "# If you get auth errors, the credentials file may be stale:\n\n# Delete and recreate the tunnel:\nuser@vm:~$ cloudflared tunnel delete my-app\nuser@vm:~$ rm ~/.cloudflared/my-app.json\nuser@vm:~$ cloudflared tunnel create my-app\n\n# Update your config.yml with the new tunnel ID\n# Then route DNS again:\nuser@vm:~$ cloudflared tunnel route dns my-app app.yourdomain.com"
+        }
+      ]
+    },
+    {
+      "id": "security-best-practices",
+      "title": "Security Best Practices",
+      "description": "Keep your tunnel and application secure.",
+      "items": [
+        {
+          "label": "1. Make your app listen only on localhost",
+          "text": "Since all traffic comes through the tunnel, your app doesn't need to listen on 0.0.0.0. Bind it to localhost only:\n\n• Nginx: listen 127.0.0.1:81;\n• Next.js: Not directly possible in dev mode, but in production with Nginx reverse proxy, bind Nginx to 127.0.0.1\n• This way, even if someone on your local network knows the port, they can't access your app directly"
+        },
+        {
+          "label": "2. Use Cloudflare Access for authentication",
+          "text": "You can add an authentication layer using Cloudflare Access (free up to 50 users). This requires anyone visiting your domain to log in via Google, GitHub, email OTP, or other providers before reaching your app.\n\nCloudflare Dashboard → Zero Trust → Access → Applications → Add an application"
+        },
+        {
+          "label": "3. Restrict the tunnel with firewall rules",
+          "text": "You can add firewall rules on the VM to only allow traffic from Cloudflare's IP ranges:\n\nuser@vm:~$ sudo ufw allow from 173.245.48.0/20 to any port 81\nuser@vm:~$ sudo ufw allow from 103.21.244.0/22 to any port 81\nuser@vm:~$ sudo ufw deny 81\n\n(Cloudflare IP ranges: https://www.cloudflare.com/ips/)"
+        },
+        {
+          "label": "4. Keep cloudflared updated",
+          "text": "Regularly update cloudflared for security patches:\n\nuser@vm:~$ sudo dpkg -i cloudflared-linux-amd64.deb\n# Or auto-update with the install script:\nuser@vm:~$ curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb -o cloudflared.deb && sudo dpkg -i cloudflared.deb"
+        },
+        {
+          "label": "5. Rotate tunnel secrets periodically",
+          "text": "If you suspect a tunnel credential leak, delete the tunnel and recreate it:\n\nuser@vm:~$ cloudflared tunnel delete my-app\nuser@vm:~$ cloudflared tunnel create my-app\nuser@vm:~$ cloudflared tunnel route dns my-app app.yourdomain.com\n# Update config.yml with new tunnel ID\nuser@vm:~$ sudo systemctl restart cloudflared"
+        }
+      ]
+    },
+    {
+      "id": "summary",
+      "title": "Summary",
+      "description": "Key takeaways and next steps.",
+      "items": [
+        {
+          "label": "What You Learned",
+          "text": [
+            "✓ CGNAT prevents port forwarding — tunneling is the solution",
+            "✓ Cloudflare Tunnel is free, secure, and works on any network",
+            "✓ cloudflared creates an outbound tunnel from your machine to Cloudflare's edge",
+            "✓ No open ports needed on your router — the tunnel initiates the connection",
+            "✓ HTTPS and DDoS protection included for free",
+            "✓ You can use TryCloudflare for quick testing without a domain",
+            "✓ The tunnel runs as a background service for permanent availability",
+            "✓ Works with Nginx reverse proxy, Next.js, or any HTTP service",
+            "✓ Extra security with Cloudflare Access, localhost binding, and firewall rules"
+          ]
+        },
+        {
+          "label": "Quick Start Recap (5 commands)",
+          "code": "# 1. Install\nsudo dpkg -i cloudflared-linux-amd64.deb\n\n# 2. Login\ncloudflared tunnel login\n\n# 3. Create tunnel\ncloudflared tunnel create my-app\n\n# 4. Quick test (no domain needed)\ncloudflared tunnel --url http://localhost:81\n\n# 5. Permanent setup\ncloudflared tunnel route dns my-app app.yourdomain.com\nsudo cloudflared service install\nsudo systemctl enable cloudflared\nsudo systemctl start cloudflared"
+        },
+        {
+          "label": "Next Steps",
+          "text": [
+            "1. Get a domain name (e.g., from Cloudflare Registrar, Namecheap, or GoDaddy) and add it to Cloudflare DNS",
+            "2. Set up Cloudflare Access (Zero Trust) for authentication",
+            "3. Configure Web Analytics in Cloudflare Dashboard for visitor insights",
+            "4. Set up a WAF rule to block malicious traffic",
+            "5. If you have multiple apps, create multiple tunnels or use ingress rules",
+            "6. Consider adding a caching layer (Cloudflare Cache or Nginx caching) for better performance"
+          ]
+        }
+      ]
+    }
+  ]
+}

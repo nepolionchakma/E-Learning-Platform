@@ -61,5 +61,26 @@
     "content": "Learn how to set up and test a full PostgreSQL High Availability cluster — including Patroni, etcd, and HAProxy — on just one machine using Docker containers. Covers automatic failover, graceful switchover, node recovery, read/write splitting, and three different HA approaches with step-by-step instructions, real commands, and expected outputs.",
     "author": "E-Learning Platform",
     "date": "2026-05-21"
+  },
+  {
+    "slug": "cloudflare-tunnel-guide",
+    "title": "Expose Your Local Web App to the Internet with Cloudflare Tunnel (Behind CGNAT / No Port Forwarding)",
+    "content": "A complete step-by-step guide to exposing your locally-hosted web application to the internet without port forwarding, without a static public IP, and even behind CGNAT. Using Cloudflare Tunnel (cloudflared), you get HTTPS, DDoS protection, and a secure tunnel — all for free.",
+    "author": "E-Learning Platform",
+    "date": "2026-06-07"
+  },
+  {
+    "slug": "it-infrastructure",
+    "title": "IT Infrastructure: Concepts, Design, and Build",
+    "content": "A comprehensive guide to IT infrastructure covering monolithic, two-tier, and three-tier/multi-tier architectures, network considerations, hardware and VM sizing, data storage strategies, and operating system selection — with practical design patterns, decision criteria, and production-ready best practices for architects, developers, and DevOps engineers.",
+    "author": "E-Learning Platform",
+    "date": "2026-06-08"
+  },
+  {
+    "slug": "redis-valkey",
+    "title": "Redis & Valkey: The Complete A–Z Guide",
+    "content": "A comprehensive end-to-end guide to Redis and Valkey — from fundamentals to production. Covers installation, all data types and commands, persistence, replication, Sentinel high availability, Redis Cluster, the Valkey fork, security (ACL/TLS), performance tuning, Redis Stack modules (JSON, Search, TimeSeries, Bloom), use cases (caching, sessions, rate limiting, queues, leaderboards), Docker/Kubernetes deployment, monitoring with Prometheus/Grafana, backups, troubleshooting, and production best practices.",
+    "author": "E-Learning Platform",
+    "date": "2026-06-08"
   }
 ]

@@ -1,0 +1,273 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 450" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="450" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0a0a1a"/>
+      <stop offset="0.5" stop-color="#0f172a"/>
+      <stop offset="1" stop-color="#0a0f1e"/>
+    </linearGradient>
+    <linearGradient id="redisGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#e8461a"/>
+      <stop offset="1" stop-color="#b83112"/>
+    </linearGradient>
+    <linearGradient id="valkeyGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#22c55e"/>
+      <stop offset="1" stop-color="#16a34a"/>
+    </linearGradient>
+    <linearGradient id="stringGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#3b82f6"/>
+      <stop offset="1" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="listGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#10b981"/>
+      <stop offset="1" stop-color="#047857"/>
+    </linearGradient>
+    <linearGradient id="setGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#f59e0b"/>
+      <stop offset="1" stop-color="#d97706"/>
+    </linearGradient>
+    <linearGradient id="zsetGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#8b5cf6"/>
+      <stop offset="1" stop-color="#6d28d9"/>
+    </linearGradient>
+    <linearGradient id="hashGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#06b6d4"/>
+      <stop offset="1" stop-color="#0891b2"/>
+    </linearGradient>
+    <linearGradient id="streamGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#ec4899"/>
+      <stop offset="1" stop-color="#be185d"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="boxShadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="450" fill="url(#bg)"/>
+
+  <!-- Subtle grid -->
+  <g stroke="#ffffff" stroke-opacity="0.015" stroke-width="1">
+    <line x1="0" y1="60" x2="1200" y2="60"/><line x1="0" y1="120" x2="1200" y2="120"/>
+    <line x1="0" y1="180" x2="1200" y2="180"/><line x1="0" y1="240" x2="1200" y2="240"/>
+    <line x1="0" y1="300" x2="1200" y2="300"/><line x1="0" y1="360" x2="1200" y2="360"/>
+    <line x1="0" y1="420" x2="1200" y2="420"/>
+    <line x1="200" y1="0" x2="200" y2="450"/><line x1="400" y1="0" x2="400" y2="450"/>
+    <line x1="600" y1="0" x2="600" y2="450"/><line x1="800" y1="0" x2="800" y2="450"/>
+    <line x1="1000" y1="0" x2="1000" y2="450"/>
+  </g>
+
+  <!-- ===== REDIS LOGO / CORE (left) ===== -->
+  <g transform="translate(30, 30)" filter="url(#boxShadow)">
+    <rect x="0" y="0" width="280" height="210" rx="8" fill="#1a2332" stroke="#334155" stroke-width="1"/>
+    <rect x="0" y="0" width="280" height="28" rx="8" fill="#b83112"/>
+    <rect x="0" y="16" width="280" height="12" fill="#b83112"/>
+    <text x="140" y="19" fill="#ffffff" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">REDIS CORE</text>
+
+    <!-- Redis logo shape -->
+    <g transform="translate(140, 65)">
+      <polygon points="0,-35 30,-20 30,10 0,25 -30,10 -30,-20" fill="#e8461a" fill-opacity="0.2" stroke="#e8461a" stroke-width="1"/>
+      <text x="0" y="5" fill="#e8461a" font-family="monospace" font-size="24" font-weight="bold" text-anchor="middle">R</text>
+    </g>
+
+    <!-- Key features -->
+    <text x="140" y="115" fill="#f87171" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">In-Memory • Key-Value Store</text>
+    <text x="140" y="132" fill="#9ca3af" font-family="monospace" font-size="8" text-anchor="middle">Sub-millisecond latency</text>
+    <text x="140" y="148" fill="#9ca3af" font-family="monospace" font-size="8" text-anchor="middle">Single-threaded event loop</text>
+    <text x="140" y="164" fill="#9ca3af" font-family="monospace" font-size="8" text-anchor="middle">Built-in replication &amp; HA</text>
+
+    <!-- Version badges -->
+    <rect x="60" y="178" width="70" height="18" rx="4" fill="#e8461a" fill-opacity="0.15" stroke="#e8461a" stroke-width="0.5"/>
+    <text x="95" y="190" fill="#fca5a5" font-family="monospace" font-size="8" text-anchor="middle">Redis 7.4 / 8.0</text>
+    <rect x="145" y="178" width="90" height="18" rx="4" fill="#22c55e" fill-opacity="0.15" stroke="#22c55e" stroke-width="0.5"/>
+    <text x="190" y="190" fill="#86efac" font-family="monospace" font-size="8" text-anchor="middle">Valkey 8.x / 9.x</text>
+  </g>
+
+  <!-- ===== DATA TYPES (center-top) ===== -->
+  <g transform="translate(330, 30)" filter="url(#boxShadow)">
+    <rect x="0" y="0" width="530" height="210" rx="8" fill="#1a2332" stroke="#334155" stroke-width="1"/>
+    <rect x="0" y="0" width="530" height="28" rx="8" fill="#1d4ed8"/>
+    <rect x="0" y="16" width="530" height="12" fill="#1d4ed8"/>
+    <text x="265" y="19" fill="#ffffff" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">DATA TYPES &amp; COMMANDS</text>
+
+    <!-- Strings -->
+    <g transform="translate(15, 40)">
+      <rect x="0" y="0" width="155" height="32" rx="4" fill="#0f172a" stroke="#3b82f6" stroke-width="0.5"/>
+      <rect x="0" y="0" width="60" height="32" rx="4" fill="#1d4ed8"/>
+      <text x="30" y="20" fill="#ffffff" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">Strings</text>
+      <text x="65" y="15" fill="#93c5fd" font-family="monospace" font-size="8">SET • GET • INCR • DECR</text>
+      <text x="65" y="27" fill="#9ca3af" font-family="monospace" font-size="7">MSET • MGET • APPEND</text>
+    </g>
+
+    <!-- Lists -->
+    <g transform="translate(180, 40)">
+      <rect x="0" y="0" width="155" height="32" rx="4" fill="#0f172a" stroke="#10b981" stroke-width="0.5"/>
+      <rect x="0" y="0" width="60" height="32" rx="4" fill="#047857"/>
+      <text x="30" y="20" fill="#ffffff" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">Lists</text>
+      <text x="65" y="15" fill="#6ee7b7" font-family="monospace" font-size="8">LPUSH • RPUSH • LPOP</text>
+      <text x="65" y="27" fill="#9ca3af" font-family="monospace" font-size="7">RPOP • LRANGE • LLEN</text>
+    </g>
+
+    <!-- Sets -->
+    <g transform="translate(345, 40)">
+      <rect x="0" y="0" width="170" height="32" rx="4" fill="#0f172a" stroke="#f59e0b" stroke-width="0.5"/>
+      <rect x="0" y="0" width="60" height="32" rx="4" fill="#d97706"/>
+      <text x="30" y="20" fill="#ffffff" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">Sets</text>
+      <text x="65" y="15" fill="#fde68a" font-family="monospace" font-size="8">SADD • SREM • SMEMBERS</text>
+      <text x="65" y="27" fill="#9ca3af" font-family="monospace" font-size="7">SINTER • SUNION • SDIFF</text>
+    </g>
+
+    <!-- Sorted Sets -->
+    <g transform="translate(15, 82)">
+      <rect x="0" y="0" width="155" height="32" rx="4" fill="#0f172a" stroke="#8b5cf6" stroke-width="0.5"/>
+      <rect x="0" y="0" width="80" height="32" rx="4" fill="#6d28d9"/>
+      <text x="40" y="20" fill="#ffffff" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">Sorted Sets</text>
+      <text x="85" y="15" fill="#c4b5fd" font-family="monospace" font-size="8">ZADD • ZRANGE</text>
+      <text x="85" y="27" fill="#9ca3af" font-family="monospace" font-size="7">ZSCORE • ZINCRBY</text>
+    </g>
+
+    <!-- Hashes -->
+    <g transform="translate(180, 82)">
+      <rect x="0" y="0" width="155" height="32" rx="4" fill="#0f172a" stroke="#06b6d4" stroke-width="0.5"/>
+      <rect x="0" y="0" width="70" height="32" rx="4" fill="#0891b2"/>
+      <text x="35" y="20" fill="#ffffff" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">Hashes</text>
+      <text x="75" y="15" fill="#67e8f9" font-family="monospace" font-size="8">HSET • HGET • HGETALL</text>
+      <text x="75" y="27" fill="#9ca3af" font-family="monospace" font-size="7">HMSET • HDEL • HINCRBY</text>
+    </g>
+
+    <!-- Streams -->
+    <g transform="translate(345, 82)">
+      <rect x="0" y="0" width="170" height="32" rx="4" fill="#0f172a" stroke="#ec4899" stroke-width="0.5"/>
+      <rect x="0" y="0" width="70" height="32" rx="4" fill="#be185d"/>
+      <text x="35" y="20" fill="#ffffff" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">Streams</text>
+      <text x="75" y="15" fill="#fbcfe8" font-family="monospace" font-size="8">XADD • XREAD • XGROUP</text>
+      <text x="75" y="27" fill="#9ca3af" font-family="monospace" font-size="7">XRANGE • XLEN • XACK</text>
+    </g>
+
+    <!-- Bitmaps / HyperLogLog / Geospatial -->
+    <g transform="translate(15, 124)">
+      <rect x="0" y="0" width="230" height="32" rx="4" fill="#0f172a" stroke="#f97316" stroke-width="0.5"/>
+      <rect x="0" y="0" width="100" height="32" rx="4" fill="#c2410c"/>
+      <text x="50" y="20" fill="#ffffff" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">Specialized</text>
+      <text x="105" y="15" fill="#fdba74" font-family="monospace" font-size="8">Bitmaps • HyperLogLog</text>
+      <text x="105" y="27" fill="#9ca3af" font-family="monospace" font-size="7">Geospatial • Bloom Filters</text>
+    </g>
+
+    <!-- Redis Stack Modules -->
+    <g transform="translate(260, 124)">
+      <rect x="0" y="0" width="255" height="32" rx="4" fill="#0f172a" stroke="#14b8a6" stroke-width="0.5"/>
+      <rect x="0" y="0" width="100" height="32" rx="4" fill="#0d9488"/>
+      <text x="50" y="20" fill="#ffffff" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">Stack Modules</text>
+      <text x="105" y="15" fill="#5eead4" font-family="monospace" font-size="8">RedisJSON • RediSearch</text>
+      <text x="105" y="27" fill="#9ca3af" font-family="monospace" font-size="7">RedisTimeSeries • RedisBloom</text>
+    </g>
+
+    <!-- Pipelining / Transactions -->
+    <g transform="translate(15, 166)">
+      <rect x="0" y="0" width="155" height="30" rx="4" fill="#0f172a" stroke="#f43f5e" stroke-width="0.5"/>
+      <text x="15" y="20" fill="#fb7185" font-family="monospace" font-size="8">⚡ Pipelining • MULTI/EXEC</text>
+    </g>
+    <g transform="translate(180, 166)">
+      <rect x="0" y="0" width="155" height="30" rx="4" fill="#0f172a" stroke="#a855f7" stroke-width="0.5"/>
+      <text x="15" y="20" fill="#c084fc" font-family="monospace" font-size="8">🔐 Lua Scripting (EVAL)</text>
+    </g>
+    <g transform="translate(345, 166)">
+      <rect x="0" y="0" width="170" height="30" rx="4" fill="#0f172a" stroke="#14b8a6" stroke-width="0.5"/>
+      <text x="15" y="20" fill="#2dd4bf" font-family="monospace" font-size="8">🏷️ TTL • EXPIRE • Pub/Sub</text>
+    </g>
+  </g>
+
+  <!-- ===== INFRASTRUCTURE (right) ===== -->
+  <g transform="translate(880, 30)" filter="url(#boxShadow)">
+    <rect x="0" y="0" width="290" height="210" rx="8" fill="#1a2332" stroke="#334155" stroke-width="1"/>
+    <rect x="0" y="0" width="290" height="28" rx="8" fill="#16a34a"/>
+    <rect x="0" y="16" width="290" height="12" fill="#16a34a"/>
+    <text x="145" y="19" fill="#ffffff" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">PRODUCTION INFRASTRUCTURE</text>
+
+    <!-- Architecture diagram -->
+    <text x="145" y="50" fill="#86efac" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">High Availability Architecture</text>
+
+    <!-- Master -->
+    <rect x="85" y="62" width="120" height="28" rx="4" fill="#e8461a" fill-opacity="0.15" stroke="#e8461a" stroke-width="1"/>
+    <text x="145" y="80" fill="#fca5a5" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">MASTER (Primary)</text>
+
+    <!-- Arrow to replicas -->
+    <line x1="145" y1="90" x2="145" y2="102" stroke="#f59e0b" stroke-width="1.5"/>
+    <line x1="145" y1="102" x2="60" y2="102" stroke="#22c55e" stroke-width="1"/>
+    <line x1="145" y1="102" x2="230" y2="102" stroke="#22c55e" stroke-width="1"/>
+    <polygon points="60,102 68,98 68,106" fill="#22c55e"/>
+    <polygon points="230,102 222,98 222,106" fill="#22c55e"/>
+
+    <!-- Replica 1 -->
+    <rect x="15" y="108" width="90" height="28" rx="4" fill="#22c55e" fill-opacity="0.1" stroke="#22c55e" stroke-width="0.5"/>
+    <text x="60" y="126" fill="#86efac" font-family="monospace" font-size="8" text-anchor="middle">REPLICA 1</text>
+
+    <!-- Replica 2 -->
+    <rect x="185" y="108" width="90" height="28" rx="4" fill="#22c55e" fill-opacity="0.1" stroke="#22c55e" stroke-width="0.5"/>
+    <text x="230" y="126" fill="#86efac" font-family="monospace" font-size="8" text-anchor="middle">REPLICA 2</text>
+
+    <!-- Sentinel -->
+    <rect x="15" y="145" width="260" height="22" rx="4" fill="#0f172a" stroke="#f59e0b" stroke-width="0.5"/>
+    <text x="145" y="160" fill="#fbbf24" font-family="monospace" font-size="8" text-anchor="middle">🛡️ SENTINEL — Auto-Failover (Quorum: 2/3)</text>
+
+    <!-- Cluster -->
+    <rect x="15" y="175" width="120" height="22" rx="4" fill="#0f172a" stroke="#8b5cf6" stroke-width="0.5"/>
+    <text x="75" y="190" fill="#a78bfa" font-family="monospace" font-size="8" text-anchor="middle">🔀 Cluster (16384 Slots)</text>
+
+    <rect x="145" y="175" width="130" height="22" rx="4" fill="#0f172a" stroke="#06b6d4" stroke-width="0.5"/>
+    <text x="210" y="190" fill="#67e8f9" font-family="monospace" font-size="8" text-anchor="middle">💾 RDB + AOF Persistence</text>
+  </g>
+
+  <!-- ===== BOTTOM: Use Cases & Features ===== -->
+  <g transform="translate(30, 260)" filter="url(#boxShadow)">
+    <rect x="0" y="0" width="1140" height="125" rx="8" fill="#1a2332" stroke="#334155" stroke-width="1"/>
+    <rect x="0" y="0" width="1140" height="28" rx="8" fill="#1a2332"/>
+    <rect x="0" y="16" width="1140" height="12" fill="#1a2332"/>
+    <text x="570" y="19" fill="#ffffff" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">USE CASES • SECURITY • DEPLOYMENT • MONITORING</text>
+
+    <!-- Use Cases -->
+    <g transform="translate(20, 40)">
+      <rect x="0" y="0" width="540" height="75" rx="6" fill="#0f172a" stroke="#3b82f6" stroke-width="0.5"/>
+      <text x="10" y="18" fill="#60a5fa" font-family="monospace" font-size="9" font-weight="bold">Use Cases</text>
+      <rect x="10" y="28" width="165" height="18" rx="3" fill="#1d4ed8" fill-opacity="0.2"/>
+      <text x="15" y="40" fill="#93c5fd" font-family="monospace" font-size="7">⚡ Caching Layer</text>
+      <rect x="185" y="28" width="165" height="18" rx="3" fill="#1d4ed8" fill-opacity="0.2"/>
+      <text x="190" y="40" fill="#93c5fd" font-family="monospace" font-size="7">🎯 Session Store</text>
+      <rect x="360" y="28" width="170" height="18" rx="3" fill="#1d4ed8" fill-opacity="0.2"/>
+      <text x="365" y="40" fill="#93c5fd" font-family="monospace" font-size="7">📊 Rate Limiting</text>
+      <rect x="10" y="50" width="165" height="18" rx="3" fill="#1d4ed8" fill-opacity="0.2"/>
+      <text x="15" y="62" fill="#93c5fd" font-family="monospace" font-size="7">📨 Message Queue (Streams)</text>
+      <rect x="185" y="50" width="165" height="18" rx="3" fill="#1d4ed8" fill-opacity="0.2"/>
+      <text x="190" y="62" fill="#93c5fd" font-family="monospace" font-size="7">🏆 Leaderboards</text>
+      <rect x="360" y="50" width="170" height="18" rx="3" fill="#1d4ed8" fill-opacity="0.2"/>
+      <text x="365" y="62" fill="#93c5fd" font-family="monospace" font-size="7">🌐 Real-time Analytics</text>
+    </g>
+
+    <!-- Security / Deployment / Monitoring -->
+    <g transform="translate(580, 40)">
+      <rect x="0" y="0" width="540" height="75" rx="6" fill="#0f172a" stroke="#f59e0b" stroke-width="0.5"/>
+      <text x="10" y="18" fill="#fbbf24" font-family="monospace" font-size="9" font-weight="bold">Security &amp; Operations</text>
+      <rect x="10" y="28" width="165" height="18" rx="3" fill="#b45309" fill-opacity="0.2"/>
+      <text x="15" y="40" fill="#fde68a" font-family="monospace" font-size="7">🔐 ACL • TLS/SSL • Auth</text>
+      <rect x="185" y="28" width="165" height="18" rx="3" fill="#b45309" fill-opacity="0.2"/>
+      <text x="190" y="40" fill="#fde68a" font-family="monospace" font-size="7">🐳 Docker • K8s Operator</text>
+      <rect x="360" y="28" width="170" height="18" rx="3" fill="#b45309" fill-opacity="0.2"/>
+      <text x="365" y="40" fill="#fde68a" font-family="monospace" font-size="7">📈 Prometheus/Grafana</text>
+      <rect x="10" y="50" width="165" height="18" rx="3" fill="#b45309" fill-opacity="0.2"/>
+      <text x="15" y="62" fill="#fde68a" font-family="monospace" font-size="7">💾 Backup • RDB/AOF</text>
+      <rect x="185" y="50" width="165" height="18" rx="3" fill="#b45309" fill-opacity="0.2"/>
+      <text x="190" y="62" fill="#fde68a" font-family="monospace" font-size="7">🔧 Slow Log • Monitor</text>
+      <rect x="360" y="50" width="170" height="18" rx="3" fill="#b45309" fill-opacity="0.2"/>
+      <text x="365" y="62" fill="#fde68a" font-family="monospace" font-size="7">🚨 Valkey Migration</text>
+    </g>
+  </g>
+
+  <!-- Title -->
+  <text x="600" y="434" fill="#ffffff" font-family="system-ui, sans-serif" font-size="22" font-weight="bold" text-anchor="middle" letter-spacing="1">Redis &amp; Valkey</text>
+  <text x="600" y="450" fill="#e8461a" font-family="monospace" font-size="11" text-anchor="middle">The Complete A–Z Guide</text>
+</svg>

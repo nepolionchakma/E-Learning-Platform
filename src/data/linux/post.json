@@ -1,5 +1,5 @@
 {
-  "title": "Ubuntu Linux",
+  "title": "Ubuntu Linux - The Complete A-Z Command Reference",
   "icon": "🐧",
   "description": "Complete command reference from beginner to advanced",
   "stages": [
@@ -450,6 +450,117 @@
               "john@nc:~$ sudo userdel -r dev1\njohn@nc:~$ getent passwd dev1\n(no output, user deleted)"
             ]
           ]
+        },
+        {
+          "name": "setfacl / getfacl - Access Control Lists",
+          "rows": [
+            [
+              "getfacl file.txt",
+              "View ACLs",
+              "Shows all ACL entries",
+              "user::rw-\ngroup::r--\nother::r--"
+            ],
+            [
+              "setfacl -m u:alice:rwx file.txt",
+              "Add user ACL",
+              "Give alice permissions",
+              "user:alice:rwx"
+            ],
+            [
+              "setfacl -m g:dev:rx /projects",
+              "Add group ACL",
+              "Give dev group access",
+              "group:dev:r-x"
+            ],
+            [
+              "setfacl -x u:alice file.txt",
+              "Remove user ACL",
+              "Delete ACL entry",
+              "(removed)"
+            ],
+            [
+              "setfacl -b file.txt",
+              "Remove all ACLs",
+              "Reset to basic perms",
+              "(all ACLs removed)"
+            ],
+            [
+              "setfacl -d -m u:alice:rx ./shared/",
+              "Default ACL",
+              "New files inherit ACL",
+              "New files get alice:r-x"
+            ]
+          ]
+        },
+        {
+          "name": "chmod - Special: SUID, SGID, Sticky Bit",
+          "rows": [
+            [
+              "chmod u+s /usr/bin/myapp",
+              "SUID (setuid)",
+              "Runs as file owner",
+              "-rwsr-xr-x (s in owner x)"
+            ],
+            [
+              "chmod g+s /shared/folder",
+              "SGID (setgid)",
+              "New files inherit group",
+              "drwxr-sr-x (s in group x)"
+            ],
+            [
+              "chmod +t /tmp",
+              "Sticky bit",
+              "Only owners delete files",
+              "drwxrwxrwt (t in other x)"
+            ],
+            [
+              "chmod 4755 script.sh",
+              "Numeric SUID",
+              "4=SUID, 755=rwxr-xr-x",
+              "-rwsr-xr-x"
+            ],
+            [
+              "chmod 2755 /shared",
+              "Numeric SGID",
+              "2=SGID, 755=perms",
+              "drwxr-sr-x"
+            ],
+            [
+              "chmod 1777 /tmp",
+              "Numeric Sticky",
+              "1=Sticky, 777=all write",
+              "drwxrwxrwt"
+            ]
+          ]
+        },
+        {
+          "name": "umask - Default Permission Mask",
+          "rows": [
+            [
+              "umask",
+              "Show current mask",
+              "Display umask value",
+              "0022"
+            ],
+            [
+              "umask -S",
+              "Show symbolic",
+              "Display as rwx format",
+              "u=rwx,g=rx,o=rx"
+            ],
+            [
+              "umask 0077",
+              "Restrictive mask",
+              "Only owner can access",
+              "-rw------- (files), drwx------ (dirs)"
+            ],
+            [
+              "umask 0000",
+              "Permissive mask",
+              "Everyone full access",
+              "-rw-rw-rw- (files), drwxrwxrwx (dirs)"
+            ]
+          ]
         }
       ]
     },
@@ -505,6 +616,111 @@
               "Clean unused deps",
               "Remove orphaned dependencies",
               "john@nc:~$ sudo apt autoremove\n0 upgraded, 0 newly installed, 3 to remove\nFreed disk space - 42.5 MB"
+            ]
+          ]
+        },
+        {
+          "name": "snap - Snap Package Manager",
+          "rows": [
+            [
+              "snap find nginx",
+              "Search snaps",
+              "Find snaps by name",
+              "nginx 1.24 from nginx"
+            ],
+            [
+              "sudo snap install lxd",
+              "Install snap",
+              "Install from store",
+              "lxd 5.21 installed"
+            ],
+            [
+              "sudo snap install code --classic",
+              "Install classic",
+              "Full system access",
+              "code 1.90 installed"
+            ],
+            [
+              "snap list",
+              "List installed",
+              "All snap packages",
+              "code, lxd, ..."
+            ],
+            [
+              "sudo snap remove code",
+              "Remove snap",
+              "Delete package",
+              "code removed"
+            ],
+            [
+              "sudo snap refresh",
+              "Update all snaps",
+              "Check and apply updates",
+              "All snaps up to date."
+            ]
+          ]
+        },
+        {
+          "name": "dpkg - Debian Package Manager (Low-Level)",
+          "rows": [
+            [
+              "dpkg -i package.deb",
+              "Install local .deb",
+              "Install from file",
+              "Unpacking and setting up..."
+            ],
+            [
+              "dpkg -l | grep nginx",
+              "Search installed",
+              "Check if installed",
+              "ii nginx 1.24 amd64"
+            ],
+            [
+              "dpkg -L nginx",
+              "List package files",
+              "Files installed by pkg",
+              "/usr/sbin/nginx, /etc/nginx/..."
+            ],
+            [
+              "dpkg -S /bin/ls",
+              "Find owning package",
+              "Which package owns file?",
+              "coreutils: /bin/ls"
+            ],
+            [
+              "dpkg --configure -a",
+              "Fix broken installs",
+              "Reconfigure unpacked",
+              "(fixes stuck packages)"
+            ],
+            [
+              "dpkg --get-selections > pkg.txt",
+              "Backup package list",
+              "Export installed list",
+              "2500 packages.txt"
+            ]
+          ]
+        },
+        {
+          "name": "PPA - Personal Package Archive",
+          "rows": [
+            [
+              "sudo add-apt-repository ppa:deadsnakes/ppa",
+              "Add PPA",
+              "Add third-party repo",
+              "Adding repository... Done"
+            ],
+            [
+              "sudo apt-add-repository --remove ppa:deadsnakes/ppa",
+              "Remove PPA",
+              "Delete repo",
+              "Repository removed."
+            ],
+            [
+              "ls /etc/apt/sources.list.d/",
+              "List all PPAs",
+              "All extra repos",
+              "deadsnakes-ppa.list, nodesource.list"
             ]
           ]
         }
@@ -628,6 +844,93 @@
               "john@nc:~$ nohup python server.py > server.log 2>&1 &\n[2] 12346\nnohup - ignoring input and appending output to 'server.log'"
             ]
           ]
+        },
+        {
+          "name": "htop - Interactive Process Viewer",
+          "rows": [
+            [
+              "htop",
+              "Interactive viewer",
+              "Full-screen process manager",
+              "CPU, MEM, SWP bars. PID, USER, PRI, NI, VIRT, RES, SHR, S, CPU%, MEM%, TIME+"
+            ],
+            [
+              "htop -u john",
+              "User filter",
+              "Only john's processes",
+              "(filtered by user)"
+            ],
+            [
+              "htop -s PERCENT_MEM",
+              "Sort by memory",
+              "Highest mem users first",
+              "F6=sorts by column"
+            ],
+            [
+              "htop -t",
+              "Tree view",
+              "Parent-child process tree",
+              "systemd---nginx---worker"
+            ]
+          ]
+        },
+        {
+          "name": "nice / renice - Process Priority",
+          "rows": [
+            [
+              "nice -n 10 ./heavy-task.sh",
+              "Low priority",
+              "nice=10, lower CPU priority",
+              "NI=10"
+            ],
+            [
+              "sudo nice --20 ./urgent-task.sh",
+              "High priority",
+              "nice=-20, highest priority",
+              "NI=-20"
+            ],
+            [
+              "renice -n 5 -p 12345",
+              "Change priority",
+              "Adjust running process",
+              "old 10, new 5"
+            ],
+            [
+              "ionice -c 2 -n 7 -p 12345",
+              "Set I/O priority",
+              "Best-effort, lowest IO prio",
+              "(idle IO class)"
+            ]
+          ]
+        },
+        {
+          "name": "pgrep / pkill / pidof",
+          "rows": [
+            [
+              "pgrep -u john node",
+              "Find PID by user",
+              "Node processes of john",
+              "12345"
+            ],
+            [
+              "pgrep -f 'python server.py'",
+              "Find by full cmd",
+              "Search entire command",
+              "23456"
+            ],
+            [
+              "pkill -f 'node server'",
+              "Kill by pattern",
+              "Kill all matching",
+              "[1]+ Terminated"
+            ],
+            [
+              "pidof nginx",
+              "Find PID by name",
+              "Quick PID lookup",
+              "1234 1235"
+            ]
+          ]
         }
       ]
     },
@@ -700,6 +1003,169 @@
               "Quick DNS lookup",
               "Just the IP address",
               "john@nc:~$ dig +short google.com\n142.250.80.46"
+            ]
+          ]
+        },
+        {
+          "name": "nmap - Network Scanner",
+          "rows": [
+            [
+              "nmap -sn 192.168.1.0/24",
+              "Ping scan subnet",
+              "Discover live hosts",
+              "5 hosts up"
+            ],
+            [
+              "nmap -p 22,80,443 192.168.1.1",
+              "Port scan",
+              "Check specific ports",
+              "22/open, 80/open, 443/closed"
+            ],
+            [
+              "nmap -sV 192.168.1.100",
+              "Version detection",
+              "Detect service versions",
+              "OpenSSH 9.0, nginx 1.24"
+            ],
+            [
+              "nmap -O 192.168.1.1",
+              "OS detection",
+              "Identify OS",
+              "Linux 5.x|6.x (95%)"
+            ]
+          ]
+        },
+        {
+          "name": "traceroute / tracepath / mtr",
+          "rows": [
+            [
+              "traceroute google.com",
+              "Trace network path",
+              "Shows each hop",
+              "hop1 1ms, hop2 3ms, hop3 12ms"
+            ],
+            [
+              "tracepath google.com",
+              "Simpler trace",
+              "No root needed",
+              "Same but simpler output"
+            ],
+            [
+              "mtr google.com",
+              "Combine ping+traceroute",
+              "Real-time network diag",
+              "Loss%, Snt, Last, Avg, Best, Wrst, StDev"
+            ]
+          ]
+        },
+        {
+          "name": "tcpdump - Packet Capture",
+          "rows": [
+            [
+              "sudo tcpdump -i eth0",
+              "Capture all packets",
+              "Listen on interface",
+              "listening on eth0"
+            ],
+            [
+              "sudo tcpdump -i eth0 port 80",
+              "Filter by port",
+              "Only HTTP traffic",
+              "IP .54321 > .80: Flags [S]"
+            ],
+            [
+              "sudo tcpdump -w capture.pcap",
+              "Save to file",
+              "Write for later analysis",
+              "1.2M capture.pcap"
+            ],
+            [
+              "sudo tcpdump -r capture.pcap -X",
+              "Read + hex dump",
+              "Analyze saved capture",
+              "(hex + ASCII output)"
+            ],
+            [
+              "sudo tcpdump -i eth0 host 10.0.0.5",
+              "Filter by host",
+              "Traffic to/from IP",
+              "(filtered)"
+            ]
+          ]
+        },
+        {
+          "name": "iptables - Firewall (Legacy)",
+          "rows": [
+            [
+              "sudo iptables -L -v",
+              "List rules",
+              "All rules with packet counts",
+              "Chain INPUT (policy ACCEPT)"
+            ],
+            [
+              "sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT",
+              "Allow SSH",
+              "Accept SSH connections",
+              "(adds rule to INPUT chain)"
+            ],
+            [
+              "sudo iptables -A INPUT -j DROP",
+              "Default deny",
+              "Drop everything not allowed",
+              "Be careful - do this last!"
+            ],
+            [
+              "sudo iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT",
+              "Allow established",
+              "Let existing connections continue",
+              "(needed before DROP)"
+            ],
+            [
+              "sudo iptables-save > /etc/iptables/rules.v4",
+              "Save rules",
+              "Persist across reboot",
+              "(saves to file)"
+            ],
+            [
+              "sudo iptables -F",
+              "Flush all rules",
+              "Clear all rules (careful!)",
+              "All rules cleared"
+            ]
+          ]
+        },
+        {
+          "name": "firewalld - Firewall Daemon (RHEL/CentOS)",
+          "rows": [
+            [
+              "sudo firewall-cmd --state",
+              "Check status",
+              "Is firewalld running?",
+              "running"
+            ],
+            [
+              "sudo firewall-cmd --list-all",
+              "List all rules",
+              "Current zone config",
+              "services: ssh, ports: 80/tcp"
+            ],
+            [
+              "sudo firewall-cmd --permanent --add-service=http",
+              "Allow HTTP",
+              "Add HTTP permanently",
+              "success"
+            ],
+            [
+              "sudo firewall-cmd --permanent --add-port=3000/tcp",
+              "Open custom port",
+              "Allow Node.js app",
+              "success"
+            ],
+            [
+              "sudo firewall-cmd --reload",
+              "Reload rules",
+              "Apply permanent changes",
+              "success"
             ]
           ]
         }
@@ -789,6 +1255,175 @@
               "john@nc:~$ cut -d - -f1 /etc/passwd\nroot\ndaemon\njohn"
             ]
           ]
+        },
+        {
+          "name": "tr - Translate / Delete Characters",
+          "rows": [
+            [
+              "echo 'hello' | tr 'a-z' 'A-Z'",
+              "Uppercase",
+              "Convert to UPPER",
+              "HELLO"
+            ],
+            [
+              "cat data.tsv | tr '\t' ','",
+              "Replace tabs",
+              "Convert TSV to CSV",
+              "name,age,city"
+            ],
+            [
+              "echo 'hello   world' | tr -s ' '",
+              "Squeeze spaces",
+              "Collapse multiple spaces",
+              "hello world"
+            ],
+            [
+              "echo -e 'a\\nb\\nc' | tr -d '\\n'",
+              "Delete newlines",
+              "Join lines into one",
+              "abc"
+            ],
+            [
+              "cat file | tr -cd '[:print:]'",
+              "Strip non-printable",
+              "Remove control characters",
+              "(printable only)"
+            ]
+          ]
+        },
+        {
+          "name": "uniq - Unique Lines (must sort first)",
+          "rows": [
+            [
+              "sort data.txt | uniq",
+              "Remove duplicates",
+              "Unique lines only",
+              "apple, banana, orange"
+            ],
+            [
+              "sort data.txt | uniq -c",
+              "Count occurrences",
+              "Show frequency",
+              "2 apple, 1 banana, 1 orange"
+            ],
+            [
+              "sort data.txt | uniq -d",
+              "Only duplicates",
+              "Show lines appearing 2+",
+              "apple"
+            ],
+            [
+              "sort data.txt | uniq -u",
+              "Only unique lines",
+              "Show lines appearing once",
+              "banana, orange"
+            ]
+          ]
+        },
+        {
+          "name": "paste / join / comm - Combine Files",
+          "rows": [
+            [
+              "paste names.txt ages.txt",
+              "Side by side",
+              "Merge line by line",
+              "Alice 30, Bob 25"
+            ],
+            [
+              "paste -d ',' names.txt ages.txt",
+              "Custom delimiter",
+              "CSV output",
+              "Alice,30"
+            ],
+            [
+              "paste -s -d '+' nums.txt | bc",
+              "Sum column",
+              "Add all numbers",
+              "150"
+            ],
+            [
+              "comm file1.txt file2.txt",
+              "Compare sorted files",
+              "Show differences",
+              "col1=unique1, col2=unique2, col3=shared"
+            ],
+            [
+              "comm -3 file1.txt file2.txt",
+              "Suppress common",
+              "Only differences",
+              "(unique lines only)"
+            ]
+          ]
+        },
+        {
+          "name": "xargs - Build & Execute Commands",
+          "rows": [
+            [
+              "find . -name '*.tmp' | xargs rm",
+              "Delete found files",
+              "Remove matching files",
+              "(deletes all .tmp files)"
+            ],
+            [
+              "cat urls.txt | xargs curl -O",
+              "Download multiple URLs",
+              "Each URL gets downloaded",
+              "% Total % Received"
+            ],
+            [
+              "find . -name '*.jpg' | xargs -P 4 -I{} convert {} -resize 50% {}",
+              "Parallel processing",
+              "4 concurrent conversions",
+              "(processes 4 at a time)"
+            ],
+            [
+              "echo 'file1 file2' | xargs -n 1 echo 'File:'",
+              "One per line",
+              "Run command per arg",
+              "File: file1, File: file2"
+            ],
+            [
+              "find . -name '*.py' -print0 | xargs -0 grep 'TODO'",
+              "Handle spaces safely",
+              "Works with spaces in names",
+              "./my script.py: # TODO"
+            ],
+            [
+              "seq 1 5 | xargs -I {} mkdir 'folder_{}'",
+              "Placeholder",
+              "Create numbered folders",
+              "folder_1 folder_2 ..."
+            ]
+          ]
+        },
+        {
+          "name": "tee - Split to File and Terminal",
+          "rows": [
+            [
+              "ls | tee output.txt",
+              "Save and display",
+              "Show + save to file",
+              "(output shows + file written)"
+            ],
+            [
+              "echo 'data' | tee -a log.txt",
+              "Append to file",
+              "Add to end of file",
+              "(appends to log.txt)"
+            ],
+            [
+              "sudo apt update 2>&1 | tee update.log",
+              "Capture all output",
+              "stdout + stderr to file",
+              "(full log saved)"
+            ],
+            [
+              "ls /etc | tee /dev/null | wc -l",
+              "Discard output",
+              "Use as junction",
+              "250 (count only)"
+            ]
+          ]
         }
       ]
     },
@@ -875,6 +1510,191 @@
               "john@nc:~$ false || { echo \"Failed\"; exit 1; }\nFailed"
             ]
           ]
+        },
+        {
+          "name": "Shell Functions",
+          "rows": [
+            [
+              "greet() { echo \"Hello, $1!\"; }; greet Alice",
+              "Define and call",
+              "Function with arg",
+              "Hello, Alice!"
+            ],
+            [
+              "mkcd() { mkdir -p \"$1\" && cd \"$1\"; }",
+              "Utility fn",
+              "Make dir and enter",
+              "(creates and changes to dir)"
+            ],
+            [
+              "backup() { cp \"$1\" \"$1.bak.$(date +%F)\"; }",
+              "Backup fn",
+              "Append date to backup",
+              "config.yml.bak.2026-06-08"
+            ],
+            [
+              "export -f mkcd",
+              "Export function",
+              "Available in subshells",
+              "(function exported)"
+            ]
+          ]
+        },
+        {
+          "name": "Arrays in Bash",
+          "rows": [
+            [
+              "fruits=('apple' 'banana'); echo ${fruits[1]}",
+              "Indexed array",
+              "Access by index",
+              "banana"
+            ],
+            [
+              "echo ${fruits[@]}",
+              "All elements",
+              "Print entire array",
+              "apple banana"
+            ],
+            [
+              "echo ${#fruits[@]}",
+              "Array length",
+              "Number of elements",
+              "2"
+            ],
+            [
+              "for f in \"${fruits[@]}\"; do echo \"$f\"; done",
+              "Iterate array",
+              "Loop through elements",
+              "apple\nbanana"
+            ],
+            [
+              "declare -A user=([name]='Alice'); echo ${user[name]}",
+              "Associative array",
+              "Key-value (Bash 4+)",
+              "Alice"
+            ]
+          ]
+        },
+        {
+          "name": "Here Documents & Here Strings",
+          "rows": [
+            [
+              "cat << EOF\\nHello\\nEOF",
+              "Here document",
+              "Multi-line input",
+              "Hello"
+            ],
+            [
+              "cat << 'EOF' > file.sh\\n$HOME\\nEOF",
+              "Literal (no expand)",
+              "Single quotes prevent expansion",
+              "$HOME (literal)"
+            ],
+            [
+              "grep 'error' <<< 'no errors'",
+              "Here string",
+              "Pass string to stdin",
+              "(no match)"
+            ],
+            [
+              "python3 <<< 'print(\"hi\")'",
+              "Inline script",
+              "Run code snippet",
+              "hi"
+            ]
+          ]
+        },
+        {
+          "name": "case Statement & Select Menu",
+          "rows": [
+            [
+              "case \"$1\" in\\nstart) echo Starting;;\\nstop) echo Stopping;;\\n*) echo Usage;;\\nesac",
+              "Multiple choice",
+              "Pattern matching",
+              "./script.sh start => Starting"
+            ],
+            [
+              "select opt in List Add Quit; do\\n  case $opt in\\n    List) ls;;\\n    Quit) break;;\\n  esac\\ndone",
+              "Interactive menu",
+              "Generate numbered menu",
+              "1) List 2) Add 3) Quit #? 1"
+            ]
+          ]
+        },
+        {
+          "name": "getopts - Parse Command-Line Options",
+          "rows": [
+            [
+              "while getopts \"hv:f:\" opt; do case $opt in h) echo Help;; v) echo Verbose=$OPTARG;; f) echo File=$OPTARG;; esac; done",
+              "Parse flags",
+              "-h, -v val, -f val",
+              "./script.sh -v debug => Verbose=debug"
+            ],
+            [
+              "while getopts \"ab:\" o; do case $o in a) echo A;; b) echo B=$OPTARG;; esac; done",
+              "Flag with/without value",
+              "b: requires value",
+              "./script.sh -a -b hello => A, B=hello"
+            ]
+          ]
+        },
+        {
+          "name": "Error Handling: set -e, set -u, trap",
+          "rows": [
+            [
+              "set -e; false; echo 'runs?'",
+              "Exit on error",
+              "Script stops at first error",
+              "(nothing printed - exited)"
+            ],
+            [
+              "set -u; echo $UNDEFINED",
+              "Fail on undefined",
+              "Catches variable typos",
+              "unbound variable"
+            ],
+            [
+              "trap 'echo Error on line $LINENO' ERR",
+              "Error handler",
+              "Print line on failure",
+              "Error on line 5"
+            ],
+            [
+              "trap 'rm -f /tmp/tmpfile' EXIT",
+              "Cleanup on exit",
+              "Delete temp files on crash",
+              "(temp cleaned up)"
+            ],
+            [
+              "set -euo pipefail",
+              "Bash strict mode",
+              "Best-practice safety",
+              "All safety flags combined"
+            ]
+          ]
+        },
+        {
+          "name": "Debugging: set -x, bash -n",
+          "rows": [
+            [
+              "bash -x script.sh",
+              "Trace execution",
+              "Print each command before run",
+              "+ name='Alice', + echo etc"
+            ],
+            [
+              "set -x; echo debug; set +x; echo normal",
+              "Toggle debug",
+              "Debug specific section",
+              "+ echo debug / debug / normal"
+            ],
+            [
+              "bash -n script.sh",
+              "Syntax check",
+              "Lint without executing",
+              "(no output = OK)"
+            ]
+          ]
         }
       ]
     },
@@ -913,6 +1733,30 @@
               "OR operator",
               "cmd2 only if cmd1 fails",
               "john@nc:~$ cd /nonexistent || echo \"Not found\"\nbash - cd - /nonexistent - No such file or directory\nNot found"
+            ],
+            [
+              "cat words.txt | sort | uniq -c | sort -rn | head -5",
+              "Multi-pipe pipeline",
+              "Top 5 frequent items",
+              "42 the, 35 and, 28 redis"
+            ],
+            [
+              "ls /root 2>/dev/null",
+              "Suppress errors",
+              "Hide error output",
+              "(silent - no error shown)"
+            ],
+            [
+              "ls /etc 1>/dev/null 2>&1",
+              "Suppress all output",
+              "Hide stdout + stderr",
+              "(completely silent)"
+            ],
+            [
+              "exec 3<file.txt; cat <&3; exec 3<&-",
+              "Custom FD",
+              "Open on FD 3, read, close",
+              "(file content)"
             ]
           ]
         },
@@ -948,6 +1792,1133 @@
               "Login history",
               "Last 5 logins",
               "john@nc:~$ last -5\njohn     pts/0        May 14 09:00   still logged in\njohn     pts/1        May 13 18:00 - 20:00  (02:00)\nreboot   system boot  May 13 07:55   still running"
+            ],
+            [
+              "iostat -xz 1 3",
+              "Disk I/O stats",
+              "CPU + device I/O 3 times",
+              "avg-cpu, Device r/s w/s await %util"
+            ],
+            [
+              "vmstat 2 5",
+              "Virtual memory stats",
+              "proc, memory, swap, io, cpu",
+              "r b swpd free buff cache si so bi bo in cs us sy id wa"
+            ],
+            [
+              "sar -u 1 3",
+              "CPU report",
+              "Historical CPU stats",
+              "%user %nice %system %iowait %idle"
+            ],
+            [
+              "sar -r 1 3",
+              "Memory report",
+              "Historical memory stats",
+              "kbmemfree kbmemused %memused"
+            ],
+            [
+              "sar -n DEV 1 3",
+              "Network report",
+              "Network throughput",
+              "rxpck/s txpck/s rxkB/s txkB/s"
+            ],
+            [
+              "dmesg | tail -20",
+              "Kernel messages",
+              "Latest kernel/hardware msgs",
+              "[timestamp] EXT4-fs: mounted"
+            ],
+            [
+              "dmesg --level=err,warn",
+              "Errors only",
+              "Filter by severity",
+              "(errors and warnings only)"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 11 - Storage & Disk Management",
+      "commands": [
+        {
+          "name": "lsblk / blkid - List Block Devices",
+          "rows": [
+            [
+              "lsblk",
+              "List block devices",
+              "Show disk tree",
+              "sda 100G, sda1 50G /, sda2 2G [SWAP]"
+            ],
+            [
+              "lsblk -f",
+              "With filesystem info",
+              "Show FS type, UUID",
+              "ext4, swap, xfs with UUIDs"
+            ],
+            [
+              "blkid",
+              "Show UUIDs",
+              "Unique device IDs",
+              "/dev/sda1: UUID=... TYPE=ext4"
+            ],
+            [
+              "sudo parted -l",
+              "Partition table",
+              "Detailed layout",
+              "GPT table, sectors, sizes"
+            ]
+          ]
+        },
+        {
+          "name": "fdisk - Partition Manager",
+          "rows": [
+            [
+              "sudo fdisk -l",
+              "List all partitions",
+              "Show disk info",
+              "Device Boot Start End Sectors Size Id Type"
+            ],
+            [
+              "sudo fdisk /dev/sdb",
+              "Interactive mode",
+              "Enter fdisk TUI",
+              "n=new, d=delete, w=write, q=quit"
+            ],
+            [
+              "sudo mkfs.ext4 /dev/sdb1",
+              "Format ext4",
+              "Create ext4 filesystem",
+              "Creating filesystem with inodes, journal..."
+            ],
+            [
+              "sudo mkfs.xfs /dev/sdb1",
+              "Format XFS",
+              "Create XFS filesystem",
+              "meta-data=/dev/sdb1 isize=512"
+            ],
+            [
+              "sudo mkfs.btrfs /dev/sdb1",
+              "Format Btrfs",
+              "Create Btrfs filesystem",
+              "Btrfs v6.6"
+            ]
+          ]
+        },
+        {
+          "name": "LVM - Logical Volume Manager",
+          "rows": [
+            [
+              "sudo pvcreate /dev/sdb",
+              "Physical Volume",
+              "Init disk for LVM",
+              "Physical volume created"
+            ],
+            [
+              "sudo vgcreate my_vg /dev/sdb",
+              "Volume Group",
+              "Group PVs into VG",
+              "Volume group created"
+            ],
+            [
+              "sudo lvcreate -n data_lv -L 50G my_vg",
+              "Logical Volume",
+              "Allocate 50GB LV",
+              "Logical volume created"
+            ],
+            [
+              "sudo lvextend -L +10G /dev/my_vg/data_lv",
+              "Extend LV online",
+              "Add 10GB, no unmount",
+              "Size changed, resize2fs to grow FS"
+            ],
+            [
+              "sudo lvreduce -L 40G /dev/my_vg/data_lv",
+              "Shrink LV (unmount first)",
+              "Reduce LV size",
+              "WARNING: unmount + e2fsck first!"
+            ],
+            [
+              "sudo lvcreate -s -n snap1 -L 5G /dev/my_vg/data_lv",
+              "LVM Snapshot",
+              "Point-in-time backup",
+              "snap1 created from data_lv"
+            ],
+            [
+              "sudo pvs; sudo vgs; sudo lvs",
+              "Quick LVM status",
+              "All LVM objects summary",
+              "PV,VG,LV summary tables"
+            ]
+          ]
+        },
+        {
+          "name": "RAID with mdadm",
+          "rows": [
+            [
+              "sudo mdadm --create /dev/md0 --level=1 --raid-devices=2 /dev/sdb1 /dev/sdc1",
+              "RAID 1 mirror",
+              "2-disk mirror, full redundancy",
+              "/dev/md0 started, 50% effective"
+            ],
+            [
+              "sudo mdadm --create /dev/md0 --level=5 --raid-devices=3 /dev/sdb1 /dev/sdc1 /dev/sdd1",
+              "RAID 5 parity",
+              "3-disk, 1 parity, 66% effective",
+              "md0 started, 2/3 usable"
+            ],
+            [
+              "sudo mdadm --detail /dev/md0",
+              "RAID status",
+              "Detailed array info",
+              "Raid Level : raid1, Active:2, Working:2"
+            ],
+            [
+              "sudo mdadm --manage /dev/md0 --fail /dev/sdb1",
+              "Simulate failure",
+              "Mark disk as failed",
+              "sdb1 faulty in /dev/md0"
+            ],
+            [
+              "sudo mdadm --manage /dev/md0 --remove /dev/sdb1 --add /dev/sdb1",
+              "Replace disk",
+              "Remove failed, add new",
+              "Re-added, resync starts"
+            ],
+            [
+              "cat /proc/mdstat",
+              "Monitor rebuild",
+              "Track resync progress",
+              "recovery = 42%, finish=2.5min"
+            ]
+          ]
+        },
+        {
+          "name": "Disk Encryption with LUKS",
+          "rows": [
+            [
+              "sudo cryptsetup luksFormat /dev/sdb1",
+              "Encrypt partition",
+              "Set up LUKS",
+              "WARNING: overwrites data!"
+            ],
+            [
+              "sudo cryptsetup open /dev/sdb1 secret",
+              "Open/decrypt",
+              "Map as /dev/mapper/secret",
+              "Enter passphrase"
+            ],
+            [
+              "sudo cryptsetup close secret",
+              "Close/lock",
+              "Remove mapping",
+              "(mapping removed)"
+            ],
+            [
+              "sudo cryptsetup luksDump /dev/sdb1",
+              "LUKS header info",
+              "Cipher, hash, version",
+              "Version: 2, aes, xts-plain64, sha256"
+            ],
+            [
+              "sudo cryptsetup luksAddKey /dev/sdb1",
+              "Add passphrase",
+              "Add backup key",
+              "(new key added)"
+            ]
+          ]
+        },
+        {
+          "name": "mount / umount / fstab",
+          "rows": [
+            [
+              "mount",
+              "Show all mounts",
+              "List mounted filesystems",
+              "sysfs, proc, /dev/sda1 on /, /dev/sdb1 on /mnt/data"
+            ],
+            [
+              "sudo mount /dev/sdb1 /mnt/data",
+              "Mount partition",
+              "Mount device to dir",
+              "(mounted at /mnt/data)"
+            ],
+            [
+              "sudo mount -o ro /dev/sdb1 /mnt/data",
+              "Mount read-only",
+              "Prevent writes",
+              "Read-only file system"
+            ],
+            [
+              "sudo umount /mnt/data",
+              "Unmount",
+              "Detach filesystem",
+              "(unmounted)"
+            ],
+            [
+              "sudo umount -l /mnt/data",
+              "Lazy unmount",
+              "Detach when not busy",
+              "(useful when 'device busy')"
+            ],
+            [
+              "cat /etc/fstab",
+              "View persistent mounts",
+              "Table for auto-mount",
+              "UUID=... / ext4 defaults 0 1"
+            ],
+            [
+              "mount -a",
+              "Mount all fstab",
+              "Apply /etc/fstab entries",
+              "(mounts everything)"
+            ]
+          ]
+        },
+        {
+          "name": "Swap Management",
+          "rows": [
+            [
+              "free -h",
+              "Check memory+swap",
+              "RAM and swap summary",
+              "Mem: 16G total, 8G used; Swap: 2G total"
+            ],
+            [
+              "swapon --show",
+              "Active swap",
+              "Which swap in use",
+              "/dev/sda2 partition 2G"
+            ],
+            [
+              "sudo fallocate -l 4G /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile",
+              "Create swap file",
+              "4GB swap file",
+              "Setting up swapspace, size 4 GiB"
+            ],
+            [
+              "sudo chmod 600 /swapfile",
+              "Secure swap file",
+              "Only root can read",
+              "-rw------- (perms set)"
+            ]
+          ]
+        },
+        {
+          "name": "dd - Data Duplicator",
+          "rows": [
+            [
+              "sudo dd if=/dev/sda of=/backup/mbr.bin bs=512 count=1",
+              "Backup MBR",
+              "First 512 bytes",
+              "512 bytes copied"
+            ],
+            [
+              "sudo dd if=/dev/sda of=/dev/sdb bs=4M status=progress",
+              "Clone disk",
+              "Full disk copy",
+              "25.6 GB, 120s, 213 MB/s"
+            ],
+            [
+              "dd if=/dev/zero of=/tmp/test bs=1M count=100",
+              "Create test file",
+              "100MB zero file",
+              "100 MB, 0.5s, 210 MB/s"
+            ],
+            [
+              "sudo dd if=/dev/sda1 bs=4M | ssh user@backup 'dd of=sda1.img'",
+              "Remote backup",
+              "Stream image over SSH",
+              "(streams over network)"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 12 - Systemd & Service Management",
+      "commands": [
+        {
+          "name": "systemctl - Systemd Service Manager",
+          "rows": [
+            [
+              "systemctl list-units --type=service --state=running",
+              "Running services",
+              "All active services",
+              "cron, nginx, ssh, systemd-journald"
+            ],
+            [
+              "systemctl list-unit-files --type=service --state=enabled",
+              "Enabled at boot",
+              "Services auto-starting",
+              "cron, nginx, ssh (enabled)"
+            ],
+            [
+              "systemctl cat nginx",
+              "Show unit file",
+              "Full unit definition",
+              "[Unit], [Service], [Install] sections"
+            ],
+            [
+              "sudo systemctl edit nginx",
+              "Override settings",
+              "Drop-in config override",
+              "(creates override.conf)"
+            ],
+            [
+              "sudo systemctl daemon-reload",
+              "Reload configs",
+              "Apply unit file changes",
+              "(systemd re-reads units)"
+            ]
+          ]
+        },
+        {
+          "name": "systemd Timers (Modern Cron)",
+          "rows": [
+            [
+              "systemctl list-timers",
+              "List all timers",
+              "Next run and last run",
+              "NEXT, LEFT, LAST, PASSED, UNIT"
+            ],
+            [
+              "systemd-analyze calendar 'daily'",
+              "Check schedule",
+              "Verify timer schedule",
+              "Normalized: *-*-* 00:00:00"
+            ],
+            [
+              "# Create backup.service + backup.timer",
+              "Timer + service pair",
+              "Create oneshot service + timer",
+              "OnCalendar=daily, Persistent=true"
+            ],
+            [
+              "sudo systemctl enable --now backup.timer",
+              "Enable timer",
+              "Start and persist timer",
+              "symlink created, timer active"
+            ],
+            [
+              "sudo systemd-analyze verify *.timer",
+              "Verify timer files",
+              "Syntax check",
+              "(no output = OK)"
+            ]
+          ]
+        },
+        {
+          "name": "systemd Targets (Runlevels)",
+          "rows": [
+            [
+              "systemctl get-default",
+              "Current target",
+              "What system boots into",
+              "graphical.target"
+            ],
+            [
+              "sudo systemctl set-default multi-user.target",
+              "Set CLI mode",
+              "No GUI at boot",
+              "default.target -> multi-user.target"
+            ],
+            [
+              "sudo systemctl isolate multi-user.target",
+              "Switch now",
+              "Go to CLI immediately",
+              "(desktop stops, in TTY)"
+            ],
+            [
+              "systemctl list-dependencies multi-user.target",
+              "Show deps",
+              "What starts for this target",
+              "cron, nginx, ssh, basic.target"
+            ]
+          ]
+        },
+        {
+          "name": "journalctl - Systemd Logs",
+          "rows": [
+            [
+              "journalctl -n 20",
+              "Latest entries",
+              "Recent log output",
+              "Last 20 log lines"
+            ],
+            [
+              "journalctl -u nginx -n 10",
+              "Service logs",
+              "Only nginx",
+              "nginx start/stop messages"
+            ],
+            [
+              "journalctl --since '2 hours ago'",
+              "Time filter",
+              "Logs since 2h ago",
+              "(filtered by time)"
+            ],
+            [
+              "journalctl -p err -b",
+              "Errors this boot",
+              "Only errors",
+              "kernel: CPU temp, Failed to start NM"
+            ],
+            [
+              "journalctl -o json-pretty -n 1",
+              "JSON output",
+              "Machine-readable",
+              "{\"MESSAGE\":\"...\", \"_PID\":\"1\"}"
+            ],
+            [
+              "sudo journalctl --vacuum-time=30d",
+              "Clean old logs",
+              "Delete logs older than 30d",
+              "Freed 256M"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 13 - Security Hardening",
+      "commands": [
+        {
+          "name": "SSH Hardening",
+          "rows": [
+            [
+              "sudo sed -i 's/^#*PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config",
+              "Disable root SSH",
+              "Prevent direct root login",
+              "sshd_config updated, restart required"
+            ],
+            [
+              "sudo sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config",
+              "Disable password auth",
+              "SSH keys only",
+              "sshd_config updated, restart required"
+            ],
+            [
+              "sudo sed -i 's/^#*Port 22/Port 2222/' /etc/ssh/sshd_config",
+              "Change SSH port",
+              "Reduce automated attacks",
+              "Port changed, connect with -p 2222"
+            ],
+            [
+              "ssh-keygen -t ed25519 -a 100",
+              "Generate strong key",
+              "Ed25519 (most secure)",
+              "id_ed25519 + id_ed25519.pub created"
+            ],
+            [
+              "ssh-copy-id user@192.168.1.100",
+              "Copy key to server",
+              "Install public key",
+              "1 key(s) installed, passwordless login ready"
+            ]
+          ]
+        },
+        {
+          "name": "fail2ban - Intrusion Prevention",
+          "rows": [
+            [
+              "sudo apt install fail2ban -y",
+              "Install fail2ban",
+              "Install intrusion prevention",
+              "fail2ban 1.0.2 installed"
+            ],
+            [
+              "sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local",
+              "Create local config",
+              "Never edit .conf directly",
+              "jail.local created"
+            ],
+            [
+              "sudo systemctl restart fail2ban",
+              "Restart fail2ban",
+              "Apply config changes",
+              "(restarted)"
+            ],
+            [
+              "sudo fail2ban-client status sshd",
+              "Check SSH jail",
+              "Banned IPs and stats",
+              "Banned IP list: 10.0.0.100"
+            ],
+            [
+              "sudo fail2ban-client set sshd unbanip 10.0.0.100",
+              "Unban IP",
+              "Manually unblock",
+              "1 (unbanned)"
+            ]
+          ]
+        },
+        {
+          "name": "SELinux / AppArmor - Mandatory Access Control",
+          "rows": [
+            [
+              "getenforce",
+              "SELinux status",
+              "Enforcing/Permissive/Disabled",
+              "Enforcing"
+            ],
+            [
+              "sudo setenforce 0",
+              "Temporarily disable",
+              "Set permissive (test only)",
+              "Permissive (re-enable: setenforce 1)"
+            ],
+            [
+              "sudo aa-status | head -10",
+              "AppArmor status",
+              "Profiles and mode",
+              "14 profiles enforce, 29 complain"
+            ],
+            [
+              "sudo aa-complain /usr/sbin/nginx",
+              "Set AppArmor complain",
+              "Log but don't block",
+              "Set to complain mode"
+            ],
+            [
+              "sudo aa-enforce /usr/sbin/nginx",
+              "Set AppArmor enforce",
+              "Block violations",
+              "Set to enforce mode"
+            ]
+          ]
+        },
+        {
+          "name": "auditd - System Auditing",
+          "rows": [
+            [
+              "sudo auditctl -l",
+              "List audit rules",
+              "Current audit rules",
+              "-w /etc/passwd -p wa -k passwd_changes"
+            ],
+            [
+              "sudo auditctl -w /etc/passwd -p wa -k passwd_changes",
+              "Watch file changes",
+              "Audit writes to /etc/passwd",
+              "Rule added"
+            ],
+            [
+              "sudo ausearch -k passwd_changes -ts today",
+              "Search audit log",
+              "Query today's events",
+              "time->..., type=SYSCALL, comm=useradd"
+            ],
+            [
+              "sudo aureport --failed",
+              "Failed access report",
+              "Summary of failures",
+              "100 AVC, 23 LOGIN, 5 USER_ERR"
+            ]
+          ]
+        },
+        {
+          "name": "ufw - Uncomplicated Firewall",
+          "rows": [
+            [
+              "sudo ufw enable",
+              "Enable firewall",
+              "Activate UFW",
+              "Firewall active on startup"
+            ],
+            [
+              "sudo ufw default deny incoming",
+              "Default deny",
+              "Block all inbound",
+              "Default incoming policy: deny"
+            ],
+            [
+              "sudo ufw allow ssh",
+              "Allow SSH",
+              "Open port 22",
+              "Rule added"
+            ],
+            [
+              "sudo ufw allow 80/tcp",
+              "Allow HTTP",
+              "Open port 80",
+              "Rule added"
+            ],
+            [
+              "sudo ufw allow from 10.0.0.0/8 to any port 5432",
+              "DB from subnet",
+              "PostgreSQL internal only",
+              "Rule added"
+            ],
+            [
+              "sudo ufw status verbose",
+              "Verbose status",
+              "All rules + details",
+              "22/tcp, 80/tcp, 5432/tcp from 10.0.0.0/8"
+            ],
+            [
+              "sudo ufw delete deny 80/tcp",
+              "Delete a rule",
+              "Remove specific rule",
+              "Rule deleted"
+            ],
+            [
+              "sudo ufw app list",
+              "App profiles",
+              "Pre-configured rules",
+              "Nginx Full, OpenSSH"
+            ],
+            [
+              "sudo ufw allow 'Nginx Full'",
+              "Allow by profile",
+              "Open 80+443",
+              "Rule added (v6)"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 14 - Scheduling & Automation",
+      "commands": [
+        {
+          "name": "crontab - Cron Jobs",
+          "rows": [
+            [
+              "crontab -e",
+              "Edit crontab",
+              "Open editor for cron",
+              "# minute hour day month weekday command"
+            ],
+            [
+              "crontab -l",
+              "List cron jobs",
+              "Show all jobs",
+              "0 2 * * * /usr/bin/backup.sh"
+            ],
+            [
+              "crontab -r",
+              "Remove crontab",
+              "Delete all jobs",
+              "no crontab for john"
+            ],
+            [
+              "# Daily at 2am",
+              "Schedule examples",
+              "Common patterns",
+              "0 2 * * *\n*/5 * * * * = every 5min\n0 9 * * 1-5 = weekdays 9am\n@daily = midnight\n@reboot = on boot"
+            ],
+            [
+              "sudo crontab -u www-data -l",
+              "Another user's cron",
+              "(root only)",
+              "www-data's cron jobs"
+            ]
+          ]
+        },
+        {
+          "name": "at - One-Time Tasks",
+          "rows": [
+            [
+              "echo 'shutdown -h now' | at now + 30 minutes",
+              "Schedule 30 min",
+              "One-time task",
+              "job 1 at Mon 10:30:00 2026"
+            ],
+            [
+              "at 15:00 <<< 'echo Standup! | wall'",
+              "At specific time",
+              "Run at 3pm",
+              "job 2 at Mon 15:00:00 2026"
+            ],
+            [
+              "atq",
+              "List pending",
+              "Show scheduled at jobs",
+              "1 Mon 10:30 a john"
+            ],
+            [
+              "atrm 1",
+              "Remove job",
+              "Cancel scheduled task",
+              "(job removed)"
+            ]
+          ]
+        },
+        {
+          "name": "anacron - For Non-24/7 Systems",
+          "rows": [
+            [
+              "cat /etc/anacrontab",
+              "View anacron",
+              "Periodic tasks for intermittent systems",
+              "1 5 cron.daily, 7 10 cron.weekly, 30 15 cron.monthly"
+            ],
+            [
+              "# period(days) delay(min) job-id command",
+              "anacron format",
+              "Runs even if system was off",
+              "1 5 cron.daily run-parts /etc/cron.daily"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 15 - Performance & Kernel Tuning",
+      "commands": [
+        {
+          "name": "sysctl - Kernel Parameters",
+          "rows": [
+            [
+              "sysctl -a | grep -E 'swappiness|dirty' | head -5",
+              "Show kernel params",
+              "Running kernel config",
+              "vm.swappiness=60, vm.dirty_ratio=20"
+            ],
+            [
+              "sudo sysctl vm.swappiness=10",
+              "Reduce swappiness",
+              "Prefer RAM over swap",
+              "vm.swappiness = 10"
+            ],
+            [
+              "sudo sysctl -w net.core.somaxconn=65535",
+              "Increase backlog",
+              "More concurrent connections",
+              "somaxconn = 65535"
+            ],
+            [
+              "sudo sysctl -w fs.file-max=500000",
+              "Max open files",
+              "System-wide limit",
+              "fs.file-max = 500000"
+            ],
+            [
+              "sudo sysctl -p",
+              "Apply /etc/sysctl.conf",
+              "Load persistent settings",
+              "(reads and applies all)"
+            ],
+            [
+              "cat /etc/sysctl.d/99-custom.conf",
+              "Custom config file",
+              "Drop-in tuning file",
+              "vm.swappiness=10, fs.file-max=500000"
+            ]
+          ]
+        },
+        {
+          "name": "ulimit - User Limits",
+          "rows": [
+            [
+              "ulimit -a",
+              "Show all limits",
+              "Current resource limits",
+              "open files (-n) 1024, max user processes (-u) 12345"
+            ],
+            [
+              "ulimit -n 65535",
+              "Increase open files",
+              "Allow more file descriptors",
+              "65535 (session only)"
+            ],
+            [
+              "ulimit -u unlimited",
+              "Unlimited processes",
+              "Allow spawning many workers",
+              "unlimited"
+            ],
+            [
+              "# Add to /etc/security/limits.conf",
+              "Persistent config",
+              "Apply across reboots",
+              "* soft nofile 65535, * hard nofile 65535"
+            ]
+          ]
+        },
+        {
+          "name": "Performance Monitoring Tools",
+          "rows": [
+            [
+              "time find / > /dev/null",
+              "Measure exec time",
+              "How long command takes",
+              "real 12.3s, user 1.2s, sys 3.4s"
+            ],
+            [
+              "nproc",
+              "CPU count",
+              "Number of cores",
+              "8"
+            ],
+            [
+              "cat /proc/1234/status | grep -E 'VmRSS|Threads'",
+              "Process memory",
+              "RSS and threads",
+              "VmRSS: 25000 kB, Threads: 4"
+            ],
+            [
+              "ls -la /proc/1234/fd/ | wc -l",
+              "Open file descriptors",
+              "Count open FDs",
+              "12 (check for leaks)"
+            ],
+            [
+              "free -m | awk '/Mem:/ {printf \"%.1f%%\\n\", ($3/$2)*100}'",
+              "Memory %",
+              "Usage percentage",
+              "45.2%"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 16 - Network File Sharing",
+      "commands": [
+        {
+          "name": "NFS - Network File System",
+          "rows": [
+            [
+              "sudo apt install nfs-kernel-server -y",
+              "Install NFS server",
+              "Install NFS server",
+              "nfs-kernel-server installed"
+            ],
+            [
+              "echo '/srv/nfs/shared 192.168.1.0/24(rw,sync,no_subtree_check)' | sudo tee -a /etc/exports",
+              "Export NFS share",
+              "Define share + network",
+              "(added to /etc/exports)"
+            ],
+            [
+              "sudo exportfs -ra",
+              "Apply exports",
+              "Reload NFS config",
+              "exportfs: ... exported"
+            ],
+            [
+              "showmount -e localhost",
+              "Check exports",
+              "Verify shared dirs",
+              "/srv/nfs/shared 192.168.1.0/24"
+            ],
+            [
+              "sudo mount -t nfs 192.168.1.100:/srv/nfs/shared /mnt/nfs",
+              "Mount NFS client",
+              "Access NFS share",
+              "(mounted)"
+            ],
+            [
+              "echo 'server:/share /mnt/nfs nfs defaults 0 0' | sudo tee -a /etc/fstab",
+              "Persistent NFS mount",
+              "Auto-mount at boot",
+              "(fstab entry added)"
+            ]
+          ]
+        },
+        {
+          "name": "Samba/CIFS - Windows File Sharing",
+          "rows": [
+            [
+              "sudo apt install samba -y",
+              "Install Samba",
+              "Install SMB server",
+              "samba 4.18 installed"
+            ],
+            [
+              "sudo smbpasswd -a john",
+              "Add SMB user",
+              "Set SMB password",
+              "Added user john."
+            ],
+            [
+              "sudo systemctl restart smbd",
+              "Restart Samba",
+              "Apply config",
+              "(restarted)"
+            ],
+            [
+              "sudo mount -t cifs //server/share /mnt/smb -o username=john",
+              "Mount CIFS share",
+              "Access from Linux client",
+              "Password: ****"
+            ],
+            [
+              "smbclient -L //192.168.1.100 -U john",
+              "List Samba shares",
+              "Browse available shares",
+              "Sharename: shared, IPC$"
+            ]
+          ]
+        },
+        {
+          "name": "rsync - Remote Sync & Backup",
+          "rows": [
+            [
+              "rsync -avz /home/john/ user@backup:/backups/john/",
+              "Sync to remote",
+              "Archive+compress over SSH",
+              "sent 2.5K bytes, speedup 0.20"
+            ],
+            [
+              "rsync -av --delete /src/ /dst/",
+              "Mirror directories",
+              "Make dst exact copy",
+              "deleting old_file.txt"
+            ],
+            [
+              "rsync -avz --progress bigfile user@host:/dst/",
+              "Show progress",
+              "Transfer progress",
+              "bigfile 100% 125MB/s 0:00:07"
+            ],
+            [
+              "rsync -nav --delete /src/ /dst/",
+              "Dry run (test)",
+              "Preview without copying",
+              "-n flag = preview only"
+            ],
+            [
+              "rsync -az --link-dest=/backup/yesterday/ /src/ /backup/today/",
+              "Incremental backup",
+              "Hard-link unchanged files",
+              "(saves massive disk space)"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 17 - Debugging & Troubleshooting",
+      "commands": [
+        {
+          "name": "strace - System Call Tracer",
+          "rows": [
+            [
+              "strace -p 12345",
+              "Trace running process",
+              "Watch system calls live",
+              "read(), write(), nanosleep()"
+            ],
+            [
+              "strace -e openat ls",
+              "Trace specific syscall",
+              "Only file opens",
+              "openat(AT_FDCWD, \".\", ...)"
+            ],
+            [
+              "strace -c ls",
+              "Count syscall summary",
+              "Stats not per-call",
+              "%time calls errors syscall"
+            ],
+            [
+              "strace -f -e trace=network curl example.com",
+              "Trace network calls",
+              "Only network syscalls",
+              "socket, connect, sendto, recvfrom"
+            ]
+          ]
+        },
+        {
+          "name": "lsof - List Open Files",
+          "rows": [
+            [
+              "lsof -i :3000",
+              "Who's on port 3000?",
+              "Fix 'port in use'",
+              "node 12345 TCP *:3000 (LISTEN)"
+            ],
+            [
+              "lsof /var/log/syslog",
+              "Who's using this file?",
+              "Find process accessing file",
+              "rsyslogd 789 ... /var/log/syslog"
+            ],
+            [
+              "lsof -u john | wc -l",
+              "Count john's open files",
+              "Check for FD leaks",
+              "142 (if high = leak)"
+            ],
+            [
+              "lsof -iTCP -sTCP:LISTEN -P -n",
+              "All listening ports",
+              "Comprehensive port overview",
+              "sshd *:22, nginx *:80, node *:3000"
+            ]
+          ]
+        },
+        {
+          "name": "eBPF & bpftrace Basics",
+          "rows": [
+            [
+              "sudo bpftrace -e 'tracepoint:syscalls:sys_enter_openat { printf(\"%s\\n\", str(args->filename)); }'",
+              "Trace file opens",
+              "Every openat syscall",
+              "ls /proc/self/status"
+            ],
+            [
+              "sudo bpftrace -e 'kprobe:do_sys_openat2 { @[comm] = count(); }'",
+              "Count opens by process",
+              "Which process opens most?",
+              "node: 1234, nginx: 456"
+            ],
+            [
+              "bpftrace --version",
+              "Check bpftrace",
+              "Is eBPF available?",
+              "bpftrace v0.21"
+            ],
+            [
+              "ls -la /sys/kernel/btf/vmlinux",
+              "Check BTF support",
+              "Kernel BTF for modern BPF",
+              "-r--r--r-- 1 root root (exists = good)"
+            ]
+          ]
+        },
+        {
+          "name": "General Troubleshooting Toolkit",
+          "rows": [
+            [
+              "dmesg -T | tail -10",
+              "Kernel messages",
+              "Latest hardware issues",
+              "[Mon Jun 8] usb disconnect"
+            ],
+            [
+              "lsusb",
+              "USB devices",
+              "Connected USB hardware",
+              "Bus 001 Device 001: Linux Foundation root hub"
+            ],
+            [
+              "lspci | grep -E 'VGA|Ethernet'",
+              "PCI devices",
+              "Graphics + network",
+              "VGA: Intel, Ethernet: Intel I219-V"
+            ],
+            [
+              "sudo dmidecode -t memory | grep -E 'Size:|Speed:'",
+              "RAM info",
+              "Physical memory",
+              "8192 MB, DDR4, 3200 MT/s"
+            ],
+            [
+              "journalctl -p err --since '1 hour ago'",
+              "Errors last hour",
+              "Quick diagnostic",
+              "kernel: task blocked >120s"
+            ],
+            [
+              "ls -la /var/crash/",
+              "Crash dumps",
+              "Application crash reports",
+              "_usr_bin_node.1000.crash (1.2M)"
             ]
           ]
         }
