@@ -1,5 +1,5 @@
 {
-  "title": "Bash/Shell Scripting",
+  "title": "Bash/Shell Scripting - The Complete A-Z Reference",
   "icon": "⌨️",
   "description": "Complete shell scripting reference: variables, control flow, functions, text processing, automation, and best practices",
   "stages": [
@@ -60,6 +60,76 @@
               "Process IDs",
               "Current + background PID",
               "john@pc:~$ echo \"Current PID: $$\n12345\njohn@pc:~$ sleep 5 &\n[1] 12346\njohn@pc:~$ echo \"Background PID: $!\"\n12346"
+            ]
+          ]
+        },
+        {
+          "name": "Parameter Expansion - Default Values",
+          "rows": [
+            [
+              "echo \"${name:-Guest}\"",
+              "Default if unset",
+              ":- = use default, don't assign",
+              "john@pc:~$ unset name\necho \"${name:-Guest}\"\nGuest"
+            ],
+            [
+              "echo \"${name:=Guest}\"",
+              "Default + assign",
+              ":= assigns default to variable",
+              "john@pc:~$ unset name\necho \"${name:=Guest}\"\nGuest\njohn@pc:~$ echo \"$name\"\nGuest"
+            ],
+            [
+              "echo \"${name:?Error: name not set}\"",
+              "Error if unset",
+              ":? prints error and exits",
+              "john@pc:~$ unset name\necho \"${name:?Error: name not set}\"\nbash: name: Error: name not set"
+            ],
+            [
+              "echo \"${name:+alt_value}\"",
+              "Alternative if set",
+              ":+ returns alt if var is set",
+              "john@pc:~$ name=\"John\"\necho \"${name:+alt_value}\"\nalt_value"
+            ]
+          ]
+        },
+        {
+          "name": "Brace Expansion",
+          "rows": [
+            [
+              "echo {1..5}",
+              "Numeric range",
+              "Expand to sequence",
+              "1 2 3 4 5"
+            ],
+            [
+              "echo {a..e}",
+              "Letter range",
+              "Alphabetic sequence",
+              "a b c d e"
+            ],
+            [
+              "echo {1..10..2}",
+              "Step range",
+              "Every 2nd number",
+              "1 3 5 7 9"
+            ],
+            [
+              "touch file{1..3}.txt",
+              "Create multiple files",
+              "Generates filenames",
+              "file1.txt file2.txt file3.txt"
+            ],
+            [
+              "mkdir -p project/{src,lib,docs}/{css,js}",
+              "Nested dirs",
+              "Combined expansion",
+              "project/src/css, project/src/js, ..."
+            ],
+            [
+              "cp file.txt{,.bak}",
+              "Quick backup",
+              "Copy and append .bak",
+              "file.txt -> file.txt.bak"
             ]
           ]
         }
@@ -125,6 +195,47 @@
               "john@pc:~$ str=\"Hello\"\njohn@pc:~$ echo ${str^^}\nHELLO\njohn@pc:~$ echo ${str,,}\nhello"
             ]
           ]
+        },
+        {
+          "name": "Advanced String Operations",
+          "rows": [
+            [
+              "url=\"https://example.com\"\necho \"${url#https://}\"",
+              "Remove prefix (shortest)",
+              "Strip matching prefix",
+              "example.com"
+            ],
+            [
+              "file=\"/path/to/script.sh\"\necho \"${file##*/}\"",
+              "Remove prefix (longest)",
+              "Strip to last /",
+              "script.sh"
+            ],
+            [
+              "name=\"script.sh\"\necho \"${name%.*}\"",
+              "Remove suffix (shortest)",
+              "Strip extension",
+              "script"
+            ],
+            [
+              "archive=\"archive.tar.gz\"\necho \"${archive%%.*}\"",
+              "Remove suffix (longest)",
+              "Strip to first dot",
+              "archive"
+            ],
+            [
+              "str=\"Hello\"\necho \"${#str}\"",
+              "String length",
+              "Count characters",
+              "5"
+            ],
+            [
+              "str=\"Hello World\"\necho \"${str:6}\"",
+              "Substring to end",
+              "From position 6 onward",
+              "World"
+            ]
+          ]
         }
       ]
     },
@@ -176,6 +287,47 @@
               "john@pc:~$ declare -A user\nuser[name]=\"John\" user[age]=25\njohn@pc:~$ echo ${!user[@]}\nname age"
             ]
           ]
+        },
+        {
+          "name": "Array Operations - Advanced",
+          "rows": [
+            [
+              "arr=(\"a\" \"b\" \"c\")\necho \"${!arr[@]}\"",
+              "Array indices",
+              "Get all index numbers",
+              "0 1 2"
+            ],
+            [
+              "arr=(\"a\" \"b\" \"c\")\necho \"${arr[*]}\"",
+              "All elements as string",
+              "Single string (uses IFS)",
+              "a b c"
+            ],
+            [
+              "arr=(\"a\" \"b\" \"c\")\nslice=(\"${arr[@]:1:2}\")\necho \"${slice[@]}\"",
+              "Array slicing",
+              "Copy subset of elements",
+              "b c"
+            ],
+            [
+              "arr+=( \"d\" \"e\" )",
+              "Append to array",
+              "Add elements at end",
+              "(array now has a b c d e)"
+            ],
+            [
+              "declare -A colors=([red]=\"#ff0000\" [green]=\"#00ff00\")\necho \"${!colors[@]}\"",
+              "Assoc array keys",
+              "Get all keys from hash",
+              "red green"
+            ],
+            [
+              "declare -A cfg=([db]=\"mysql\" [port]=3306)\necho \"${cfg[db]}\"",
+              "Config map pattern",
+              "Use as a dictionary",
+              "mysql"
+            ]
+          ]
         }
       ]
     },
@@ -196,6 +348,47 @@
               "Floating point with bc",
               "bc calculator for decimals",
               "john@pc:~$ echo \"scale=2; 10/3\" | bc\n3.33"
+            ]
+          ]
+        },
+        {
+          "name": "Advanced Arithmetic",
+          "rows": [
+            [
+              "i=0; echo $((++i))",
+              "Pre-increment",
+              "Increment then output",
+              "1"
+            ],
+            [
+              "i=5; echo $((i--))",
+              "Post-decrement",
+              "Output then decrement",
+              "5"
+            ],
+            [
+              "x=5; x+=3; echo $x",
+              "Compound addition",
+              "x = x + 3",
+              "8"
+            ],
+            [
+              "echo $((16#FF))",
+              "Hex to decimal",
+              "Base conversion",
+              "255"
+            ],
+            [
+              "echo $((8#777))",
+              "Octal to decimal",
+              "Base 8 conversion",
+              "511"
+            ],
+            [
+              "echo $((RANDOM % 100))",
+              "Random number",
+              "0-99 random integer",
+              "42"
             ]
           ]
         }
@@ -224,6 +417,88 @@
               "File test",
               "-f file, -d dir",
               "john@pc:~$ nano check-file.sh\n#!/bin/bash\npath=\"$1\"\nif [ -f \"$path\" ]; then\n  echo \"File: $path\"\nelif [ -d \"$path\" ]; then\n  echo \"Directory: $path\"\nelse\n  echo \"Not found: $path\"\nfi\njohn@pc:~$ bash check-file.sh /etc/passwd\nFile: /etc/passwd\njohn@pc:~$ bash check-file.sh /etc\nDirectory: /etc"
+            ]
+          ]
+        },
+        {
+          "name": "Modern [[ Tests vs [ Tests",
+          "rows": [
+            [
+              "if [[ \"$str\" == \"hello\" ]]; then echo \"match\"; fi",
+              "[[ string equality",
+              "== works with patterns too",
+              "match"
+            ],
+            [
+              "if [[ \"$str\" == h* ]]; then echo \"starts with h\"; fi",
+              "Glob pattern in [[",
+              "Unquoted = pattern match",
+              "starts with h"
+            ],
+            [
+              "if [[ \"$email\" =~ ^[a-z]+@[a-z]+\\.[a-z]{2,}$ ]]; then echo \"valid\"; fi",
+              "Regex match =~",
+              "Matches regex pattern",
+              "valid"
+            ],
+            [
+              "if [[ -f \"$f\" && -r \"$f\" ]]; then echo \"readable file\"; fi",
+              "Combined conditions",
+              "&& and || inside [[",
+              "readable file"
+            ],
+            [
+              "if (( $# > 0 )); then echo \"has args\"; fi",
+              "Arithmetic test (( ))",
+              "Faster than -gt",
+              "has args"
+            ],
+            [
+              "BASH_REMATCH",
+              "Regex groups",
+              "$BASH_REMATCH[0]=full match, [1]=group1",
+              "(see example below)"
+            ]
+          ]
+        },
+        {
+          "name": "File Test Operators",
+          "rows": [
+            [
+              "[[ -e \"$f\" ]] && echo \"exists\"",
+              "-e: exists",
+              "File or directory exists",
+              "exists"
+            ],
+            [
+              "[[ -s \"$f\" ]] && echo \"non-empty\"",
+              "-s: size > 0",
+              "File is not empty",
+              "non-empty"
+            ],
+            [
+              "[[ -x \"$f\" ]] && echo \"executable\"",
+              "-x: executable",
+              "Has execute permission",
+              "executable"
+            ],
+            [
+              "[[ -L \"$f\" ]] && echo \"symlink\"",
+              "-L: is symlink",
+              "True if symbolic link",
+              "symlink"
+            ],
+            [
+              "[[ -N \"$f\" ]] && echo \"modified since read\"",
+              "-N: modified since last read",
+              "Newer than last access",
+              "modified"
+            ],
+            [
+              "[[ \"$f1\" -nt \"$f2\" ]] && echo \"newer\"",
+              "-nt: newer than",
+              "Compare file ages",
+              "newer"
             ]
           ]
         }
@@ -270,6 +545,41 @@
               "until loop",
               "Run while false",
               "john@pc:~$ nano until-count.sh\n#!/bin/bash\ncount=1\nuntil [ $count -gt 3 ]; do\n  echo \"Count: $count\"\n  ((count++))\ndone\njohn@pc:~$ bash until-count.sh\nCount: 1\nCount: 2\nCount: 3"
+            ]
+          ]
+        },
+        {
+          "name": "Loop Control & Select",
+          "rows": [
+            [
+              "for i in {1..10}; do [[ $i -eq 5 ]] && break; echo \"$i\"; done",
+              "break example",
+              "Exit loop at 5",
+              "1 2 3 4"
+            ],
+            [
+              "for i in {1..5}; do [[ $i -eq 3 ]] && continue; echo \"$i\"; done",
+              "continue example",
+              "Skip iteration at 3",
+              "1 2 4 5"
+            ],
+            [
+              "select opt in \"List\" \"Quit\"; do case $opt in List) ls;; Quit) break;; esac; done",
+              "Interactive select menu",
+              "Generates numbered menu",
+              "1) List\\n2) Quit\\n#?"
+            ],
+            [
+              "for word in $(cat file.txt); do echo \"$word\"; done",
+              "Loop over words (caution)",
+              "Word splitting (fragile)",
+              "(one word per line)"
+            ],
+            [
+              "while IFS= read -r -d \"\" file; do echo \"$file\"; done < <(find . -name \"*.txt\" -print0)",
+              "Loop over find results",
+              "Safe with spaces",
+              "(one filename per line)"
             ]
           ]
         }
@@ -340,6 +650,58 @@
               "john@pc:~$ log=\"info: ok\\nerror: fail\"\njohn@pc:~$ grep \"error\" <<< \"$log\"\nerror: fail"
             ]
           ]
+        },
+        {
+          "name": "mapfile / readarray",
+          "rows": [
+            [
+              "mapfile -t lines < file.txt\necho \"${lines[0]}\"",
+              "Read file to array",
+              "-t strips newlines",
+              "(first line of file)"
+            ],
+            [
+              "mapfile -t lines <<< \"$multiline\"\necho \"${#lines[@]} lines\"",
+              "Read string to array",
+              "From variable",
+              "5 lines"
+            ],
+            [
+              "readarray -t users < <(cut -d: -f1 /etc/passwd)\necho \"${users[@]:0:3}\"",
+              "Read from command",
+              "Process substitution input",
+              "root daemon bin"
+            ],
+            [
+              "mapfile -n 5 -t headers < file.csv",
+              "Read first 5 lines",
+              "-n max lines",
+              "(first 5 lines of CSV)"
+            ]
+          ]
+        },
+        {
+          "name": "Process Substitution",
+          "rows": [
+            [
+              "diff <(ls dir1) <(ls dir2)",
+              "Compare two command outputs",
+              "<() feeds output as file",
+              "(shows differences)"
+            ],
+            [
+              "while IFS= read -r line; do echo \"$line\"; done < <(tail -f log.txt)",
+              "Read from live command",
+              "Process sub as input source",
+              "(live streaming)"
+            ],
+            [
+              "cat <(echo \"header\") file.txt <(echo \"footer\") > output.txt",
+              "Combine multiple sources",
+              "Merge outputs into one",
+              "(combined file)"
+            ]
+          ]
         }
       ]
     },
@@ -388,6 +750,52 @@
               "Syntax check",
               "Check without running",
               "john@pc:~$ bash -n hello.sh\n(no output = valid syntax)"
+            ]
+          ]
+        },
+        {
+          "name": "Advanced Traps",
+          "rows": [
+            [
+              "trap 'echo \"Before: $BASH_COMMAND\"' DEBUG",
+              "DEBUG trap",
+              "Runs before every command",
+              "Before: ls, Before: echo ..."
+            ],
+            [
+              "trap 'echo \"Returned from function\"' RETURN",
+              "RETURN trap",
+              "Runs when function returns",
+              "Returned from function"
+            ],
+            [
+              "trap 'echo \"Signal $? received\"' TERM HUP",
+              "Multiple signals",
+              "Handle TERM and HUP",
+              "Signal 15 received"
+            ]
+          ]
+        },
+        {
+          "name": "Advanced Debugging",
+          "rows": [
+            [
+              "export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'",
+              "Custom PS4 for trace",
+              "Show file, line, function in -x output",
+              "(enhanced trace output)"
+            ],
+            [
+              "exec 5> debug.log; BASH_XTRACEFD=\"5\"; set -x",
+              "Redirect debug to file",
+              "Send -x output to file, not stderr",
+              "(debug output in debug.log)"
+            ],
+            [
+              "export BASH_ENV=~/.bashrc",
+              "Non-interactive init",
+              "Bash loads this for scripts",
+              "(runs .bashrc for scripts)"
             ]
           ]
         }
@@ -471,6 +879,70 @@
               "john@pc:~$ cut -d: -f1 /etc/passwd\nroot\ndaemon\njohn"
             ]
           ]
+        },
+        {
+          "name": "Advanced Globbing",
+          "rows": [
+            [
+              "shopt -s globstar; ls **/*.txt",
+              "Recursive glob (**)",
+              "Match files in all subdirs",
+              "dir1/file.txt dir2/a/file.txt"
+            ],
+            [
+              "shopt -s extglob; ls !(*.txt)",
+              "Invert match (extglob)",
+              "All files NOT ending in .txt",
+              "file.pdf file.jpg"
+            ],
+            [
+              "shopt -s extglob; ls +(file|doc)*.txt",
+              "Alternation pattern",
+              "Start with file or doc",
+              "file.txt doc.txt"
+            ],
+            [
+              "shopt -s nocaseglob; ls *.JPG",
+              "Case-insensitive glob",
+              "Match .jpg .JPG .Jpg",
+              "photo.JPG image.jpg"
+            ],
+            [
+              "shopt -s nullglob; files=(*.txt); echo ${#files[@]}",
+              "Empty glob = empty array",
+              "Prevent literal *.txt",
+              "0 (if no .txt files)"
+            ]
+          ]
+        },
+        {
+          "name": "Subshell vs Grouping",
+          "rows": [
+            [
+              "(cd /tmp && pwd); pwd",
+              "Subshell ( )",
+              "cd only affects subshell",
+              "/tmp\\n/home/john"
+            ],
+            [
+              "{ cd /tmp && pwd; }; pwd",
+              "Grouping { }",
+              "cd persists in current shell",
+              "/tmp\\n/tmp"
+            ],
+            [
+              "(echo \"hello\" | read -r line; echo \"$line\")",
+              "Pipeline subshell",
+              "read dies after pipe",
+              "(line variable lost outside)"
+            ],
+            [
+              "shopt -s lastpipe; echo \"hello\" | read -r line; echo \"$line\"",
+              "lastpipe option",
+              "Keeps read in current shell",
+              "hello"
+            ]
+          ]
         }
       ]
     },
@@ -492,6 +964,551 @@
           "name": "Complete Backup Script",
           "type": "codeblock",
           "code": "#!/bin/bash\n# backup.sh - directory backup with retention\nset -euo pipefail\n\nBACKUP_DIR=\"/backups\"\nRETENTION_DAYS=7\n\nusage() { echo \"Usage: $0 [-d dir] [-r days] <source>\"; exit 1; }\n\nwhile getopts \"d:r:h\" opt; do\n  case $opt in\n    d) BACKUP_DIR=\"$OPTARG\" ;;\n    r) RETENTION_DAYS=\"$OPTARG\" ;;\n    h|?) usage ;;\n  esac\ndone\nshift $((OPTIND-1))\n\nSOURCE=\"${1:?Source required}\"\n[ ! -d \"$SOURCE\" ] && echo \"Error: not found\" >&2 && exit 1\n\nmkdir -p \"$BACKUP_DIR\"\nNAME=\"backup-$(basename \"$SOURCE\")-$(date +%Y%m%d_%H%M%S).tar.gz\"\n\ntar -czf \"$BACKUP_DIR/$NAME\" \"$SOURCE\" && {\n  echo \"Created: $BACKUP_DIR/$NAME\"\n  find \"$BACKUP_DIR\" -name \"*.tar.gz\" -mtime +$RETENTION_DAYS -delete\n  echo \"Cleaned older than $RETENTION_DAYS days\"\n} || { echo \"Backup failed\" >&2; exit 1; }"
+        }
+      ]
+    },
+    {
+      "title": "Stage 12: Advanced Features & Shell Internals",
+      "commands": [
+        {
+          "name": "Namerefs (declare -n)",
+          "rows": [
+            [
+              "set_name() { declare -n ref=$1; ref=\"John\"; }; set_name myvar; echo \"$myvar\"",
+              "Pass by reference",
+              "Modify caller variable",
+              "john@pc:~$ set_name() { declare -n ref=$1; ref=\"John\"; }; set_name myvar\njohn@pc:~$ echo \"$myvar\"\nJohn"
+            ],
+            [
+              "swap() { declare -n a=$1 b=$2; local t=$a; a=$b; b=$t; }; swap x y",
+              "Swap two variables",
+              "Nameref references",
+              "john@pc:~$ x=1; y=2; swap x y\njohn@pc:~$ echo \"$x $y\"\n2 1"
+            ],
+            [
+              "${!var}",
+              "Indirect reference",
+              "Get var value by variable name",
+              "john@pc:~$ name=\"John\"; ref=\"name\"; echo \"${!ref}\"\nJohn"
+            ]
+          ]
+        },
+        {
+          "name": "declare / typeset - Variable Attributes",
+          "rows": [
+            [
+              "declare -i num=42; num=\"5+10\"; echo \"$num\"",
+              "Integer attribute",
+              "Arithmetic evaluation on assign",
+              "john@pc:~$ declare -i num=42; num=\"5+10\"\njohn@pc:~$ echo \"$num\"\n15"
+            ],
+            [
+              "declare -r CONST=100; CONST=200",
+              "Readonly (const)",
+              "Alternative to readonly keyword",
+              "john@pc:~$ declare -r CONST=100; CONST=200\nbash: CONST: readonly variable"
+            ],
+            [
+              "declare -l lower=\"HELLO\"; echo \"$lower\"",
+              "Auto-lowercase",
+              "Forces value to lowercase",
+              "john@pc:~$ declare -l lower=\"HELLO\"\njohn@pc:~$ echo \"$lower\"\nhello"
+            ],
+            [
+              "declare -u upper=\"hello\"; echo \"$upper\"",
+              "Auto-uppercase",
+              "Forces value to uppercase",
+              "john@pc:~$ declare -u upper=\"hello\"\njohn@pc:~$ echo \"$upper\"\nHELLO"
+            ],
+            [
+              "func() { declare -g global_var=\"visible outside\"; }; func; echo \"$global_var\"",
+              "Global in function",
+              "declare -g = global scope",
+              "john@pc:~$ func() { declare -g x=\"global\"; }; func && echo \"$x\"\nvisible outside"
+            ]
+          ]
+        },
+        {
+          "name": "IFS - Internal Field Separator",
+          "rows": [
+            [
+              "old_ifs=\"$IFS\"; IFS=\",\"; read -ra arr <<< \"a,b,c\"; IFS=\"$old_ifs\"; echo \"${arr[1]}\"",
+              "Custom IFS for parsing",
+              "Split CSV safely",
+              "john@pc:~$ old_ifs=\"$IFS\"; IFS=\",\"; read -ra arr <<< \"a,b,c\"; IFS=\"$old_ifs\"\njohn@pc:~$ echo \"${arr[1]}\"\nb"
+            ],
+            [
+              "data=\"2026-06-08\"; IFS=\"-\" read -r y m d <<< \"$data\"; echo \"$y $m $d\"",
+              "Split into variables",
+              "Date parsing",
+              "john@pc:~$ data=\"2026-06-08\"; IFS=\"-\" read -r y m d <<< \"$data\"\njohn@pc:~$ echo \"$y $m $d\"\n2026 06 08"
+            ],
+            [
+              "(IFS=\":\"; echo \"$*\")",
+              "Join with IFS",
+              "Array to string with separator",
+              "john@pc:~$ (IFS=\":\"; echo \"$*\")\n(colon-joined elements)"
+            ]
+          ]
+        },
+        {
+          "name": "Special Variables & Shell Info",
+          "rows": [
+            [
+              "echo \"$EPOCHSECONDS\"",
+              "Epoch seconds",
+              "Fast timestamp (no date cmd)",
+              "john@pc:~$ echo \"$EPOCHSECONDS\"\n1728547200"
+            ],
+            [
+              "echo \"$EPOCHREALTIME\"",
+              "Epoch with microseconds",
+              "High-res timestamp",
+              "john@pc:~$ echo \"$EPOCHREALTIME\"\n1728547200.123456"
+            ],
+            [
+              "echo \"$BASH_VERSION\"",
+              "Bash version",
+              "Current shell version",
+              "john@pc:~$ echo \"$BASH_VERSION\"\n5.2.21(1)-release"
+            ],
+            [
+              "echo \"$HOSTNAME\"",
+              "Hostname",
+              "Current machine name",
+              "john@pc:~$ echo \"$HOSTNAME\"\njohn-pc"
+            ],
+            [
+              "echo \"$LINENO\"",
+              "Current line number",
+              "Line in script",
+              "john@pc:~$ echo \"$LINENO\"\n5"
+            ],
+            [
+              "echo \"$SECONDS\"",
+              "Shell uptime seconds",
+              "Seconds since shell started",
+              "john@pc:~$ echo \"$SECONDS\"\n1234"
+            ],
+            [
+              "shopt -p",
+              "List all shopt options",
+              "Print all shell options",
+              "john@pc:~$ shopt -p\nshopt -s autocd globstar ..."
+            ]
+          ]
+        },
+        {
+          "name": "Call Stack & Introspection",
+          "rows": [
+            [
+              "caller() { echo \"${FUNCNAME[@]}\"; echo \"${BASH_SOURCE[@]}\"; echo \"${BASH_LINENO[@]}\"; }",
+              "Show call stack",
+              "Function name, source, line arrays",
+              "john@pc:~$ caller() { echo \"$FUNCNAME[@]\"; echo \"$BASH_SOURCE[@]\"; echo \"$BASH_LINENO[@]\"; }\n(shows entire call chain)"
+            ],
+            [
+              "func() { caller 0; }; func",
+              "Show caller info",
+              "Who called this function?",
+              "john@pc:~$ func() { caller 0; }; func\n(shows caller function name)"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 13: Best Practices & Production Patterns",
+      "commands": [
+        {
+          "name": "ShellCheck & Strict Mode",
+          "rows": [
+            [
+              "set -euo pipefail",
+              "Bash strict mode",
+              "-e=exit on error, -u=unset error, -o pipefail=pipeline fail",
+              "john@pc:~$ set -euo pipefail\nset -euo pipefail\n(Safety guarantee)"
+            ],
+            [
+              "shellcheck script.sh",
+              "Check with ShellCheck",
+              "Static analysis for bash",
+              "john@pc:~$ shellcheck script.sh\nSC1001: This word is outside of quotes..."
+            ],
+            [
+              "# In editor: install shellcheck plugin",
+              "IDE integration",
+              "Real-time linting",
+              "(run shellcheck on save)"
+            ],
+            [
+              "#!/usr/bin/env bash",
+              "Portable shebang",
+              "Works on any system with bash",
+              "#!/usr/bin/env bash\n(More portable than #!/bin/bash)"
+            ]
+          ]
+        },
+        {
+          "name": "printf vs echo",
+          "rows": [
+            [
+              "printf '%s\\n' 'Hello World'",
+              "Safe output",
+              "Predictable, portable",
+              "john@pc:~$ printf '%s\\n' 'Hello World'\nHello World"
+            ],
+            [
+              "printf 'Name: %s, Age: %d\\n' 'John' 25",
+              "Format specifiers",
+              "%s=string %d=int %f=float %x=hex",
+              "john@pc:~$ printf 'Name: %s, Age: %d\\n' 'John' 25\nName: John, Age: 25"
+            ],
+            [
+              "printf '%*s' 10 'hello'",
+              "Dynamic width",
+              "Pad to width 10",
+              "john@pc:~$ printf '%*s' 10 'hello'\n     hello"
+            ],
+            [
+              "printf '%b' 'escape\\nsequence'",
+              "Interpret escapes",
+              "%b allows \\n, \\t",
+              "john@pc:~$ printf '%b' 'escape\\nsequence'\nescape\\nsequence"
+            ],
+            [
+              "printf -v myvar \"%s\" \"Store in var\"",
+              "Print to variable",
+              "-v stores output in variable",
+              "john@pc:~$ printf -v myvar \"%s\" \"Store in var\"\njohn@pc:~$ echo \"$myvar\"\nStore in var"
+            ]
+          ]
+        },
+        {
+          "name": "Idempotent & Safe Patterns",
+          "rows": [
+            [
+              "mkdir -p /some/dir",
+              "Safe directory creation",
+              "No error if exists",
+              "john@pc:~$ mkdir -p /some/dir\n(succeeds even if exists)"
+            ],
+            [
+              "[[ -f \"$file\" ]] || touch \"$file\"",
+              "Conditional creation",
+              "Only create if missing",
+              "john@pc:~$ [[ -f \"$file\" ]] || touch \"$file\"\n(only creates if missing)"
+            ],
+            [
+              "mktemp -d tmp.XXXXXX",
+              "Safe temp directory",
+              "Creates unique temp dir",
+              "john@pc:~$ mktemp -d tmp.XXXXXX\n/tmp/tmp.abcdef"
+            ],
+            [
+              "trap 'rm -rf \"$tmpdir\"' EXIT",
+              "Auto-clean temp dir",
+              "Deletes temp on exit",
+              "john@pc:~$ trap 'rm -rf \"$tmpdir\"' EXIT\n(temp dir auto-cleaned)"
+            ],
+            [
+              "ln -sfn new_target link_name",
+              "Safe symlink",
+              "-f force, -n no deref",
+              "john@pc:~$ ln -sfn new_target link_name\n(symlink updated safely)"
+            ],
+            [
+              "rm -rf -- \"$dir\"",
+              "Safe recursive delete",
+              "-- prevents arg injection",
+              "john@pc:~$ rm -rf -- \"$dir\"\n(safer than bare rm -rf)"
+            ]
+          ]
+        },
+        {
+          "name": "Command Substitution: $() vs Backticks",
+          "rows": [
+            [
+              "result=$(ls -la)",
+              "Modern $()",
+              "Nestable, readable",
+              "john@pc:~$ result=$(ls -la)\n(nestable, recommended)"
+            ],
+            [
+              "result=`ls -la`",
+              "Legacy backticks",
+              "Harder to nest, escape",
+              "john@pc:~$ result=`ls -la`\n(avoid - hard to nest)"
+            ],
+            [
+              "now=$(date +%s); echo \"$now\"",
+              "Nested $()",
+              "Clean nesting",
+              "john@pc:~$ now=$(date +%s)\njohn@pc:~$ echo \"$now\"\n1728547200"
+            ]
+          ]
+        },
+        {
+          "name": "Security & Defensive Programming",
+          "rows": [
+            [
+              "[[ -n \"$1\" ]] || { echo \"Usage: $0 <arg>\"; exit 1; }",
+              "Validate arguments",
+              "Check arg exists before use",
+              "john@pc:~$ [[ -n \"$1\" ]] || { echo \"Usage: $0 <arg>\"; exit 1; }\nUsage: script.sh <arg>"
+            ],
+            [
+              "[[ \"$1\" =~ ^[a-zA-Z0-9]+$ ]] || exit 1",
+              "Sanitize input",
+              "Only alphanumeric allowed",
+              "john@pc:~$ [[ \"$1\" =~ ^[a-zA-Z0-9]+$ ]] || exit 1\n(rejects non-alphanumeric)"
+            ],
+            [
+              "exec 2>error.log",
+              "Redirect all stderr",
+              "All error output to file",
+              "john@pc:~$ exec 2>error.log\n(all stderr goes to file)"
+            ],
+            [
+              "eval \"$cmd\"  # DANGEROUS",
+              "Avoid eval",
+              "Can execute arbitrary code",
+              "john@pc:~$ eval \"$cmd\"\nDANGEROUS! Never use with user input"
+            ],
+            [
+              "lockfile=\"/tmp/app.lock\"; exec 8>\"$lockfile\"; flock -n 8 || exit 1",
+              "Simple lock file",
+              "Prevent concurrent runs",
+              "john@pc:~$ exec 8>/tmp/app.lock; flock -n 8 || exit 1\n(exits if already running)"
+            ],
+            [
+              "timeout 30 ./slow-script.sh || echo \"Timed out\"",
+              "Timeout guard",
+              "Kill if takes too long",
+              "john@pc:~$ timeout 30 ./slow-script.sh || echo \"Timed out\"\nTimed out"
+            ]
+          ]
+        },
+        {
+          "name": "Logging & Output Patterns",
+          "rows": [
+            [
+              "log() { local level=$1; shift; printf '[%s] [%s] %s\\n' \"$(date +%H:%M:%S)\" \"$level\" \"$*\"; }",
+              "Logging function",
+              "Structured log output",
+              "john@pc:~$ log INFO \"Starting backup\"\n[10:00:00] [INFO] Starting backup"
+            ],
+            [
+              "log 'ERROR' 'Disk full'; exit 1",
+              "Usage: log function",
+              "Consistent log format",
+              "john@pc:~$ log ERROR \"Disk full\"\n[10:00:00] [ERROR] Disk full"
+            ],
+            [
+              "die() { echo \"FATAL: $*\" >&2; exit 1; }",
+              "Die on error",
+              "Print to stderr and exit",
+              "john@pc:~$ die \"file not found\"\nFATAL: file not found"
+            ],
+            [
+              "export PS4='+ ${BASH_SOURCE##*/}:$LINENO: '; set -x",
+              "Script tracing",
+              "File:line prefix in -x",
+              "john@pc:~$ export PS4='+ ${BASH_SOURCE##*/}:$LINENO: '; set -x\n+ backup.sh:10: echo backing up"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 14: Regex, Prompts & Completion",
+      "commands": [
+        {
+          "name": "Regex Matching with =~ and BASH_REMATCH",
+          "rows": [
+            [
+              "[[ \"hello123\" =~ ^[a-z]+[0-9]+$ ]] && echo \"matches\"",
+              "Basic regex test",
+              "Uses ERE syntax",
+              "john@pc:~$ [[ \"hello123\" =~ ^[a-z]+[0-9]+$ ]] && echo \"matches\"\nmatches"
+            ],
+            [
+              "[[ \"abc-123\" =~ ^([a-z]+)-([0-9]+)$ ]]; echo \"${BASH_REMATCH[1]}\"",
+              "Capture groups",
+              "BASH_REMATCH[1]=group1",
+              "john@pc:~$ [[ \"abc-123\" =~ ^([a-z]+)-([0-9]+)$ ]]\njohn@pc:~$ echo \"${BASH_REMATCH[1]}\"\nabc"
+            ],
+            [
+              "[[ \"abc-123\" =~ ^([a-z]+)-([0-9]+)$ ]]; echo \"${BASH_REMATCH[2]}\"",
+              "Capture group 2",
+              "BASH_REMATCH[2]=group2",
+              "john@pc:~$ echo \"${BASH_REMATCH[2]}\"\n123"
+            ],
+            [
+              "[[ \"file.txt\" =~ \\.(txt|jpg|png)$ ]] && echo \"${BASH_REMATCH[1]}\"",
+              "File extension check",
+              "Match multiple extensions",
+              "john@pc:~$ [[ \"file.txt\" =~ \\.(txt|jpg|png)$ ]]\njohn@pc:~$ echo \"${BASH_REMATCH[1]}\"\ntxt"
+            ],
+            [
+              "email=\"user@example.com\"; [[ \"$email\" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$ ]] && echo \"valid email\"",
+              "Email validation",
+              "Comprehensive email regex",
+              "john@pc:~$ email=\"user@example.com\"; [[ \"$email\" =~ $regex ]] && echo \"valid email\"\nvalid email"
+            ]
+          ]
+        },
+        {
+          "name": "Prompt Customization (PS1-PS4)",
+          "rows": [
+            [
+              "PS1=\"\\[\\e[32m\\]\\u@\\h\\[\\e[0m\\]:\\[\\e[34m\\]\\w\\[\\e[0m\\]\\$ \"",
+              "Colorized prompt",
+              "Green user@host, blue cwd",
+              "john@pc:~$ PS1=\"\\[\\e[32m\\]\\u@\\h\\[\\e[0m\\]\\$ \"\n(green user@host: ~ $)"
+            ],
+            [
+              "PS1=\"\\n\\[\\e[33m\\]\\A\\[\\e[0m\\] \\u@\\h \\w\\n\\$ \"",
+              "Multi-line prompt",
+              "Time + user on line 1, $ on line 2",
+              "john@pc:~$ PS1=\"\\n\\[\\e[33m\\]\\A\\[\\e[0m\\] \\u@\\h \\w\\n\\$ \"\n(time user@host ~ $)"
+            ],
+            [
+              "PS2=\"> \"",
+              "Continuation prompt",
+              "For multi-line input",
+              "john@pc:~$ PS2=\"> \"\n> "
+            ],
+            [
+              "PS3=\"Select option: \"",
+              "Select menu prompt",
+              "Prompt for select loop",
+              "john@pc:~$ PS3=\"Select option: \"\nSelect option: "
+            ]
+          ]
+        },
+        {
+          "name": "Programmable Completion",
+          "rows": [
+            [
+              "complete -W \"start stop restart\" myscript",
+              "Simple completion",
+              "Tab shows options for myscript",
+              "john@pc:~$ myscript <tab>\nstart stop restart"
+            ],
+            [
+              "complete -A command mycmd",
+              "Complete with commands",
+              "Show commands as completions",
+              "john@pc:~$ mycmd <tab>\nls cd cp mv ..."
+            ],
+            [
+              "complete -F _custom_func myscript",
+              "Custom completion fn",
+              "Use function for dynamic comp",
+              "john@pc:~$ complete -F _custom_func myscript\n(custom tab completion)"
+            ],
+            [
+              "compgen -W \"apple banana cherry\" -- \"a\"",
+              "Generate completions",
+              "Test what matches prefix",
+              "john@pc:~$ compgen -W \"apple banana cherry\" -- \"a\"\napple"
+            ]
+          ]
+        },
+        {
+          "name": "Here-Document Variants",
+          "rows": [
+            [
+              "cat <<- EOF\n\tindented\nEOF",
+              "Strip leading tabs",
+              "<<- allows indented heredocs with tabs",
+              "john@pc:~$ cat <<- EOF\n\tindented\nEOF\nindented (no leading tab)"
+            ],
+            [
+              "cat << \"EOF\"\n$HOME\nEOF",
+              "Literal heredoc",
+              "No variable expansion inside",
+              "john@pc:~$ cat << \"EOF\"\n$HOME\nEOF\n$HOME (literal)"
+            ],
+            [
+              "cat << EOF > output.txt\ndata\nEOF",
+              "Heredoc to file",
+              "Direct heredoc output to file",
+              "john@pc:~$ cat << EOF > output.txt\ndata\nEOF\n(writes to output.txt)"
+            ],
+            [
+              "ssh user@host << \"REMOTE\"\nwhoami\nhostname\nREMOTE",
+              "Multi-line SSH",
+              "Run commands on remote host",
+              "john@pc:~$ ssh user@host << \"REMOTE\"\nwhoami\nhostname\nREMOTE\n(runs commands remotely)"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Stage 15: Bash Automation - Real-World Scenarios",
+      "commands": [
+        {
+          "name": "1. Database Backup Automation",
+          "type": "codeblock",
+          "code": "#!/usr/bin/env bash\n# Automated MySQL/PostgreSQL backup with verification\nset -euo pipefail\n\nDB_USER=\"root\"\nDB_NAME=\"myapp\"\nBACKUP_DIR=\"/backup/db\"\nRETENTION_DAYS=7\nTIMESTAMP=$(date +%Y%m%d_%H%M%S)\nmkdir -p \"$BACKUP_DIR\"\n\n# Backup with compression\nmysqldump -u \"$DB_USER\" \"$DB_NAME\" | gzip > \"$BACKUP_DIR/${DB_NAME}_${TIMESTAMP}.sql.gz\"\n\n# Verify backup is not empty\nBACKUP_FILE=\"$BACKUP_DIR/${DB_NAME}_${TIMESTAMP}.sql.gz\"\nif [[ ! -s \"$BACKUP_FILE\" ]]; then\n  echo \"ERROR: Backup file is empty!\" | mail -s \"BACKUP FAILED\" admin@example.com\n  exit 1\nfi\n\n# Show backup size\nSIZE=$(du -h \"$BACKUP_FILE\" | cut -f1)\necho \"Backup created: $BACKUP_FILE ($SIZE)\"\n\n# Remote sync to offsite storage\nrsync -avz \"$BACKUP_DIR/\" backup@offsite:/backups/db/\n\n# Clean old backups (local)\nfind \"$BACKUP_DIR\" -name \"*.sql.gz\" -mtime +$RETENTION_DAYS -delete\necho \"Cleaned backups older than $RETENTION_DAYS days\"\n\n# Cron: 0 2 * * * /usr/local/bin/db-backup.sh"
+        },
+        {
+          "name": "2. Server Health Monitor & Slack Alert",
+          "type": "codeblock",
+          "code": "#!/usr/bin/env bash\n# Monitor disk, memory, CPU, services. Alert via Slack.\nset -euo pipefail\n\nHOSTNAME=$(hostname)\nSLACK_WEBHOOK=\"https://hooks.slack.com/services/YOUR/WEBHOOK\"\n\nsend_alert() {\n  command -v jq &>/dev/null || { echo \"jq required for Slack alerts\" >&2; exit 1; }\n  local message=\"$1\"\n  local payload\n  payload=$(jq -n --arg h \"$HOSTNAME\" --arg m \"$message\" \\\n    '{\"text\":\"[\\($h)] \\($m)\"}') || { echo \"Failed to build JSON payload\" >&2; exit 1; }\n  curl -s -X POST -H 'Content-type: application/json' \\\n    --data \"$payload\" \\\n    \"$SLACK_WEBHOOK\" &>/dev/null\n}\n\n# --- Disk Check ---\ndf -h | awk 'NR>1 {print $5, $6}' | while read -r use mount; do\n  pct=${use%\\%}\n  if [[ $pct -gt 90 ]]; then\n    send_alert \"CRITICAL: Disk $mount is $use full!\"\n  elif [[ $pct -gt 80 ]]; then\n    echo \"WARNING: $mount at $use\" | logger -t monitor\n  fi\ndone\n\n# --- Memory Check ---\nMEM_FREE=$(free -m | awk '/Mem:/ {print $7}')\nMEM_TOTAL=$(free -m | awk '/Mem:/ {print $2}')\nMEM_PCT=$(( (MEM_TOTAL - MEM_FREE) * 100 / MEM_TOTAL ))\nif [[ $MEM_PCT -gt 90 ]]; then\n  send_alert \"CRITICAL: Memory at ${MEM_PCT}%!\"\nfi\n\n# --- Service Health Check ---\nSERVICES=(\"nginx\" \"postgresql\" \"redis-server\" \"ssh\")\nfor svc in \"${SERVICES[@]}\"; do\n  if ! systemctl is-active --quiet \"$svc\"; then\n    echo \"Restarting $svc...\"\n    systemctl restart \"$svc\"\n    send_alert \"$svc was down and restarted\"\n  fi\ndone\n\n# --- SSL Certificate Expiry ---\nexpiry_date=$(echo | openssl s_client -connect example.com:443 2>/dev/null | openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2)\nif [[ -n \"$expiry_date\" ]]; then\n  expiry_epoch=$(date -d \"$expiry_date\" +%s)\n  now_epoch=$(date +%s)\n  days_left=$(( (expiry_epoch - now_epoch) / 86400 ))\n  if [[ $days_left -lt 7 ]]; then\n    send_alert \"SSL cert expires in $days_left days!\"\n  fi\nfi"
+        },
+        {
+          "name": "3. Zero-Downtime Deployment",
+          "type": "codeblock",
+          "code": "#!/usr/bin/env bash\n# Deploy web app with zero downtime via symlink swap\nset -euo pipefail\n\nAPP_NAME=\"myapp\"\nREPO=\"git@github.com:org/${APP_NAME}.git\"\nDEPLOY_DIR=\"/opt/${APP_NAME}\"\nRELEASES_DIR=\"/opt/${APP_NAME}_releases\"\nTIMESTAMP=$(date +%Y%m%d_%H%M%S)\nRELEASE_DIR=\"${RELEASES_DIR}/${TIMESTAMP}\"\n\nmkdir -p \"$RELEASE_DIR\"\ncd \"$RELEASE_DIR\"\ngit clone --depth 1 \"$REPO\" .\nnpm ci --production\nnpm run build\ncp \"${DEPLOY_DIR}/.env\" . 2>/dev/null || true\n\n# Atomic symlink swap\nln -sfn \"$RELEASE_DIR\" \"${DEPLOY_DIR}_new\"\nmv -T \"${DEPLOY_DIR}_new\" \"$DEPLOY_DIR\"\nsystemctl reload \"$APP_NAME\" 2>/dev/null || systemctl restart \"$APP_NAME\"\n\n# Health check\nsleep 5\nif curl -sf http://localhost/health > /dev/null 2>&1; then\n  echo \"Deployment successful: $TIMESTAMP\"\nelse\n  echo \"Health check failed! Rolling back...\"\n  PREV=$(ls -dt \"${RELEASES_DIR}\"/* | head -2 | tail -1)\n  ln -sfn \"$PREV\" \"$DEPLOY_DIR\"\n  systemctl restart \"$APP_NAME\"\n  exit 1\nfi\n\n# Keep last 3 releases\nls -dt \"${RELEASES_DIR}\"/* | tail -n +4 | xargs rm -rf"
+        },
+        {
+          "name": "4. Log Rotation & Cleanup",
+          "type": "codeblock",
+          "code": "#!/usr/bin/env bash\n# Compress large logs, archive, cleanup old ones\nset -euo pipefail\n\nLOG_DIRS=(\"/var/log/nginx\" \"/var/log/myapp\")\nARCHIVE_BASE=\"/var/log/archive\"\nRETENTION_DAYS=30\nMAX_LOG_SIZE_MB=500\n\nfor log_dir in \"${LOG_DIRS[@]}\"; do\n  [[ -d \"$log_dir\" ]] || continue\n  YEAR_MONTH=$(date +%Y/%m)\n  ARCHIVE_DIR=\"${ARCHIVE_BASE}/${YEAR_MONTH}\"\n  mkdir -p \"$ARCHIVE_DIR\"\n\n  find \"$log_dir\" -name \"*.log\" -type f -size +${MAX_LOG_SIZE_MB}M | while read -r log; do\n    BASENAME=$(basename \"$log\")\n    gzip -c \"$log\" > \"${ARCHIVE_DIR}/${BASENAME}.$(date +%Y%m%d).gz\"\n    : > \"$log\"  # truncate original\n    echo \"Rotated: $log\"\n  done\ndone\n\nfind \"$ARCHIVE_BASE\" -name \"*.gz\" -type f -mtime +$RETENTION_DAYS -delete\necho \"Archive cleaned\""
+        },
+        {
+          "name": "5. Batch User Management",
+          "type": "codeblock",
+          "code": "#!/usr/bin/env bash\n# Bulk user operations from CSV\nset -euo pipefail\n\nACTION=\"${1:-}\"\nCSV=\"${2:-users.csv}\"\n\nusage() {\n  echo \"Usage: $0 {create|delete|list} [csv-file]\"\n  echo \"CSV: username,fullname,group,shell\"\n  exit 1\n}\n\n[[ -n \"$ACTION\" ]] || usage\n\ncase \"$ACTION\" in\n  create)\n    [[ -f \"$CSV\" ]] || { echo \"File not found\"; exit 1; }\n    while IFS=',' read -r username fullname group shell; do\n      [[ \"$username\" == \"username\" ]] && continue\n      id \"$username\" &>/dev/null && { echo \"SKIP: $username exists\"; continue; }\n      useradd -m -s \"$shell\" -c \"$fullname\" -U \"$username\"\n      usermod -aG \"$group\" \"$username\"\n      PASS=$(openssl rand -base64 12)\n      echo \"$username:$PASS\" | chpasswd\n      echo \"CREATED: $username - Pass: $PASS\"\n    done < \"$CSV\"\n    ;;\n  delete)\n    shift 2\n    for user in \"$@\"; do userdel -r \"$user\" && echo \"Deleted $user\"; done\n    ;;\n  list)\n    awk -F: '$3 >= 1000 {printf \"%s (UID: %s)\\n\", $1, $3}' /etc/passwd\n    ;;\n  *) usage ;;\nesac"
+        },
+        {
+          "name": "6. SSL Auto-Renewal",
+          "type": "codeblock",
+          "code": "#!/usr/bin/env bash\n# Renew Let's Encrypt SSL and reload services\nset -euo pipefail\n\nLOGFILE=\"/var/log/ssl-renew.log\"\nlog() { echo \"[$(date +%Y-%m-%d)] $*\" >> \"$LOGFILE\"; }\n\nfor domain in \"$@\"; do\n  expiry=$(echo | openssl s_client -connect \"${domain}:443\" -servername \"$domain\" 2>/dev/null | openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2)\n  [[ -z \"$expiry\" ]] && { log \"Cannot check $domain\"; continue; }\n  days_left=$(( ($(date -d \"$expiry\" +%s) - $(date +%s)) / 86400 ))\n  log \"$domain: $days_left days left\"\n  [[ $days_left -lt 30 ]] || continue\n  certbot certonly --nginx -d \"$domain\" --non-interactive --agree-tos -m admin@example.com \\\n    && log \"Renewed $domain\" || log \"FAILED $domain\"\ndone\nsystemctl reload nginx || systemctl restart nginx"
+        },
+        {
+          "name": "7. Docker Cleanup & Health Check",
+          "type": "codeblock",
+          "code": "#!/usr/bin/env bash\n# Docker housekeeping: prune containers, images, volumes\nset -euo pipefail\n\nlog() { echo \"[$(date +%H:%M:%S)] $*\"; }\nlog \"=== Docker Cleanup ===\"\n\n# Remove stopped containers\ndocker container prune -f 2>/dev/null && log \"Removed stopped containers\"\n\n# Remove unused images (24h+)\ndocker image prune -a -f --filter \"until=24h\" 2>/dev/null && log \"Cleaned old images\"\n\n# Remove unused volumes\ndocker volume prune -f 2>/dev/null && log \"Cleaned unused volumes\"\n\n# Check restarting containers\ndocker ps -a --format \"{{.Names}} {{.Status}}\" | while read -r name status; do\n  echo \"$status\" | grep -q \"Restarting\" && log \"ALERT: $name restarting!\"\ndone\n\n# Limit container log sizes\nfind /var/lib/docker/containers -name \"*-json.log\" -exec truncate -s 50M {} \\; 2>/dev/null || true\nlog \"=== Complete ===\""
+        },
+        {
+          "name": "8. AWS EC2 Auto-Stop (Cost Optimizer)",
+          "type": "codeblock",
+          "code": "#!/usr/bin/env bash\n# Stop tagged EC2 instances after hours to save costs\nset -euo pipefail\n\nTAG_KEY=\"AutoStop\"\nTAG_VALUE=\"true\"\n\n# Only run at 8 PM (adjust hour as needed)\n[[ $(date +%H) -eq 20 ]] || exit 0\n\nINSTANCES=$(aws ec2 describe-instances \\\n  --filters \"Name=tag:${TAG_KEY},Values=${TAG_VALUE}\" \\\n            \"Name=instance-state-name,Values=running\" \\\n  --query \"Reservations[*].Instances[*].InstanceId\" \\\n  --output text)\n\nif [[ -n \"$INSTANCES\" ]]; then\n  aws ec2 stop-instances --instance-ids $INSTANCES --region \"${AWS_REGION:-us-east-1}\"\nfi\n\n# Delete old snapshots (7 days+)\nSEVEN_DAYS_AGO=$(date -d '-7 days' --iso-8601)\nfor snap in $(aws ec2 describe-snapshots --owner-ids self \\\n  --query \"Snapshots[?StartTime<='$SEVEN_DAYS_AGO'].SnapshotId\" \\\n  --output text); do\n  aws ec2 delete-snapshot --snapshot-id \"$snap\" --region \"${AWS_REGION:-us-east-1}\" || true\ndone"
+        },
+        {
+          "name": "9. Error Log Analysis & Email Report",
+          "type": "codeblock",
+          "code": "#!/usr/bin/env bash\n# Parse logs, extract errors, email report\nset -euo pipefail\n\nREPORT=\"/tmp/error-report-$(date +%F).txt\"\n\n{\n  echo \"Error Report: $(date)\"\n  echo \"Host: $(hostname)\"\n  echo \"\"\n  echo \"--- Nginx 5xx Errors (24h) ---\"\n  grep \"$(date -d '1 day ago' +%d/%b/%Y):\" /var/log/nginx/access.log 2>/dev/null | grep -c '\" 5[0-9][0-9] ' || echo \"0\"\n  echo \"\"\n  echo \"--- Top 10 Application Errors ---\"\n  grep -oP 'ERROR: \\K.*' /var/log/myapp/error.log 2>/dev/null | sort | uniq -c | sort -rn | head -10 || echo \"(none)\"\n  echo \"\"\n  echo \"--- Failed SSH Logins (today) ---\"\n  grep \"$(date +%b\\ %e)\" /var/log/auth.log 2>/dev/null | grep \"Failed password\" | awk '{print $11}' | sort | uniq -c | sort -rn | head -5 || echo \"(none)\"\n  echo \"\"\n  echo \"--- Disks > 85% Usage ---\"\n  df -h | awk '$5+0 > 85 {print $1, $5, $6}'\n  echo \"\"\n  echo \"--- OOM Killer Events ---\"\n  dmesg -T 2>/dev/null | grep -i \"oom-killer\" | tail -3 || echo \"(none)\"\n} > \"$REPORT\"\n\n# Email the report\nmail -s \"Error Report - $(hostname) - $(date +%F)\" admin@example.com < \"$REPORT\"\n\n# Also alert if critical\nif grep -q \"OOM\\|CRITICAL\" \"$REPORT\" 2>/dev/null; then\n  echo \"Critical errors found on $(hostname)!\" | mail -s \"ALERT: Critical Error\" admin@example.com\nfi"
+        },
+        {
+          "name": "10. Git Sync & Maintenance",
+          "type": "codeblock",
+          "code": "#!/usr/bin/env bash\n# Bulk git pull, status check across all projects\nset -euo pipefail\n\nBASE_DIR=\"/home/projects\"\nLOG=\"/var/log/git-sync.log\"\n\nlog() { echo \"[$(date +%H:%M:%S)] $*\" | tee -a \"$LOG\"; }\n\nlog \"=== Git Sync ===\"\n\nfor repo in \"$BASE_DIR\"/*/; do\n  [[ -d \"${repo}.git\" ]] || continue\n  cd \"$repo\"\n  NAME=$(basename \"$repo\")\n  BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo \"unknown\")\n  \n  # Stash any local changes before pulling\n  git stash push -m \"auto-stash $(date +%Y-%m-%d)\" --quiet 2>/dev/null || true\n  \n  if git pull --rebase origin \"$BRANCH\" 2>/dev/null; then\n    log \"OK: $NAME [$BRANCH]\"\n  else\n    log \"FAILED: $NAME [$BRANCH]\"\n  fi\n  \n  # Check if we have unpushed commits\n  AHEAD=$(git rev-list --count \"@{u}..HEAD\" 2>/dev/null || echo 0)\n  if [[ $AHEAD -gt 0 ]]; then\n    log \"PENDING: $NAME is $AHEAD commits ahead of remote\"\n  fi\ndone\n\nlog \"=== Complete ===\""
+        },
+        {
+          "name": "11. Central Cron Orchestrator",
+          "type": "codeblock",
+          "code": "#!/usr/bin/env bash\n# Central cron manager with logging, locking, and alerting\nset -euo pipefail\n\nLOG_DIR=\"/var/log/cron-jobs\"\nmkdir -p \"$LOG_DIR\"\n\nrun_job() {\n  local name=$1 cmd=$2\n  local log=\"${LOG_DIR}/${name}_$(date +%Y%m%d).log\"\n  local lock=\"/tmp/${name}.lock\"\n  \n  # Prevent concurrent runs\n  exec 8>\"$lock\"\n  flock -n 8 || { echo \"SKIP: $name already running\" >> \"$log\"; return 1; }\n  \n  echo \"=== $(date): Starting $name ===\" >> \"$log\"\n  START=$(date +%s)\n  \n  if eval \"$cmd\" >> \"$log\" 2>&1; then\n    echo \"=== SUCCESS ($(( $(date +%s) - START ))s) ===\" >> \"$log\"\n  else\n    echo \"=== FAILED (exit=$?, duration=$(( $(date +%s) - START ))s) ===\" >> \"$log\"\n    echo \"Cron job $name failed on $(hostname)!\" | mail -s \"CRON ALERT\" admin@example.com\n  fi\n  \n  flock -u 8\n}\n\n# Define your scheduled jobs\nrun_job \"db-backup\"   \"/usr/local/bin/db-backup.sh\"\nrun_job \"ssl-renew\"   \"/usr/local/bin/renew-ssl.sh\"\nrun_job \"docker-clean\" \"/usr/local/bin/docker-cleanup.sh\"\nrun_job \"log-rotate\"  \"/usr/local/bin/log-rotate.sh\""
+        },
+        {
+          "name": "12. Network Connectivity Probe",
+          "type": "codeblock",
+          "code": "#!/usr/bin/env bash\n# Test connectivity to critical services and report\nset -euo pipefail\n\n# Format: name host port\nSERVICES=(\n  \"Database\"      \"db.example.com\"     5432\n  \"Redis\"         \"redis.example.com\"  6379\n  \"API\"           \"api.example.com\"    443\n  \"Web\"           \"example.com\"        443\n  \"DNS\"           \"8.8.8.8\"            53\n)\n\nPASS=0\nFAIL=0\nFAILED=\"\"\n\n{\n  echo \"Network Probe Report: $(date)\"\n  echo \"From: $(hostname) ($(hostname -I | awk '{print $1}'))\"\n  echo \"\"\n  \n  for ((i=0; i<${#SERVICES[@]}; i+=3)); do\n    name=\"${SERVICES[$i]}\"\n    host=\"${SERVICES[$((i+1))]}\"\n    port=\"${SERVICES[$((i+2))]}\"\n    \n    if timeout 5 bash -c \"echo > /dev/tcp/$host/$port\" 2>/dev/null; then\n      echo \"  OK: $name ($host:$port)\"\n      ((PASS++))\n    else\n      echo \"  FAIL: $name ($host:$port)\"\n      ((FAIL++))\n      FAILED+=\"$name \"\n    fi\n  done\n  \n  echo \"\"\n  echo \"Summary: $PASS passed, $FAIL failed\"\n} | tee /var/log/network-probe.log\n\n# Alert if any failed\nif [[ $FAIL -gt 0 ]]; then\n  echo \"Network probe alert: $FAILED unreachable on $(hostname)\" | mail -s \"NETWORK ALERT\" admin@example.com\nfi"
         }
       ]
     }
