@@ -77,9 +77,9 @@
     "date": "2026-06-08"
   },
   {
-    "slug": "redis-valkey",
-    "title": "Redis & Valkey: The Complete A–Z Guide",
-    "content": "A comprehensive end-to-end guide to Redis and Valkey — from fundamentals to production. Covers installation, all data types and commands, persistence, replication, Sentinel high availability, Redis Cluster, the Valkey fork, security (ACL/TLS), performance tuning, Redis Stack modules (JSON, Search, TimeSeries, Bloom), use cases (caching, sessions, rate limiting, queues, leaderboards), Docker/Kubernetes deployment, monitoring with Prometheus/Grafana, backups, troubleshooting, and production best practices.",
+    "slug": "valkey",
+    "title": "Valkey: The Complete A–Z Guide",
+    "content": "A comprehensive end-to-end guide to Valkey — from fundamentals to production. Covers installation (official + Percona repos), all data types and commands, persistence, replication, high availability, security (ACL/TLS), performance tuning, Valkey 9.x built-in search, use cases (caching, sessions, rate limiting, queues, leaderboards), Docker deployment, monitoring with Prometheus/Grafana, backups, troubleshooting, and production best practices.",
     "author": "E-Learning Platform",
     "date": "2026-06-08"
   }

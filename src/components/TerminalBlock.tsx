@@ -79,12 +79,11 @@ function StripedBlock({
           <div key={i}>{l || "\u00A0"}</div>
         ))}
       </div>
-      {copyContent && (
-        <button
-          onClick={handleCopy}
-          className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 text-zinc-500 hover:text-indigo-600 hover:border-indigo-400 shadow-sm cursor-pointer"
-          title={copied ? "Copied!" : "Copy command"}
-        >
+      {copyContent && (          <button
+            onClick={handleCopy}
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded-md opacity-60 group-hover:opacity-100 transition-all duration-200 bg-white/90 dark:bg-zinc-700/90 border border-zinc-300 dark:border-zinc-600 text-zinc-500 hover:text-indigo-600 hover:border-indigo-400 hover:bg-white dark:hover:bg-zinc-700 hover:scale-110 shadow-sm cursor-pointer backdrop-blur-sm"
+            title={copied ? "Copied!" : "Copy command"}
+          >
           <CopyIcon copied={copied} />
         </button>
       )}
