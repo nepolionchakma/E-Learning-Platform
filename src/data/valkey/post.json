@@ -1,0 +1,906 @@
+{
+  "title": "Valkey: The Complete A–Z Guide",
+  "icon": "⚡",
+  "description": "A comprehensive end-to-end guide to Valkey — from fundamentals to production. Covers installation (official + Percona repos), all data types and commands, persistence, replication, high availability, security (ACL/TLS), performance tuning, Valkey 9.x built-in search, use cases (caching, sessions, rate limiting, queues, leaderboards), Docker deployment, monitoring with Prometheus/Grafana, backups, troubleshooting, and production best practices — for beginners and advanced users alike.",
+  "author": "E-Learning Platform",
+  "date": "2026-06-08",
+  "readTime": "35 min read",
+  "heroImage": "/images/valkey-hero.svg",
+  "heroAlt": "Valkey architecture diagram showing data types (Strings, Lists, Sets, Sorted Sets, Hashes, Streams), production infrastructure with master-replica-Sentinel-Cluster, and use cases including caching, sessions, rate limiting, and queues",
+  "sections": [
+    {
+      "id": "introduction",
+      "title": "Introduction to Valkey",
+      "description": "What Valkey is, its history, and why it is the most popular community-driven in-memory data store.",
+      "items": [
+        {
+          "label": "What is Valkey?",
+          "text": "Valkey is a high-performance, open-source, in-memory key-value data store that was created in March 2024 as a community-driven fork of Valkey OSS (version 7.2.4). The fork occurred after Valkey Ltd. shifted its licensing from the permissive BSD 3-Clause license to a dual-license structure (SSPL/RSAL), which restricted certain commercial uses.\n\nValkey operates under the BSD 3-Clause license and is governed by the Linux Foundation — ensuring it remains fully open-source and free. Major contributors include AWS, Google Cloud, Oracle, and Ericsson. Valkey is designed as a drop-in replacement for Valkey OSS, meaning applications written against Valkey 7.2.x require minimal to no code changes.\n\nAs of early 2026, Valkey has diverged from Valkey with its own innovations:\n• Valkey 8.x — Enhanced I/O multithreading model with near-linear scaling on multi-core systems, delivering ~8-10% higher throughput and ~20% better P99 latency; optimized memory efficiency and improved hashtables\n• Valkey 9.x — Full-text and hybrid search, vector similarity search, advanced retrieval capabilities, built-in search without external modules\n\nValkey 8.x+ also introduces advanced observability features including **per-slot metrics** that provide deep insight into performance bottlenecks — far beyond standard Valkey monitoring. The project has been widely adopted by major cloud providers (AWS ElastiCache, Google Cloud Memorystore) and high-scale tech firms."
+        },
+        {
+          "label": "Architecture Overview",
+          "text": "Before touching configurations, understand the layers of a typical Valkey deployment. Your application interacts with Valkey through a client library (like ioredis for Node.js, redis-py for Python, or predis for PHP), which manages connection pooling and command execution.\n\n```text\n┌──────────────────────────────────────────────────────────┐\n│                    YOUR APPLICATION                      │\n│             (Node.js / Python / PHP / Go)                │\n└──────────────────────────┬───────────────────────────────┘\n                           │  Client Library (ioredis / redis-py)\n                           │  (Connection Pooling & Retries)\n┌──────────────────────────▼───────────────────────────────┐\n│                VALKEY SERVER :6379                       │\n│  ┌──────────────┐  ┌──────────────┐  ┌────────────────┐  │\n│  │    ACL       │  │    Auth      │  │  Persistence   │  │\n│  │   Users      │  │   Password   │  │   RDB + AOF    │  │\n│  └──────────────┘  └──────────────┘  └────────────────┘  │\n└──────────────────────────────────────────────────────────┘\n```\n\n**Security Principle:** Access to the Valkey port should be denied to everyone except trusted clients. In a production network, Valkey instances should only be directly accessible by the application servers that use them."
+        }
+      ]
+    },
+    {
+      "id": "installation",
+      "title": "Installation & Setup",
+      "description": "Installing Valkey on Ubuntu/Debian via official APT, Percona repository, and Docker.",
+      "items": [
+        {
+          "label": "Install Valkey via Official APT Repository",
+          "code": "# Method 1: Install from official Valkey APT repository\n# Requires Ubuntu 24.04+ or Debian 12+\nuser@server:~$ sudo apt update\nuser@server:~$ sudo apt install valkey -y\n\n# Optional: Install compatibility symlinks for redis-* CLI tools\nuser@server:~$ sudo apt install valkey-redis-compat -y\n\nuser@server:~$ valkey-server --version\nValkey server v=9.1.8 sha=00000000:0 malloc=jemalloc-5.3.0 bits=64 build=def456\n\nuser@server:~$ valkey-cli ping\nPONG"
+        },
+        {
+          "label": "Install Valkey via Percona Repository (Method 1)",
+          "code": "# Method 2a: Install via Percona repository (wget + lsb-release)\n# Recommended for older or non-Ubuntu 24.04+ distributions\n\n# Install prerequisites\nuser@server:~$ sudo apt install wget lsb-release gnupg -y\n\n# Download and add the Percona repository (distribution-specific)\nuser@server:~$ wget https://repo.percona.com/apt/percona-release_latest.$(lsb_release -sc)_all.deb\nuser@server:~$ sudo dpkg -i percona-release_latest.$(lsb_release -sc)_all.deb\n\n# Enable the Valkey experimental repository\nuser@server:~$ sudo percona-release enable valkey experimental\n\n# Install Valkey\nuser@server:~$ sudo apt update\nuser@server:~$ sudo apt install valkey -y\n\n# Verify the installation\nuser@server:~$ valkey-server --version\nuser@server:~$ valkey-cli ping\nPONG"
+        },
+        {
+          "label": "Install Valkey via Percona Repository (Method 2)",
+          "code": "# Method 2b: Install via Percona repository (generic .deb)\n# Works on any Debian-based distribution regardless of release name\n\n# Download the generic Percona release package\nuser@server:~$ wget https://repo.percona.com/apt/percona-release_latest.generic_all.deb\n\n# Install the package\nuser@server:~$ sudo apt install ./percona-release_latest.generic_all.deb -y\n\n# Enable the Valkey experimental repository\nuser@server:~$ sudo percona-release enable valkey experimental\n\n# Install Valkey\nuser@server:~$ sudo apt update\nuser@server:~$ sudo apt install valkey -y\n\n# Verify\nuser@server:~$ valkey-cli ping\nPONG"
+        },
+        {
+          "label": "Install Valkey via Percona Repository (Method 3 — with dpkg fix)",
+          "code": "# Method 2c: Install via Percona (with curl + dpkg fix)\n# Use this method if you encounter repository/dpkg issues with Methods 2a/2b\n\n# Install prerequisites\nuser@server:~$ sudo apt install curl -y\n\n# Fix any existing dpkg issues\nuser@server:~$ sudo dpkg --configure -a\nuser@server:~$ sudo apt install -f\n\n# Add Percona repository and enable Valkey\nuser@server:~$ sudo percona-release enable valkey experimental\n\n# Install Valkey\nuser@server:~$ sudo apt update\nuser@server:~$ sudo apt install valkey -y\n\n# Verify\nuser@server:~$ valkey-server --version\nuser@server:~$ valkey-cli ping\nPONG"
+        },
+        {
+          "label": "Valkey with Docker (Recommended for Development)",
+          "code": "# Pull the latest Valkey image\nuser@server:~$ docker pull valkey/valkey:9-alpine\n\n# Basic single instance\nuser@server:~$ docker run -d --name my-valkey -p 6379:6379 valkey/valkey:9-alpine\n\n# With persistence and config\nuser@server:~$ docker run -d --name my-valkey \\\n  -p 6379:6379 \\\n  -v valkey-data:/data \\\n  -v $(pwd)/valkey.conf:/etc/valkey/valkey.conf \\\n  valkey/valkey:9-alpine \\\n  valkey-server /etc/valkey/valkey.conf\n\n# Test connectivity\nuser@server:~$ docker exec -it my-valkey valkey-cli ping\nPONG"
+        },
+        {
+          "label": "Connecting with valkey-cli",
+          "code": "# Connect to local default\nuser@server:~$ valkey-cli\n127.0.0.1:6379> ping\nPONG\n127.0.0.1:6379> info server\n# Server\nvalkey_version:9.1.8\nvalkey_mode:standalone\nos:Linux\narch_bits:64\n\n# Connect to remote server\nuser@server:~$ valkey-cli -h 192.168.1.100 -p 6379 -a 'your-password'\n\n# Connect via Unix socket\nuser@server:~$ valkey-cli -s /var/run/valkey/valkey-server.sock\n\n# Run a single command\nuser@server:~$ valkey-cli GET mykey\n\"myvalue\"\n\n# Monitor all live commands\nuser@server:~$ valkey-cli monitor"
+        },
+        {
+          "label": "Service Management with systemd",
+          "code": "# Start / Stop / Restart / Status\nuser@server:~$ sudo systemctl start valkey\nuser@server:~$ sudo systemctl stop valkey\nuser@server:~$ sudo systemctl restart valkey\nuser@server:~$ sudo systemctl status valkey\n\n# Enable auto-start on boot\nuser@server:~$ sudo systemctl enable valkey\n\n# Check logs in real-time\nuser@server:~$ sudo journalctl -u valkey -f"
+        },
+        {
+          "label": "Valkey Configuration File Reference",
+          "code": "# The main configuration file is located at:\n#   /etc/valkey/valkey.conf\n#\n# Edit it with your preferred editor:\nuser@server:~$ sudo nano /etc/valkey/valkey.conf\n\n# --- Network ---\nbind 127.0.0.1          # Listen on localhost only (secure default)\nport 6379               # Default port\nprotected-mode yes      # Rejects connections unless auth is set\n\n# --- Authentication ---\nrequirepass YourStrongPassword123\n\n# --- Memory ---\nmaxmemory 512mb                   # Set a hard limit (ALWAYS do this)\nmaxmemory-policy allkeys-lru      # Evict LRU keys when full\n\n# --- Persistence ---\nsave 900 1          # Save if 1 key changed in 900 seconds\nsave 300 10         # Save if 10 keys changed in 300 seconds\nsave 60 10000       # Save if 10000 keys changed in 60 seconds\nappendonly yes      # Enable AOF (append-only file) for durability\nappendfsync everysec  # Flush to disk every second (safe + fast)\n\n# --- Performance (Valkey 9.x multi-threaded) ---\nio-threads 4        # Set to number of CPU cores to dedicate\nio-threads-do-reads yes\n\n# --- Logging ---\nloglevel notice\nlogfile /var/log/valkey/valkey.log\n\n# After editing, restart Valkey:\nuser@server:~$ sudo systemctl restart valkey"
+        }
+      ]
+    },
+    {
+      "id": "core-data-types",
+      "title": "Core Data Types & Commands",
+      "description": "Every data type in Valkey — Strings, Lists, Sets, Sorted Sets, Hashes, Streams, Bitmaps, HyperLogLog, and Geospatial — with all commands and practical examples.",
+      "items": [
+        {
+          "label": "Strings — The Foundation",
+          "text": "Strings are the most basic Valkey data type. They can store any sequence of bytes — text, integers, floats, serialized JSON, binary data (images), up to 512 MB per key. Strings are the foundation for caching, counters, and simple key-value stores.\n\nKey commands: SET, GET, GETSET, MSET, MGET, INCR, INCRBY, DECR, DECRBY, APPEND, STRLEN, SETNX, SETEX, GETDEL, GETEX, SUBSTR."
+        },
+        {
+          "label": "String Commands in Action",
+          "code": "# Basic set/get\n127.0.0.1:6379> SET user:1:name \"Alice\"\nOK\n127.0.0.1:6379> GET user:1:name\n\"Alice\"\n\n# Set with expiration (N seconds)\n127.0.0.1:6379> SETEX session:token:abc123 3600 \"user_data_here\"\nOK\n127.0.0.1:6379> TTL session:token:abc123\n(integer) 3598\n\n# Set only if key does not exist (SETNX)\n127.0.0.1:6379> SETNX lock:resource:42 \"locked\"\n(integer) 1   # Key was set\n127.0.0.1:6379> SETNX lock:resource:42 \"locked\"\n(integer) 0   # Key already exists\n\n# Counters (atomic increment/decrement)\n127.0.0.1:6379> SET page:home:views 0\nOK\n127.0.0.1:6379> INCR page:home:views\n(integer) 1\n127.0.0.1:6379> INCRBY page:home:views 100\n(integer) 101\n127.0.0.1:6379> DECR page:home:views\n(integer) 100\n\n# Multi-get/set (batch operations)\n127.0.0.1:6379> MSET user:1:name \"Alice\" user:1:email \"alice@example.com\" user:1:age \"30\"\nOK\n127.0.0.1:6379> MGET user:1:name user:1:email user:1:age\n1) \"Alice\"\n2) \"alice@example.com\"\n3) \"30\"\n\n# Get and delete / get and set\n127.0.0.1:6379> SET temp \"temporary_value\"\nOK\n127.0.0.1:6379> GETDEL temp\n\"temporary_value\"\n127.0.0.1:6379> GET temp\n(nil)\n\n# Append to existing value\n127.0.0.1:6379> SET log \"Error: \"\nOK\n127.0.0.1:6379> APPEND log \"connection timeout\"\n(integer) 23\n127.0.0.1:6379> GET log\n\"Error: connection timeout\""
+        },
+        {
+          "label": "Lists — Doubly Linked Lists",
+          "text": "Lists are ordered collections of strings, implemented as doubly linked lists. They excel at queue-like operations — pushing to one end and popping from the other. Perfect for message queues, activity feeds, and time-series data.\n\nKey commands: LPUSH, RPUSH, LPOP, RPOP, LLEN, LRANGE, LINDEX, LSET, LREM, LTRIM, BLPOP, BRPOP, RPOPLPUSH, BRPOPLPUSH."
+        },
+        {
+          "label": "List Commands in Action",
+          "code": "# Building a queue\n127.0.0.1:6379> RPUSH tasks \"Process order 123\"\n(integer) 1\n127.0.0.1:6379> RPUSH tasks \"Send email receipt\" \"Update inventory\" \"Generate invoice\"\n(integer) 4\n\n127.0.0.1:6379> LRANGE tasks 0 -1\n1) \"Process order 123\"\n2) \"Send email receipt\"\n3) \"Update inventory\"\n4) \"Generate invoice\"\n\n# Process from front of queue\n127.0.0.1:6379> LPOP tasks\n\"Process order 123\"\n127.0.0.1:6379> LLEN tasks\n(integer) 3\n\n# Blocking pop — waits for an element (timeout: 0 = forever)\n127.0.0.1:6379> BLPOP task_queue 5\n(nil)  # Timed out after 5 seconds\n\n# Activity feed (recent items first)\n127.0.0.1:6379> LPUSH feed:user:42 \"John liked your post\"\n127.0.0.1:6379> LPUSH feed:user:42 \"Sarah commented on your photo\"\n127.0.0.1:6379> LPUSH feed:user:42 \"New follower: Mike\"\n127.0.0.1:6379> LTRIM feed:user:42 0 9   # Keep only latest 10\nOK\n127.0.0.1:6379> LRANGE feed:user:42 0 -1\n1) \"New follower: Mike\"\n2) \"Sarah commented on your photo\"\n3) \"John liked your post\"\n\n# Get element by index\n127.0.0.1:6379> LINDEX feed:user:42 0\n\"New follower: Mike\""
+        },
+        {
+          "label": "Sets — Unordered Unique Collections",
+          "text": "Sets are unordered collections of unique strings. They excel at membership testing, deduplication, and set operations like intersection, union, and difference. Perfect for tags, user groups, and unique visitors tracking.\n\nKey commands: SADD, SREM, SISMEMBER, SMEMBERS, SCARD, SPOP, SRANDMEMBER, SINTER, SUNION, SDIFF, SSCAN, SMISMEMBER."
+        },
+        {
+          "label": "Set Commands in Action",
+          "code": "# Tag management\n127.0.0.1:6379> SADD post:42:tags \"redis\" \"database\" \"tutorial\" \"performance\"\n(integer) 4\n127.0.0.1:6379> SADD post:42:tags \"database\"  # Duplicate — ignored\n(integer) 0\n\n127.0.0.1:6379> SMEMBERS post:42:tags\n1) \"database\"\n2) \"tutorial\"\n3) \"redis\"\n4) \"performance\"\n\n127.0.0.1:6379> SISMEMBER post:42:tags \"redis\"\n(integer) 1\n127.0.0.1:6379> SISMEMBER post:42:tags \"nosql\"\n(integer) 0\n\n# Set operations — find related content\n127.0.0.1:6379> SADD post:1:tags \"redis\" \"database\" \"caching\"\n127.0.0.1:6379> SADD post:2:tags \"redis\" \"performance\" \"scaling\"\n127.0.0.1:6379> SADD post:3:tags \"database\" \"postgresql\" \"sql\"\n\n# Posts that share tags with post:42 (intersection)\n127.0.0.1:6379> SINTER post:42:tags post:1:tags\n1) \"redis\"\n2) \"database\"\n\n# All unique tags (union)\n127.0.0.1:6379> SUNION post:42:tags post:1:tags post:2:tags\n1) \"database\"\n2) \"tutorial\"\n3) \"redis\"\n4) \"performance\"\n5) \"caching\"\n6) \"scaling\"\n\n# Tags only in post:42 (difference)\n127.0.0.1:6379> SDIFF post:42:tags post:1:tags\n1) \"tutorial\"\n2) \"performance\"\n\n# Random member (for sampling)\n127.0.0.1:6379> SRANDMEMBER post:42:tags 2\n1) \"redis\"\n2) \"tutorial\"\n\n# Remove and return random member\n127.0.0.1:6379> SPOP post:42:tags\n\"performance\""
+        },
+        {
+          "label": "Sorted Sets — Ordered Unique Collections",
+          "text": "Sorted Sets (ZSETs) are like Sets, but each member has an associated floating-point score. Members are ordered by score, enabling range queries, leaderboards, priority queues, and autocomplete. They are among the most powerful Valkey data structures.\n\nKey commands: ZADD, ZRANGE, ZREVRANGE, ZSCORE, ZINCRBY, ZCARD, ZCOUNT, ZREM, ZRANK, ZREVRANK, ZRANGEBYSCORE, ZREVRANGEBYSCORE, ZREMRANGEBYSCORE, ZREMRANGEBYRANK, ZINTERSTORE, ZUNIONSTORE, ZPOPMAX, ZPOPMIN, BZPOPMAX, BZPOPMIN, ZDIFF, ZMSCORE."
+        },
+        {
+          "label": "Sorted Set Commands in Action",
+          "code": "# Leaderboard — game scores\n127.0.0.1:6379> ZADD leaderboard:game1 1500 \"player:alice\"\n(integer) 1\n127.0.0.1:6379> ZADD leaderboard:game1 2200 \"player:bob\"\n127.0.0.1:6379> ZADD leaderboard:game1 1800 \"player:charlie\"\n127.0.0.1:6379> ZADD leaderboard:game1 3100 \"player:diana\"\n127.0.0.1:6379> ZADD leaderboard:game1 950 \"player:eve\"\n\n# Top 3 players (highest to lowest)\n127.0.0.1:6379> ZREVRANGE leaderboard:game1 0 2 WITHSCORES\n1) \"player:diana\"\n2) \"3100\"\n3) \"player:bob\"\n4) \"2200\"\n5) \"player:charlie\"\n6) \"1800\"\n\n# Bottom 3 players (lowest to highest)\n127.0.0.1:6379> ZRANGE leaderboard:game1 0 2 WITHSCORES\n1) \"player:eve\"\n2) \"950\"\n3) \"player:alice\"\n4) \"1500\"\n5) \"player:charlie\"\n6) \"1800\"\n\n# Get player rank (0-based)\n127.0.0.1:6379> ZREVRANK leaderboard:game1 \"player:bob\"\n(integer) 1  # Second place\n127.0.0.1:6379> ZSCORE leaderboard:game1 \"player:bob\"\n\"2200\"\n\n# Increment score (player scored!)\n127.0.0.1:6379> ZINCRBY leaderboard:game1 500 \"player:alice\"\n\"2000\"\n127.0.0.1:6379> ZREVRANK leaderboard:game1 \"player:alice\"\n(integer) 2  # Moved up from 4th to 3rd!\n\n# Players with scores between 1500 and 3000\n127.0.0.1:6379> ZRANGEBYSCORE leaderboard:game1 1500 3000 WITHSCORES\n1) \"player:alice\"\n2) \"2000\"\n3) \"player:charlie\"\n4) \"1800\"\n5) \"player:bob\"\n6) \"2200\"\n\n# Priority queue (lower score = higher priority)\n127.0.0.1:6379> ZADD priority_queue 3 \"job:send-email\"\n127.0.0.1:6379> ZADD priority_queue 1 \"job:process-payment\"\n127.0.0.1:6379> ZADD priority_queue 5 \"job:generate-report\"\n\n# Pop highest priority (lowest score)\n127.0.0.1:6379> ZPOPMIN priority_queue\n1) \"job:process-payment\"\n2) \"1\""
+        },
+        {
+          "label": "Hashes — Objects & Records",
+          "text": "Hashes are maps between string fields and string values, perfect for representing objects. Instead of storing a user as a serialized JSON string (which requires reading and rewriting the entire object on every update), hashes let you modify individual fields independently.\n\nKey commands: HSET, HGET, HGETALL, HMGET, HMSET, HDEL, HEXISTS, HLEN, HKEYS, HVALS, HINCRBY, HSTRLEN, HSCAN, HSETNX, HRANDFIELD."
+        },
+        {
+          "label": "Hash Commands in Action",
+          "code": "# User profile as a hash\n127.0.0.1:6379> HSET user:1000 name \"Alice Johnson\" email \"alice@example.com\" age 30 city \"New York\"\n(integer) 4\n\n127.0.0.1:6379> HGET user:1000 name\n\"Alice Johnson\"\n127.0.0.1:6379> HGETALL user:1000\n1) \"name\"\n2) \"Alice Johnson\"\n3) \"email\"\n4) \"alice@example.com\"\n5) \"age\"\n6) \"30\"\n7) \"city\"\n8) \"New York\"\n\n# Get specific fields only\n127.0.0.1:6379> HMGET user:1000 name email city\n1) \"Alice Johnson\"\n2) \"alice@example.com\"\n3) \"New York\"\n\n# Increment a field atomically\n127.0.0.1:6379> HINCRBY user:1000 login_count 1\n(integer) 1\n127.0.0.1:6379> HINCRBY user:1000 login_count 1\n(integer) 2\n\n# Check if field exists\n127.0.0.1:6379> HEXISTS user:1000 phone\n(integer) 0\n127.0.0.1:6379> HEXISTS user:1000 email\n(integer) 1\n\n# Get all keys or values\n127.0.0.1:6379> HKEYS user:1000\n1) \"name\"\n2) \"email\"\n3) \"age\"\n4) \"city\"\n5) \"login_count\"\n\n127.0.0.1:6379> HVALS user:1000\n1) \"Alice Johnson\"\n2) \"alice@example.com\"\n3) \"30\"\n4) \"New York\"\n5) \"2\"\n\n# Delete a field\n127.0.0.1:6379> HDEL user:1000 city\n(integer) 1\n\n# Hash size\n127.0.0.1:6379> HLEN user:1000\n(integer) 4"
+        },
+        {
+          "label": "Streams — Event Log & Message Queue",
+          "text": "Streams are append-only log data structures that store messages ordered by time. They are Valkey's answer to Apache Kafka — ideal for event sourcing, activity tracking, message queues, and real-time data pipelines. Each stream entry has a unique ID (timestamp-sequence) and a set of field-value pairs.\n\nKey commands: XADD, XREAD, XRANGE, XREVRANGE, XLEN, XDEL, XTRIM, XGROUP, XREADGROUP, XACK, XCLAIM, XINFO, XPENDING."
+        },
+        {
+          "label": "Stream Commands in Action",
+          "code": "# Add events to a stream\n127.0.0.1:6379> XADD events:orders * user_id 42 order_id 1001 amount 49.99\n\"1728547200000-0\"  # Auto-generated ID: timestamp-sequence\n\n127.0.0.1:6379> XADD events:orders * user_id 42 order_id 1002 amount 129.99\n\"1728547200123-0\"\n\n127.0.0.1:6379> XADD events:orders * user_id 55 order_id 1003 amount 19.99\n\"1728547200456-0\"\n\n# Read all entries\n127.0.0.1:6379> XRANGE events:orders - +  # '-' = start, '+' = end\n1) 1) \"1728547200000-0\"\n   2) 1) \"user_id\"\n      2) \"42\"\n      3) \"order_id\"\n      4) \"1001\"\n      5) \"amount\"\n      6) \"49.99\"\n2) 1) \"1728547200123-0\"\n   2) ...\n\n# Read new entries only (like Kafka consumer)\n127.0.0.1:6379> XREAD COUNT 10 BLOCK 0 STREAMS events:orders $\n# ^ '$' means \"only new entries from now\"\n\n# Consumer groups — for distributing work\n127.0.0.1:6379> XGROUP CREATE events:orders email-workers $ MKSTREAM\nOK\n127.0.0.1:6379> XGROUP CREATE events:orders notification-workers $ MKSTREAM\nOK\n\n# Read as a consumer group (each message goes to one consumer)\n127.0.0.1:6379> XREADGROUP GROUP email-workers worker-1 COUNT 1 BLOCK 2000 STREAMS events:orders >\n\n# Acknowledge processed messages\n127.0.0.1:6379> XACK events:orders email-workers \"1728547200000-0\"\n(integer) 1\n\n# Trim stream to keep only the latest 1000 entries\n127.0.0.1:6379> XTRIM events:orders MAXLEN ~ 1000\nOK\n\n# Check pending messages (unacknowledged)\n127.0.0.1:6379> XPENDING events:orders email-workers\n1) (integer) 0  # No pending messages"
+        },
+        {
+          "label": "Bitmaps — Space-Efficient Booleans",
+          "text": "Bitmaps are not a separate data type — they are String operations on bits. Each string can store up to 2^32 bits (512 MB), allowing you to track boolean state for billions of items using minimal memory. Perfect for feature flags, user sign-ins, and A/B testing.\n\nKey commands: SETBIT, GETBIT, BITCOUNT, BITPOS, BITOP, BITFIELD.\n\nExample: Track daily active users — each user ID maps to a bit position. SETBIT dau:2026-06-08 42 1 marks user 42 as active on that day. BITCOUNT dau:2026-06-08 counts total daily active users."
+        },
+        {
+          "label": "Bitmap & HyperLogLog Examples",
+          "code": "# Bitmap: Daily active users tracking\n# Each bit position = user ID\n127.0.0.1:6379> SETBIT dau:2026-06-08 42 1     # User 42 visited\n(integer) 0\n127.0.0.1:6379> SETBIT dau:2026-06-08 100 1    # User 100 visited\n(integer) 0\n127.0.0.1:6379> SETBIT dau:2026-06-08 42 0     # Mark as not active\n(integer) 1\n\n127.0.0.1:6379> GETBIT dau:2026-06-08 42        # Is user 42 active?\n(integer) 0\n127.0.0.1:6379> BITCOUNT dau:2026-06-08          # Total DAU count\n(integer) 1\n\n# HyperLogLog: Unique visitor counting (approximate)\n# Uses ~12 KB per key, error rate ~0.81% — no matter how many items!\n127.0.0.1:6379> PFADD unique:visitors:june \"192.168.1.1\" \"10.0.0.5\" \"192.168.1.1\" \"172.16.0.8\"\n(integer) 1\n127.0.0.1:6379> PFCOUNT unique:visitors:june\n(integer) 3  # Duplicates automatically handled\n\n# Merge multiple HyperLogLogs\n127.0.0.1:6379> PFADD unique:visitors:july \"10.0.0.5\" \"203.0.113.42\"\n127.0.0.1:6379> PFMERGE unique:visitors:summer unique:visitors:june unique:visitors:july\nOK\n127.0.0.1:6379> PFCOUNT unique:visitors:summer\n(integer) 4  # Combined unique visitors across both months"
+        },
+        {
+          "label": "Geospatial — Location-Based Queries",
+          "text": "Valkey geospatial commands let you store longitude/latitude coordinates and query by distance, radius, and bounding box. Uses the sorted set data type internally with a geohash as the score.\n\nKey commands: GEOADD, GEODIST, GEORADIUS, GEORADIUSBYMEMBER, GEOPOS, GEOHASH, GEOSEARCH."
+        },
+        {
+          "label": "Geospatial & Key Operations",
+          "code": "# Store locations\n127.0.0.1:6379> GEOADD locations 13.361389 38.115556 \"Palermo\" 15.087269 37.502669 \"Catania\"\n(integer) 2\n\n# Distance between two points (km)\n127.0.0.1:6379> GEODIST locations Palermo Catania km\n\"166.2742\"\n\n# Find locations within 200km radius of Palermo\n127.0.0.1:6379> GEORADIUS locations 13.361389 38.115556 200 km\n1) \"Palermo\"\n2) \"Catania\"\n\n# With distance and coordinates\n127.0.0.1:6379> GEORADIUS locations 13.361389 38.115556 200 km WITHDIST WITHCOORD\n1) 1) \"Palermo\"\n   2) \"0.0000\"\n   3) 1) \"13.361389338970184\"\n      2) \"38.115556395496299\"\n2) 1) \"Catania\"\n   2) \"166.2742\"\n   3) 1) \"15.087267458438873\"\n      2) \"37.502668423331621\""
+        },
+        {
+          "label": "Pub/Sub — Publish-Subscribe Messaging",
+          "text": "Valkey supports Publish/Subscribe messaging, where publishers send messages to channels and subscribers receive messages in real-time. This is ideal for real-time notifications, chat systems, event broadcasting, and distributed system coordination.",
+          "code": "# Terminal 1 — Subscribe to a channel\n127.0.0.1:6379> SUBSCRIBE mychannel\nReading messages... (press Ctrl-C to quit)\n1) \"subscribe\"\n2) \"mychannel\"\n3) (integer) 1\n\n# Terminal 2 — Publish a message\n127.0.0.1:6379> PUBLISH mychannel \"Hello from Valkey!\"\n(integer) 1\n\n# Subscribe to multiple channels with pattern matching\n127.0.0.1:6379> PSUBSCRIBE news.*\n1) \"psubscribe\"\n2) \"news.*\"\n3) (integer) 1\n\n# Publish to a matching channel\n127.0.0.1:6379> PUBLISH news.tech \"New Valkey 9.2 released!\"\n(integer) 1"
+        },
+        {
+          "label": "Key Expiration & TTL",
+          "text": "Valkey supports automatic key expiration with sub-millisecond precision. This is essential for caching, session management, and any time-bound data.\n\nCommands: EXPIRE, PEXPIRE, EXPIREAT, TTL, PTTL, PERSIST, SETEX, PSETEX."
+        },
+        {
+          "label": "TTL & Key Management Commands",
+          "code": "# Set expiration on existing key\n127.0.0.1:6379> SET cache:weather \"sunny, 24°C\"\nOK\n127.0.0.1:6379> EXPIRE cache:weather 300    # Expire in 5 minutes\n(integer) 1\n127.0.0.1:6379> TTL cache:weather\n(integer) 297\n\n# Set with expiration in one command\n127.0.0.1:6379> SETEX session:abc123 86400 \"user_data\"   # 24 hours\nOK\n\n# Remove expiration (make persistent)\n127.0.0.1:6379> PERSIST session:abc123\n(integer) 1\n127.0.0.1:6379> TTL session:abc123\n(integer) -1  # No expiration\n\n# Check if key exists\n127.0.0.1:6379> EXISTS cache:weather\n(integer) 1\n127.0.0.1:6379> EXISTS non_existent_key\n(integer) 0\n\n# Get key type\n127.0.0.1:6379> TYPE user:1000\nhash\n127.0.0.1:6379> TYPE leaderboard:game1\nzset\n\n# Delete keys\n127.0.0.1:6379> DEL cache:weather\n(integer) 1\n127.0.0.1:6379> DEL user:1:name user:1:email user:1:age\n(integer) 3\n\n# Scan keys (NEVER use KEYS * in production!)\n127.0.0.1:6379> SCAN 0 MATCH user:* COUNT 100\n1) \"23\"  # Next cursor\n2) 1) \"user:1000\"\n   2) \"user:1:name\"\n   3) \"user:1:email\"\n   ..."
+        }
+      ]
+    },
+    {
+      "id": "transactions-pipelining-scripting",
+      "title": "Transactions, Pipelining & Lua Scripting",
+      "description": "Ensuring atomicity, reducing network round trips, and running server-side logic in Valkey.",
+      "items": [
+        {
+          "label": "Transactions with MULTI/EXEC",
+          "text": "Valkey transactions use MULTI/EXEC/DISCARD to batch commands and guarantee atomic execution. All commands in a transaction are queued and executed sequentially — no other commands can interleave. However, Valkey transactions do NOT support rollback. If a command fails syntactically, it's caught before execution. If it fails at runtime (e.g., applying an operation to the wrong data type), the error is returned but other commands in the transaction still execute.\n\nWATCH provides optimistic locking — if a watched key changes before the transaction executes, the entire transaction is aborted (returns nil)."
+        },
+        {
+          "label": "Transaction Examples",
+          "code": "# Basic transaction — atomic bank transfer\n127.0.0.1:6379> MULTI\nOK\n127.0.0.1:6379(TX)> DECRBY account:alice 100\nQUEUED\n127.0.0.1:6379(TX)> INCRBY account:bob 100\nQUEUED\n127.0.0.1:6379(TX)> EXEC\n1) (integer) 50   # Alice's new balance\n2) (integer) 150  # Bob's new balance\n\n# Optimistic locking with WATCH\n127.0.0.1:6379> WATCH account:alice\nOK\n127.0.0.1:6379> GET account:alice\n\"150\"\n127.0.0.1:6379> MULTI\nOK\n127.0.0.1:6379(TX)> DECRBY account:alice 100\nQUEUED\n127.0.0.1:6379(TX)> INCRBY account:bob 100\nQUEUED\n127.0.0.1:6379(TX)> EXEC\n(nil)  # Transaction aborted! Someone modified account:alice between WATCH and EXEC\n\n# Discard transaction\n127.0.0.1:6379> MULTI\nOK\n127.0.0.1:6379(TX)> SET key1 \"value1\"\nQUEUED\n127.0.0.1:6379(TX)> SET key2 \"value2\"\nQUEUED\n127.0.0.1:6379(TX)> DISCARD\nOK"
+        },
+        {
+          "label": "Pipelining — Batch Commands for Performance",
+          "text": "Pipelining sends multiple commands to the server without waiting for each reply. Instead of N round trips (each with network latency), you send all commands at once and read all replies together. This can improve throughput by 5-10× on high-latency networks.\n\nPipelining is NOT transactional — commands are still interleaved with other clients. Use MULTI/EXEC for atomicity, pipelining for throughput."
+        },
+        {
+          "label": "Pipelining in Different Languages",
+          "code": "# valkey-cli pipelining\nuser@server:~$ cat commands.txt\nSET user:1:name \"Alice\"\nSET user:1:email \"alice@example.com\"\nINCR counter:users\nuser@server:~$ cat commands.txt | valkey-cli --pipe\n\n# Python (redis-py)\nimport redis\n\nr = redis.Valkey(host='localhost', port=6379, decode_responses=True)\npipe = r.pipeline()\npipe.set('user:1:name', 'Alice')\npipe.set('user:1:email', 'alice@example.com')\npipe.incr('counter:users')\nresults = pipe.execute()  # Returns [True, True, 1]\n\n# Node.js (ioredis)\nconst Valkey = require('ioredis');\nconst redis = new Valkey();\n\nconst pipeline = redis.pipeline();\npipeline.set('user:1:name', 'Alice');\npipeline.set('user:1:email', 'alice@example.com');\npipeline.incr('counter:users');\nconst results = await pipeline.exec();"
+        },
+        {
+          "label": "Lua Scripting with EVAL",
+          "text": "Lua scripting allows you to execute arbitrary Lua code on the Valkey server. Scripts are atomic — no other commands run while your script is executing. This is the most powerful way to implement complex multi-key operations, custom data structures, and server-side logic.\n\nScripts can be cached with SCRIPT LOAD and executed by SHA1 hash with EVALSHA, eliminating network transfer of the script on every call."
+        },
+        {
+          "label": "Lua Script Examples",
+          "code": "# EVAL script with arguments\n# KEYS[1] = key, ARGV[1] = limit, ARGV[2] = increment\n127.0.0.1:6379> EVAL \"\n    local current = redis.call('GET', KEYS[1]) or 0\n    local limit = tonumber(ARGV[1])\n    if tonumber(current) >= limit then\n        return 0  -- Rate limit exceeded\n    end\n    redis.call('INCR', KEYS[1])\n    redis.call('EXPIRE', KEYS[1], ARGV[2])\n    return 1  -- Allowed\n\" 1 rate:limit:user:42 100 60\n\n# Compare-and-swap (CAS) operation\n127.0.0.1:6379> EVAL \"\n    local current = redis.call('GET', KEYS[1])\n    if current == ARGV[1] then\n        redis.call('SET', KEYS[1], ARGV[2])\n        return 1\n    end\n    return 0\n\" 1 account:alice \"150\" \"200\"\n\n# Load and execute by hash (faster)\n127.0.0.1:6379> SCRIPT LOAD \"return redis.call('GET', KEYS[1])\"\n\"4e6d...\"  # SHA1 hash\n127.0.0.1:6379> EVALSHA \"4e6d...\" 1 user:1:name\n\"Alice\"\n\n# Built-in Lua library functions available:\n# redis.call() - Run Valkey command, raises error on failure\n# redis.pcall() - Same but catches errors, returns error object\n# redis.log() - Write to Valkey log file\n# All standard Lua 5.1 libraries (string, table, math, etc.)"
+        }
+      ]
+    },
+    {
+      "id": "persistence",
+      "title": "Persistence: RDB, AOF & Hybrid",
+      "description": "How Valkey saves data to disk — tradeoffs between durability, performance, and recovery time.",
+      "items": [
+        {
+          "label": "RDB — Point-in-Time Snapshots",
+          "text": "RDB (Valkey Database) performs full snapshots of your dataset at configurable intervals. The snapshot is a compressed binary file (dump.rdb) that can be used for backups, disaster recovery, or seeding new replicas.\n\nPros: Fast recovery (load the entire dataset at once). Very compact on disk. Ideal for backups and cold-start scenarios.\n\nCons: Data loss window between snapshots (up to your save interval). Not suitable as the sole persistence mechanism for critical data.\n\nConfiguration in valkey.conf:\nsave 900 1    # Save if at least 1 key changed in 900 seconds\nsave 300 10   # Save if at least 10 keys changed in 300 seconds\nsave 60 10000 # Save if at least 10000 keys changed in 60 seconds"
+        },
+        {
+          "label": "AOF — Append-Only File",
+          "text": "AOF logs every write operation as a Valkey protocol command. On restart, Valkey replays all commands to rebuild the dataset. AOF is more durable than RDB (configurable fsync policy) but produces larger files and is slower to replay.\n\nfsync policies:\nalways — fsync on every write (safest, ~50% throughput reduction)\neverysec — fsync once per second (good balance, ~1 second data loss) — Recommended\nno — Let OS decide (fastest, highest data loss potential)\n\nAOF files can be rewritten to compact them (BGREWRITEAOF) — the process creates a new AOF with only the minimum commands needed to represent the current dataset."
+        },
+        {
+          "label": "Hybrid Persistence (Recommended in Valkey 7+)",
+          "code": "# valkey.conf — Hybrid persistence configuration\n# =============================================\n\n# Enable both RDB and AOF (recommended for production)\n# Valkey loads AOF at restart (AOF is more complete), then uses RDB for\n# faster initial loading by embedding an RDB preamble in the AOF file.\n\n# RDB Configuration\nsave 900 1\nsave 300 10\nsave 60 10000\nstop-writes-on-bgsave-error yes\nrdbcompression yes\nrdbchecksum yes\ndbfilename dump.rdb\n\n# AOF Configuration\nappendonly yes                    # Enable AOF\nappendfilename \"appendonly.aof\"\nappendfsync everysec              # fsync once per second\nno-appendfsync-on-rewrite no\nauto-aof-rewrite-percentage 100   # Rewrite when AOF doubles in size\nauto-aof-rewrite-min-size 64mb    # Minimum size before rewriting\naof-load-truncated yes\naof-use-rdb-preamble yes          # Hybrid: RDB preamble + AOF tail\n\n# View persistence info\n127.0.0.1:6379> INFO persistence\n# Persistence\nloading:0\nrdb_changes_since_last_save:0\nrdb_bgsave_in_progress:0\nrdb_last_save_time:1728547200\nrdb_last_bgsave_status:ok\nrdb_last_bgsave_time_sec:3\nrdb_current_bgsave_time_sec:-1\naof_enabled:1\naof_rewrite_in_progress:0\naof_rewrite_scheduled:0\naof_last_rewrite_time_sec:2\naof_current_size:1048576\naof_base_size:524288\naof_pending_rewrite:0\naof_last_bgrewrite_status:ok"
+        },
+        {
+          "label": "Manual Backup & Restore",
+          "code": "# Manual RDB snapshot (non-blocking)\n127.0.0.1:6379> BGSAVE\nBackground saving started\n\n# Blocking save (not recommended in production — blocks all clients)\n127.0.0.1:6379> SAVE\nOK\n\n# Location of RDB file\n127.0.0.1:6379> CONFIG GET dir\n1) \"dir\"\n2) \"/var/lib/valkey\"\n127.0.0.1:6379> CONFIG GET dbfilename\n1) \"dbfilename\"\n2) \"dump.rdb\"\n\n# Manual AOF rewrite\n127.0.0.1:6379> BGREWRITEAOF\nBackground append only file rewriting started\n\n# Backup script (recommended)\nuser@server:~$ cat /usr/local/bin/backup-valkey.sh\n#!/bin/bash\nBACKUP_DIR=\"/backups/valkey\"\nDATE=$(date +%Y-%m-%d_%H%M%S)\n\n# Trigger RDB then copy it\nvalkey-cli BGSAVE\nsleep 2\ncp /var/lib/valkey/dump.rdb $BACKUP_DIR/valkey_$DATE.rdb\n\n# Copy AOF as additional safety\ncp /var/lib/valkey/appendonly.aof $BACKUP_DIR/valkey_aof_$DATE.aof\n\n# Compress\ngzip $BACKUP_DIR/valkey_$DATE.rdb\n\n# Keep only last 7 days of backups\nfind $BACKUP_DIR -name \"*.rdb.gz\" -mtime +7 -delete\n\n# Restore procedure:\n# 1. Stop Valkey: sudo systemctl stop valkey\n# 2. Copy dump.rdb to /var/lib/valkey/\n# 3. Start Valkey: sudo systemctl start valkey"
+        },
+        {
+          "label": "Persistence Tradeoffs Summary",
+          "table": {
+            "headers": [
+              "Persistence Mode",
+              "Data Safety",
+              "Recovery Speed",
+              "Disk Usage",
+              "Performance Impact",
+              "Recommended For"
+            ],
+            "rows": [
+              [
+                "RDB only",
+                "Lost since last save",
+                "Fast (load single file)",
+                "Small (compressed)",
+                "Minimal (periodic fork)",
+                "Cache, non-critical data"
+              ],
+              [
+                "AOF (everysec)",
+                "~1 second max loss",
+                "Slow (replay all commands)",
+                "Large (grows over time)",
+                "Moderate (fsync overhead)",
+                "General production"
+              ],
+              [
+                "AOF (always)",
+                "Zero data loss",
+                "Slowest",
+                "Largest",
+                "Significant (~50% write perf)",
+                "Financial systems, critical data"
+              ],
+              [
+                "Hybrid (RDB + AOF)",
+                "~1 second max loss",
+                "Fast (RDB preamble)",
+                "Medium (RDB + AOF tail)",
+                "Moderate",
+                "BEST — production standard"
+              ],
+              [
+                "None (disabled)",
+                "No persistence, all lost on restart",
+                "Instant (empty DB)",
+                "None",
+                "None",
+                "Pure cache, session store"
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "replication",
+      "title": "Replication",
+      "description": "Master-replica replication — how Valkey replicates data, replication internals, and best practices.",
+      "items": [
+        {
+          "label": "How Valkey Replication Works",
+          "text": "Valkey replication is asynchronous and follows a master-replica (formerly master-slave) model. A master can have multiple replicas. Replicas maintain an exact copy of the master's dataset and can accept read-only queries.\n\nReplication process:\n1. Replica connects to master and issues PSYNC (partial sync) or FULLRESYNC\n2. If partial sync is possible, master sends buffered commands from the replication backlog\n3. If not (new replica, backlog too old), master forks a child process, creates an RDB snapshot, and sends it to the replica\n4. Replica loads the RDB, then replays any buffered commands\n5. After initial sync, master continuously streams write commands to replicas (replication ID + offset tracking)\n\nReplication is single-threaded on the master (one connection per replica) and asynchronous — the master does NOT wait for replicas to acknowledge writes."
+        },
+        {
+          "label": "Configuring Replication",
+          "code": "# On replica server — edit valkey.conf:\n# =======================================\n\nreplicaof 192.168.1.10 6379    # Master IP and port\nmasterauth your-master-password  # If master has requirepass\nreplica-serve-stale-data yes    # Serve old data during sync\nreplica-read-only yes           # Replicas are read-only (default)\nrepl-diskless-sync yes         # Master sends RDB over socket (no temp file)\nrepl-diskless-sync-delay 5     # Wait 5s for more replicas to sync together\nrepl-backlog-size 100mb        # Replication backlog (larger = more tolerance for disconnects)\nrepl-backlog-ttl 3600          # How long to keep backlog when no replicas connected\nreplica-priority 100           # Lower = higher priority for Sentinel promotion\nmin-replicas-to-write 1        # Master stops writes if < 1 replica connected\nmin-replicas-max-lag 10        # Max lag in seconds before considering replica disconnected\n\n# Verify replication status\n127.0.0.1:6379> INFO replication\n# Replication\nrole:master\nconnected_slaves:2\nslave0:ip=192.168.1.20,port=6379,state=online,offset=123456,lag=0\nslave1:ip=192.168.1.21,port=6379,state=online,offset=123456,lag=0\nmaster_replid:abc123...\nmaster_replid2:def456...\nmaster_repl_offset:123456\nsecond_repl_offset:-1\nrepl_backlog_active:1\nrepl_backlog_size:104857600\nrepl_backlog_first_byte_offset:1\nrepl_backlog_histlen:123456"
+        },
+        {
+          "label": "Configuring Replication with ACLs (Production Method)",
+          "text": "In production, don't use the simple requirepass method. Replicas authenticate as the default user, so the default user must be granted specific replication permissions in the ACL file.\n\n**Master ACL File (`/etc/valkey/users.acl`):**\n```text\n# Default user: Restricted but allowed to sync data\nuser default on >ReplicaPass123! +psync +replconf +ping -@dangerous\n\n# App user: Your application uses this for data operations\nuser appuser on >AppPass@2024! ~* +@read +@write -@dangerous\n```\n\n**Replica `valkey.conf`:**\n```ini\nbind 0.0.0.0\nport 6379\nreplicaof 192.168.68.200 6379\n# MUST match the password assigned to 'default' in the ACL file\nmasterauth ReplicaPass123!\n```\n\nKey takeaway: `masterauth` is the password the replica presents when authenticating as the `default` user. The `+psync` permission on the default user is what allows replication to proceed."
+        },
+        {
+          "label": "Replication Best Practices",
+          "text": [
+            "1. Use replicas for read scaling — offload read queries to replicas (caching, reporting, analytics)",
+            "2. NEVER write to a replica — replicas should be read-only unless using Valkey 7+ replica writes (advanced use case)",
+            "3. Set repl-backlog-size appropriately — the backlog allows replicas to resume partial sync after short disconnects. A good rule is: backlog_size = avg_connection_reconnect_time × peak_write_throughput",
+            "4. Monitor replication lag — use INFO replication and alert if lag exceeds 10 seconds",
+            "5. Use at least 2 replicas for production — provides redundancy if one replica fails",
+            "6. Chain replication (replica → sub-replica) — can reduce master load but increases replication lag",
+            "7. Consider replicas for backups — run BGSAVE on a replica to avoid impacting the master's performance",
+            "8. Test failover scenarios — simulate a master failure and verify the replica promotes correctly"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sentinel",
+      "title": "High Availability with Sentinel",
+      "description": "Automatic failover, monitoring, and notification with Valkey Sentinel.",
+      "items": [
+        {
+          "label": "What is Valkey Sentinel?",
+          "text": "Valkey Sentinel is a distributed system that provides high availability for Valkey. At minimum, you need 3 Sentinel processes (odd number for quorum) that monitor your Valkey instances and perform automatic failover if the master becomes unavailable.\n\nSentinel capabilities:\n• Monitoring — Constantly checks if master and replicas are working\n• Notification — Alerts system administrators via API when something goes wrong\n• Automatic failover — If a master fails, Sentinel promotes a replica to master and reconfigures other replicas to follow the new master\n• Configuration provider — Clients can query Sentinel for the current master address\n\nSentinel uses a quorum (majority) to make decisions. With 3 Sentinels, you need at least 2 to agree that the master is down before initiating a failover."
+        },
+        {
+          "label": "Sentinel Configuration",
+          "code": "# /etc/valkey/sentinel.conf — Run on 3 separate nodes\n# ====================================================\n\nport 26379\ndaemonize no\npidfile /var/run/valkey-sentinel.pid\nlogfile /var/log/valkey/sentinel.log\n\n# Monitor the master\n# sentinel monitor <name> <ip> <port> <quorum>\nsentinel monitor mymaster 192.168.1.10 6379 2\n\n# Sentinel will wait this many milliseconds to consider the master down\nsentinel down-after-milliseconds mymaster 5000\n\n# Number of replicas to reconfigure in parallel during failover\nsentinel parallel-syncs mymaster 1\n\n# Failover timeout\nsentinel failover-timeout mymaster 10000\n\n# Auth (if master requires password)\nsentinel auth-pass mymaster your-master-password\n\n# Notification script (called on failover events)\nsentinel notification-script mymaster /usr/local/bin/sentinel-notify.sh\n\n# Start Sentinel\nuser@server:~$ valkey-sentinel /etc/valkey/sentinel.conf\n\n# Or via systemd\nuser@server:~$ sudo systemctl start valkey-sentinel@mymaster\n\n# Verify Sentinel status\nuser@server:~$ valkey-cli -p 26379 SENTINEL master mymaster\n1) \"name\"\n2) \"mymaster\"\n3) \"ip\"\n4) \"192.168.1.10\"\n5) \"port\"\n6) \"6379\"\n7) \"runid\"\n8) \"abc...\"\n9) \"flags\"\n10) \"master\"\n...\n\nuser@server:~$ valkey-cli -p 26379 SENTINEL replicas mymaster\n1) 1) \"name\"\n   2) \"192.168.1.20:6379\"\n   3) \"flags\"\n   4) \"slave\"\n   ...\n\nuser@server:~$ valkey-cli -p 26379 SENTINEL get-master-addr-by-name mymaster\n1) \"192.168.1.10\"\n2) \"6379\""
+        },
+        {
+          "label": "Sentinel Failover Process",
+          "text": "When a master fails:\n\n1. Detection — Each Sentinel with flags the master as subjectively down (SDOWN) if it doesn't receive a reply to PING within down-after-milliseconds\n\n2. Verification — The Sentinel that detected SDOWN asks other Sentinels if the master is reachable. If the quorum (e.g., 2 of 3) agree, the master is marked as objectively down (ODOWN)\n\n3. Election — Sentinels vote for a leader Sentinel to coordinate the failover. The leader is chosen via the Raft consensus algorithm\n\n4. Failover — The leader Sentinel:\n   • Picks the best replica (highest replication offset, lowest priority, lowest runid)\n   • Reconfigures the replica to become the new master (REPLICAOF NO ONE)\n   • Reconfigures other replicas to follow the new master\n   • Updates the configuration so Sentinels monitor the new layout\n   • Notifies clients via the notification script\n\n5. Recovery — When the old master comes back online, it detects the new master and automatically configures itself as a replica"
+        }
+      ]
+    },
+    {
+      "id": "cluster",
+      "title": "Cluster Mode — Horizontal Scaling",
+      "description": "Sharding data across multiple Valkey nodes for datasets larger than a single server's RAM.",
+      "items": [
+        {
+          "label": "What is Valkey Cluster?",
+          "text": "Valkey Cluster provides automatic sharding (partitioning) across multiple Valkey nodes, enabling you to store datasets larger than the RAM of a single machine. Data is automatically distributed across nodes using hash slots (16,384 total slots), and the cluster provides a degree of availability through automatic failover.\n\nKey characteristics:\n• Automatic sharding — Every key is mapped to one of 16,384 slots using CRC16(key) % 16384\n• Decentralized — No proxy or single point of failure. All nodes communicate via gossip protocol (cluster bus, port +10000)\n• Partial availability — If a node fails, only the slots it owns become unavailable (unless replicas exist)\n• Smart clients — Clients connect to any node and are redirected to the correct node (MOVED redirect) or given a proxy-like cluster topology (ASK redirect for migrations)\n• Minimum 3 master nodes (recommended: 3 masters + 3 replicas for full HA)"
+        },
+        {
+          "label": "Setting Up Valkey Cluster",
+          "code": "# 1. Configure each node (valkey.conf)\n# =====================================\nport 7000\ncluster-enabled yes\ncluster-config-file nodes-7000.conf\ncluster-node-timeout 5000\nappendonly yes\ndaemonize no\n\n# Repeat for nodes 7000-7005 (6 nodes: 3 masters + 3 replicas)\n\n# 2. Start all nodes\nuser@server:~$ valkey-server /etc/valkey/7000.conf &\nuser@server:~$ valkey-server /etc/valkey/7001.conf &\nuser@server:~$ valkey-server /etc/valkey/7002.conf &\nuser@server:~$ valkey-server /etc/valkey/7003.conf &\nuser@server:~$ valkey-server /etc/valkey/7004.conf &\nuser@server:~$ valkey-server /etc/valkey/7005.conf &\n\n# 3. Create the cluster\nuser@server:~$ valkey-cli --cluster create \\\n  127.0.0.1:7000 127.0.0.1:7001 127.0.0.1:7002 \\\n  127.0.0.1:7003 127.0.0.1:7004 127.0.0.1:7005 \\\n  --cluster-replicas 1  # 1 replica per master\n\n# Output:\n>>> Performing hash slots allocation on 6 nodes...\nMaster[0] -> Slots 0 - 5460\nMaster[1] -> Slots 5461 - 10922\nMaster[2] -> Slots 10923 - 16383\nAdding replica 127.0.0.1:7004 to 127.0.0.1:7000\nAdding replica 127.0.0.1:7005 to 127.0.0.1:7001\nAdding replica 127.0.0.1:7003 to 127.0.0.1:7002\n>>> Performing Cluster Check (using node 127.0.0.1:7000)\nM: abc... 127.0.0.1:7000\n   slots:[0-5460] (5461 slots) master\nS: def... 127.0.0.1:7004\n   replicates abc...\nM: ghi... 127.0.0.1:7001\n   slots:[5461-10922] (5462 slots) master\n...\n[OK] All 16384 slots covered\n\n# 4. Connect with cluster mode\nuser@server:~$ valkey-cli -c -p 7000\n127.0.0.1:7000> SET user:1000 \"Alice\"\n-> Redirected to slot [1234] located at 127.0.0.1:7002\nOK\n127.0.0.1:7002> GET user:1000\n\"Alice\""
+        },
+        {
+          "label": "Cluster Management Commands",
+          "code": "# View cluster info\n127.0.0.1:7000> CLUSTER INFO\ncluster_state:ok\ncluster_slots_assigned:16384\ncluster_slots_ok:16384\ncluster_slots_pfail:0\ncluster_slots_fail:0\ncluster_known_nodes:6\ncluster_size:3\ncluster_current_epoch:6\ncluster_my_epoch:1\ncluster_stats_messages_sent:12345\ncluster_stats_messages_received:12345\n\n# View nodes in cluster\n127.0.0.1:7000> CLUSTER NODES\naaa... 127.0.0.1:7000@17000 myself,master - 0 0 1 connected 0-5460\nbbb... 127.0.0.1:7001@17001 master - 0 1728547200 2 connected 5461-10922\nccc... 127.0.0.1:7002@17002 master - 0 1728547200 3 connected 10923-16383\nddd... 127.0.0.1:7003@17003 slave ccc... 0 1728547200 3 connected\neee... 127.0.0.1:7004@17004 slave aaa... 0 1728547200 1 connected\nfff... 127.0.0.1:7005@17005 slave bbb... 0 1728547200 2 connected\n\n# Count keys per node\n127.0.0.1:7000> CLUSTER COUNTKEYSINSLOT 0\n(integer) 15\n\n# Resharding (move slots to a new node)\nuser@server:~$ valkey-cli --cluster reshard 127.0.0.1:7000\n\n# Add a new node\nuser@server:~$ valkey-cli --cluster add-node 127.0.0.1:7006 127.0.0.1:7000\n\n# Add as replica\nuser@server:~$ valkey-cli --cluster add-node 127.0.0.1:7006 127.0.0.1:7000 --cluster-slave --cluster-master-id <node-id>\n\n# Remove a node\nuser@server:~$ valkey-cli --cluster del-node 127.0.0.1:7000 <node-id>\n\n# Fix cluster (after partial failures)\nuser@server:~$ valkey-cli --cluster fix 127.0.0.1:7000"
+        },
+        {
+          "label": "Cluster Limitations",
+          "text": [
+            "1. Multi-key operations are limited — You can only operate on keys in the same slot. Use hash tags ({user:1000}.address and {user:1000}.name hash to the same slot) for related keys.",
+            "2. No multi-database — Only database 0 is available. SELECT is not supported in cluster mode.",
+            "3. Pipelining is per-node — You need separate pipelines for each node, or use client-side aggregation.",
+            "4. Lua scripts must target keys in the same slot — All KEYS in EVAL must hash to the same slot.",
+            "5. No cross-slot transactions — MULTI/EXEC only works on keys in the same slot.",
+            "6. Increased latency — Cross-node queries involve network hops. Keep your data access patterns slot-aware.",
+            "7. Client libraries must support cluster mode — Not all Valkey clients handle MOVED/ASK redirects correctly."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "valkey-deep-dive",
+      "title": "Valkey Deep Dive",
+      "description": "Understanding Valkey — its unique features, architecture, and built-in capabilities.",
+      "items": [
+        {
+          "label": "Why Valkey Exists",
+          "text": "In March 2024, Valkey Ltd. announced that future versions of Valkey would no longer be open source under the BSD 3-Clause license, adopting instead the Valkey Source Available License (RSAL) and Server Side Public License (SSPL). This change meant that cloud providers and commercial entities could no longer offer Valkey as a managed service without a commercial license.\n\nIn response, the Linux Foundation, together with AWS, Google Cloud, Oracle, Ericsson, and other major contributors, forked the last BSD-licensed version (Valkey 7.2.4) to create Valkey — ensuring a permanent, permissively-licensed, community-governed in-memory data store."
+        },
+        {
+          "label": "Valkey 9.x Built-in Search",
+          "code": "# Valkey 9.x introduces built-in full-text and vector search — no external modules needed!\n# This is a major differentiator from Valkey OSS which requires the RediSearch module.\n\n# Create a search index on hash keys\n127.0.0.1:6379> FT.CREATE idx:products ON HASH PREFIX 1 \"product:\" SCHEMA \\\n    name TEXT WEIGHT 5.0 SORTABLE \\\n    description TEXT WEIGHT 1.0 \\\n    price NUMERIC SORTABLE \\\n    category TAG SORTABLE \\\n    stock NUMERIC SORTABLE\nOK\n\n# Add some products\n127.0.0.1:6379> HSET product:1 name \"Gaming Laptop\" description \"High-performance laptop\" price 1499.99 category \"electronics\" stock 50\n127.0.0.1:6379> HSET product:2 name \"Mechanical Keyboard\" description \"RGB backlit keyboard\" price 89.99 category \"electronics\" stock 200\n\n# Full-text search\n127.0.0.1:6379> FT.SEARCH idx:products \"laptop\" LIMIT 0 10\n1) (integer) 1\n2) \"product:1\"\n3) 1) \"name\"\n   2) \"Gaming Laptop\"\n\n# Vector similarity search\n127.0.0.1:6379> FT.CREATE idx:vectors ON HASH PREFIX 1 \"vec:\" SCHEMA embedding VECTOR FLAT 6 TYPE FLOAT32 DIM 384 DISTANCE_METRIC COSINE\nOK\n127.0.0.1:6379> FT.SEARCH idx:vectors \"*=>[KNN 10 @embedding $BLOB AS score]\" PARAMS 2 BLOB $vector SORTBY score"
+        },
+        {
+          "label": "Valkey 8.x+ Enhanced Multithreading",
+          "text": "Valkey 8.x introduced enhanced I/O multithreading that provides near-linear scaling on multi-core systems. This translates to ~8-10% higher throughput and ~20% better P99 latency compared to single-threaded Valkey 7.2.x. Additional features include per-slot metrics for deep performance insight and optimized memory efficiency."
+        }
+      ]
+    },
+    {
+      "id": "security",
+      "title": "Security: ACLs, TLS, Firewall & Hardening",
+      "description": "Securing your Valkey deployment against unauthorized access and attacks.",
+      "items": [
+        {
+          "label": "Access Control Lists (ACL)",
+          "text": "Valkey 6+ (and all Valkey versions) support ACLs, replacing the old single-password model with granular per-user permissions. You can create users with specific command permissions, key patterns, and channel access (Pub/Sub).\n\nACL rules follow the format: user <username> on/off +<command>|+@<category> -<command> ~<key-pattern> &<channel-pattern> ><password>"
+        },
+        {
+          "label": "ACL Configuration",
+          "code": "# ACL: Predefined users in valkey.conf\n# =========================================\n\n# Default user (can be disabled or restricted)\nuser default off -@all +@info +@connection  # Only info & ping\n\n# Application user — can read/write cache:*, but not admin commands\nuser appuser on +@read +@write +@set -@dangerous +@pubsub ~cache:* ~session:* >app-password-123\n\n# Admin user — full access\nuser admin on +@all ~* &* >admin-password-456\n\n# Read-only user for analytics\nuser readonly on +@read ~* >readonly-pass\n\n# Specific command restrictions\nuser restricted on +@all -@admin -@dangerous -FLUSHALL -FLUSHDB -CONFIG ~* >restricted-pass\n\n# ACL commands (runtime, no restart needed)\n127.0.0.1:6379> ACL LIST\n1) \"user default on nopass ~* &* +@all\"\n2) \"user appuser on #abc... ~cache:* ~session:* +@read +@write -@dangerous\"\n\n127.0.0.1:6379> ACL SETUSER developer on >dev-pass +@all ~* &*\nOK\n127.0.0.1:6379> ACL DELUSER old-user\n(integer) 1\n\n127.0.0.1:6379> ACL WHOAMI\n\"default\"\n\n127.0.0.1:6379> AUTH appuser app-password-123\nOK\n127.0.0.1:6379> ACL WHOAMI\n\"appuser\"\n\n127.0.0.1:6379> ACL GETUSER appuser\n1) \"flags\"\n2) 1) \"on\"\n2) \"allkeys\"  # Actually shows key patterns\n...\n\n127.0.0.1:6379> ACL LOG\n1) 1) \"count\"\n   2) (integer) 1\n   3) \"reason\"\n   4) \"command\"\n   5) \"object\"\n   6) \"CONFIG\"\n   7) \"username\"\n   8) \"appuser\""
+        },
+        {
+          "label": "Step-by-Step ACL User Setup",
+          "text": "Move beyond single-password auth. Valkey's ACL system provides fine-grained permissions for true \"least privilege\" security.\n\nThe default user has full access with no password — disable it immediately:\n\n```bash\n# Lock down the default user\n127.0.0.1:6379> ACL SETUSER default off\n# Create an Admin user (full access)\n127.0.0.1:6379> ACL SETUSER admin on >AdminPass@2024! ~* &* +@all\n# Create an App user (least privilege)\n127.0.0.1:6379> ACL SETUSER appuser on >AppPass@2024! ~* +@read +@write +@string +@hash +@list +@set +@sortedset +@generic -@dangerous\n# Create a Read-Only user (analytics/reporting)\n127.0.0.1:6379> ACL SETUSER readonly on >ReadOnly@2024! ~* +@read +@string +@hash +@list +@set\n# Create a Monitoring user (health checks only)\n127.0.0.1:6379> ACL SETUSER monitor on >Monitor@2024! ~* +ping +info +latency\n```\n\nPersist ACLs to survive restarts:\n1. Set `aclfile /etc/valkey/users.acl` in valkey.conf\n2. Run `ACL SAVE` in valkey-cli"
+        },
+        {
+          "label": "ACL Rule Cheatsheet",
+          "table": {
+            "headers": ["Rule", "Meaning"],
+            "rows": [
+              ["on / off", "Enable or disable the user"],
+              [">password", "Set the user's password"],
+              ["~*", "Access all keys"],
+              ["~cache:*", "Access only keys starting with 'cache:'"],
+              ["+@all", "Allow all commands"],
+              ["+@read", "Allow all read commands"],
+              ["-@dangerous", "Block dangerous commands (e.g., FLUSHALL, DEBUG)"],
+              ["&*", "Access all pub/sub channels"],
+              ["nopass", "No password required (dev only)"]
+            ]
+          }
+        },
+        {
+          "label": "TLS/SSL Configuration",
+          "code": "# valkey.conf — Enable TLS\n# =============================\n\nport 0                                  # Disable plain TCP\n\ntls-port 6379                           # TLS on default port\ntls-cert-file /etc/ssl/certs/redis.crt\ntls-key-file /etc/ssl/private/redis.key\ntls-ca-cert-file /etc/ssl/certs/ca.crt  # For client cert verification\ntls-auth-clients yes                     # Require client certificates\ntls-protocols \"TLSv1.2 TLSv1.3\"\ntls-ciphers \"HIGH:!aNULL:!eNULL:!EXPORT:!DES:!MD5:!PSK:!RC4\"\ntls-ciphersuites \"TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256\"\ntls-prefer-server-ciphers yes\n\n# Replication with TLS\nreplica-tls-cert-file /etc/ssl/certs/redis.crt\nreplica-tls-key-file /etc/ssl/private/redis.key\nreplica-tls-ca-cert-file /etc/ssl/certs/ca.crt\nreplica-tls-auth-clients yes\n\n# Connect with TLS\nuser@server:~$ valkey-cli --tls --cert redis.crt --key redis.key --cacert ca.crt -h redis.example.com -p 6379\n\n# Docker with TLS\nuser@server:~$ docker run -d --name redis-tls \\\n  -v $(pwd)/ssl:/etc/ssl \\\n  -v $(pwd)/valkey.conf:/usr/local/etc/valkey/valkey.conf \\\n  -p 6379:6379 \\\n  valkey/valkey:9-alpine \\\n  valkey-server /usr/local/etc/valkey/valkey.conf"
+        },
+        {
+          "label": "Network Security & Hardening",
+          "code": "# 1. Bind to localhost or private IP (NOT 0.0.0.0)\n# valkey.conf\nbind 127.0.0.1 10.0.10.10       # Only localhost + private subnet\nprotected-mode yes               # Only allow loopback connections if no password set\n\n# 2. Firewall rules (ufw on Ubuntu)\nuser@server:~$ sudo ufw allow from 10.0.0.0/8 to any port 6379  # Only internal network\nuser@server:~$ sudo ufw deny 6379                               # Block external access\n\n# 3. Rename dangerous commands (prevent accidental/abusive use)\n# valkey.conf\nrename-command FLUSHALL \"\"       # Completely disable\nrename-command FLUSHDB \"\"\nrename-command CONFIG \"ADMIN_CONFIG\"  # Rename to something obscure\nrename-command EVAL \"\"           # Disable if not using Lua\nrename-command DEBUG \"\"\nrename-command SHUTDOWN \"\"\nrename-command SLAVEOF \"\"       # Old name for REPLICAOF\n\n# 4. Set max memory to prevent OOM kills\nmaxmemory 4gb\nmaxmemory-policy allkeys-lru     # Eviction policy when memory is full\nmaxmemory-samples 10             # Accuracy of eviction approximation\n\n# 5. Rate-limit connections\n# valkey.conf\ntimeout 300                       # Close idle connections after 5 minutes\ntcp-keepalive 300                 # TCP keepalive interval\nmaxclients 10000                  # Max simultaneous connected clients\n\n# 6. Disable dangerous commands via ACL\n127.0.0.1:6379> ACL SETUSER default on >strong-password +@all -@admin -@dangerous -FLUSHALL -FLUSHDB -CONFIG -DEBUG -SHUTDOWN -SLAVEOF -EVAL"
+        }
+      ]
+    },
+    {
+      "id": "performance-tuning",
+      "title": "Performance Tuning & Memory Optimization",
+      "description": "Optimizing Valkey for maximum throughput, minimal latency, and efficient memory usage.",
+      "items": [
+        {
+          "label": "Eviction Policies",
+          "text": "When Valkey reaches maxmemory, it must evict old data to make room for new writes. The eviction policy determines what gets removed:\n\n• noeviction — Return errors on write operations (not recommended for caching)\n• allkeys-lru — Evict the least recently used keys (best for general caching)\n• allkeys-lfu — Evict the least frequently used keys (better for hot/cold data patterns)\n• volatile-lru — Evict LRU from keys with TTL set (if no TTL keys, falls back to noeviction)\n• volatile-lfu — Evict LFU from keys with TTL set\n• allkeys-random — Evict random keys (fastest, useful for uniform access)\n• volatile-random — Evict random keys from those with TTL\n• volatile-ttl — Evict keys with the shortest remaining TTL\n\nRecommendation: Use allkeys-lru for most cache scenarios. Use allkeys-lfu if you have a clear hot/cold access pattern."
+        },
+        {
+          "label": "Memory Optimization Techniques",
+          "code": "# valkey.conf — Memory optimization settings\n# ===========================================\n\n# Use jemalloc allocator (default, best for Valkey)\n# Check: valkey-cli INFO memory | grep allocator\n\n# Hash encoding optimization (ziplist → hashtable threshold)\nhash-max-ziplist-entries 512\nhash-max-ziplist-value 64\n\n# List encoding optimization (quicklist)\nlist-max-ziplist-size -2       # -2 = -8 KB max per node\nlist-compress-depth 0\n\n# Set encoding optimization (intset for integers)\nset-max-intset-entries 512\n\n# Sorted set optimization (ziplist → skiplist threshold)\nzset-max-ziplist-entries 128\nzset-max-ziplist-value 64\n\n# Active memory defragmentation (Valkey 7+)\nactivedefrag yes\nactive-defrag-threshold-lower 10    # Start defrag at 10% fragmentation\nactive-defrag-threshold-upper 100   # Max defrag intensity at 100%\nactive-defrag-ignore-bytes 100mb   # Ignore fragmentation below this\nactive-defrag-cycle-min 1           # Min CPU % for defrag\nactive-defrag-cycle-max 25          # Max CPU % for defrag\nactive-defrag-max-scan-fields 1000\n\n# View memory usage\n127.0.0.1:6379> INFO memory\n# Memory\nused_memory:104857600\nused_memory_human:100.00M\nused_memory_rss:157286400\nused_memory_rss_human:150.00M\nused_memory_peak:209715200\nused_memory_peak_human:200.00M\nused_memory_lua:37888\nused_memory_scripts:4096\nmem_fragmentation_ratio:1.50  # RSS/used — should be close to 1.0\nmem_allocator:jemalloc-5.3.0\n\n# Memory usage of individual keys\n127.0.0.1:6379> MEMORY USAGE user:1000\n(integer) 512   # Bytes used by this key\n127.0.0.1:6379> MEMORY USAGE user:1000 SAMPLES 10\n(integer) 528   # More accurate with larger sample\n\n# Memory stats\n127.0.0.1:6379> MEMORY STATS\n 1) \"peak.allocated\"\n 2) (integer) 209715200\n 3) \"total.allocated\"\n 4) (integer) 104857600\n..."
+        },
+        {
+          "label": "System-Level Tuning (Linux OS)",
+          "text": "Valkey performance is heavily dependent on host OS configuration. These three kernel tweaks are essential for production:\n\n**1. Disable Transparent Huge Pages (THP)** — THP causes significant latency spikes and memory fragmentation for Valkey's memory allocator (jemalloc).\n```bash\n# Check current status\ncat /sys/kernel/mm/transparent_hugepage/enabled\n# Disable (add to /etc/rc.local or use a systemd unit)\necho never > /sys/kernel/mm/transparent_hugepage/enabled\n```\n\n**2. Kernel Overcommit Memory** — Prevents background saving (RDB fork) from failing under memory pressure. The fork() syscall copies page tables and can fail if the system thinks there isn't enough RAM, even though Valkey uses copy-on-write.\n```bash\n# Add to /etc/sysctl.conf\nvm.overcommit_memory = 1\n# Apply immediately\nsysctl -p\n```\n\n**3. TCP Backlog and File Descriptors** — Ensure the OS can handle high connection counts without dropping connections.\n```bash\n# Increase somaxconn (add to /etc/sysctl.conf)\nnet.core.somaxconn = 512\n# Increase ulimits (add to /etc/security/limits.conf)\nvalkey soft nofile 65536\nvalkey hard nofile 65536\n```\n\nWithout these three tweaks, Valkey will suffer from periodic latency spikes, background save failures under load, and connection drops under high concurrency."
+        },
+        {
+          "label": "Observability & Monitoring",
+          "text": "\"If you can't measure it, you can't manage it.\" Set up a robust monitoring stack before going to production.\n\n**Prometheus & Grafana:** Use the `valkey_exporter` to scrape Valkey metrics. Monitor these key indicators:\n• `hit_rate` — Cache effectiveness (keyspace_hits / (keyspace_hits + keyspace_misses))\n• `evicted_keys` — Spikes indicate maxmemory is too low or TTLs are too long\n• `mem_fragmentation_ratio` — Values > 1.5 indicate memory fragmentation issues\n• `connected_clients` — Unexplained growth signals connection leaks\n• `repl_lag` — Replication delay in seconds\n\n**Slow Log:** Audit regularly to identify unoptimized queries or large key operations:\n```bash\nvalkey-cli SLOWLOG GET 10\n```\n\n**Health Checks:** Implement active monitoring via PING through your orchestration layer (Kubernetes readiness probes, Docker HEALTHCHECK, or external monitoring tools)."
+        },
+        {
+          "label": "Latency Monitoring & Slow Log",
+          "code": "# Configure slow log\n# valkey.conf\nslowlog-log-slower-than 10000   # Log commands slower than 10ms (microseconds)\nslowlog-max-len 128             # Keep last 128 slow entries\n\n# View slow log\n127.0.0.1:6379> SLOWLOG GET 5\n1) 1) (integer) 1                 # Entry ID\n   2) (integer) 1728547200        # Unix timestamp\n   3) (integer) 45000             # Duration (microseconds) = 45ms\n   4) 1) \"KEYS\"                   # Command\n      2) \"user:*\"                 # Arguments\n   5) \"127.0.0.1:54321\"           # Client IP:port\n2) 1) (integer) 0\n   2) (integer) 1728547100\n   3) (integer) 12000             # 12ms\n   4) 1) \"SORT\"\n      2) \"large_list\"\n   5) \"127.0.0.1:54322\"\n\n# Reset slow log\n127.0.0.1:6379> SLOWLOG RESET\nOK\n\n# Real-time latency test (built-in)\nuser@server:~$ valkey-cli --latency\nmin: 0, max: 3, avg: 0.45 (793 samples)\n\nuser@server:~$ valkey-cli --latency-history -i 10\nmin: 0, max: 2, avg: 0.32 (1479 samples) -- 10.01 seconds range\n\nuser@server:~$ valkey-cli --intrinsic-latency 1000\nMax latency so far: 1 microseconds.\nMax latency so far: 2 microseconds.\nMax latency so far: 4 microseconds.\n1244556322 total runs (avg latency: 0.8038 microseconds / 803.79 nanoseconds)\n\n# Common causes of high latency:\n# - KEYS * or other O(N) commands (use SCAN instead)\n# - Large batch operations without pipelining\n# - Fork-induced latency (BGSAVE/BGREWRITEAOF) — see below\n# - AOF fsync (always — avoid unless critical data)\n# - Swap (never let Valkey memory go to swap!)\n# - Network congestion or buffer bloat\n\n# Fork latency mitigation (for BGSAVE/BGREWRITEAOF):\n# Use replica for BGSAVE (never do it on master)\n# or use diskless replication:\nrepl-diskless-sync yes\n# Set vm.overcommit_memory=1 in /etc/sysctl.conf:\nuser@server:~$ sudo sysctl vm.overcommit_memory=1"
+        },
+        {
+          "label": "Connection Pooling — Client-Side Best Practices",
+          "code": "# Connection pooling is CRITICAL for production Valkey performance.\n# Without pooling, every request opens/closes a TCP connection — O(10ms) overhead!\n\n# Python (redis-py — built-in pool)\nimport redis\n\n# Connection pool is created automatically (one per Valkey instance)\nr = redis.Valkey(\n    host='localhost',\n    port=6379,\n    decode_responses=True,\n    max_connections=50,  # Max pool size\n    socket_connect_timeout=5,\n    socket_timeout=5,\n    retry_on_timeout=True,\n    health_check_interval=30  # Periodic health checks\n)\n\n# Use normally — pool manages connections transparently\nr.set('key', 'value')\nr.get('key')\n\n# Check pool stats\ninfo = r.connection_pool._available_connections\nprint(f\"Available connections: {len(info)}\")\n\n# Node.js (ioredis — built-in pool)\nconst Valkey = require('ioredis');\n\nconst redis = new Valkey({\n    host: 'localhost',\n    port: 6379,\n    maxRetriesPerRequest: 3,\n    retryStrategy: (times) => Math.min(times * 50, 2000),\n    enableReadyCheck: true,\n    lazyConnect: true,  // Don't connect on instantiation\n    connectionName: 'my-app',  // Identify in CLIENT LIST\n    keepAlive: 10000,  // TCP keepalive\n    db: 0\n});\n\nawait redis.connect();  // Explicit connect\n\n// Java (Lettuce — reactive, recommended)\n// RedisClient client = RedisClient.create(\"redis://localhost:6379\");\n// StatefulRedisConnection<String, String> conn = client.connect();\n// RedisCommands<String, String> commands = conn.sync();\n\n// Connection Pooling Anti-Patterns — AVOID:\n// ❌ Opening a new connection per request\n// ❌ Not setting max_connections (default can be too low)\n// ❌ No timeout configuration (hangs on network issues)\n// ❌ No health checks (stale connections fail mysteriously)\n// ❌ Forgetting to close connections in error paths\n\n# Recommended pool sizes:\n# - Small app (< 100 req/s): 10-20 connections\n# - Medium app (100-1000 req/s): 20-50 connections\n# - Large app (> 1000 req/s): 50-200 connections\n# Rule of thumb: pool_size = (peak_requests_per_second * avg_response_time_ms) / 1000"
+        },
+        {
+          "label": "Performance Tuning Cheat Sheet",
+          "table": {
+            "headers": [
+              "Goal",
+              "Configuration",
+              "Impact"
+            ],
+            "rows": [
+              [
+                "Maximize throughput",
+                "Pipelining + connection pooling",
+                "5-10× improvement for batch operations"
+              ],
+              [
+                "Reduce latency",
+                "Use localhost (Unix socket if single-process)",
+                "-0.3 ms per round trip"
+              ],
+              [
+                "Save memory (small objects)",
+                "ziplist/intset encodings (tune thresholds)",
+                "Up to 70% memory reduction"
+              ],
+              [
+                "Save memory (large objects)",
+                "Use hashes instead of JSON strings",
+                "50-80% reduction for objects"
+              ],
+              [
+                "Reduce fork latency",
+                "disable-thp yes + vm.overcommit_memory=1",
+                "Avoids major latency spikes during save"
+              ],
+              [
+                "Faster failover",
+                "Lower cluster-node-timeout / sentinel down-after",
+                "Faster detection but more false positives"
+              ],
+              [
+                "Reduce replication lag",
+                "Smaller repl-backlog, faster disks",
+                "Replicas catch up faster"
+              ],
+              [
+                "Optimize AOF",
+                "appendfsync everysec + no-appendfsync-on-rewrite yes",
+                "Best balance of safety and speed"
+              ],
+              [
+                "Avoid eviction",
+                "Set maxmemory to 70-80% of available RAM",
+                "Headroom for BGSAVE memory spikes"
+              ],
+              [
+                "Client performance",
+                "Use RESP3 (Valkey 7+) for push notifications",
+                "Reduces polling in Pub/Sub and streams"
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "modules-extensions",
+      "title": "Modules & Extensions",
+      "description": "Extending Valkey with modules like JSON, TimeSeries, Bloom filters.",
+      "items": [
+        {
+          "label": "Valkey Modules Overview",
+          "text": "Valkey supports a growing ecosystem of modules that extend its capabilities beyond key-value operations. Since Valkey is wire-compatible with the Valkey RESP protocol, most Valkey modules also work with Valkey:\n\n• RedisJSON — Native JSON document storage with deep path manipulation\n• RedisTimeSeries — Time-series data ingestion, aggregation, downsampling\n• RedisBloom — Probabilistic data structures (Bloom filters, Cuckoo filters, Count-min sketch, Top-K)\n\nAdditionally, Valkey 9.x includes built-in full-text search, vector similarity search, and hybrid search — capabilities that require separate modules in Valkey OSS."
+        },
+        {
+          "label": "RedisJSON — Document Store",
+          "code": "# Store and query JSON documents natively\n# Unlike storing JSON strings in regular keys, RedisJSON allows\n# per-field operations without fetching/overwriting the entire document.\n\n127.0.0.1:6379> JSON.SET user:1000 $ '{\"name\":\"Alice\",\"age\":30,\"address\":{\"city\":\"NYC\",\"zip\":\"10001\"},\"tags\":[\"premium\",\"vip\"]}'\nOK\n\n# Get entire document\n127.0.0.1:6379> JSON.GET user:1000 $\n\"[{\"name\":\"Alice\",\"age\":30,\"address\":{\"city\":\"NYC\",\"zip\":\"10001\"},\"tags\":[\"premium\",\"vip\"]}]\"\n\n# Get specific fields using JSONPath\n127.0.0.1:6379> JSON.GET user:1000 $.name\n\"[\\\"Alice\\\"]\"\n127.0.0.1:6379> JSON.GET user:1000 $.address.city\n\"[\\\"NYC\\\"]\"\n127.0.0.1:6379> JSON.GET user:1000 $.tags[0]\n\"[\\\"premium\\\"]\"\n\n# Update individual fields\n127.0.0.1:6379> JSON.SET user:1000 $.age 31\nOK\n127.0.0.1:6379> JSON.ARRAPPEND user:1000 $.tags \"new-york\"\n1) (integer) 3    # New array length\n\n# Increment numeric field\n127.0.0.1:6379> JSON.NUMINCRBY user:1000 $.age 1\n\"32\"\n\n# Delete fields\n127.0.0.1:6379> JSON.DEL user:1000 $.address.zip\n(integer) 1\n\n# Check if field exists\n127.0.0.1:6379> JSON.TYPE user:1000 $.name\n1) \"string\"\n127.0.0.1:6379> JSON.TYPE user:1000 $.tags\n1) \"array\""
+        },
+        {
+          "label": "RediSearch — Full-Text & Vector Search",
+          "code": "# Create a search index on hash keys\n127.0.0.1:6379> FT.CREATE idx:products ON HASH PREFIX 1 \"product:\" SCHEMA \\\n    name TEXT WEIGHT 5.0 SORTABLE \\\n    description TEXT WEIGHT 1.0 \\\n    price NUMERIC SORTABLE \\\n    category TAG SORTABLE \\\n    stock NUMERIC SORTABLE\nOK\n\n# Add some products\n127.0.0.1:6379> HSET product:1 name \"Gaming Laptop\" description \"High-performance laptop with RTX 4080\" price 1499.99 category \"electronics\" stock 50\n127.0.0.1:6379> HSET product:2 name \"Mechanical Keyboard\" description \"RGB backlit mechanical keyboard\" price 89.99 category \"electronics\" stock 200\n127.0.0.1:6379> HSET product:3 name \"Ergonomic Mouse\" description \"Wireless vertical ergonomic mouse\" price 49.99 category \"electronics\" stock 150\n\n# Full-text search\n127.0.0.1:6379> FT.SEARCH idx:products \"laptop\" LIMIT 0 10\n1) (integer) 1\n2) \"product:1\"\n3) 1) \"name\"\n   2) \"Gaming Laptop\"\n\n# Search with filters\n127.0.0.1:6379> FT.SEARCH idx:products \"mechanical\" FILTER price 50 200 SORTBY price DESC\n1) (integer) 1\n2) \"product:2\"\n\n# Faceted search (aggregation)\n127.0.0.1:6379> FT.AGGREGATE idx:products \"*\" GROUPBY 1 @category REDUCE COUNT 0 AS count\n1) (integer) 1\n2) 1) \"category\"\n   2) \"electronics\"\n   3) \"count\"\n   4) \"3\"\n\n# Vector similarity search (Valkey 8.0+)\n# FT.CREATE idx:vectors ON HASH PREFIX 1 \"vec:\" SCHEMA embedding VECTOR FLAT 6 TYPE FLOAT32 DIM 384 DISTANCE_METRIC COSINE\n# FT.SEARCH idx:vectors \"*=>[KNN 10 @embedding $BLOB AS score]\" PARAMS 2 BLOB $vector SORTBY score"
+        },
+        {
+          "label": "RedisTimeSeries & RedisBloom",
+          "code": "# RedisTimeSeries — Time-series data\n# ======================================\n\n# Create a time series\n127.0.0.1:6379> TS.CREATE sensor:temperature:room1 RETENTION 86400000 LABELS type \"temperature\" room \"room1\"\nOK\n\n# Add data points (timestamp in milliseconds)\n127.0.0.1:6379> TS.ADD sensor:temperature:room1 1728547200000 22.5\n(integer) 1728547200000\n127.0.0.1:6379> TS.ADD sensor:temperature:room1 1728547260000 23.1\n127.0.0.1:6379> TS.ADD sensor:temperature:room1 1728547320000 22.8\n\n# Range query with aggregation\n127.0.0.1:6379> TS.RANGE sensor:temperature:room1 1728547200000 1728547400000 AGGREGATION avg 60000\n1) 1) 1728547200000\n   2) 22.5\n2) 1) 1728547260000\n   2) 23.1\n3) 1) 1728547320000\n   2) 22.8\n\n# Get last sample\n127.0.0.1:6379> TS.GET sensor:temperature:room1\n1) 1728547320000\n2) 22.8\n\n# RedisBloom — Probabilistic data structures\n# =============================================\n\n# Bloom filter — check if item EXISTS (may have false positives, NO false negatives)\n127.0.0.1:6379> BF.RESERVE seen:usernames 0.01 1000000  # 1% error rate, 1M capacity\nOK\n127.0.0.1:6379> BF.ADD seen:usernames \"alice\"\n(integer) 1\n127.0.0.1:6379> BF.EXISTS seen:usernames \"alice\"\n(integer) 1  # Definitely exists\n127.0.0.1:6379> BF.EXISTS seen:usernames \"mallory\"\n(integer) 0  # Definitely does NOT exist (might be false positive)\n\n# Cuckoo filter — Bloom filter with deletion support\n127.0.0.1:6379> CF.RESERVE emails 1000000\nOK\n127.0.0.1:6379> CF.ADDNX emails \"user@example.com\"\n(integer) 1\n127.0.0.1:6379> CF.DEL emails \"user@example.com\"\n(integer) 1\n\n# Top-K — track most frequent items\n127.0.0.1:6379> TOPK.RESERVE trending:hashtags 10  # Track top 10\nOK\n127.0.0.1:6379> TOPK.ADD trending:hashtags \"#redis\" \"#database\" \"#performance\" \"#redis\" \"#redis\" \"#tutorial\"\n1) (nil)\n2) (nil)\n127.0.0.1:6379> TOPK.LIST trending:hashtags\n1) \"#redis\"\n2) \"#tutorial\"\n3) \"#database\"\n4) \"#performance\""
+        }
+      ]
+    },
+    {
+      "id": "use-cases",
+      "title": "Use Cases & Design Patterns",
+      "description": "Real-world use cases with production-ready design patterns for Valkey.",
+      "items": [
+        {
+          "label": "1. Caching Layer",
+          "text": "Valkey as a cache is the most common use case. It sits between your application and database, storing frequently accessed data in memory for sub-millisecond retrieval.\n\nPattern: Cache-Aside (Lazy Loading)\n1. Application checks cache (GET key)\n2. If found (cache hit), return data\n3. If not found (cache miss), query database, store in cache (SETEX), return data\n4. On writes, invalidate or update cache"
+        },
+        {
+          "label": "Caching Implementation",
+          "code": "# Cache-aside pattern with TTL\n# =================================\n\n# Application code (Python example)\nimport redis\nimport json\n\nr = redis.Valkey(host='localhost', port=6379, decode_responses=True)\n\ndef get_user(user_id):\n    cache_key = f\"user:{user_id}:profile\"\n\n    # 1. Try cache\n    cached = r.get(cache_key)\n    if cached:\n        return json.loads(cached)\n\n    # 2. Cache miss — query database (simulated)\n    user = query_database(user_id)\n    if not user:\n        return None\n\n    # 3. Store in cache for 1 hour\n    r.setex(cache_key, 3600, json.dumps(user))\n    return user\n\n# Invalidation on update\ndef update_user(user_id, data):\n    # Update database\n    update_database(user_id, data)\n\n    # Invalidate cache (or update it)\n    cache_key = f\"user:{user_id}:profile\"\n    r.delete(cache_key)  # Next read will fetch fresh data\n\n# Caching best practices:\n# - TTL every cached item (prevents stale data)\n# - Use consistent key naming: resource:type:id\n# - Invalidate on writes — don't try to keep cache in sync\n# - Cache the query result, not the raw data\n# - Monitor cache hit ratio: INFO stats -> keyspace_hits / (keyspace_hits + keyspace_misses)"
+        },
+        {
+          "label": "2. Session Store",
+          "code": "# Store user sessions with automatic expiration\n# ================================================\n\n# Store session on login\n127.0.0.1:6379> HSET session:abc123 user_id 42 ip \"192.168.1.1\" created_at \"2026-06-08T10:00:00Z\" role \"admin\"\n127.0.0.1:6379> EXPIRE session:abc123 86400   # 24-hour session\n\n# Verify session on each request\n127.0.0.1:6379> TTL session:abc123\n(integer) 82800  # Still valid\n127.0.0.1:6379> HGET session:abc123 user_id\n\"42\"\n\n# Extend session on activity\n127.0.0.1:6379> EXPIRE session:abc123 86400   # Reset 24h timer\n\n# Logout — delete session\n127.0.0.1:6379> DEL session:abc123\n\n# List all active sessions (SCAN for production!)\nuser@server:~$ valkey-cli SCAN 0 MATCH session:* COUNT 1000\n1) \"0\"\n2) 1) \"session:abc123\"\n   2) \"session:def456\""
+        },
+        {
+          "label": "3. Rate Limiting",
+          "code": "# Sliding window rate limiter using Sorted Sets\n# ================================================\n\n# Pattern: Allow N requests per M seconds per user/IP\n# Uses ZREMRANGEBYSCORE to remove old entries, then ZCARD to count\n\n# Lua script for atomic rate limiting\n127.0.0.1:6379> EVAL \"\n    local key = KEYS[1]\n    local limit = tonumber(ARGV[1])      -- Max requests\n    local window = tonumber(ARGV[2])     -- Time window (seconds)\n    local now = tonumber(ARGV[3])\n    local window_start = now - (window * 1000)  -- Convert to milliseconds\n\n    -- Remove old entries\n    redis.call('ZREMRANGEBYSCORE', key, 0, window_start)\n\n    -- Count remaining entries\n    local current = redis.call('ZCARD', key)\n\n    if current >= limit then\n        return -1  -- Rate limit exceeded\n    end\n\n    -- Add current request\n    redis.call('ZADD', key, now, now)\n    redis.call('EXPIRE', key, window)\n    return limit - current - 1  -- Remaining requests\n\" 1 rate:api:user:42 100 60 1728547200000\n\n# Token bucket algorithm (using strings with INCR + EXPIRE)\n# Allow 10 requests per minute, but allows bursting\n127.0.0.1:6379> EVAL \"\n    local key = KEYS[1]\n    local limit = tonumber(ARGV[1])      -- Max requests per window\n    local window = tonumber(ARGV[2])     -- Window in seconds\n    local now = tonumber(ARGV[3])\n    local window_key = key .. ':' .. math.floor(now / (window * 1000))\n\n    local count = redis.call('INCR', window_key)\n    if count == 1 then\n        redis.call('EXPIRE', window_key, window * 2)\n    end\n\n    if count > limit then\n        return -1  -- Rate limited\n    end\n    return limit - count  -- Remaining\n\" 1 rate:api 100 60 1728547200000\n\n# Generic Cell Rate Algorithm (GCRA) — most precise\n# Use redis-cell module or implement via Lua"
+        },
+        {
+          "label": "4. Message Queue with Streams",
+          "code": "# Producer — add tasks to stream\n127.0.0.1:6379> XADD tasks:email * to \"user@example.com\" subject \"Welcome!\" template \"welcome-email\"\n\"1728547200000-0\"\n127.0.0.1:6379> XADD tasks:email * to \"admin@example.com\" subject \"Alert: Server Down\" template \"alert\"\n\"1728547200123-0\"\n\n# Create consumer group\n127.0.0.1:6379> XGROUP CREATE tasks:email email-workers $ MKSTREAM\nOK\n\n# Consumer — read and process\n127.0.0.1:6379> XREADGROUP GROUP email-workers worker-1 COUNT 1 BLOCK 5000 STREAMS tasks:email >\n1) 1) \"tasks:email\"\n   2) 1) 1) \"1728547200000-0\"\n         2) 1) \"to\"\n            2) \"user@example.com\"\n            3) \"subject\"\n            4) \"Welcome!\"\n            5) \"template\"\n            6) \"welcome-email\"\n\n# Process the email... then acknowledge\n127.0.0.1:6379> XACK tasks:email email-workers \"1728547200000-0\"\n(integer) 1\n\n# Check pending messages\n127.0.0.1:6379> XPENDING tasks:email email-workers\n1) (integer) 1  # One unacknowledged message\n2) \"1728547200123-0\"\n3) \"1728547200123-0\"\n4) 1) 1) \"worker-1\"\n      2) \"1\""
+        },
+        {
+          "label": "5. Leaderboard & Real-Time Analytics",
+          "code": "# Real-time game leaderboard\n# ============================\n\n# Record a score\n127.0.0.1:6379> ZINCRBY leaderboard:game:level1 150 \"player:alice\"\n\"150\"\n127.0.0.1:6379> ZINCRBY leaderboard:game:level1 200 \"player:bob\"\n\"200\"\n127.0.0.1:6379> ZINCRBY leaderboard:game:level1 1000 \"player:diana\"\n\"1000\"\n\n# Top 10 players\n127.0.0.1:6379> ZREVRANGE leaderboard:game:level1 0 9 WITHSCORES\n1) \"player:diana\"\n2) \"1000\"\n3) \"player:bob\"\n4) \"200\"\n5) \"player:alice\"\n6) \"150\"\n\n# Player's rank\n127.0.0.1:6379> ZREVRANK leaderboard:game:level1 \"player:alice\"\n(integer) 2  # 0-based: 3rd place\n\n# Player's score\n127.0.0.1:6379> ZSCORE leaderboard:game:level1 \"player:alice\"\n\"150\"\n\n# Real-time page view counter\n# ==============================\n127.0.0.1:6379> INCR stats:page:home:views\n(integer) 1\n127.0.0.1:6379> INCR stats:page:home:views\n(integer) 2\n\n# Per-minute breakdown using sorted sets\n127.0.0.1:6379> ZINCRBY stats:page:home:by-minute 1 \"2026-06-08T10:00\"\n127.0.0.1:6379> ZINCRBY stats:page:home:by-minute 1 \"2026-06-08T10:00\"\n127.0.0.1:6379> ZINCRBY stats:page:home:by-minute 3 \"2026-06-08T10:01\"\n\n127.0.0.1:6379> ZRANGE stats:page:home:by-minute 0 -1 WITHSCORES\n1) \"2026-06-08T10:00\"\n2) \"2\"\n3) \"2026-06-08T10:01\"\n4) \"3\"\n\n# Unique visitor counting (HyperLogLog — ~12 KB per day)\n127.0.0.1:6379> PFADD stats:uv:2026-06-08 \"192.168.1.1\" \"10.0.0.5\" \"203.0.113.42\"\n127.0.0.1:6379> PFCOUNT stats:uv:2026-06-08\n(integer) 3  # Approximate unique visitors"
+        },
+        {
+          "label": "6. Distributed Locking (Redlock)",
+          "code": "# Simple distributed lock with SET NX + TTL\n127.0.0.1:6379> SET resource:lock:order-123 \"server-1\" NX EX 30\nOK  # Lock acquired\n127.0.0.1:6379> SET resource:lock:order-123 \"server-2\" NX EX 30\n(nil)  # Lock NOT acquired (already held)\n\n# Release lock (Lua script — must be atomic!)\n127.0.0.1:6379> EVAL \"\n    if redis.call('GET', KEYS[1]) == ARGV[1] then\n        return redis.call('DEL', KEYS[1])\n    else\n        return 0\n    end\n\" 1 resource:lock:order-123 \"server-1\"\n\n# Redlock algorithm (for multi-master Valkey, e.g., 5 independent nodes):\n# 1. Get current timestamp\n# 2. Try to acquire lock on all N nodes (with short timeout)\n# 3. If majority (N/2 + 1) succeed AND elapsed time < lock TTL → lock acquired\n# 4. If lock not acquired, release from ALL nodes\n#\n# Implementation exists in Redisson (Java), redis-py, and other clients."
+        }
+      ]
+    },
+    {
+      "id": "deployment",
+      "title": "Production Deployment",
+      "description": "Docker, monitoring, backups, and operational best practices for Valkey.",
+      "items": [
+        {
+          "label": "Docker Compose — Full Stack",
+          "code": "# docker-compose.yml — Valkey + Sentinel + App\nversion: '3.8'\n\nservices:\n  valkey-master:\n    image: valkey/valkey:9-alpine\n    container_name: redis-master\n    command: valkey-server /usr/local/etc/valkey/valkey.conf\n    volumes:\n      - ./valkey-master.conf:/usr/local/etc/valkey/valkey.conf\n      - valkey-master-data:/data\n    ports:\n      - \"6379:6379\"\n    networks:\n      - valkey-net\n    restart: unless-stopped\n    healthcheck:\n      test: [\"CMD\", \"valkey-cli\", \"ping\"]\n      interval: 10s\n      timeout: 3s\n      retries: 3\n\n  valkey-replica-1:\n    image: valkey/valkey:9-alpine\n    container_name: redis-replica-1\n    command: valkey-server /usr/local/etc/valkey/valkey.conf --replicaof redis-master 6379\n    volumes:\n      - ./valkey-replica.conf:/usr/local/etc/valkey/valkey.conf\n      - valkey-replica-1-data:/data\n    depends_on:\n      - redis-master\n    networks:\n      - valkey-net\n    restart: unless-stopped\n\n  valkey-sentinel-1:\n    image: valkey/valkey:9-alpine\n    container_name: valkey-sentinel-1\n    command: valkey-sentinel /usr/local/etc/valkey/sentinel.conf\n    volumes:\n      - ./sentinel.conf:/usr/local/etc/valkey/sentinel.conf\n    depends_on:\n      - redis-master\n    networks:\n      - valkey-net\n    restart: unless-stopped\n\n  app:\n    build: ./app\n    container_name: app\n    environment:\n      - REDIS_HOST=redis-master\n      - REDIS_PORT=6379\n      - REDIS_SENTINEL_HOSTS=valkey-sentinel-1 26379,valkey-sentinel-2 26379,valkey-sentinel-3 26379\n      - REDIS_MASTER_NAME=mymaster\n    depends_on:\n      - redis-master\n    networks:\n      - valkey-net\n    ports:\n      - \"3000:3000\"\n\nvolumes:\n  valkey-master-data:\n  valkey-replica-1-data:\n\nnetworks:\n  valkey-net:\n    driver: bridge"
+        },
+        {
+          "label": "Production valkey.conf Template",
+          "code": "# Production-ready valkey.conf — organized by concern\n# =====================================================\n\n# --- NETWORK ---\n# bind 127.0.0.1              # Localhost only (Secure Default)\n# bind 10.0.0.5               # Specific Private IP (Recommended)\nport 6379\nprotected-mode yes\ntcp-backlog 511\ntimeout 300                    # Close idle connections after 5 min\ntcp-keepalive 60\n\n# --- ACL / AUTH ---\naclfile /etc/valkey/users.acl\n\n# --- MEMORY MANAGEMENT ---\nmaxmemory 512mb                # ALWAYS set this!\nmaxmemory-policy allkeys-lru   # Evict least recently used keys when full\nmaxmemory-samples 5\n\n# --- PERSISTENCE ---\nsave 900 1\nsave 300 10\nsave 60 10000\ndbfilename dump.rdb\ndir /var/lib/valkey\n\nappendonly yes\nappendfilename \"appendonly.aof\"\nappendfsync everysec\naof-use-rdb-preamble yes\nauto-aof-rewrite-percentage 100\nauto-aof-rewrite-min-size 64mb\n\n# --- LOGGING ---\nloglevel notice\nlogfile /var/log/valkey/valkey.log\nslowlog-log-slower-than 10000\nslowlog-max-len 128\n\n# --- SECURITY — Disable/Rename Dangerous Commands ---\nrename-command FLUSHALL \"\"\nrename-command FLUSHDB  \"\"\nrename-command DEBUG    \"\"\nrename-command CONFIG   \"CONFIG_RESTRICTED_9f3kd\"\nrename-command SHUTDOWN \"SHUTDOWN_RESTRICTED_8x2pq\""
+        },
+        {
+          "label": "Kubernetes with Valkey Operator",
+          "code": "# Using the Valkey Operator for K8s\n# Installation:\nuser@k8s:~$ helm repo add ot-helm https://ot-container-kit.github.io/helm-charts/\nuser@k8s:~$ helm install redis-operator ot-helm/redis-operator\n\n# Create a Valkey cluster\ncat <<EOF | kubectl apply -f -\napiVersion: redis.redis.opstreelabs.in/v1beta1\nkind: RedisCluster\nmetadata:\n  name: redis-cluster\nspec:\n  clusterSize: 3  # Number of master nodes\n  podSecurityContext:\n    runAsUser: 1000\n    fsGroup: 1000\n  kubernetesConfig:\n    image: valkey/valkey:9-alpine\n    imagePullPolicy: IfNotPresent\n    resources:\n      requests:\n        memory: 1Gi\n        cpu: 500m\n      limits:\n        memory: 2Gi\n        cpu: 1000m\n  storage:\n    volumeClaimTemplate:\n      accessModes: [\"ReadWriteOnce\"]\n      resources:\n        requests:\n          storage: 10Gi\nEOF\n\n# Expose via service\napiVersion: v1\nkind: Service\nmetadata:\n  name: redis-service\nspec:\n  selector:\n    app: redis-cluster\n  ports:\n    - port: 6379\n      targetPort: 6379\n  type: ClusterIP"
+        },
+        {
+          "label": "Monitoring with Prometheus & Grafana",
+          "code": "# Prometheus valkey_exporter\nuser@server:~$ docker run -d --name redis-exporter \\\n  -p 9121:9121 \\\n  oliver006/valkey_exporter \\\n  --redis.addr redis://localhost:6379 \\\n  --redis.password \"your-password\"\n\n# Test metrics\nuser@server:~$ curl http://localhost:9121/metrics | head -20\n# HELP valkey_up Whether the Valkey server is up\n# TYPE valkey_up gauge\nvalkey_up 1\n# HELP valkey_instantaneous_ops_per_sec Instantaneous operations per second\n# TYPE valkey_instantaneous_ops_per_sec gauge\nvalkey_instantaneous_ops_per_sec 1234\n# HELP valkey_connected_clients Number of connected clients\n# TYPE valkey_connected_clients gauge\nvalkey_connected_clients 42\n# HELP valkey_memory_used_bytes Memory used by Valkey\n# TYPE valkey_memory_used_bytes gauge\nvalkey_memory_used_bytes 104857600\n\n# Prometheus scrape config (prometheus.yml)\nscrape_configs:\n  - job_name: 'redis'\n    static_configs:\n      - targets: ['localhost:9121']\n\n# Grafana dashboard: https://grafana.com/grafana/dashboards/11835 (Valkey Dashboard)\n# Import via Grafana UI -> Import -> 11835\n\n# Key metrics to monitor:\n# - valkey_memory_used_bytes / maxmemory (memory pressure)\n# - valkey_connected_clients (connection leak detection)\n# - valkey_instantaneous_ops_per_sec (throughput)\n# - valkey_keyspace_hits / valkey_keyspace_misses (cache hit ratio)\n# - valkey_master_repl_offset / valkey_slave_repl_offset (replication lag)\n# - valkey_rdb_bgsave_in_progress (fork latency)\n# - valkey_slowlog_length (slow queries)"
+        },
+        {
+          "label": "Operational Cheat Sheet",
+          "code": "# Quick reference for day-to-day operations\n# ============================================\n\n# Check server health\nuser@server:~$ valkey-cli INFO server\nuser@server:~$ valkey-cli INFO stats\nuser@server:~$ valkey-cli PING\n\n# Check memory\nuser@server:~$ valkey-cli INFO memory | grep -E \"used_memory_human|maxmemory|mem_fragmentation_ratio\"\n\n# Check replication\nuser@server:~$ valkey-cli INFO replication\n\n# Check slow log\nuser@server:~$ valkey-cli SLOWLOG GET 5\n\n# Check connected clients\nuser@server:~$ valkey-cli CLIENT LIST\nuser@server:~$ valkey-cli CLIENT KILL <ip>:<port>  # Kill a specific client\n\n# Flush database (DANGER!)\nuser@server:~$ valkey-cli FLUSHDB     # Flush current DB\nuser@server:~$ valkey-cli FLUSHALL    # Flush ALL databases\n\n# Config changes at runtime\nuser@server:~$ valkey-cli CONFIG SET maxmemory 2gb\nuser@server:~$ valkey-cli CONFIG SET maxmemory-policy allkeys-lru\nuser@server:~$ valkey-cli CONFIG REWRITE  # Persist to valkey.conf\n\n# Backup\nuser@server:~$ valkey-cli BGSAVE\nuser@server:~$ sudo cp /var/lib/valkey/dump.rdb /backup/valkey_$(date +%F).rdb\n\n# Restart\nuser@server:~$ sudo systemctl restart valkey\n\n# Shutdown gracefully\nuser@server:~$ valkey-cli SHUTDOWN  # Saves RDB, flushes AOF, stops cleanly\nuser@server:~$ valkey-cli SHUTDOWN NOSAVE  # No persistence, immediate stop"
+        }
+      ]
+    },
+    {
+      "id": "troubleshooting",
+      "title": "Troubleshooting Common Issues",
+      "description": "Diagnosing and fixing the most common Valkey problems.",
+      "items": [
+        {
+          "label": "Common Issues & Solutions",
+          "table": {
+            "headers": [
+              "Issue",
+              "Symptoms",
+              "Causes",
+              "Solutions"
+            ],
+            "rows": [
+              [
+                "Connection refused",
+                "valkey-cli: Could not connect to Valkey at 127.0.0.1:6379: Connection refused",
+                "Valkey not running, wrong port, binding to wrong interface",
+                "sudo systemctl status valkey; check bind directive; check port"
+              ],
+              [
+                "MISCONF error",
+                "MISCONF Valkey is configured to save RDB snapshots, but is currently not able to persist on disk",
+                "BGSAVE failed (disk full, permissions)",
+                "Check disk space; fix /var/lib/valkey permissions; config set stop-writes-on-bgsave-error no (temporary)"
+              ],
+              [
+                "OOM (Out of Memory)",
+                "OOM command not allowed when used memory > 'maxmemory'",
+                "maxmemory reached, eviction policy preventing writes",
+                "Increase maxmemory; change eviction policy; identify and remove unnecessary keys"
+              ],
+              [
+                "High latency spikes",
+                "Commands taking > 100ms, periodic pauses",
+                "BGSAVE fork, AOF rewrite fork, swap usage",
+                "Disable THP; set vm.overcommit_memory=1; use replica for BGSAVE; increase maxmemory headroom"
+              ],
+              [
+                "Replication lag",
+                "INFO replication shows large offset difference",
+                "Network latency, master overload, backlog too small",
+                "Increase repl-backlog-size; check network; add replicas for read offload"
+              ],
+              [
+                "Authentication failure",
+                "NOAUTH Authentication required",
+                "Wrong password, ACL misconfiguration",
+                "Check requirepass; check ACL LIST; verify user permissions"
+              ],
+              [
+                "Slow queries",
+                "SLOWLOG shows many entries",
+                "KEYS *, LRANGE large lists, ZRANGEBYSCORE on huge ZSET",
+                "Replace KEYS with SCAN; trim lists; use pagination; add indexes"
+              ],
+              [
+                "High memory fragmentation",
+                "mem_fragmentation_ratio > 1.5",
+                "jemalloc fragmentation, alternating large/small allocations",
+                "Enable activedefrag; restart to defrag; use jemalloc (default)"
+              ],
+              [
+                "Failed failover",
+                "Sentinel reports failover aborted",
+                "Quorum not reached, replica not ready",
+                "Check sentinel config; ensure odd number of sentinels; verify replica lag is low"
+              ],
+              [
+                "Cluster slot coverage",
+                "CLUSTER INFO shows cluster_state:fail",
+                "Node failure caused unassigned slots, resharding in progress",
+                "CLUSTER FIX; add replicas; check node health; reshard manually"
+              ]
+            ]
+          }
+        },
+        {
+          "label": "Debugging Toolkit",
+          "code": "# 1. Real-time command monitoring\nuser@server:~$ valkey-cli MONITOR\n# WARNING: Use only for debugging — MONITOR reduces throughput by ~50%!\n\n# 2. Slow log analysis\nuser@server:~$ valkey-cli SLOWLOG GET 20 | python -c \"\nimport sys\nfor line in sys.stdin:\n    print(line.strip())\n\"\n\n# 3. Client list\nuser@server:~$ valkey-cli CLIENT LIST\nid=1234 addr=192.168.1.42:54321 fd=8 name= age=342 idle=0 flags=N db=0 sub=0 psub=0 multi=-1 qbuf=0 qbuf-free=0 obl=0 oll=0 omem=0 events=r cmd=GET\n\n# 4. Key space analysis\nuser@server:~$ valkey-cli --bigkeys  # Find largest keys\n\n# 5. Memory usage by key\nuser@server:~$ valkey-cli --memkeys   # Find keys using most memory\n\n# 6. Scan for key patterns\nuser@server:~$ valkey-cli --scan --pattern \"user:*\" | head -100\n\n# 7. Latency test\nuser@server:~$ valkey-cli --latency -h remote-server -p 6379\n\n# 8. Check for THP (Transparent Huge Pages)\nuser@server:~$ cat /sys/kernel/mm/transparent_hugepage/enabledmm/transparent_hugepage/enabled\n[always] madvise never  # If 'always', DISABLE IT!\nuser@server:~$ echo never | sudo tee /sys/kernel/mm/transparent_hugepage/enabled\n\n# 9. Check overcommit memory\nuser@server:~$ sysctl vm.overcommit_memory\nvm.overcommit_memory = 1  # Should be 1 for Valkey\n\n# 10. Max open files\nuser@server:~$ cat /proc/$(pgrep valkey-server)/limits | grep \"open files\"\nMax open files            65536                65536                files\n\n# 11. Check swap usage (Valkey should NEVER swap!)\nuser@server:~$ cat /proc/$(pgrep valkey-server)/status | grep -i swap\nVmSwap:       0 kB  # Should be 0"
+        },
+        {
+          "label": "Valkey/Valkey Configuration Reference",
+          "code": "# Essential production valkey.conf settings\n# ============================================\n\n# Network\nbind 127.0.0.1 10.0.10.10\nport 6379\ntcp-backlog 511\ntimeout 0\ntcp-keepalive 300\n\n# General\ndaemonize no\nsupervised systemd\npidfile /var/run/valkey_6379.pid\nloglevel notice\nlogfile /var/log/valkey/redis.log\ndatabases 16\nalways-show-logo no\n\n# Snapshots (RDB)\nsave 900 1\nsave 300 10\nsave 60 10000\nstop-writes-on-bgsave-error yes\nrdbcompression yes\nrdbchecksum yes\ndbfilename dump.rdb\ndir /var/lib/valkey\n\n# Replication\nreplica-serve-stale-data yes\nreplica-read-only yes\nrepl-diskless-sync yes\nrepl-diskless-sync-delay 5\nrepl-backlog-size 100mb\nreplica-priority 100\nmin-replicas-to-write 1\nmin-replicas-max-lag 10\n\n# Security\nrequirepass your-strong-password\nrename-command FLUSHALL \"\"\nrename-command FLUSHDB \"\"\nrename-command DEBUG \"\"\nrename-command CONFIG \"ADMIN_CONFIG\"\n\n# Memory\nmaxmemory 4gb\nmaxmemory-policy allkeys-lru\nmaxmemory-samples 10\n\n# AOF\nappendonly yes\nappendfilename \"appendonly.aof\"\nappendfsync everysec\nno-appendfsync-on-rewrite no\nauto-aof-rewrite-percentage 100\nauto-aof-rewrite-min-size 128mb\naof-load-truncated yes\naof-use-rdb-preamble yes\n\n# Lua\nlua-time-limit 5000\n\n# Slow log\nslowlog-log-slower-than 10000\nslowlog-max-len 128\n\n# Latency monitor\nlatency-monitor-threshold 0\n\n# Notifications\nnotify-keyspace-events \"\"\n\n# Advanced\nhash-max-ziplist-entries 512\nhash-max-ziplist-value 64\nlist-max-ziplist-size -2\nlist-compress-depth 0\nset-max-intset-entries 512\nzset-max-ziplist-entries 128\nzset-max-ziplist-value 64\nactiverehashing yes\nclient-output-buffer-limit normal 0 0 0\nclient-output-buffer-limit replica 256mb 64mb 60\nclient-output-buffer-limit pubsub 32mb 8mb 60\nhz 10\ndynamic-hz yes\naof-rewrite-incremental-fsync yes\nrdb-save-incremental-fsync yes\nactivedefrag yes"
+        }
+      ]
+    },
+    {
+      "id": "anti-patterns",
+      "title": "Anti-Patterns & Common Mistakes",
+      "description": "Frequent pitfalls and anti-patterns that can degrade Valkey performance, reliability, and security — and how to avoid them.",
+      "items": [
+        {
+          "label": "Using KEYS * in Production",
+          "text": "KEYS * blocks the Valkey event loop for the entire duration of the scan. On a dataset with millions of keys, this can block all operations for seconds or even minutes — causing timeouts, cascading failures, and Sentinel failovers.\n\n✅ Fix: Always use SCAN (cursor-based iteration) instead:\nSCAN 0 MATCH user:* COUNT 100\n\nIn Valkey 7.4+, you can also configure the max iterations for SCAN."
+        },
+        {
+          "label": "Storing Massive Blobs / Large Keys",
+          "text": "Storing multi-megabyte values in Valkey causes:\n• Network congestion — transferring large payloads blocks the connection\n• Latency spikes — serialization/deserialization of large objects is slow\n• Memory fragmentation — allocating large blocks stresses jemalloc\n• Blocked replicas — replication streams large values synchronously\n\n✅ Fix: Break large objects into hashes (individual fields for each attribute). Valkey is optimized for many small keys, not few large ones. The recommended max value size is 10-100 KB per key."
+        },
+        {
+          "label": "Using Valkey as the Primary Database",
+          "text": "Valkey is an in-memory store — if you lose the server (crash, OOM kill, hardware failure), you lose data. Even with AOF+RDB persistence, the recovery window means data loss is possible.\n\n✅ Fix: Use Valkey as a cache layer in front of a durable database (PostgreSQL, MySQL, etc.). Write to the database first, then populate Valkey. Never treat Valkey as your source of truth unless you fully understand the persistence and replication tradeoffs."
+        },
+        {
+          "label": "Shared Instances (Noisy Neighbor)",
+          "text": "Using a single Valkey instance for multiple microservices creates \"noisy neighbor\" problems — one service's heavy load (large scans, pipelining bursts, slow queries) impacts all other services sharing the same instance.\n\n✅ Fix: Use separate Valkey instances per service (or per functional domain). Use RESP3 client-set-name and monitoring to identify which service is causing load. In containerized environments, allocate dedicated instances per microservice."
+        },
+        {
+          "label": "Ignoring TTL — Memory Leaks",
+          "text": "Storing data in Valkey without setting TTLs is the #1 cause of out-of-memory errors. Every key that doesn't expire stays in memory forever — until maxmemory is reached and Valkey starts evicting (or rejecting writes).\n\n✅ Fix: Every cached item should have a TTL. Use SETEX or explicitly call EXPIRE. Monitor total keys with INFO keyspace and set up alerts for unexpected key count growth. Use maxmemory-policy allkeys-lru as a safety net, but don't rely on it as your primary cleanup mechanism."
+        },
+        {
+          "label": "Blocking Operations on the Main Thread",
+          "text": "Several operations block the Valkey main thread, preventing ALL other clients from executing commands:\n• KEYS * — O(N) scan\n• SMEMBERS on large sets — returns ALL members\n• FLUSHALL / FLUSHDB (sync) — deletes everything\n• SORT on large lists/sets\n• ZRANGEBYSCORE without LIMIT\n• BRPOPLPUSH with large data\n• MONITOR — reduces throughput by ~50%\n\n✅ Fix: Use SCAN family (SCAN, SSCAN, HSCAN, ZSCAN) for iteration. Use UNLINK instead of DEL for large keys (async deletion). Use FLUSHALL ASYNC. Always add LIMIT to range queries."
+        },
+        {
+          "label": "Anti-Pattern Summary Table",
+          "table": {
+            "headers": [
+              "Anti-Pattern",
+              "Why It's Harmful",
+              "Impact",
+              "Correct Approach"
+            ],
+            "rows": [
+              [
+                "KEYS * in production",
+                "Blocks event loop for seconds/minutes",
+                "Global pause, cascading failures",
+                "SCAN with MATCH + COUNT"
+              ],
+              [
+                "Multi-MB values",
+                "Network congestion, slow replication",
+                "Latency spikes, OOM",
+                "Use hashes, keep < 100KB per key"
+              ],
+              [
+                "Valkey as primary DB",
+                "Data loss on crash/restart",
+                "Permanent data loss",
+                "Valkey = cache, DB = source of truth"
+              ],
+              [
+                "No TTL on cache keys",
+                "Memory exhaustion, OOM errors",
+                "Service degradation, write failures",
+                "Always set EXPIRE/SETEX"
+              ],
+              [
+                "Single instance for all services",
+                "Noisy neighbor, contention",
+                "Unpredictable performance",
+                "Dedicated instances per service"
+              ],
+              [
+                "No connection pooling",
+                "TCP overhead per request",
+                "Added ~10ms per request",
+                "Use client connection pools"
+              ],
+              [
+                "Synchronous FLUSHALL",
+                "Blocks all operations during delete",
+                "Global pause",
+                "FLUSHALL ASYNC"
+              ],
+              [
+                "Ignoring replication lag",
+                "Stale reads from replicas",
+                "Data inconsistency",
+                "Monitor lag, alert > 10s"
+              ],
+              [
+                "Default config in production",
+                "No auth, no limits, no persistence",
+                "Security breach, data loss",
+                "Use production config template"
+              ],
+              [
+                "No backup strategy",
+                "No recovery path after disaster",
+                "Complete data loss",
+                "Automated RDB backups with retention"
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "summary",
+      "title": "Summary & Best Practices",
+      "description": "Key takeaways, production checklist, and next steps for mastering Valkey/Valkey.",
+      "items": [
+        {
+          "label": "Key Takeaways",
+          "text": [
+            "Valkey is an in-memory data structure store — not just a cache. It supports strings, lists, sets, sorted sets, hashes, streams, bitmaps, HyperLogLog, and geospatial indices.",
+            "Valkey 8.0 introduces the INCREX command (atomic counter + expiry), ARRAY data structure (efficient indexed lists), and Hash Field Expiration (per-field TTLs). Valkey also returned to AGPLv3 open-source licensing in 2025.",
+            "Valkey is the open-source fork of Valkey under BSD 3-Clause license, governed by the Linux Foundation. It's a drop-in replacement with added search capabilities in version 9.x.",
+            "Choose your data type wisely — Hashes for objects, Sorted Sets for leaderboards, Streams for message queues, Bitmaps for boolean tracking, HyperLogLog for unique counting.",
+            "Persistence is configurable — Use hybrid (RDB + AOF) for production, RDB-only for cache, AOF-everysec for critical data, or disable entirely for pure cache.",
+            "Replication + Sentinel provides high availability — 1 master, 2+ replicas, 3+ Sentinels for automatic failover.",
+            "Valkey Cluster shards data across nodes using 16,384 hash slots — ideal for datasets larger than single-node RAM.",
+            "ACLs replace the old single-password model — create users with specific command and key permissions.",
+            "Avoid KEYS *, FLUSHALL, and other dangerous commands in production — rename or disable them in valkey.conf.",
+            "Monitor performance with SLOWLOG, INFO commandstats, latency-monitor-threshold, and Prometheus/Grafana.",
+            "Design for failure — test failover scenarios, practice disaster recovery, and always have a backup strategy."
+          ]
+        },
+        {
+          "label": "Production Readiness Checklist",
+          "text": [
+            "☐ ACLs implemented (No default user access) — Use ACL SETUSER, not just requirepass",
+            "☐ ACL file persisted to disk — Set aclfile in valkey.conf and run ACL SAVE",
+            "☐ Bind to specific interfaces — Never 0.0.0.0 in production",
+            "☐ Configure protected-mode yes",
+            "☐ Rename or disable dangerous commands (FLUSHALL, FLUSHDB, CONFIG, DEBUG, SHUTDOWN)",
+            "☐ Set maxmemory with appropriate eviction policy",
+            "☐ Enable persistence (hybrid RDB + AOF recommended)",
+            "☐ Set up replication with at least 2 replicas",
+            "☐ Configure Sentinel (3+ instances) for automatic failover",
+            "☐ Set up Prometheus valkey_exporter + Grafana monitoring",
+            "☐ Configure slowlog-log-slower-than and monitor regularly",
+            "☐ Set up automated backups (RDB snapshots) with retention policy",
+            "☐ Test backup restoration procedure",
+            "☐ TLS/SSL enabled (for remote/cloud connections)",
+            "☐ Disable Transparent Huge Pages (THP) on the host OS",
+            "☐ Set vm.overcommit_memory=1 in sysctl",
+            "☐ Increase max open files (ulimit -n 65536) for high-traffic deployments",
+            "☐ Use connection pooling in application clients",
+            "☐ Implement circuit breakers for Valkey connection failures",
+            "☐ Document key naming conventions (app:module:entity:id:field)",
+            "☐ Set up alerts for: replication lag, memory pressure, OOM errors, failover events",
+            "☐ Review SLOWLOG weekly — identify and optimize slow queries",
+            "☐ Conduct failover drills quarterly",
+            "☐ Test failover (Manual test of Sentinel/Cluster)",
+            "☐ Keep Valkey version up to date (subscribe to security advisories)"
+          ]
+        },
+        {
+          "label": "Next Steps",
+          "text": [
+            "1. Install Valkey or Valkey locally and work through every command in this guide — hands-on practice is the best teacher.",
+            "2. Build a caching layer — Add Valkey caching to an existing application. Monitor the cache hit ratio improvement.",
+            "3. Implement a real-time leaderboard — Use Sorted Sets for a game or application that needs ranked data.",
+            "4. Set up Valkey Sentinel — Configure 3 Sentinels and practice killing the master to test automatic failover.",
+            "5. Deploy Valkey Cluster — Start with 6 nodes (3 masters + 3 replicas) and practice resharding.",
+            "6. Migrate to Valkey — Test Valkey 9.x as a drop-in replacement and explore its built-in search features.",
+            "7. Monitor and optimize — Set up Prometheus/Grafana monitoring. Tune the slow log, eviction policy, and memory settings based on real metrics.",
+            "8. Explore Redis Stack — Add RedisJSON for document storage and RediSearch for full-text search in your application.",
+            "9. Implement a message queue — Use Valkey Streams with consumer groups to build a reliable task processing pipeline.",
+            "10. Go deeper — Read the Valkey documentation at redis.io/docs, explore the Valkey project at valkey.io, and study the source code to understand the internals."
+          ]
+        },
+        {
+          "label": "Further Reading & Resources",
+          "text": [
+            "Official Documentation: redis.io/docs — The authoritative reference for all commands, configuration, and patterns",
+            "Valkey Project: valkey.io — Official Valkey documentation and migration guides",
+            "Redis Stack: redis.io/about/redis-stack — RedisJSON, RediSearch, RedisTimeSeries, RedisBloom modules",
+            "Valkey in Action (Book): manning.com/books/redis-in-action — The classic Valkey book by Josiah L. Carlson",
+            "Valkey University: university.redis.com — Free online courses from basics to advanced",
+            "GitHub: github.com/redis/redis — Valkey source code",
+            "GitHub: github.com/valkey-io/valkey — Valkey source code",
+            "Awesome Valkey: github.com/JamzyWang/awesome-redis — Curated list of Valkey resources, tools, and libraries",
+            "Valkey Client Libraries: redis.io/resources/clients — Official and community client libraries for all programming languages"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quick-reference",
+      "title": "Quick Command Reference",
+      "description": "Handy shortcuts for day-to-day Valkey operations.",
+      "items": [
+        {
+          "label": "Useful Shortcuts Summary",
+          "table": {
+            "headers": [
+              "Task",
+              "Command"
+            ],
+            "rows": [
+              [
+                "Test connection",
+                "valkey-cli PING"
+              ],
+              [
+                "Server info",
+                "valkey-cli INFO"
+              ],
+              [
+                "List all keys",
+                "valkey-cli KEYS *"
+              ],
+              [
+                "Flush current DB",
+                "valkey-cli FLUSHDB"
+              ],
+              [
+                "Flush ALL databases",
+                "valkey-cli FLUSHALL"
+              ],
+              [
+                "Save snapshot",
+                "valkey-cli BGSAVE"
+              ],
+              [
+                "Reload config",
+                "valkey-cli CONFIG REWRITE"
+              ],
+              [
+                "Shutdown gracefully",
+                "valkey-cli SHUTDOWN SAVE"
+              ]
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
