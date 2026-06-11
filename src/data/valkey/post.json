@@ -1,10 +1,10 @@
 {
   "title": "Valkey: The Complete A–Z Guide",
   "icon": "⚡",
-  "description": "A comprehensive end-to-end guide to Valkey — from fundamentals to production. Covers installation (official + Percona repos), all data types and commands, persistence, replication, high availability, security (ACL/TLS), performance tuning, Valkey 9.x built-in search, use cases (caching, sessions, rate limiting, queues, leaderboards), Docker deployment, monitoring with Prometheus/Grafana, backups, troubleshooting, and production best practices — for beginners and advanced users alike.",
+  "description": "A comprehensive end-to-end guide to Valkey — from fundamentals to production. Covers installation (official + Percona repos), all data types and commands, persistence, replication, high availability (HA overview comparing Sentinel vs Cluster), Sentinel deployment (automatic failover), Cluster mode (horizontal scaling), security (ACL/TLS), performance tuning, Valkey 9.x built-in search, use cases (caching, sessions, rate limiting, queues, leaderboards), Docker deployment, monitoring with Prometheus/Grafana, backups, troubleshooting, and production best practices — for beginners and advanced users alike.",
   "author": "E-Learning Platform",
   "date": "2026-06-08",
-  "readTime": "35 min read",
+  "readTime": "40 min read",
   "heroImage": "/images/valkey-hero.svg",
   "heroAlt": "Valkey architecture diagram showing data types (Strings, Lists, Sets, Sorted Sets, Hashes, Streams), production infrastructure with master-replica-Sentinel-Cluster, and use cases including caching, sessions, rate limiting, and queues",
   "sections": [
@@ -288,13 +288,161 @@
       ]
     },
     {
+      "id": "high-availability-overview",
+      "title": "High Availability Overview: Sentinel vs Cluster",
+      "description": "Understanding the two approaches to Valkey high availability — Sentinel (automatic failover) and Cluster (horizontal scaling with sharding) — and when to use each.",
+      "items": [
+        {
+          "label": "Two Paths to High Availability",
+          "text": "Valkey offers **two distinct methods** for achieving high availability. Choosing the right one depends on your dataset size, scaling needs, and operational complexity tolerance."
+        },
+        {
+          "label": "Comparison: Sentinel vs Cluster",
+          "table": {
+            "headers": [
+              "Aspect",
+              "Sentinel Mode",
+              "Cluster Mode"
+            ],
+            "rows": [
+              [
+                "Purpose",
+                "Automatic failover when master goes down",
+                "Horizontal scaling + automatic failover"
+              ],
+              [
+                "Data distribution",
+                "All nodes hold full dataset",
+                "Data is sharded across nodes (16,384 hash slots)"
+              ],
+              [
+                "Max dataset size",
+                "Limited by single node RAM",
+                "Effectively unlimited (add nodes to scale)"
+              ],
+              [
+                "Write throughput",
+                "Single master (vertical scaling)",
+                "Multi-master (horizontal scaling)"
+              ],
+              [
+                "Complexity",
+                "Lower — simpler to set up and operate",
+                "Higher — requires cluster-aware clients"
+              ],
+              [
+                "Minimum nodes",
+                "2 (1 master + 1 replica) + 3 Sentinels",
+                "6 (3 masters + 3 replicas) for full HA"
+              ],
+              [
+                "Multi-key operations",
+                "Fully supported (single node)",
+                "Limited to same hash slot"
+              ],
+              [
+                "Client support",
+                "Any Valkey client",
+                "Cluster-aware clients required"
+              ],
+              [
+                "Best for",
+                "Moderate datasets, simpler ops, existing apps",
+                "Large datasets, high write volume, elastic scaling"
+              ]
+            ]
+          }
+        },
+        {
+          "label": "When to Use Sentinel vs Cluster",
+          "text": [
+            "Use Sentinel mode when:",
+            "• Your entire dataset fits comfortably in a single server's RAM (e.g., < 64 GB)",
+            "• You want automatic failover with minimal operational complexity",
+            "• Your application needs full support for multi-key operations and transactions",
+            "• You're migrating from a standalone Valkey instance and want high availability with minimal changes",
+            "• You need Pub/Sub, Lua scripting, and other single-node features without restrictions",
+            "",
+            "Use Cluster mode when:",
+            "• Your dataset exceeds the RAM of a single server (e.g., > 64 GB and growing)",
+            "• You need to scale write throughput horizontally across multiple nodes",
+            "• You can design your data model around hash-tag-based key grouping",
+            "• Your client library supports cluster mode (MOVED/ASK redirects)",
+            "• You need both high availability AND elastic scalability together",
+            "",
+            "Can you combine both? No — they are mutually exclusive. Sentinel manages failover for a master-replica setup. Cluster has its own built-in failover mechanism using gossip protocol and node voting. You don't run Sentinel on top of a Cluster."
+          ]
+        },
+        {
+          "label": "Quick Decision Flowchart",
+          "code": "Is your dataset larger than a single server's RAM?\n├── YES → Use Cluster Mode (or consider caching/CDN)\n└── NO  → Do you need automatic failover?\n        ├── YES → Use Sentinel Mode\n        └── NO  → Standalone + Replication is enough"
+        }
+      ]
+    },
+    {
       "id": "sentinel",
-      "title": "High Availability with Sentinel",
-      "description": "Automatic failover, monitoring, and notification with Valkey Sentinel.",
+      "title": "Method 1 — Sentinel: Automatic Failover",
+      "description": "How Valkey Sentinel provides automatic failover, monitoring, and notification for master-replica deployments.",
       "items": [
         {
           "label": "What is Valkey Sentinel?",
           "text": "Valkey Sentinel is a distributed system that provides high availability for Valkey. At minimum, you need 3 Sentinel processes (odd number for quorum) that monitor your Valkey instances and perform automatic failover if the master becomes unavailable.\n\nSentinel capabilities:\n• Monitoring — Constantly checks if master and replicas are working\n• Notification — Alerts system administrators via API when something goes wrong\n• Automatic failover — If a master fails, Sentinel promotes a replica to master and reconfigures other replicas to follow the new master\n• Configuration provider — Clients can query Sentinel for the current master address\n\nSentinel uses a quorum (majority) to make decisions. With 3 Sentinels, you need at least 2 to agree that the master is down before initiating a failover."
+        },
+        {
+          "label": "3-VM Configuration Breakdown",
+          "text": "When deploying Valkey Sentinel across 3 virtual machines, you need to decide which VM acts as the **master** and which as **replicas**. The table below shows the exact breakdown of which configuration file goes on which VM. The same  is used on all three nodes.\n\n**Key rules:**\n• **Master VM** (VM 1, 192.168.68.200):  — NO `replicaof` line. Includes `masterauth` so it can authenticate if it later becomes a replica after a failover.\n• **Replica VMs** (VM 2, 192.168.68.201 & VM 3, 192.168.68.202):  — MUST have `replicaof 192.168.68.200 6379` pointing to the master.\n• **All 3 VMs**: Identical  — Sentinel runs on every node.\n• **Authentication**: Use the same `requirepass` and `masterauth` password on all nodes (`nepo123` in this example).\n• **Quorum**: Set to 2 (majority of 3 Sentinels).",
+          "table": {
+            "headers": [
+              "Component",
+              "VM 1 (192.168.68.200)",
+              "VM 2 (192.168.68.201)",
+              "VM 3 (192.168.68.202)"
+            ],
+            "rows": [
+              [
+                "Valkey Role",
+                "Master (read/write)",
+                "Replica (read-only)",
+                "Replica (read-only)"
+              ],
+              [
+                "valkey.conf",
+                "Master config (no replicaof)",
+                "Replica config (replicaof .200)",
+                "Replica config (replicaof .200)"
+              ],
+              [
+                "sentinel.conf",
+                "Same as all nodes",
+                "Same as all nodes",
+                "Same as all nodes"
+              ],
+              [
+                "requirepass",
+                "nepo123",
+                "nepo123",
+                "nepo123"
+              ],
+              [
+                "masterauth",
+                "nepo123",
+                "nepo123",
+                "nepo123"
+              ],
+              [
+                "Port (Valkey)",
+                "6379",
+                "6379",
+                "6379"
+              ],
+              [
+                "Port (Sentinel)",
+                "26379",
+                "26379",
+                "26379"
+              ]
+            ]
+          }
         },
         {
           "label": "Sentinel Configuration",
@@ -307,9 +455,43 @@
       ]
     },
     {
+      "id": "production-ha-sentinel",
+      "title": "Method 1 — Sentinel: Production Deployment Walkthrough",
+      "description": "A complete real-world walkthrough of building a production-ready Sentinel-based HA cluster — covering topology, configuration files, troubleshooting real issues, and verification commands.",
+      "items": [
+        {
+          "label": "Architecture Topology",
+          "text": "This deployment uses a three-node topology with three Sentinel instances to provide automatic failover. All nodes live on the same private subnet (192.168.68.0/24) and use shared global authentication.\n\nNode Layout:\n- Master: 192.168.68.200:6379\n- Replica 1: 192.168.68.201:6379\n- Replica 2: 192.168.68.202:6379 (ready for deployment)\n- Sentinel 1-3: 192.168.68.200-202:26379\n\nGlobal Authentication:\n  Database password (requirepass): nepo123\n  Inter-node replication password (masterauth): nepo123\n\nSentinel Quorum: 2 (out of 3 Sentinels must agree the master is down before failover initiates)"
+        },
+        {
+          "label": "Master Node Configuration",
+          "text": "The Master server acts as the primary read/write entry point. It has no `replicaof` line initially but includes `masterauth` so it can cleanly authenticate if it ever reboots as a replica after a failover event.",
+          "code": "# /etc/valkey/valkey.conf on 192.168.68.200 — Master Node\n\n# Network & Security\nbind 0.0.0.0\nprotected-mode yes\nport 6379\ntcp-backlog 511\ntimeout 0\ntcp-keepalive 300\n\n# Process & Logging\ndaemonize no\npidfile /var/run/valkey_6379.pid\nloglevel notice\nlogfile \"\"\ndatabases 16\n\n# Snapshotting & Storage\nstop-writes-on-bgsave-error yes\nrdbcompression yes\nrdbchecksum yes\ndbfilename dump.rdb\ndir /var/lib/valkey\n\n# Replication Settings\nreplica-serve-stale-data yes\nreplica-read-only yes\nrepl-diskless-sync yes\nrepl-diskless-sync-delay 5\nrepl-backlog-size 100mb\nrepl-backlog-ttl 3600\nreplica-priority 100\n\n# Authentication:\nrequirepass nepo123\nmasterauth nepo123"
+        },
+        {
+          "label": "Replica Node Configuration",
+          "text": "Replicas mirror the master in real-time and are explicitly locked to read-only mode to prevent application data divergence.",
+          "code": "# /etc/valkey/valkey.conf on 192.168.68.201 & 192.168.68.202 — Replica Nodes\n\n# Network & Security (Matches Master)\nbind 0.0.0.0\nprotected-mode yes\nport 6379\n\ndaemonize no\npidfile /var/run/valkey_6379.pid\ndir /var/lib/valkey\n\n# Active Replication Target\nreplicaof 192.168.68.200 6379\n\n# Replication Settings\nreplica-serve-stale-data yes\nreplica-read-only yes\nrepl-diskless-sync yes\nrepl-diskless-sync-delay 5\nrepl-backlog-size 100mb\n\n# Authentication\nrequirepass nepo123\nmasterauth nepo123"
+        },
+        {
+          "label": "Sentinel Configuration",
+          "text": "The Sentinel processes monitor the cluster layout and handle automated master promotion during crashes. This file must be identical across all three nodes.",
+          "code": "# /etc/valkey/sentinel.conf — Identical on all three nodes\n\nport 26379\nprotected-mode no\ndaemonize no\npidfile /var/run/valkey-sentinel.pid\ndir /var/lib/valkey\n\n# Monitor Target (Name, IP, Port, Quorum)\nsentinel monitor mymaster 192.168.68.200 6379 2\nsentinel auth-pass mymaster nepo123\n\n# Failover Timers\nsentinel down-after-milliseconds mymaster 10000\nsentinel failover-timeout mymaster 30000\nsentinel parallel-syncs mymaster 1\nsentinel deny-scripts-reconfig yes"
+        },
+        {
+          "label": "Troubleshooting Real Deployment Issues",
+          "text": "During this deployment several issues were encountered and resolved. These are the exact steps taken to get the cluster healthy.\n\n1. Read-Only Verification\nConfirmed replica status via `valkey-cli INFO replication`, locating the `slave_read_only:1` key to verify replicas are properly locked to read-only.\n\n2. Sentinel Immediate Crashes (status=1/FAILURE)\nSentinel strictly aborts if a `sentinel notification-script` path is declared in the configuration file but the physical script file does not exist or lacks executable permissions. Resolved by stripping out the empty script declaration line.\n\n3. File System Permissions\nAddressed file system blockages by enforcing ownership: `sudo chown -R valkey:valkey /etc/valkey /var/lib/valkey`.\n\n4. Ghost Node Connection State (127.0.0.1 vs Real IP)\nDiscovered Sentinel rewriting itself to 127.0.0.1 due to default values being applied on first run. Solved by stopping the service, resetting raw text parameters to target 192.168.68.200, and flushing memory cache.\n\n5. Replica Communication Isolation (s_down and master-link-status: err)\nA major cluster block was caused by `min-replicas-to-write 1` being active during the initial setup phase when replicas had not yet synced. Commented out the threshold variable to allow successful initial handshakes.\n\n6. Relative Path Issues\nReplaced relative path designations (`dir ./`) with strict absolute path models (`dir /var/lib/valkey`) to bypass permissions limits."
+        },
+        {
+          "label": "Verification & Status Commands",
+          "code": "# Check master cluster parameters from any Sentinel node\nuser@server:~$ valkey-cli -p 26379 SENTINEL master mymaster\n# Expected: flags: master, num-slaves: 1+\n\n# Check real-time replication stream conditions from replicas\nuser@server:~$ valkey-cli -p 26379 SENTINEL replicas mymaster\n# Expected: flags: slave, master-link-status: ok, master-host: 192.168.68.200\n\n# Force Sentinel to re-scan and discard stale cached node definitions\nuser@server:~$ valkey-cli -p 26379 SENTINEL RESET mymaster"
+        }
+      ]
+    },
+    {
       "id": "cluster",
-      "title": "Cluster Mode — Horizontal Scaling",
-      "description": "Sharding data across multiple Valkey nodes for datasets larger than a single server's RAM.",
+      "title": "Method 2 — Cluster: Horizontal Scaling & Sharding",
+      "description": "Sharding data across multiple Valkey nodes with built-in failover — for datasets that exceed a single server's RAM.",
       "items": [
         {
           "label": "What is Valkey Cluster?",
@@ -317,7 +499,12 @@
         },
         {
           "label": "Setting Up Valkey Cluster",
-          "code": "# 1. Configure each node (valkey.conf)\n# =====================================\nport 7000\ncluster-enabled yes\ncluster-config-file nodes-7000.conf\ncluster-node-timeout 5000\nappendonly yes\ndaemonize no\n\n# Repeat for nodes 7000-7005 (6 nodes: 3 masters + 3 replicas)\n\n# 2. Start all nodes\nuser@server:~$ valkey-server /etc/valkey/7000.conf &\nuser@server:~$ valkey-server /etc/valkey/7001.conf &\nuser@server:~$ valkey-server /etc/valkey/7002.conf &\nuser@server:~$ valkey-server /etc/valkey/7003.conf &\nuser@server:~$ valkey-server /etc/valkey/7004.conf &\nuser@server:~$ valkey-server /etc/valkey/7005.conf &\n\n# 3. Create the cluster\nuser@server:~$ valkey-cli --cluster create \\\n  127.0.0.1:7000 127.0.0.1:7001 127.0.0.1:7002 \\\n  127.0.0.1:7003 127.0.0.1:7004 127.0.0.1:7005 \\\n  --cluster-replicas 1  # 1 replica per master\n\n# Output:\n>>> Performing hash slots allocation on 6 nodes...\nMaster[0] -> Slots 0 - 5460\nMaster[1] -> Slots 5461 - 10922\nMaster[2] -> Slots 10923 - 16383\nAdding replica 127.0.0.1:7004 to 127.0.0.1:7000\nAdding replica 127.0.0.1:7005 to 127.0.0.1:7001\nAdding replica 127.0.0.1:7003 to 127.0.0.1:7002\n>>> Performing Cluster Check (using node 127.0.0.1:7000)\nM: abc... 127.0.0.1:7000\n   slots:[0-5460] (5461 slots) master\nS: def... 127.0.0.1:7004\n   replicates abc...\nM: ghi... 127.0.0.1:7001\n   slots:[5461-10922] (5462 slots) master\n...\n[OK] All 16384 slots covered\n\n# 4. Connect with cluster mode\nuser@server:~$ valkey-cli -c -p 7000\n127.0.0.1:7000> SET user:1000 \"Alice\"\n-> Redirected to slot [1234] located at 127.0.0.1:7002\nOK\n127.0.0.1:7002> GET user:1000\n\"Alice\""
+          "code": "# 1. Create directory structure for each node\n# You can use any ports you like (7000-7005 in this example).\n# Just update the port numbers in the loops below.\nuser@server:~$ \nmkdir -p ~/cluster-test\ncd ~/cluster-test\nmkdir 7000 7001 7002 7003 7004 7005\n\n# 2. Generate config files for all 6 nodes using a loop\nuser@server:~$ \nfor port in 7000 7001 7002 7003 7004 7005; do\ncat > ~/cluster-test/$port/valkey.conf <<EOF\nport $port\nbind 0.0.0.0\nprotected-mode no\n\ncluster-enabled yes\ncluster-config-file nodes-$port.conf\ncluster-node-timeout 5000\n\nappendonly yes\ndaemonize no\n\ndir $HOME/cluster-test/$port\nEOF\ndone\n\n# 3. Start all Valkey instances (background with logging)\nuser@server:~$ \nfor port in 7000 7001 7002 7003 7004 7005; do\n  nohup valkey-server ~/cluster-test/$port/valkey.conf \\\n  > ~/cluster-test/$port/valkey.log 2>&1 &\ndone\n\n# 4. Verify all nodes are listening\nuser@server:~$ ss -tuln | grep 700\n\n# 5. Create the cluster (3 masters + 3 replicas, 1 replica per master)\nuser@server:~$ \nvalkey-cli --cluster create \\\n  127.0.0.1:7000 127.0.0.1:7001 127.0.0.1:7002 \\\n  127.0.0.1:7003 127.0.0.1:7004 127.0.0.1:7005 \\\n  --cluster-replicas 1\n\n# Output:\n>>> Performing hash slots allocation on 6 nodes...\nMaster[0] -> Slots 0 - 5460\nMaster[1] -> Slots 5461 - 10922\nMaster[2] -> Slots 10923 - 16383\nAdding replica 127.0.0.1:7004 to 127.0.0.1:7000\nAdding replica 127.0.0.1:7005 to 127.0.0.1:7001\nAdding replica 127.0.0.1:7003 to 127.0.0.1:7002\n>>> Performing Cluster Check (using node 127.0.0.1:7000)\nM: abc... 127.0.0.1:7000\n   slots:[0-5460] (5461 slots) master\nS: def... 127.0.0.1:7004\n   replicates abc...\nM: ghi... 127.0.0.1:7001\n   slots:[5461-10922] (5462 slots) master\n...\n[OK] All 16384 slots covered\n\n# 6. Connect with cluster mode\nuser@server:~$ valkey-cli -c -p 7000\n127.0.0.1:7000> SET user:1000 \"Alice\"\n-> Redirected to slot [1234] located at 127.0.0.1:7002\nOK\n127.0.0.1:7002> GET user:1000\n\"Alice\""
+        },
+        {
+          "label": "Failover Test",
+          "text": "Testing automatic failover in Valkey Cluster validates that your cluster is truly resilient. Here's how to simulate a master failure and verify that a replica promotes automatically.\n\n1. **Find the master process for port 7000** — the first master node:\n```bash\nps aux | grep valkey | grep 7000\n# Note the PID (e.g., 4031)\n```\n\n2. **Kill the master process** — simulate a crash:\n```bash\nkill -9 <PID>\n# Replace <PID> with the actual process ID\n```\n\n3. **Wait a few seconds** — the cluster detects the failure via gossip protocol and initiates failover. One of the replicas (usually 7004, which was replicating 7000) will promote itself to master.\n\n4. **Verify the promotion** — check which node is now the master for slot range 0-5460:\n```bash\nvalkey-cli -p 7004 cluster nodes\n# You should see 127.0.0.1:7004 listed as 'master' with slots assigned\n```\n\nThat's the power of Valkey Cluster — no manual intervention needed. The cluster self-heals by promoting a replica.",
+          "code": "# Step 1: Find the master PID for port 7000\nuser@server:~$ ps aux | grep valkey | grep 7000\nuser         4031  ...  valkey-server *:7000\n\n# Step 2: Kill the master (simulate crash)\nuser@server:~$ kill -9 4031\n\n# Step 3: Wait a few seconds (at least cluster-node-timeout) for failover to complete\nuser@server:~$ sleep 5\n\n# Step 4: Verify promotion — check 7004 (former replica of 7000)\nuser@server:~$ valkey-cli -p 7004 cluster nodes\n# Expected: 127.0.0.1:7004 is now 'master' with slots 0-5460,\n# and it no longer shows 'slave' next to its node ID"
         },
         {
           "label": "Cluster Management Commands",
@@ -376,17 +563,47 @@
         {
           "label": "ACL Rule Cheatsheet",
           "table": {
-            "headers": ["Rule", "Meaning"],
+            "headers": [
+              "Rule",
+              "Meaning"
+            ],
             "rows": [
-              ["on / off", "Enable or disable the user"],
-              [">password", "Set the user's password"],
-              ["~*", "Access all keys"],
-              ["~cache:*", "Access only keys starting with 'cache:'"],
-              ["+@all", "Allow all commands"],
-              ["+@read", "Allow all read commands"],
-              ["-@dangerous", "Block dangerous commands (e.g., FLUSHALL, DEBUG)"],
-              ["&*", "Access all pub/sub channels"],
-              ["nopass", "No password required (dev only)"]
+              [
+                "on / off",
+                "Enable or disable the user"
+              ],
+              [
+                ">password",
+                "Set the user's password"
+              ],
+              [
+                "~*",
+                "Access all keys"
+              ],
+              [
+                "~cache:*",
+                "Access only keys starting with 'cache:'"
+              ],
+              [
+                "+@all",
+                "Allow all commands"
+              ],
+              [
+                "+@read",
+                "Allow all read commands"
+              ],
+              [
+                "-@dangerous",
+                "Block dangerous commands (e.g., FLUSHALL, DEBUG)"
+              ],
+              [
+                "&*",
+                "Access all pub/sub channels"
+              ],
+              [
+                "nopass",
+                "No password required (dev only)"
+              ]
             ]
           }
         },
