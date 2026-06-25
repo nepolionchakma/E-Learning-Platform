@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" fill="none">
+  <rect width="1200" height="630" fill="#0f172a"/>
+  <defs>
+    <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="50%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#ec4899"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(99,102,241,0.2)"/>
+      <stop offset="100%" stop-color="rgba(99,102,241,0)"/>
+    </linearGradient>
+  </defs>
+  <rect x="50" y="50" width="1100" height="530" rx="24" fill="url(#g2)" stroke="rgba(99,102,241,0.3)" stroke-width="2"/>
+  <!-- Shield icon -->
+  <g transform="translate(600,180)">
+    <path d="M0-80L120-40V60C120 180 60 260 0 300-60 260-120 180-120 60V-40L0-80Z" fill="url(#g1)" opacity="0.15"/>
+    <path d="M0-60L90-25V50C90 145 45 210 0 240-45 210-90 145-90 50V-25L0-60Z" fill="url(#g1)" opacity="0.3"/>
+    <path d="M0-40L60-10V40C60 110 30 160 0 180-30 160-60 110-60 40V-10L0-40Z" fill="url(#g1)"/>
+    <!-- Checkmark -->
+    <path d="M-20 40L-8 55 20 20" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <!-- Header text -->
+  <text x="600" y="420" text-anchor="middle" fill="#fff" font-family="system-ui,sans-serif" font-size="56" font-weight="700">NGINX Security Headers</text>
+  <text x="600" y="470" text-anchor="middle" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="24">The Complete Guide to Hardening Your Web Server</text>
+  <!-- Decorative elements -->
+  <circle cx="150" cy="150" r="4" fill="#6366f1" opacity="0.6"/>
+  <circle cx="1050" cy="500" r="3" fill="#ec4899" opacity="0.6"/>
+  <circle cx="200" cy="480" r="2" fill="#8b5cf6" opacity="0.4"/>
+  <circle cx="1000" cy="130" r="3" fill="#6366f1" opacity="0.5"/>
+  <!-- Code lines decoration -->
+  <g transform="translate(200,520)" opacity="0.2">
+    <rect x="0" y="0" width="800" height="40" rx="4" fill="#1e293b"/>
+    <rect x="20" y="10" width="200" height="4" rx="2" fill="#6366f1"/>
+    <rect x="240" y="10" width="300" height="4" rx="2" fill="#a78bfa"/>
+    <rect x="560" y="10" width="80" height="4" rx="2" fill="#f472b6"/>
+    <rect x="660" y="10" width="120" height="4" rx="2" fill="#34d399"/>
+  </g>
+</svg>

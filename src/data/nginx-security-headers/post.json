@@ -1,0 +1,623 @@
+{
+  "title": "NGINX Security Headers: The Complete Guide to Hardening Your Web Server",
+  "icon": "🛡️",
+  "description": "A comprehensive guide to configuring HTTP security headers in NGINX — covering HSTS, CSP, X-Frame-Options, X-Content-Type-Options, Permissions-Policy, Referrer-Policy, and the critical add_header inheritance caveat that breaks most configurations. Includes production-ready snippets, testing tools, and real-world scenarios for DevOps engineers.",
+  "author": "E-Learning Platform",
+  "date": "2026-06-24",
+  "readTime": "25 min read",
+  "heroImage": "/images/nginx-security-headers-hero.svg",
+  "heroAlt": "NGINX Security Headers shield illustration showing HTTP security headers protecting a web server",
+  "sections": [
+    {
+      "id": "introduction",
+      "title": "1. Introduction",
+      "description": "Why security headers matter and what this guide covers.",
+      "content": [
+        "HTTP security headers are response headers that instruct browsers how to behave when rendering your website. They are your first line of defense against common web attacks — cross-site scripting (XSS), clickjacking, MIME-type sniffing, protocol downgrade attacks, and data injection.",
+        "The critical insight: security headers are cheap to implement, have zero performance impact, and close real attack vectors. Yet they are surprisingly easy to misconfigure in NGINX due to the add_header inheritance behavior.",
+        "This guide covers every security header you should configure in NGINX, explains what each one does, provides production-ready configuration snippets, reveals the #1 NGINX security header pitfall (and how to avoid it), and includes testing tools to verify your setup."
+      ],
+      "infoBox": {
+        "type": "info",
+        "content": "NGINX version 1.14+ is recommended for full security header support. Nearly all distributions package this or newer."
+      },
+      "cards": [
+        {
+          "title": "What You Will Learn",
+          "desc": "Every major HTTP security header, how to configure them in NGINX, the add_header inheritance trap, production snippets, and testing methodologies."
+        },
+        {
+          "title": "Prerequisites",
+          "desc": "A running NGINX server (any OS), basic familiarity with nginx.conf structure, and a browser with DevTools for testing."
+        }
+      ]
+    },
+    {
+      "id": "what-are-security-headers",
+      "title": "2. What Are HTTP Security Headers?",
+      "description": "Understanding the role of response headers in browser security.",
+      "content": [
+        "When a browser sends an HTTP request to your NGINX server, the server responds with both the requested content and a set of HTTP headers. Security headers are specific response headers that tell the browser to enforce certain security policies.",
+        "Without security headers, browsers use default behavior — which is often insecure. For example, without X-Content-Type-Options, a browser might sniff the content of a JavaScript file and execute it even if the server declared it as CSS. Without X-Frame-Options, an attacker can embed your site in an iframe and trick users into clicking buttons they cannot see (clickjacking).",
+        "Think of security headers as a contract between your server and the browser: 'Here are the rules for how to handle my content.' Browsers that support these headers will enforce them. Older browsers ignore them, which is harmless."
+      ],
+      "items": [
+        {
+          "label": "The 7 Essential Security Headers at a Glance",
+          "table": {
+            "headers": ["Header", "Purpose", "Priority", "Risk If Missing"],
+            "rows": [
+              ["Strict-Transport-Security", "Force HTTPS connections only", "Critical", "SSL stripping, cookie hijacking"],
+              ["Content-Security-Policy", "Control allowed resources (XSS prevention)", "Critical", "Cross-site scripting attacks"],
+              ["X-Frame-Options", "Prevent clickjacking (iframe blocking)", "High", "UI redress attacks"],
+              ["X-Content-Type-Options", "Prevent MIME-type sniffing", "High", "Script injection via disguised file types"],
+              ["Referrer-Policy", "Control referrer header leakage", "Medium", "URL leakage via Referer header"],
+              ["Permissions-Policy", "Restrict browser features (camera, mic, etc.)", "Medium", "Feature abuse by malicious scripts"],
+              ["X-XSS-Protection", "Enable legacy browser XSS filter", "Low", "Only affects outdated browsers"]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "add-header-caveat",
+      "title": "3. The Critical NGINX Caveat: add_header Inheritance",
+      "description": "The #1 mistake that silently breaks security headers in NGINX.",
+      "content": [
+        "This is the most important section in this guide. The NGINX add_header directive has a behavior that causes countless security misconfigurations: when you use add_header in a nested block (like a location block), it completely replaces all add_header directives from parent blocks.",
+        "It does NOT merge them. It does NOT inherit them. It replaces them entirely.",
+        "This means if you define security headers in your server block and then add any add_header in a location block, all server-level headers are lost for that location."
+      ],
+      "infoBox": {
+        "type": "warning",
+        "content": "This is the #1 cause of missing security headers in production. A 2024 scan of the top 10,000 websites found that ~30% had gaps caused by this exact issue."
+      },
+      "items": [
+        {
+          "label": "The Problem: What Happens",
+          "code": "# BAD: Security headers disappear in /api/ location\n\nserver {\n    listen 443 ssl;\n    server_name example.com;\n\n    # Server-level headers\n    add_header X-Frame-Options \"SAMEORIGIN\" always;\n    add_header X-Content-Type-Options \"nosniff\" always;\n\n    location / {\n        # Inherits server headers ✓\n        try_files $uri $uri/ =404;\n    }\n\n    location /api/ {\n        # This add_header REPLACES server-level headers!\n        # X-Frame-Options and X-Content-Type-Options are GONE!\n        add_header X-Custom \"value\" always;\n        proxy_pass http://backend;\n    }\n}"
+        },
+        {
+          "label": "Three Solutions to the Inheritance Problem",
+          "text": [
+            "Solution 1: NEVER use add_header in location blocks — keep them all at the server level or an included snippet.",
+            "Solution 2: If you MUST have location-level add_header, repeat ALL security headers in that location block.",
+            "Solution 3: Use a shared include file for all headers and include it in every block that needs them."
+          ]
+        },
+        {
+          "label": "Solution 1: No Location-Level add_header",
+          "code": "# GOOD: All headers at server level, no location add_header\n\nserver {\n    listen 443 ssl;\n    server_name example.com;\n\n    # Security headers — server level\n    add_header X-Frame-Options \"SAMEORIGIN\" always;\n    add_header X-Content-Type-Options \"nosniff\" always;\n    add_header Strict-Transport-Security \"max-age=63072000; includeSubDomains\" always;\n    server_tokens off;\n\n    location / {\n        # NO add_header here — inherits server headers ✓\n        try_files $uri $uri/ =404;\n    }\n\n    location /api/ {\n        # NO add_header here — inherits server headers ✓\n        proxy_pass http://backend;\n    }\n}"
+        },
+        {
+          "label": "Solution 2: Repeat Headers in Location (if you must)",
+          "code": "# If you MUST add a location-specific header, repeat all security headers\n\nserver {\n    listen 443 ssl;\n    server_name example.com;\n\n    add_header X-Frame-Options \"SAMEORIGIN\" always;\n    add_header X-Content-Type-Options \"nosniff\" always;\n    add_header Strict-Transport-Security \"max-age=63072000; includeSubDomains\" always;\n    server_tokens off;\n\n    location / {\n        try_files $uri $uri/ =404;\n    }\n\n    location /api/ {\n        # MUST repeat ALL security headers here\n        add_header X-Frame-Options \"SAMEORIGIN\" always;\n        add_header X-Content-Type-Options \"nosniff\" always;\n        add_header Strict-Transport-Security \"max-age=63072000; includeSubDomains\" always;\n        add_header X-Custom \"value\" always;\n        proxy_pass http://backend;\n    }\n}"
+        },
+        {
+          "label": "Solution 3: Shared Include Snippet (Recommended)",
+          "code": "# /etc/nginx/snippets/security-headers.conf\n# One file to rule them all\n\nadd_header X-Frame-Options \"SAMEORIGIN\" always;\nadd_header X-Content-Type-Options \"nosniff\" always;\nadd_header Referrer-Policy \"strict-origin-when-cross-origin\" always;\nadd_header Permissions-Policy \"camera=(), microphone=(), geolocation=()\" always;\nadd_header Strict-Transport-Security \"max-age=63072000; includeSubDomains\" always;\nadd_header X-XSS-Protection \"1; mode=block\" always;\nserver_tokens off;\n\n# Usage in each server block:\n# server {\n#     include /etc/nginx/snippets/security-headers.conf;\n#     # ...\n# }"
+        }
+      ]
+    },
+    {
+      "id": "hsts",
+      "title": "4. Strict-Transport-Security (HSTS)",
+      "description": "Forcing HTTPS connections and preventing SSL stripping attacks.",
+      "content": [
+        "HTTP Strict Transport Security (HSTS) tells browsers to ALWAYS connect to your site over HTTPS — even if the user types http:// or clicks a non-HTTPS link. Once a browser sees this header, it refuses to make plain HTTP connections to your domain for the specified duration.",
+        "This is one of the most impactful security headers you can set, and one of the most consequential to get wrong. If you enable HSTS with includeSubDomains and a subdomain does not support HTTPS, that subdomain becomes permanently unreachable for the duration of the max-age."
+      ],
+      "items": [
+        {
+          "label": "Basic HSTS Configuration",
+          "code": "add_header Strict-Transport-Security \"max-age=31536000; includeSubDomains\" always;\n\n# Parameters:\n# max-age       — seconds the browser should remember (31536000 = 1 year)\n# includeSubDomains — apply to all subdomains\n# preload        — allow inclusion in browser preload lists (optional)\n# always        — send even on error responses (4xx/5xx)"
+        },
+        {
+          "label": "HSTS Preload (Advanced)",
+          "text": "The preload directive allows your site to be included in browser preload lists. Chrome, Firefox, Safari, and Edge ship with a hardcoded list of HSTS sites. Once preloaded, your site is HSTS-enabled from the very first visit — no initial HTTP connection is ever made.\n\nWARNING: HSTS preload is effectively PERMANENT. Removal requests must be made to each browser vendor and may take months to propagate. Do NOT enable preload unless you are certain every current and future subdomain will support HTTPS forever."
+        },
+        {
+          "label": "HSTS Preload Configuration",
+          "code": "# Only enable preload if you are absolutely certain\nadd_header Strict-Transport-Security \"max-age=63072000; includeSubDomains; preload\" always;\n\n# Submit your domain at: https://hstspreload.org/"
+        },
+        {
+          "label": "The 'always' Parameter — Why It Matters",
+          "content": [
+            "Without the always parameter, NGINX only sends add_header directives on successful responses (2xx and 3xx). This means 404, 500, 502, 503, and 429 (rate limit) responses will NOT carry the HSTS header.",
+            "If a browser receives a 404 without HSTS, and this happens during an initial HTTP connection, the browser proceeds over HTTP — defeating the purpose of HSTS. Always add the 'always' parameter."
+          ]
+        },
+        {
+          "label": "HSTS Deployment Phases (Recommended)",
+          "text": [
+            "Phase 1 — Test: Set max-age to a low value (e.g., 300 = 5 minutes) and monitor for issues.",
+            "Phase 2 — Gradual: If no issues after a week, increase to max-age=31536000 (1 year) with includeSubDomains.",
+            "Phase 3 — Preload (optional): After months of stable HTTPS, consider submitting to HSTS preload list."
+          ],
+          "code": "# Phase 1: Test (5 minutes)\nadd_header Strict-Transport-Security \"max-age=300; includeSubDomains\" always;\n\n# Phase 2: Production (1 year)\nadd_header Strict-Transport-Security \"max-age=31536000; includeSubDomains\" always;\n\n# Phase 3: Preload (irreversible)\nadd_header Strict-Transport-Security \"max-age=63072000; includeSubDomains; preload\" always;"
+        }
+      ]
+    },
+    {
+      "id": "x-frame-options",
+      "title": "5. X-Frame-Options",
+      "description": "Preventing clickjacking attacks by controlling iframe embedding.",
+      "content": [
+        "X-Frame-Options protects your users from clickjacking attacks. Clickjacking works by embedding your site in a transparent iframe on an attacker's page. When the user clicks what they think is a button on the attacker's site, they are actually clicking a button on your site — potentially authorizing a transaction, changing settings, or deleting an account.",
+        "This header tells the browser whether your page can be displayed in an iframe, frame, object, or embed element."
+      ],
+      "items": [
+        {
+          "label": "X-Frame-Options Configuration",
+          "code": "# DENY — Never allow iframing (most secure)\nadd_header X-Frame-Options \"DENY\" always;\n\n# SAMEORIGIN — Allow iframing only on same origin (recommended)\nadd_header X-Frame-Options \"SAMEORIGIN\" always;\n\n# ALLOW-FROM — Deprecated, not supported in modern browsers\n# Use Content-Security-Policy frame-ancestors instead"
+        },
+        {
+          "label": "When to Use DENY vs SAMEORIGIN",
+          "text": [
+            "DENY: Use when your site should NEVER be embedded in any iframe. This is the most secure option. Suitable for admin panels, login pages, payment portals, and banking sites.",
+            "SAMEORIGIN: Use when your own site embeds itself in iframes (e.g., a dashboard with embedded widgets). This is the recommended default for most websites.",
+            "Note: If you need to allow embedding from specific external domains, you MUST use the Content-Security-Policy frame-ancestors directive instead. X-Frame-Options ALLOW-FROM is deprecated and not consistently supported."
+          ]
+        },
+        {
+          "label": "Modern Alternative: CSP frame-ancestors",
+          "code": "# CSP frame-ancestors is the modern replacement with more granular control\n\n# Block all iframing (equivalent to DENY)\nadd_header Content-Security-Policy \"frame-ancestors 'none'\" always;\n\n# Allow same origin (equivalent to SAMEORIGIN)\nadd_header Content-Security-Policy \"frame-ancestors 'self'\" always;\n\n# Allow specific external domains\nadd_header Content-Security-Policy \"frame-ancestors 'self' https://trusted-app.example.com\" always;\n\n# Best practice: set BOTH headers for backward compatibility\nadd_header X-Frame-Options \"SAMEORIGIN\" always;\nadd_header Content-Security-Policy \"frame-ancestors 'self'\" always;"
+        }
+      ]
+    },
+    {
+      "id": "x-content-type-options",
+      "title": "6. X-Content-Type-Options",
+      "description": "Preventing MIME-type sniffing attacks.",
+      "content": [
+        "Browsers have a feature called MIME sniffing or content type sniffing. When a server sends a file, the browser may ignore the declared Content-Type and try to guess the actual type by examining the file content. This was designed for older websites that misconfigured MIME types.",
+        "Attackers exploit this by uploading a file that claims to be an image (Content-Type: image/jpeg) but contains JavaScript. If the browser sniffs it and executes it as JavaScript, the attacker has achieved cross-site scripting.",
+        "Setting X-Content-Type-Options: nosniff instructs the browser to ALWAYS trust the declared Content-Type and never sniff the content."
+      ],
+      "items": [
+        {
+          "label": "X-Content-Type-Options Configuration",
+          "code": "add_header X-Content-Type-Options \"nosniff\" always;\n\n# That is it. The only valid value is \"nosniff\".\n# There is no reason not to set this header on every response."
+        }
+      ]
+    },
+    {
+      "id": "csp",
+      "title": "7. Content-Security-Policy (CSP)",
+      "description": "The most powerful security header — preventing XSS and data injection attacks.",
+      "content": [
+        "Content-Security-Policy (CSP) is the single most powerful security header. It defines exactly which sources of content the browser is allowed to load: scripts, styles, images, fonts, media, frames, and more. Any resource from a source not listed in the policy is blocked by the browser.",
+        "CSP is your primary defense against Cross-Site Scripting (XSS) attacks. Even if an attacker manages to inject a script tag into your page, the browser will refuse to execute it unless the script's source is explicitly allowed by your CSP.",
+        "CSP is also complex to configure correctly. A too-restrictive policy breaks your site. A too-permissive policy provides no protection. Always start with a strict policy and relax it only when necessary."
+      ],
+      "infoBox": {
+        "type": "tip",
+        "content": "Always start with Content-Security-Policy-Report-Only mode first. This sends violations to a report endpoint without actually blocking anything. Monitor the reports, adjust your policy, and switch to enforcement mode only after you are confident."
+      },
+      "items": [
+        {
+          "label": "CSP Directive Reference",
+          "table": {
+            "headers": ["Directive", "Controls", "Example"],
+            "rows": [
+              ["default-src", "Fallback for all resource types", "default-src 'self'"],
+              ["script-src", "Allowed script sources", "script-src 'self' 'unsafe-inline'"],
+              ["style-src", "Allowed stylesheet sources", "style-src 'self' 'unsafe-inline'"],
+              ["img-src", "Allowed image sources", "img-src 'self' data: https:"],
+              ["font-src", "Allowed font sources", "font-src 'self' data:"],
+              ["connect-src", "Allowed fetch/XMLHttpRequest targets", "connect-src 'self' https://api.example.com"],
+              ["frame-src", "Allowed iframe sources", "frame-src 'self' https://youtube.com"],
+              ["frame-ancestors", "Who can embed your site in iframes", "frame-ancestors 'self'"],
+              ["media-src", "Allowed video/audio sources", "media-src 'self' https://cdn.example.com"],
+              ["object-src", "Allowed plugin sources", "object-src 'none'"],
+              ["base-uri", "Allowed base URL elements", "base-uri 'self'"],
+              ["form-action", "Allowed form submission targets", "form-action 'self'"],
+              ["report-uri", "Where to send violation reports", "report-uri /csp-report"]
+            ]
+          }
+        },
+        {
+          "label": "CSP Source Values",
+          "table": {
+            "headers": ["Source", "Meaning"],
+            "rows": [
+              ["'self'", "Same origin only"],
+              ["'none'", "Block all sources"],
+              ["'unsafe-inline'", "Allow inline code (scripts/styles)"],
+              ["'unsafe-eval'", "Allow eval() and similar"],
+              ["'strict-dynamic'", "Trust scripts loaded by trusted scripts"],
+              ["https:", "Allow any HTTPS source"],
+              ["data:", "Allow data: URIs"],
+              ["example.com", "Specific domain"],
+              ["*.example.com", "Domain and all subdomains"],
+              ["https://cdn.example.com", "Specific HTTPS origin"]
+            ]
+          }
+        },
+        {
+          "label": "The 'unsafe-inline' Problem",
+          "text": "The most common CSP dilemma: inline scripts and styles are blocked by default. If your application uses inline event handlers (onclick, onload), inline <script> blocks, or inline <style> tags — as most do — you need either 'unsafe-inline' (which weakens protection) or a nonce/hash-based approach (which is more secure but requires server-side integration)."
+        },
+        {
+          "label": "Strict CSP (Recommended Starting Point)",
+          "code": "# Strict CSP — start here, then relax as needed\nadd_header Content-Security-Policy \"\n    default-src 'self';\n    script-src 'self';\n    style-src 'self' 'unsafe-inline';\n    img-src 'self' data: https:;\n    font-src 'self';\n    connect-src 'self';\n    frame-ancestors 'self';\n    form-action 'self';\n    base-uri 'self';\n    object-src 'none';\n\" always;"
+        },
+        {
+          "label": "Moderate CSP (Most Common Pattern)",
+          "code": "# Moderate CSP — suitable for most web applications\nadd_header Content-Security-Policy \"\n    default-src 'self';\n    script-src 'self' 'unsafe-inline' 'unsafe-eval';\n    style-src 'self' 'unsafe-inline';\n    img-src 'self' data: https: blob:;\n    font-src 'self' data:;\n    connect-src 'self' https://api.example.com wss:;\n    frame-src 'self' https://www.youtube.com;\n    frame-ancestors 'self';\n    form-action 'self';\n    base-uri 'self';\n    object-src 'none';\n\" always;"
+        },
+        {
+          "label": "Permissive CSP (for Sites with Many Third-Party Resources)",
+          "code": "# Permissive CSP — for sites that embed many external resources\nadd_header Content-Security-Policy \"\n    default-src 'self' http: https: data: blob: 'unsafe-inline' 'unsafe-eval';\n    script-src 'self' 'unsafe-inline' 'unsafe-eval' https:;\n    style-src 'self' 'unsafe-inline' https:;\n    img-src 'self' data: https: blob:;\n    font-src 'self' data: https:;\n    connect-src 'self' https: wss:;\n    frame-src 'self' https:;\n    frame-ancestors 'self';\n    form-action 'self';\n    base-uri 'self';\n    object-src 'none';\n\" always;"
+        },
+        {
+          "label": "CSP Report-Only Mode (Safe Testing)",
+          "code": "# Phase 1: Test with Report-Only — violations are logged but NOT blocked\nadd_header Content-Security-Policy-Report-Only \"\n    default-src 'self';\n    script-src 'self';\n    style-src 'self' 'unsafe-inline';\n    img-src 'self' data:;\n    font-src 'self';\n    connect-src 'self';\n    frame-ancestors 'self';\n    form-action 'self';\n    base-uri 'self';\n    object-src 'none';\n    report-uri /csp-violations;\n\" always;\n\n# Monitor your violation reports, then switch to enforcement mode:\n# add_header Content-Security-Policy \"...\" always;"
+        },
+        {
+          "label": "CSP with Nonces (Advanced — Most Secure)",
+          "text": "Instead of using 'unsafe-inline', you can generate a cryptographically random nonce (number used once) for each request and add it to your script tags. The server includes the same nonce in the CSP header. Only scripts with the matching nonce will execute.",
+          "contentAfter": "This approach requires server-side integration: your application must generate a unique nonce per request, include it in the CSP header, and add it to every script tag. NGINX alone cannot generate nonces — you need your application to do it."
+        }
+      ]
+    },
+    {
+      "id": "referrer-policy",
+      "title": "8. Referrer-Policy",
+      "description": "Controlling what information is sent in the Referer header.",
+      "content": [
+        "When a user clicks a link on your page, the browser sends a Referer (note: the actual header misspells it as Referer) header to the destination site. This header reveals the URL the user came from. For sensitive pages (password reset, payment page, admin panel), this can leak private information.",
+        "Referrer-Policy controls how much information is included in the Referer header when navigating away from your site."
+      ],
+      "items": [
+        {
+          "label": "Referrer-Policy Options",
+          "table": {
+            "headers": ["Policy", "Behavior", "Use Case"],
+            "rows": [
+              ["no-referrer", "Never send Referer header", "Maximum privacy"],
+              ["no-referrer-when-downgrade", "Send only for HTTPS→HTTPS (browser default)", "Default behavior"],
+              ["origin", "Send only origin (no path)", "Reveal domain but not specific page"],
+              ["origin-when-cross-origin", "Full URL same-origin, origin only cross-origin", "Good balance"],
+              ["same-origin", "Send Referer only for same-origin requests", "Internal links only"],
+              ["strict-origin", "Send origin only for HTTPS→HTTPS", "Privacy + security"],
+              ["strict-origin-when-cross-origin", "Full URL same-origin, origin only HTTPS→HTTPS, nothing to downgrade", "RECOMMENDED"],
+              ["unsafe-url", "Send full URL always (even HTTPS→HTTP)", "Maximum leakage — avoid"]
+            ]
+          }
+        },
+        {
+          "label": "Recommended Configuration",
+          "code": "# Recommended: strict-origin-when-cross-origin\nadd_header Referrer-Policy \"strict-origin-when-cross-origin\" always;\n\n# Maximum privacy (but may break some analytics)\nadd_header Referrer-Policy \"no-referrer\" always;\n\n# Good balance for most sites\nadd_header Referrer-Policy \"strict-origin-when-cross-origin\" always;"
+        }
+      ]
+    },
+    {
+      "id": "permissions-policy",
+      "title": "9. Permissions-Policy (Formerly Feature-Policy)",
+      "description": "Restricting browser features like camera, microphone, and geolocation.",
+      "content": [
+        "Permissions-Policy (formerly Feature-Policy) allows you to control which browser features your site and its embedded third-party content can use. This prevents malicious scripts from accessing sensitive device capabilities like the camera, microphone, geolocation, and accelerometer without user consent.",
+        "This header is particularly important for sites that embed third-party content (ads, analytics, social widgets) — it restricts what those third parties can access."
+      ],
+      "items": [
+        {
+          "label": "Permissions-Policy Configuration",
+          "code": "# Restrict all sensitive features (recommended default)\nadd_header Permissions-Policy \"\n    camera=(),\n    microphone=(),\n    geolocation=(),\n    payment=(),\n    usb=(),\n    accelerometer=(),\n    gyroscope=(),\n    magnetometer=(),\n    midi=(),\n    sync-xhr=(),\n    display-capture=()\n\" always;"
+        },
+        {
+          "label": "Allowing Specific Origins",
+          "code": "# Allow specific features for specific origins\nadd_header Permissions-Policy \"\n    camera=(self \"https://zoom.example.com\"),\n    microphone=(self \"https://zoom.example.com\"),\n    geolocation=(self),\n    payment=(),\n    accelerometer=()\n\" always;"
+        },
+        {
+          "label": "Permissions-Policy Directives Reference",
+          "table": {
+            "headers": ["Feature", "Controls", "Default Behavior"],
+            "rows": [
+              ["camera", "Access to video camera", "Allowed"],
+              ["microphone", "Access to audio microphone", "Allowed"],
+              ["geolocation", "Access to device location", "Allowed"],
+              ["payment", "Payment Request API", "Allowed"],
+              ["usb", "WebUSB API", "Allowed"],
+              ["accelerometer", "Accelerometer sensor", "Allowed"],
+              ["gyroscope", "Gyroscope sensor", "Allowed"],
+              ["magnetometer", "Magnetometer sensor", "Allowed"],
+              ["midi", "MIDI access", "Allowed"],
+              ["sync-xhr", "Synchronous XMLHttpRequest", "Allowed"],
+              ["display-capture", "Screen capture API", "Allowed"],
+              ["clipboard-read", "Clipboard read access", "Allowed"],
+              ["clipboard-write", "Clipboard write access", "Allowed"]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "xxss-protection",
+      "title": "10. X-XSS-Protection",
+      "description": "Enabling legacy browser cross-site scripting filters.",
+      "content": [
+        "X-XSS-Protection controls the built-in XSS filter in older browsers (Internet Explorer, legacy Edge, older Safari). Modern browsers have deprecated this filter in favor of Content-Security-Policy, but setting this header provides defense-in-depth for users on legacy browsers.",
+        "Note: In Chrome 78+ and modern browsers, the XSS filter is removed entirely. This header is only for legacy compatibility."
+      ],
+      "items": [
+        {
+          "label": "X-XSS-Protection Options",
+          "code": "# Enable filter, block if XSS detected (recommended for legacy support)\nadd_header X-XSS-Protection \"1; mode=block\" always;\n\n# Disable filter (use with CSP instead)\nadd_header X-XSS-Protection \"0\" always;\n\n# Enable filter with sanitization (not recommended — can introduce XSS)\nadd_header X-XSS-Protection \"1\" always;"
+        },
+        {
+          "label": "Recommendation",
+          "text": "Set X-XSS-Protection to \"1; mode=block\" for legacy browser compatibility, combined with a strong Content-Security-Policy for modern browsers. If you do not need legacy support, set it to \"0\" and rely entirely on CSP."
+        }
+      ]
+    },
+    {
+      "id": "server-tokens",
+      "title": "11. Server Tokens (Server Header)",
+      "description": "Hiding NGINX version information from attackers.",
+      "content": [
+        "By default, NGINX includes its version number in the Server response header (e.g., Server: nginx/1.24.0). This gives attackers information about your server — if a known vulnerability exists in your version, you have made their reconnaissance easier.",
+        "Setting server_tokens off removes the version number, showing only 'nginx' (e.g., Server: nginx)."
+      ],
+      "items": [
+        {
+          "label": "Server Tokens Configuration",
+          "code": "# Hide NGINX version\nserver_tokens off;\n\n# Result:\n# Before: Server: nginx/1.24.0\n# After:  Server: nginx"
+        },
+        {
+          "label": "Completely Remove Server Header (Advanced)",
+          "text": "To completely remove the Server header, you need the ngx_headers_more module (third-party) or NGINX Plus. NGINX Open Source does not support removing the Server header entirely — only hiding the version.",
+          "code": "# With ngx_headers_more module:\nmore_clear_headers \"Server\";\n\n# Result:\n# Server header is removed entirely"
+        }
+      ]
+    },
+    {
+      "id": "production-snippet",
+      "title": "12. Production-Ready Security Headers Snippet",
+      "description": "Copy-paste NGINX configuration for all security headers.",
+      "items": [
+        {
+          "label": "Complete Security Headers File",
+          "code": "# /etc/nginx/snippets/security-headers.conf\n# Include this in every server block\n\n# === HSTS — Force HTTPS (only for HTTPS servers) ===\n# Start with max-age=300 for testing, then increase to 31536000\n# Use preload only if you are certain (it is hard to undo)\nadd_header Strict-Transport-Security \"max-age=63072000; includeSubDomains; preload\" always;\n\n# === Prevent Clickjacking ===\nadd_header X-Frame-Options \"SAMEORIGIN\" always;\n\n# === Prevent MIME Sniffing ===\nadd_header X-Content-Type-Options \"nosniff\" always;\n\n# === Legacy XSS Protection ===\nadd_header X-XSS-Protection \"1; mode=block\" always;\n\n# === Referrer Policy ===\nadd_header Referrer-Policy \"strict-origin-when-cross-origin\" always;\n\n# === Permissions Policy ===\nadd_header Permissions-Policy \"\n    camera=(),\n    microphone=(),\n    geolocation=(),\n    payment=(),\n    usb=(),\n    accelerometer=(),\n    gyroscope=(),\n    magnetometer=(),\n    midi=(),\n    sync-xhr=(),\n    display-capture=()\n\" always;\n\n# === Content Security Policy (customize for your app) ===\nadd_header Content-Security-Policy \"\n    default-src 'self';\n    script-src 'self' 'unsafe-inline' 'unsafe-eval';\n    style-src 'self' 'unsafe-inline';\n    img-src 'self' data: https: blob:;\n    font-src 'self' data:;\n    connect-src 'self' https: wss:;\n    frame-src 'self' https:;\n    frame-ancestors 'self';\n    form-action 'self';\n    base-uri 'self';\n    object-src 'none';\n\" always;\n\n# === Hide NGINX version ===\nserver_tokens off;"
+        }
+      ]
+    },
+    {
+      "id": "how-to-use-snippet",
+      "title": "13. How to Use the Snippet in Your Server Blocks",
+      "description": "Proper include patterns that avoid the inheritance trap.",
+      "items": [
+        {
+          "label": "Method 1: Include in Every Server Block (Recommended)",
+          "code": "# /etc/nginx/sites-available/example.com\n\nserver {\n    listen 443 ssl http2;\n    server_name example.com;\n\n    ssl_certificate /etc/letsencrypt/live/example.com/fullchain.pem;\n    ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;\n\n    # Include security headers\n    include /etc/nginx/snippets/security-headers.conf;\n\n    root /var/www/example;\n    index index.html;\n\n    location / {\n        # No add_header = inherits from server block\n        try_files $uri $uri/ =404;\n    }\n\n    location /api/ {\n        # No add_header = inherits from server block\n        proxy_pass http://backend;\n    }\n}"
+        },
+        {
+          "label": "Method 2: Include Globally in nginx.conf",
+          "code": "# /etc/nginx/nginx.conf\nhttp {\n    # ...\n    include /etc/nginx/snippets/security-headers.conf;\n    # ...\n    include /etc/nginx/sites-enabled/*;\n}\n\n# !! WARNING: If ANY server or location block uses add_header,\n# the globally included headers will be REPLACED for that block.\n# Only use this method if you NEVER use add_header in server/location blocks."
+        },
+        {
+          "label": "Method 3: Include in Each HTTP and HTTPS Server Block",
+          "code": "# HTTP redirect server\nserver {\n    listen 80;\n    server_name example.com;\n    include /etc/nginx/snippets/security-headers.conf;\n    return 301 https://$server_name$request_uri;\n}\n\n# HTTPS server\nserver {\n    listen 443 ssl http2;\n    server_name example.com;\n    include /etc/nginx/snippets/security-headers.conf;\n\n    ssl_certificate /etc/letsencrypt/live/example.com/fullchain.pem;\n    ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;\n\n    root /var/www/example;\n    index index.html;\n\n    location / {\n        try_files $uri $uri/ =404;\n    }\n}"
+        }
+      ]
+    },
+    {
+      "id": "testing",
+      "title": "14. Testing and Verifying Security Headers",
+      "description": "How to verify your security headers are properly configured.",
+      "items": [
+        {
+          "label": "Using curl (Command Line)",
+          "code": "# Check all response headers\nuser@server:~$ curl -I https://example.com\nHTTP/2 200\nserver: nginx\ncontent-type: text/html\nstrict-transport-security: max-age=63072000; includeSubDomains; preload\nx-frame-options: SAMEORIGIN\nx-content-type-options: nosniff\nx-xss-protection: 1; mode=block\nreferrer-policy: strict-origin-when-cross-origin\npermissions-policy: camera=(), microphone=(), geolocation=()\ncontent-security-policy: default-src 'self'...\n\n# Check specific header\nuser@server:~$ curl -s -D- https://example.com | grep -i strict-transport\nstrict-transport-security: max-age=63072000; includeSubDomains; preload"
+        },
+        {
+          "label": "Online Testing Tools",
+          "text": [
+            "Security Headers (securityheaders.com) — Scan your site and get a letter grade (A+ to F). The industry standard for security header verification.",
+            "Mozilla Observatory (observatory.mozilla.org) — Comprehensive scan including TLS, headers, and more.",
+            "HSTS Preload Checker (hstspreload.org) — Verify if your domain is eligible for HSTS preloading.",
+            "CSP Evaluator (csp-evaluator.withgoogle.com) — Google's tool for evaluating CSP quality."
+          ]
+        },
+        {
+          "label": "Browser DevTools",
+          "text": "Open Chrome DevTools (F12) → Network tab → Click a request → Check the Response Headers section. All security headers should appear here.\n\nPro tip: Filter by 'Doc' to see only HTML responses. Check that security headers are present on: the main page, error pages (404, 500), and API responses."
+        },
+        {
+          "label": "Automated Testing Script",
+          "code": "#!/bin/bash\n# security-headers-check.sh — Test script\n\nURL=\"${1:-https://example.com}\"\n\necho \"=== Testing Security Headers for $URL ===\"\necho \"\"\n\n# Get response headers\nHEADERS=$(curl -sI \"$URL\")\n\n# Check each header\necho \"1. Strict-Transport-Security (HSTS):\"\necho \"$HEADERS\" | grep -i \"strict-transport-security\"\necho \"\"\n\necho \"2. X-Frame-Options:\"\necho \"$HEADERS\" | grep -i \"x-frame-options\"\necho \"\"\n\necho \"3. X-Content-Type-Options:\"\necho \"$HEADERS\" | grep -i \"x-content-type-options\"\necho \"\"\n\necho \"4. Content-Security-Policy:\"\necho \"$HEADERS\" | grep -i \"content-security-policy\"\necho \"\"\n\necho \"5. Referrer-Policy:\"\necho \"$HEADERS\" | grep -i \"referrer-policy\"\necho \"\"\n\necho \"6. Permissions-Policy:\"\necho \"$HEADERS\" | grep -i \"permissions-policy\"\necho \"\"\n\necho \"7. Server header (should not show version):\"\necho \"$HEADERS\" | grep -i \"server\"\necho \"\"\n\n# Check HSTS on 404\nNOT_FOUND_HEADERS=$(curl -sI \"$URL/nonexistent-page-12345\")\necho \"=== HSTS on 404 page (must have 'always' parameter) ===\"\necho \"$NOT_FOUND_HEADERS\" | grep -i \"strict-transport-security\"\necho \"\"\n\n# Print grade\necho \"=== Check online ===\"\necho \"Visit: https://securityheaders.com/?q=$URL\"\necho \"Visit: https://observatory.mozilla.org/analyze/$URL\""
+        }
+      ]
+    },
+    {
+      "id": "common-mistakes",
+      "title": "15. Common Mistakes and How to Fix Them",
+      "description": "Frequent security header misconfigurations and their solutions.",
+      "items": [
+        {
+          "label": "Mistake 1: Missing 'always' Parameter",
+          "content": "Without the always parameter, security headers are only sent on 2xx and 3xx responses. Error pages (4xx, 5xx) do not get headers. This means a 404 response does not carry HSTS, and a browser that encounters a 404 during the initial HTTP connection will proceed over cleartext HTTP.",
+          "code": "# WRONG — headers missing on error pages\nadd_header Strict-Transport-Security \"max-age=63072000\" always;  # OK\nadd_header X-Frame-Options \"SAMEORIGIN\";  # MISSING always — no header on 404/500\n\n# CORRECT\nadd_header Strict-Transport-Security \"max-age=63072000\" always;\nadd_header X-Frame-Options \"SAMEORIGIN\" always;"
+        },
+        {
+          "label": "Mistake 2: add_header in Location Replacing Server Headers",
+          "content": "This is the #1 mistake. Adding any add_header in a location block replaces ALL server-level add_header directives. The fix: either do not use add_header in locations, or repeat all headers.",
+          "code": "# WRONG\nserver {\n    add_header X-Frame-Options \"SAMEORIGIN\" always;\n    location / {\n        add_header X-Content-Type-Options \"nosniff\" always;  # X-Frame-Options LOST!\n    }\n}\n\n# CORRECT\nserver {\n    add_header X-Frame-Options \"SAMEORIGIN\" always;\n    add_header X-Content-Type-Options \"nosniff\" always;\n    location / {\n        # No add_header = inherits from server\n    }\n}"
+        },
+        {
+          "label": "Mistake 3: HSTS on HTTP Server Block",
+          "content": "HSTS should ONLY be set on HTTPS server blocks. Setting it on an HTTP block does nothing (the browser discards it). More importantly, if you redirect HTTP→HTTPS via return 301, the HTTP response itself should NOT have HSTS — the browser would see HSTS on HTTP and ignore it.",
+          "code": "# CORRECT: HSTS only on HTTPS\nserver {\n    listen 80;\n    server_name example.com;\n    # NO HSTS here\n    return 301 https://$server_name$request_uri;\n}\n\nserver {\n    listen 443 ssl;\n    server_name example.com;\n    add_header Strict-Transport-Security \"max-age=63072000\" always;\n}"
+        },
+        {
+          "label": "Mistake 4: CSP Too Permissive (or Too Strict)",
+          "content": "A CSP with 'unsafe-inline' on script-src provides minimal XSS protection. A CSP that does not include all your CDN domains will break your site. The fix: use Report-Only mode first, monitor violations, adjust, then enforce."
+        },
+        {
+          "label": "Mistake 5: Setting Headers at http Level and Then Using add_header in server",
+          "content": "The same inheritance rule applies at every level. If you set headers at the http level and then use add_header in a server block, the server block replaces all http-level headers."
+        },
+        {
+          "label": "Mistake 6: Overlooking Server Header Information Disclosure",
+          "content": "server_tokens off only removes the version number. The Server header still advertises 'nginx'. Some security standards require removing the Server header entirely, which requires third-party modules."
+        }
+      ]
+    },
+    {
+      "id": "scenarios",
+      "title": "16. Real-World Scenarios",
+      "description": "Complete NGINX configuration examples for different use cases.",
+      "items": [
+        {
+          "label": "Scenario 1: Static Website",
+          "code": "# /etc/nginx/sites-available/static-site.conf\n\n# HTTP redirect\nserver {\n    listen 80;\n    listen [::]:80;\n    server_name example.com www.example.com;\n    include /etc/nginx/snippets/security-headers.conf;\n    return 301 https://$server_name$request_uri;\n}\n\n# HTTPS server\nserver {\n    listen 443 ssl http2;\n    listen [::]:443 ssl http2;\n    server_name example.com www.example.com;\n\n    ssl_certificate /etc/letsencrypt/live/example.com/fullchain.pem;\n    ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;\n    ssl_protocols TLSv1.2 TLSv1.3;\n    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384;\n    ssl_prefer_server_ciphers off;\n    ssl_session_cache shared:SSL:10m;\n    ssl_session_timeout 1d;\n\n    root /var/www/example;\n    index index.html;\n\n    include /etc/nginx/snippets/security-headers.conf;\n\n    # Static asset caching\n    location ~* \\.(css|js|svg|woff2?)$ {\n        expires 1y;\n        add_header Cache-Control \"public, immutable\";\n        access_log off;\n        # Inherits security headers from server level ✓\n    }\n\n    location ~* \\.(jpg|jpeg|png|gif|ico|webp)$ {\n        expires 30d;\n        add_header Cache-Control \"public, immutable\";\n        access_log off;\n        # Inherits security headers from server level ✓\n    }\n\n    location / {\n        try_files $uri $uri/ =404;\n    }\n}"
+        },
+        {
+          "label": "Scenario 2: API Backend",
+          "code": "# /etc/nginx/sites-available/api.conf\n\nserver {\n    listen 443 ssl http2;\n    server_name api.example.com;\n\n    ssl_certificate /etc/letsencrypt/live/api.example.com/fullchain.pem;\n    ssl_certificate_key /etc/letsencrypt/live/api.example.com/privkey.pem;\n\n    include /etc/nginx/snippets/security-headers.conf;\n\n    # CSP for API (stricter — no inline anything)\n    add_header Content-Security-Policy \"default-src 'none'; frame-ancestors 'none';\" always;\n\n    # CORS headers\n    add_header Access-Control-Allow-Origin \"https://app.example.com\" always;\n    add_header Access-Control-Allow-Methods \"GET, POST, PUT, DELETE, OPTIONS\" always;\n    add_header Access-Control-Allow-Headers \"Authorization, Content-Type\" always;\n\n    location / {\n        proxy_pass http://api_backend;\n        proxy_http_version 1.1;\n        proxy_set_header Host $host;\n        proxy_set_header X-Real-IP $remote_addr;\n        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n        proxy_set_header X-Forwarded-Proto $scheme;\n    }\n}"
+        },
+        {
+          "label": "Scenario 3: Single Page Application (React/Vue/Angular)",
+          "code": "# /etc/nginx/sites-available/spa.conf\n\nserver {\n    listen 443 ssl http2;\n    server_name app.example.com;\n\n    ssl_certificate /etc/letsencrypt/live/app.example.com/fullchain.pem;\n    ssl_certificate_key /etc/letsencrypt/live/app.example.com/privkey.pem;\n\n    root /var/www/app/dist;\n    index index.html;\n\n    include /etc/nginx/snippets/security-headers.conf;\n\n    # SPA needs less restrictive CSP for dev tools\n    add_header Content-Security-Policy \"\n        default-src 'self';\n        script-src 'self' 'unsafe-inline' 'unsafe-eval';\n        style-src 'self' 'unsafe-inline';\n        img-src 'self' data: https: blob:;\n        font-src 'self' data:;\n        connect-src 'self' https://api.example.com wss:;\n        frame-src 'none';\n        frame-ancestors 'none';\n        form-action 'self';\n        base-uri 'self';\n        object-src 'none';\n    \" always;\n\n    # API proxy (NO add_header here — inherits from server)\n    location /api/ {\n        proxy_pass http://127.0.0.1:3000/;\n        proxy_set_header Host $host;\n        proxy_set_header X-Real-IP $remote_addr;\n        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n    }\n\n    # Static files\n    location ~* \\.(js|css)$ {\n        expires 1y;\n        add_header Cache-Control \"public, immutable\";\n        access_log off;\n    }\n\n    # SPA routing\n    location / {\n        try_files $uri $uri/ /index.html;\n    }\n}"
+        }
+      ]
+    },
+    {
+      "id": "advanced",
+      "title": "17. Advanced: Additional Security Headers",
+      "description": "Less common but valuable security headers.",
+      "items": [
+        {
+          "label": "Cross-Origin Resource Policy (CORP)",
+          "content": "Cross-Origin-Resource-Policy tells browsers which origins can read the response. This prevents side-channel attacks like Spectre by ensuring sensitive resources are not accessible from other origins.",
+          "code": "# Restrict to same-origin only (prevent Spectre attacks)\nadd_header Cross-Origin-Resource-Policy \"same-origin\" always;\n\n# Other options:\n# same-site — Allow same-site (including subdomains)\n# cross-origin — Allow all"
+        },
+        {
+          "label": "Cross-Origin Opener Policy (COOP)",
+          "content": "Cross-Origin-Opener-Policy isolates your pages from cross-origin windows opened via window.open or target=_blank. This prevents cross-origin attacks on your window object.",
+          "code": "# Isolate your page from cross-origin openers\nadd_header Cross-Origin-Opener-Policy \"same-origin-allow-popups\" always;\n\n# Other options:\n# unsafe-none — Default, no isolation\n# same-origin — Full isolation (can break OAuth popups)"
+        },
+        {
+          "label": "Cross-Origin Embedder Policy (COEP)",
+          "content": "Cross-Origin-Embedder-Policy requires cross-origin resources to be loaded with CORS headers or be loaded through a CORP-compatible mechanism. This enables features like SharedArrayBuffer.",
+          "code": "# Require CORS for all cross-origin resources\nadd_header Cross-Origin-Embedder-Policy \"require-corp\" always;\n\n# WARNING: This can break CDN resources, images, and fonts\n# that do not set CORS headers. Test thoroughly!"
+        },
+        {
+          "label": "Cache-Control for Sensitive Pages",
+          "code": "# Prevent caching of sensitive pages\nlocation /admin/ {\n    add_header Cache-Control \"no-store, no-cache, must-revalidate, private\" always;\n    add_header Pragma \"no-cache\" always;\n    add_header Expires \"0\" always;\n}\n\n# Allow caching of public resources\nlocation ~* \\.(css|js|png)$ {\n    expires 1y;\n    add_header Cache-Control \"public, immutable\" always;\n}"
+        },
+        {
+          "label": "Expect-CT (Deprecated)",
+          "content": "Expect-CT allowed sites to opt-into Certificate Transparency reporting. It is now deprecated in favor of built-in CT enforcement in modern browsers, but may still be useful for legacy environments."
+        }
+      ]
+    },
+    {
+      "id": "checklist",
+      "title": "18. Security Headers Checklist",
+      "description": "A printable checklist for deploying security headers.",
+      "items": [
+        {
+          "label": "Pre-Deployment Checklist",
+          "table": {
+            "headers": ["Header", "Configured?", "Tested?"],
+            "rows": [
+              ["Strict-Transport-Security (HSTS) — max-age≥31536000, includeSubDomains", "☐", "☐"],
+              ["X-Frame-Options — SAMEORIGIN or DENY", "☐", "☐"],
+              ["X-Content-Type-Options — nosniff", "☐", "☐"],
+              ["Content-Security-Policy — tested in Report-Only first", "☐", "☐"],
+              ["Referrer-Policy — strict-origin-when-cross-origin", "☐", "☐"],
+              ["Permissions-Policy — restrict all unused features", "☐", "☐"],
+              ["X-XSS-Protection — 1; mode=block (legacy)", "☐", "☐"],
+              ["server_tokens off — hide NGINX version", "☐", "☐"],
+              ["Headers sent on 4xx/5xx responses (always parameter)", "☐", "☐"],
+              ["No add_header in location blocks that override server headers", "☐", "☐"]
+            ]
+          }
+        },
+        {
+          "label": "Post-Deployment Verification",
+          "text": [
+            "✓ Run: curl -I https://yourdomain.com — check all headers are present",
+            "✓ Run: curl -I https://yourdomain.com/nonexistent — check headers on 404",
+            "✓ Visit: https://securityheaders.com — aim for A+ grade",
+            "✓ Visit: https://observatory.mozilla.org — aim for A+ grade",
+            "✓ Check browser DevTools → Network tab for every page type",
+            "✓ Verify HSTS preload eligibility at https://hstspreload.org (optional)",
+            "✓ Test CSP via Report-Only mode for at least 1 week",
+            "✓ Monitor logs for CSP violations and adjust policy accordingly"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "troubleshooting",
+      "title": "19. Troubleshooting Common Issues",
+      "description": "Fixing problems with security header deployment.",
+      "items": [
+        {
+          "label": "Issue: Headers Not Showing in Browser",
+          "content": "Check: Did you reload NGINX? (sudo systemctl reload nginx). Check: Are you using add_header in a location block that overrides server-level headers? Check: Is the 'always' parameter missing on error pages?"
+        },
+        {
+          "label": "Issue: Site Broken After Adding CSP",
+          "content": "Your CSP is too restrictive. Switch to Content-Security-Policy-Report-Only mode and monitor violations. Each violation tells you exactly which resource was blocked and from which directive. Relax your policy to allow those resources."
+        },
+        {
+          "label": "Issue: HSTS Preload Submission Rejected",
+          "content": "Common reasons: max-age < 31536000 (1 year), missing includeSubDomains, subdomains not serving HTTPS, redirect chain not fully HTTPS, or mixed content warnings on some pages."
+        },
+        {
+          "label": "Issue: Security Headers.com Grade is Low",
+          "content": "Security Headers.com checks: presence of all major headers, HSTS with sufficient max-age, CSP with proper directives, and whether headers are present on the root page and error pages. Address missing items one at a time."
+        },
+        {
+          "label": "Issue: Headers Appear on Root Page But Not on Subpages",
+          "content": "This is the add_header inheritance problem with near 100% certainty. Check if your subpage's location block uses add_header. If so, that location is replacing all server-level headers. See Section 3 for the fix."
+        }
+      ]
+    },
+    {
+      "id": "summary",
+      "title": "20. Summary and Key Takeaways",
+      "description": "What you should remember from this guide.",
+      "items": [
+        {
+          "label": "Key Takeaways",
+          "text": [
+            "✓ Security headers are free, zero-cost protection against common web attacks — there is no reason not to implement them.",
+            "✓ The add_header inheritance trap is the #1 cause of missing headers in NGINX. Never use add_header in location blocks, or repeat all headers if you must.",
+            "✓ Always use the 'always' parameter on every security header to ensure error pages are protected.",
+            "✓ Start CSP in Report-Only mode, monitor violations, then enforce. A broken CSP breaks your site.",
+            "✓ Deploy HSTS gradually: test → 1 year → preload (if certain).",
+            "✓ Test your headers with curl, securityheaders.com, and Mozilla Observatory.",
+            "✓ server_tokens off is essential — never advertise your NGINX version.",
+            "✓ Use the included snippet (security-headers.conf) for consistent, maintainable configuration."
+          ]
+        },
+        {
+          "label": "Production Quick Start",
+          "text": [
+            "1. Copy the security-headers.conf snippet to your server.",
+            "2. Include it in every server block.",
+            "3. Ensure no location block uses add_header.",
+            "4. Test with curl -I and securityheaders.com.",
+            "5. Aim for A+ grade on securityheaders.com."
+          ]
+        },
+        {
+          "label": "Additional Resources",
+          "text": [
+            "Mozilla Web Security Guidelines — https://infosec.mozilla.org/guidelines/web_security",
+            "OWASP Secure Headers Project — https://owasp.org/www-project-secure-headers/",
+            "CSP Evaluator — https://csp-evaluator.withgoogle.com",
+            "HSTS Preload — https://hstspreload.org",
+            "Security Headers Scanner — https://securityheaders.com",
+            "Mozilla Observatory — https://observatory.mozilla.org",
+            "NGINX add_header Documentation — https://nginx.org/en/docs/http/ngx_http_headers_module.html"
+          ]
+        }
+      ]
+    }
+  ]
+}

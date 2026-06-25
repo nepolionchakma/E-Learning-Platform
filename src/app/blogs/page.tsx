@@ -82,7 +82,7 @@ export default async function BlogsPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {blogs.map((blog) => (
+          {blogs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((blog) => (
             <Link
               key={blog.slug}
               href={`/blogs/${blog.slug}`}
