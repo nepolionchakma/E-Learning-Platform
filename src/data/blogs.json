@@ -82,5 +82,11 @@
     "content": "A comprehensive end-to-end guide to Valkey — from fundamentals to production. Covers installation (official + Percona repos), all data types and commands, persistence, replication, high availability, security (ACL/TLS), performance tuning, Valkey 9.x built-in search, use cases (caching, sessions, rate limiting, queues, leaderboards), Docker deployment, monitoring with Prometheus/Grafana, backups, troubleshooting, and production best practices.",
     "author": "E-Learning Platform",
     "date": "2026-06-08"
+  },{
+    "slug": "nginx-security-headers",
+    "title": "NGINX Security Headers: The Complete Guide to Hardening Your Web Server",
+    "content": "A comprehensive guide to configuring HTTP security headers in NGINX — covering HSTS, CSP, X-Frame-Options, X-Content-Type-Options, Permissions-Policy, Referrer-Policy, and the critical add_header inheritance caveat that breaks most configurations. Includes production-ready snippets, testing tools, and real-world scenarios for DevOps engineers.",
+    "author": "E-Learning Platform",
+    "date": "2026-06-24"
   }
 ]
