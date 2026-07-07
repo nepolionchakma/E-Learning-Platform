@@ -1,0 +1,786 @@
+{
+  "title": "Docker: The Complete A–Z Guide",
+  "icon": "🐳",
+  "description": "A comprehensive end-to-end guide to Docker from fundamentals to production. Covers installation, images and containers, Dockerfiles, multi-stage builds, volumes and data persistence, networking, Docker Compose for multi-container apps, security hardening, image scanning, logging and monitoring, CI/CD integration, and production best practices — for beginners and experienced developers alike.",
+  "author": "E-Learning Platform",
+  "date": "2026-07-06",
+  "readTime": "45 min read",
+  "heroImage": "/images/docker-hero.svg",
+  "heroAlt": "Docker architecture diagram showing Docker Engine, the Build → Ship → Run pipeline with multi-stage builds and registries, Docker Compose multi-service stack with Nginx, API, PostgreSQL and Redis, and production features including volumes, networking, security hardening, health checks, resource limits, image scanning, and logging",
+  "sections": [
+    {
+      "id": "introduction",
+      "title": "1. Introduction",
+      "description": "What Docker is, the problem it solves, and what this guide covers.",
+      "content": [
+        "Docker is the industry standard for building, shipping, and running applications in containers. It packages your application with all its dependencies — code, runtime, system libraries, configuration files — into a lightweight, portable unit called a container. This container runs consistently on any system that has Docker installed, whether it's your laptop, a test server, or a production cluster in the cloud.",
+        "The core problem Docker solves is the 'works on my machine' syndrome. Without containers, differences between development and production environments cause subtle bugs and deployment failures. Docker eliminates this by providing a consistent environment across the entire software delivery pipeline.",
+        "This guide covers everything from your first Docker install to production-ready multi-container deployments. You will learn containers and images, Dockerfiles and multi-stage builds, volumes and networking, Docker Compose, security hardening, image scanning, CI/CD integration, and battle-tested production patterns."
+      ],
+      "infoBox": {
+        "type": "info",
+        "content": "This guide is tested against Docker Engine 29.x and Docker Compose v2.40+, which are the current standard releases as of mid-2026. BuildKit is the default build backend, and the legacy docker-compose (Python) binary is fully retired."
+      },
+      "cards": [
+        {
+          "title": "What You Will Learn",
+          "desc": "Images and container lifecycle, Dockerfile optimization, multi-stage builds, volumes and networking, Docker Compose, production hardening, image scanning, CI/CD pipelines, and troubleshooting."
+        },
+        {
+          "title": "Prerequisites",
+          "desc": "Basic command-line familiarity, a Linux VM or machine with sudo access (or macOS/Windows with Docker Desktop), and an internet connection."
+        }
+      ]
+    },
+    {
+      "id": "core-concepts",
+      "title": "2. Core Concepts: Images, Containers, and the Docker Engine",
+      "description": "Understanding the fundamental building blocks of Docker.",
+      "content": [
+        "Before writing a single command, it is essential to understand the three core components: images, containers, and the Docker Engine.",
+        "An image is a read-only template that contains everything needed to run an application — a base operating system, application code, dependencies, environment variables, and configuration. Images are built from a Dockerfile using the docker build command. They are stored in a registry (like Docker Hub) and can be versioned with tags.",
+        "A container is a runnable instance of an image. When you run an image, Docker adds a thin writable layer on top of the image layers and starts the application process inside an isolated environment. Containers are ephemeral by design — they can be stopped, destroyed, and recreated with minimal overhead.",
+        "The Docker Engine is the runtime that builds and runs containers. It consists of a daemon (dockerd) that manages containers, images, networks, and volumes, and a CLI (docker) that communicates with the daemon via a REST API.",
+        "Registries store and distribute images. Docker Hub is the default public registry, but you can use private registries like AWS ECR, GitHub Container Registry (ghcr.io), or a self-hosted registry."
+      ],
+      "items": [
+        {
+          "label": "Images vs Containers — The Analogy",
+          "table": {
+            "headers": ["Concept", "Analogy", "Docker Equivalent"],
+            "rows": [
+              ["Image", "Class / Blueprint", "Read-only template with app + dependencies"],
+              ["Container", "Object / Instance", "Running process with its own filesystem and network"],
+              ["Dockerfile", "Source code / Recipe", "Instructions to build the image"],
+              ["Registry", "Package repository / App Store", "Storage and distribution for images"],
+              ["Docker Engine", "Operating System / Runtime", "Daemon + CLI that manages everything"]
+            ]
+          }
+        },
+        {
+          "label": "Docker Architecture Diagram",
+          "content": [
+            "┌─────────────────────────────────────────────────────────┐",
+            "│                    Docker Client (CLI)                 │",
+            "│  docker build, docker run, docker pull, docker push   │",
+            "└────────────────────────┬────────────────────────────────┘",
+            "                         │ REST API (Unix socket / TCP)",
+            "┌────────────────────────▼────────────────────────────────┐",
+            "│                   Docker Daemon (dockerd)               │",
+            "│  ┌──────────┐  ┌──────────┐  ┌──────────┐             │",
+            "│  │ Container │  │  Image   │  │  Volume  │             │",
+            "│  │   nginx   │  │ postgres │  │ pg_data  │             │",
+            "│  └──────────┘  └──────────┘  └──────────┘             │",
+            "│  ┌──────────┐  ┌──────────┐  ┌──────────┐             │",
+            "│  │ Container │  │  Network │  │  Build   │             │",
+            "│  │   myapp   │  │  bridge  │  │  Cache   │             │",
+            "│  └──────────┘  └──────────┘  └──────────┘             │",
+            "└─────────────────────────────────────────────────────────┘",
+            "                         │",
+            "┌────────────────────────▼────────────────────────────────┐",
+            "│                 Registries (Docker Hub, ECR, ghcr.io)    │",
+            "│              Store and distribute container images      │",
+            "└─────────────────────────────────────────────────────────┘"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "installation",
+      "title": "3. Installing Docker",
+      "description": "Installing Docker Engine on Linux or Docker Desktop on macOS/Windows.",
+      "content": [
+        "Docker Engine is available on Linux, macOS, and Windows. On Linux, you install the Docker Engine daemon directly. On macOS and Windows, Docker Desktop provides a convenient GUI along with the CLI tools.",
+        "For production servers, always use Docker Engine on Linux. Docker Desktop is designed for development workstations."
+      ],
+      "items": [
+        {
+          "label": "Install on Ubuntu/Debian (Production Recommended)",
+          "code": "user@host:~$ sudo apt-get update\nuser@host:~$ sudo apt-get install -y ca-certificates curl\nuser@host:~$ sudo install -m 0755 -d /etc/apt/keyrings\nuser@host:~$ sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc\nuser@host:~$ sudo chmod a+r /etc/apt/keyrings/docker.asc\n\nuser@host:~$ echo \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo \"$VERSION_CODENAME\") stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null\n\nuser@host:~$ sudo apt-get update\nuser@host:~$ sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin\n\nuser@host:~$ sudo systemctl enable docker\nuser@host:~$ sudo systemctl start docker"
+        },
+        {
+          "label": "Verify Installation",
+          "code": "user@host:~$ sudo docker run hello-world\n\nHello from Docker!\nThis message shows that your installation appears to be working correctly.\n\nTo generate this message, Docker took the following steps:\n 1. The Docker client contacted the Docker daemon.\n 2. The Docker daemon pulled the \"hello-world\" image from the Docker Hub.\n 3. The Docker daemon created a new container from that image which runs the\n    executable that produces the output you are currently reading.\n 4. The Docker daemon streamed that output to the Docker client, which sent it\n    to your terminal."
+        },
+        {
+          "label": "Post-Install: Run Docker Without sudo",
+          "code": "user@host:~$ sudo usermod -aG docker $USER\nuser@host:~$ newgrp docker\nuser@host:~$ docker run hello-world\n# Should work without sudo"
+        },
+        {
+          "label": "Install on RHEL/CentOS/Fedora",
+          "code": "user@host:~$ sudo dnf config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo\nuser@host:~$ sudo dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin\nuser@host:~$ sudo systemctl enable --now docker"
+        },
+        {
+          "label": "Install on macOS (Docker Desktop)",
+          "text": "Download Docker Desktop for Mac from https://docs.docker.com/desktop/setup/install/mac-install/ and install the .dmg. Docker Desktop includes Docker Engine, Docker CLI, Docker Compose, and BuildKit in a single package with a system tray menu.",
+          "contentAfter": "After installation, verify with: docker --version && docker compose version"
+        },
+        {
+          "label": "Install on Windows (Docker Desktop)",
+          "text": "Download Docker Desktop for Windows from https://docs.docker.com/desktop/setup/install/windows-install/ and install the .exe. Docker Desktop requires WSL 2 (Windows Subsystem for Linux) on Windows 10/11.\n\nEnable WSL 2 before installing: wsl --install\n\nThen install Docker Desktop, which automatically integrates with your WSL 2 distribution."
+        },
+        {
+          "label": "Verify Docker Engine and Compose Versions",
+          "code": "user@host:~$ docker --version\nDocker version 29.4.2, build abc1234\n\nuser@host:~$ docker compose version\nDocker Compose version v2.40.0\n\nuser@host:~$ docker info\nClient:\n Version:    29.4.2\n Context:    default\n\nServer:\n Engine Version:  29.4.2\n OSType:          linux\n Architecture:    x86_64\n CPUs:            4\n Total Memory:    7.78GiB\n Containers:      2\n Running:         1\n Paused:          0\n Stopped:         1\n Images:          8\n Server Version:  29.4.2"
+        }
+      ]
+    },
+    {
+      "id": "first-container",
+      "title": "4. Running Your First Container",
+      "description": "Essential Docker commands for managing containers and images.",
+      "content": [
+        "With Docker installed, let's run containers, inspect them, execute commands inside them, and clean them up. These commands form the foundation of daily Docker work."
+      ],
+      "items": [
+        {
+          "label": "Essential Container Lifecycle Commands",
+          "table": {
+            "headers": ["Command", "Description"],
+            "rows": [
+              ["docker run IMAGE", "Create and start a container from an image"],
+              ["docker run -d IMAGE", "Run in detached mode (background)"],
+              ["docker run -p HOST:CONTAINER IMAGE", "Map host port to container port"],
+              ["docker run --name NAME IMAGE", "Assign a name to the container"],
+              ["docker ps", "List running containers"],
+              ["docker ps -a", "List all containers (including stopped)"],
+              ["docker stop CONTAINER", "Gracefully stop a container"],
+              ["docker kill CONTAINER", "Force stop a container"],
+              ["docker rm CONTAINER", "Remove a stopped container"],
+              ["docker rm -f CONTAINER", "Force remove a running container"],
+              ["docker logs CONTAINER", "View container logs"],
+              ["docker logs -f CONTAINER", "Follow log output in real time"],
+              ["docker exec -it CONTAINER CMD", "Execute a command inside a running container"],
+              ["docker inspect CONTAINER", "View detailed container metadata"]
+            ]
+          }
+        },
+        {
+          "label": "Run an Nginx Web Server",
+          "code": "user@host:~$ docker run -d --name my-nginx -p 8080:80 nginx:alpine\nUnable to find image 'nginx:alpine' locally\nalpine: Pulling from library/nginx\n5c1f6215d1b8: Pull complete\nc3b4d5e6f7a8: Pull complete\ndigest: sha256:abc123...\nStatus: Downloaded newer image for nginx:alpine\nabc12345def67890abcdef1234567890abcdef1234567890abcdef1234567890ab\n\nuser@host:~$ docker ps\nCONTAINER ID   IMAGE          COMMAND                  PORTS                  STATUS        NAMES\nabc12345def6   nginx:alpine   \"/docker-entrypoint.…\"   0.0.0.0:8080->80/tcp   Up 2 minutes  my-nginx\n\nuser@host:~$ curl -s http://localhost:8080 | head -n 5\n<!DOCTYPE html>\n<html>\n<head>\n<title>Welcome to nginx!</title>\n<style>\nhtml { color-scheme: light dark; }"
+        },
+        {
+          "label": "Inspect and Debug a Container",
+          "code": "user@host:~$ docker logs my-nginx\n/docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration\n/docker-entrypoint.sh: Looking for shell scripts...\n/docker-entrypoint.sh: Launching...\n2026/07/06 10:00:00 [notice] 1#1: start worker processes\n\nuser@host:~$ docker exec -it my-nginx sh\n/ # ls -la /usr/share/nginx/html/\ndrwxr-xr-x   2 root root   4096 Jul  6 10:00 .\ndrwxr-xr-x   3 root root   4096 Jul  6 10:00 ..\n-rw-r--r--   1 root root    497 Jul  6 10:00 50x.html\n-rw-r--r--   1 root root    615 Jul  6 10:00 index.html\n/ # exit\n\nuser@host:~$ docker inspect my-nginx --format '{{.NetworkSettings.IPAddress}}'\n172.17.0.2\n\nuser@host:~$ docker inspect my-nginx --format '{{.State.Status}}'\nrunning"
+        },
+        {
+          "label": "Clean Up Containers and Images",
+          "code": "user@host:~$ docker stop my-nginx\nmy-nginx\n\nuser@host:~$ docker rm my-nginx\nmy-nginx\n\nuser@host:~$ docker rm -f my-nginx  # If still running\nmy-nginx\n\n# Remove unused resources:\nuser@host:~$ docker container prune\nWARNING! This will remove all stopped containers.\nAre you sure you want to continue? [y/N] y\nDeleted Containers:\nabc12345def6\n\nuser@host:~$ docker image prune\nWARNING! This will remove all dangling images.\nAre you sure you want to continue? [y/N] y\n\nuser@host:~$ docker system prune -a  # Remove ALL unused containers, images, networks\nWARNING! This will remove all unused resources.\nAre you sure you want to continue? [y/N] y\n\nTotal reclaimed space: 342.5MB"
+        }
+      ]
+    },
+    {
+      "id": "dockerfile-fundamentals",
+      "title": "5. Dockerfile Fundamentals",
+      "description": "Writing your first Dockerfile and understanding the key instructions.",
+      "content": [
+        "A Dockerfile is a text file with instructions that define how to build a Docker image. Each instruction creates a layer in the image. Understanding the core instructions — FROM, RUN, COPY, CMD, ENV, WORKDIR, and EXPOSE — covers 90% of use cases."
+      ],
+      "infoBox": {
+        "type": "tip",
+        "content": "Always pin base image versions with exact tags (e.g., node:22-alpine, python:3.12-slim). Never use :latest in production — it produces non-reproducible builds."
+      },
+      "items": [
+        {
+          "label": "Dockerfile Instruction Reference",
+          "table": {
+            "headers": ["Instruction", "Purpose", "Example"],
+            "rows": [
+              ["FROM", "Set the base image", "FROM node:22-alpine"],
+              ["WORKDIR", "Set working directory", "WORKDIR /app"],
+              ["COPY", "Copy files from host to image", "COPY package*.json ./"],
+              ["RUN", "Execute commands during build", "RUN npm ci"],
+              ["ENV", "Set environment variables", "ENV NODE_ENV=production"],
+              ["EXPOSE", "Document container port", "EXPOSE 3000"],
+              ["CMD", "Default command on container start", "CMD [\"node\", \"server.js\"]"],
+              ["ENTRYPOINT", "Main executable (harder to override)", "ENTRYPOINT [\"python\"]"],
+              ["ARG", "Build-time variable", "ARG VERSION=1.0"],
+              ["LABEL", "Add metadata to image", "LABEL maintainer=\"team@example.com\""],
+              ["HEALTHCHECK", "Define health check command", "HEALTHCHECK CMD curl -f http://localhost || exit 1"],
+              ["USER", "Set user for runtime", "USER node"],
+              ["VOLUME", "Create mount point", "VOLUME /data"]
+            ]
+          }
+        },
+        {
+          "label": "Example: Node.js Dockerfile",
+          "code": "# Dockerfile for a Node.js application\nFROM node:22-alpine AS base\n\nWORKDIR /app\n\n# Copy dependency files first (for better caching)\nCOPY package.json package-lock.json ./\n\n# Install production dependencies only\nRUN npm ci --only=production\n\n# Copy application source\nCOPY . .\n\n# Application listens on this port\nEXPOSE 3000\n\n# Run as non-root user\nUSER node\n\n# Start the application\nCMD [\"node\", \"server.js\"]"
+        },
+        {
+          "label": "Example: Python (Flask/FastAPI) Dockerfile",
+          "code": "# Dockerfile for a Python web application\nFROM python:3.12-slim\n\nWORKDIR /app\n\n# Install system dependencies\nRUN apt-get update && apt-get install -y --no-install-recommends \\\n    gcc \\\n    && rm -rf /var/lib/apt/lists/*\n\n# Copy requirements and install Python dependencies\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\n\n# Copy application code\nCOPY . .\n\nEXPOSE 8000\n\n# Run with uvicorn (FastAPI) or gunicorn (Flask)\nCMD [\"uvicorn\", \"main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]"
+        },
+        {
+          "label": "Example: Go Dockerfile (Compiled Binary)",
+          "code": "# Dockerfile for a Go application\nFROM golang:1.23-alpine AS builder\n\nWORKDIR /build\n\nCOPY go.mod go.sum ./\nRUN go mod download\n\nCOPY . .\nRUN CGO_ENABLED=0 GOOS=linux go build -o /app ./cmd/server\n\n# Minimal runtime image\nFROM alpine:3.20\n\nRUN apk add --no-cache ca-certificates tzdata\n\nCOPY --from=builder /app /app\n\nEXPOSE 8080\n\nCMD [\"/app\"]"
+        },
+        {
+          "label": "The .dockerignore File",
+          "content": [
+            "The .dockerignore file excludes files from the build context, similar to .gitignore. This speeds up builds and prevents secrets from being copied into the image.",
+            "Place .dockerignore in the same directory as your Dockerfile."
+          ],
+          "code": "# .dockerignore\nnode_modules\nnpm-debug.log\n.git\n.gitignore\n.env\n.env.*\nDockerfile\n.dockerignore\n*.md\ndist\n.cache\ncoverage\ntest\n__pycashe__\n*.pyc"
+        }
+      ]
+    },
+    {
+      "id": "building-images",
+      "title": "6. Building Images with docker build",
+      "description": "Building, tagging, and managing Docker images.",
+      "content": [
+        "The docker build command reads a Dockerfile and produces an image. Understanding the build context, tagging conventions, and BuildKit features is essential for efficient image builds."
+      ],
+      "items": [
+        {
+          "label": "Docker Build Commands",
+          "table": {
+            "headers": ["Command", "Description"],
+            "rows": [
+              ["docker build -t NAME:TAG .", "Build an image with a name and tag"],
+              ["docker build -f Dockerfile.prod .", "Use a specific Dockerfile"],
+              ["docker build --no-cache .", "Build without using cache"],
+              ["docker build --target STAGE .", "Stop at a specific multi-stage build stage"],
+              ["docker build --build-arg VAR=VALUE .", "Pass build arguments"],
+              ["docker build --secret id=mysecret,src=./secret.txt .", "Mount a secret during build"],
+              ["docker images", "List all local images"],
+              ["docker rmi IMAGE", "Remove an image"],
+              ["docker tag SOURCE TARGET", "Tag an image with a new name"],
+              ["docker pull IMAGE", "Download an image from a registry"],
+              ["docker push IMAGE", "Upload an image to a registry"]
+            ]
+          }
+        },
+        {
+          "label": "Build and Tag an Image",
+          "code": "user@host:~/myapp$ docker build -t myapp:1.0.0 .\n[+] Building 12.5s (10/10) FINISHED\n => [internal] load build definition from Dockerfile                   0.1s\n => [internal] load metadata for docker.io/library/node:22-alpine      1.2s\n => [internal] load .dockerignore                                      0.1s\n => [1/5] FROM node:22-alpine@sha256:abc...                            1.5s\n => [2/5] WORKDIR /app                                                 0.1s\n => [3/5] COPY package*.json ./                                        0.1s\n => [4/5] RUN npm ci --only=production                                 6.8s\n => [5/5] COPY . .                                                     0.3s\n => exporting to image                                                 0.5s\n => => naming to docker.io/library/myapp:1.0.0\n\nuser@host:~/myapp$ docker images\nREPOSITORY   TAG       IMAGE ID       CREATED          SIZE\nmyapp        1.0.0     abc12345def6   12 seconds ago   182MB\nnginx        alpine    def67890abc1   2 weeks ago      42.6MB"
+        },
+        {
+          "label": "Understanding the Build Context",
+          "text": "The final argument to docker build (the . in the command) specifies the build context — the directory sent to the Docker daemon. Everything in the context is available to COPY instructions in the Dockerfile.\n\nA large build context slows down builds. Keep it small by:\n1. Using a .dockerignore file to exclude unnecessary files\n2. Placing the Dockerfile at the project root (not in a subdirectory that requires sending extra files)\n3. Being intentional about what goes in the context — you don't need node_modules, .git, or test data"
+        },
+        {
+          "label": "BuildKit Features (Default in Docker 29+)",
+          "text": [
+            "BuildKit is the default build backend in Docker Engine 29+. It provides significant improvements over the legacy builder:",
+            "- Parallel stage execution — multi-stage build stages run concurrently when they don't depend on each other",
+            "- Content-addressable caching — cache keys are based on content, not just command strings",
+            "--mount=type=cache — cache package manager downloads across builds",
+            "--mount=type=secret — securely mount secrets during build without embedding them in layers",
+            "--mount=type=ssh — forward SSH agent for cloning private repositories",
+            "Automatic garbage collection of unused cache data"
+          ]
+        },
+        {
+          "label": "Using BuildKit Cache Mounts",
+          "code": "# Dockerfile with BuildKit cache mounts\n# Cache apt and pip packages across builds\nFROM python:3.12-slim\n\nWORKDIR /app\n\n# Cache apt packages\nRUN --mount=type=cache,target=/var/cache/apt,sharing=locked \\\n    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \\\n    apt-get update && apt-get install -y --no-install-recommends gcc\n\nCOPY requirements.txt .\n\n# Cache pip packages\nRUN --mount=type=cache,target=/root/.cache/pip \\\n    pip install --no-cache-dir -r requirements.txt\n\nCOPY . .\n\nCMD [\"python\", \"app.py\"]"
+        }
+      ]
+    },
+    {
+      "id": "layers-and-cache",
+      "title": "7. Layer Optimization and the Build Cache",
+      "description": "Understanding Docker image layers and maximizing cache efficiency.",
+      "content": [
+        "Every instruction in a Dockerfile creates a layer. Layers are cached — if a layer hasn't changed, Docker reuses it from the cache instead of rebuilding it. Understanding this cache mechanism is critical for fast builds."
+      ],
+      "infoBox": {
+        "type": "tip",
+        "content": "The golden rule of Dockerfile layer ordering: put instructions that change least often at the top, and instructions that change most often at the bottom. This maximizes cache reuse."
+      },
+      "items": [
+        {
+          "label": "Layer Ordering — Good vs Bad",
+          "code": "# BAD: Source code copied before dependencies\n# Changing any source file invalidates the npm install cache\nFROM node:22-alpine\nWORKDIR /app\nCOPY . .                          # Changes on every code edit\nRUN npm ci --only=production      # Re-runs on every build even if package.json hasn't changed\nCMD [\"node\", \"server.js\"]\n\n# GOOD: Dependencies installed before copying source\n# npm ci only re-runs when package files change\nFROM node:22-alpine\nWORKDIR /app\nCOPY package.json package-lock.json ./   # Rarely changes\nRUN npm ci --only=production             # Cached unless package files change\nCOPY . .                                 # Changes on every code edit, but this is fast\nCMD [\"node\", \"server.js\"]"
+        },
+        {
+          "label": "Checking Layer Cache Status",
+          "code": "user@host:~/myapp$ docker build -t myapp .\n[+] Building 15.2s (10/10) FINISHED\n\n# Add a small change to source code, rebuild:\nuser@host:~/myapp$ docker build -t myapp .\n[+] Building 1.8s (10/10) FINISHED\n => [internal] load build definition from Dockerfile         0.1s\n => CACHED [2/5] WORKDIR /app                               0.0s\n => CACHED [3/5] COPY package*.json ./                      0.0s\n => CACHED [4/5] RUN npm ci --only=production               0.0s\n => [5/5] COPY . .                                          0.8s  # Only this re-runs!\n => exporting to image                                      0.3s"
+        },
+        {
+          "label": "Reducing Image Size",
+          "table": {
+            "headers": ["Technique", "Impact", "Example"],
+            "rows": [
+              ["Use Alpine-based images", "Reduces size 5-10x", "node:22-alpine (126MB) vs node:22 (380MB)"],
+              ["Multi-stage builds", "Removes build tools from final image", "Builder stage with Go SDK, runtime stage with compiled binary only"],
+              ["Clean up package manager caches", "Saves 20-100MB", "apt-get clean && rm -rf /var/lib/apt/lists/*"],
+              ["Combine RUN statements", "Reduces layer count", "RUN apt-get update && apt-get install ... && cleanup"],
+              ["Use --no-cache-dir for pip", "Saves 10-50MB", "pip install --no-cache-dir -r requirements.txt"],
+              ["Use npm ci instead of npm install", "Smaller, deterministic", "npm ci --only=production"],
+              ["Use distroless base images", "Minimal attack surface", "gcr.io/distroless/nodejs22-debian12"]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "multi-stage-builds",
+      "title": "8. Multi-Stage Builds",
+      "description": "Building smaller, more secure images by separating build and runtime environments.",
+      "content": [
+        "Multi-stage builds are the single most impactful optimization in modern Docker. The pattern uses multiple FROM statements in one Dockerfile. The first stage compiles or bundles the application with all build tools. The final stage copies only the runtime artifacts — no compilers, no dev dependencies, no intermediate files.",
+        "The result: smaller images (often 80-90% smaller), fewer CVEs (fewer packages in the final image), and faster deployments."
+      ],
+      "infoBox": {
+        "type": "info",
+        "content": "Multi-stage builds are not optional for production images. Every official Docker best practice guide, from Docker Inc. to the CNCF, mandates multi-stage builds for production containers."
+      },
+      "items": [
+        {
+          "label": "Node.js Multi-Stage Build",
+          "code": "# Stage 1: Install dependencies and build\nFROM node:22-alpine AS builder\n\nWORKDIR /build\n\nCOPY package.json package-lock.json ./\nRUN npm ci\n\nCOPY . .\nRUN npm run build\n\n# Stage 2: Production runtime (no dev tools, no source code)\nFROM node:22-alpine AS production\n\nWORKDIR /app\n\n# Copy only production dependencies\nCOPY package.json package-lock.json ./\nRUN npm ci --only=production && npm cache clean --force\n\n# Copy compiled output from builder\nCOPY --from=builder /build/dist ./dist\n\nEXPOSE 3000\n\nUSER node\n\nCMD [\"node\", \"dist/server.js\"]\n\n# Build output:\n# Standard build:  ~1.2GB (includes devDependencies, TypeScript compiler, source maps)\n# Multi-stage:      ~180MB (only production code and runtime)"
+        },
+        {
+          "label": "Python Multi-Stage Build",
+          "code": "# Stage 1: Builder\nFROM python:3.12-slim AS builder\n\nWORKDIR /build\n\nCOPY requirements.txt .\nRUN pip install --no-cache-dir --user -r requirements.txt\n\nCOPY . .\n\n# Stage 2: Runtime\nFROM python:3.12-slim\n\nWORKDIR /app\n\n# Copy installed packages from builder\nCOPY --from=builder /root/.local /root/.local\n\n# Make sure scripts in .local are usable\nENV PATH=/root/.local/bin:$PATH\n\nCOPY --from=builder /build/app ./app\n\nEXPOSE 8000\n\nUSER 10001\n\nCMD [\"uvicorn\", \"app.main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]"
+        },
+        {
+          "label": "Go Multi-Stage Build (Most Dramatic Size Reduction)",
+          "code": "# Stage 1: Build the Go binary\nFROM golang:1.23-alpine AS builder\n\nWORKDIR /build\n\nCOPY go.mod go.sum ./\nRUN go mod download\n\nCOPY . .\n\n# Build a statically linked binary\nRUN CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-s -w' -o /app ./cmd/server\n\n# Stage 2: Minimal runtime\nFROM scratch\n\nCOPY --from=builder /app /app\n\nEXPOSE 8080\n\nENTRYPOINT [\"/app\"]\n\n# Build output:\n# Standard golang image: ~950MB\n# Multi-stage with scratch: ~15MB (just the compiled binary!)"
+        },
+        {
+          "label": "Multi-Stage Build Tips",
+          "text": [
+            "1. Name your stages (FROM node:22-alpine AS builder) — this makes COPY --from=builder readable",
+            "2. Use docker build --target STAGE to stop at a specific stage for debugging",
+            "3. BuildKit runs independent stages in parallel automatically",
+            "4. The final stage should be as minimal as possible — use scratch, distroless, or alpine",
+            "5. Never include build tools, package managers, or dev dependencies in the final stage"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "volumes-persistence",
+      "title": "9. Volumes and Data Persistence",
+      "description": "Managing persistent data with named volumes, bind mounts, and tmpfs.",
+      "content": [
+        "Containers are ephemeral — when you remove a container, all data written to its writable layer is lost. Volumes provide persistent storage that survives container lifecycle events. Docker supports three types of mounts: named volumes (managed by Docker), bind mounts (host directory mounted into the container), and tmpfs mounts (in-memory storage)."
+      ],
+      "infoBox": {
+        "type": "warning",
+        "content": "Never store persistent data in a container's writable layer. Use named volumes for production databases. Bind mounts are convenient for development but can have permission issues and are harder to back up."
+      },
+      "items": [
+        {
+          "label": "Volume Types Comparison",
+          "table": {
+            "headers": ["Feature", "Named Volume", "Bind Mount", "tmpfs"],
+            "rows": [
+              ["Managed by Docker", "Yes", "No", "Yes"],
+              ["Stored in Docker area", "/var/lib/docker/volumes/", "Any host path", "Host memory only"],
+              ["Persists after container removal", "Yes", "Yes", "No (ephemeral)"],
+              ["Backup method", "docker run --volumes-from or tar", "Standard file backup", "Not applicable"],
+              ["Performance", "Native (fast)", "Native (fast)", "Very fast (RAM)"],
+              ["Use case", "Databases, persistent app data", "Development, config files", "Sensitive data, temporary files"],
+              ["Permission issues", "Rare (Docker manages UID/GID)", "Common (host UID vs container UID)", "None"]
+            ]
+          }
+        },
+        {
+          "label": "Named Volume Commands",
+          "code": "# Create a named volume\ndocker volume create pg_data\n\n# List volumes\ndocker volume ls\nDRIVER    VOLUME NAME\nlocal     pg_data\n\n# Inspect a volume\ndocker volume inspect pg_data\n[\n    {\n        \"CreatedAt\": \"2026-07-06T10:00:00Z\",\n        \"Driver\": \"local\",\n        \"Mountpoint\": \"/var/lib/docker/volumes/pg_data/_data\",\n        \"Name\": \"pg_data\",\n        \"Options\": null,\n        \"Scope\": \"local\"\n    }\n]\n\n# Remove a volume\ndocker volume rm pg_data\n\n# Remove all unused volumes\ndocker volume prune"
+        },
+        {
+          "label": "Using Volumes with PostgreSQL",
+          "code": "# Run PostgreSQL with a named volume for data persistence\ndocker run -d \\\n    --name postgres \\\n    -e POSTGRES_USER=myapp \\\n    -e POSTGRES_PASSWORD=secret \\\n    -e POSTGRES_DB=mydb \\\n    -v pg_data:/var/lib/postgresql/data \\\n    -p 5432:5432 \\\n    postgres:16-alpine\n\n# Data survives container removal:\ndocker stop postgres && docker rm postgres\ndocker run -d \\\n    --name postgres \\\n    -e POSTGRES_USER=myapp \\\n    -e POSTGRES_PASSWORD=secret \\\n    -e POSTGRES_DB=mydb \\\n    -v pg_data:/var/lib/postgresql/data \\\n    postgres:16-alpine\n# All data is still there!"
+        },
+        {
+          "label": "Bind Mounts for Development",
+          "code": "# Mount current directory into container for live code reloading\ndocker run -d \\\n    --name myapp-dev \\\n    -v $(pwd):/app \\\n    -p 3000:3000 \\\n    node:22-alpine \\\n    npx nodemon server.js\n\n# Read-only bind mount for configuration files:\ndocker run -d \\\n    --name nginx \\\n    -v /host/path/nginx.conf:/etc/nginx/nginx.conf:ro \\\n    -p 80:80 \\\n    nginx:alpine"
+        },
+        {
+          "label": "Backing Up a Volume",
+          "code": "# Backup a named volume to a tar file\ndocker run --rm -v pg_data:/source -v $(pwd):/backup alpine \\\n    tar czf /backup/pg_data_backup.tar.gz -C /source .\n\n# Restore a volume from a tar file\ndocker run --rm -v pg_data:/target -v $(pwd):/backup alpine \\\n    tar xzf /backup/pg_data_backup.tar.gz -C /target"
+        }
+      ]
+    },
+    {
+      "id": "networking",
+      "title": "10. Docker Networking",
+      "description": "Understanding Docker network drivers and container communication.",
+      "content": [
+        "Docker networking enables containers to communicate with each other and with the outside world. Docker provides several built-in network drivers, each designed for different use cases. Understanding when to use each driver is critical for both development and production deployments."
+      ],
+      "items": [
+        {
+          "label": "Docker Network Drivers",
+          "table": {
+            "headers": ["Driver", "Isolation", "Use Case", "DNS Resolution"],
+            "rows": [
+              ["bridge (default)", "Single host", "Default for standalone containers", "IP only (default), names on custom bridges"],
+              ["host", "No isolation", "Performance-critical, container uses host network stack", "Host DNS"],
+              ["none", "Full isolation", "Security-sensitive, offline processing", "None"],
+              ["overlay", "Multi-host", "Docker Swarm, multi-node deployments", "Automatic"],
+              ["macvlan", "Network-level", "Containers with own MAC addresses, legacy apps", "External DHCP"]
+            ]
+          }
+        },
+        {
+          "label": "User-Defined Bridge Networks (Recommended)",
+          "content": [
+            "The default bridge network has a critical limitation: containers on it can only communicate by IP address, not by name. IP addresses are assigned dynamically — restarting a container changes its IP.",
+            "A user-defined bridge network fixes this. Docker runs an embedded DNS server on user-defined networks, so containers can reach each other by container name. This is the pattern every Docker Compose setup uses.",
+            "Always create a user-defined network for multi-container applications."
+          ],
+          "code": "# Create a user-defined bridge network\ndocker network create myapp-network\n\n# Run two containers on the same network\ndocker run -d --name db --network myapp-network -e POSTGRES_PASSWORD=secret postgres:16-alpine\n\ndocker run -d --name api --network myapp-network -p 3000:3000 myapp:1.0.0\n\n# The API can reach the database by name:\n# DATABASE_URL=postgres://postgres:secret@db:5432/mydb\n\n# Verify connectivity:\ndocker exec api ping db\nPING db (172.18.0.2) 56(84) bytes of data.\n64 bytes from db.myapp-network (172.18.0.2): icmp_seq=1 ttl=64 time=0.089ms"
+        },
+        {
+          "label": "Exposing Ports — Best Practices",
+          "code": "# BAD: Expose database to the world\ndocker run -d -p 5432:5432 --name db postgres:16-alpine\n# Anyone on your network can connect to port 5432\n\n# GOOD: Expose only what needs external access\n# Bind database to localhost only (for local tooling)\ndocker run -d -p 127.0.0.1:5432:5432 --name db postgres:16-alpine\n\n# BEST: Don't expose the database port at all\n# API connects via the internal Docker network\ndocker network create myapp-network\ndocker run -d --name db --network myapp-network postgres:16-alpine\ndocker run -d --name api --network myapp-network -p 3000:3000 myapp\n# Database is only accessible from other containers on the same network"
+        },
+        {
+          "label": "Network Isolation — Internal Networks",
+          "code": "# Create an internal network (no external internet access)\ndocker network create --internal backend-network\n\n# Database on internal network cannot reach the internet\ndocker run -d --name db --network backend-network postgres:16-alpine\n\n# Create a regular network for frontend\ndocker network create frontend-network\n\n# API connects to both: frontend (for web traffic) and backend (for database)\ndocker run -d --name api \\\n    --network frontend-network \\\n    -p 3000:3000 \\\n    myapp:1.0.0\n\n# Add API to backend network too\ndocker network connect backend-network api\n\n# Now:\n# - Web traffic reaches API via frontend-network\n# - API reaches database via backend-network\n# - Database has no internet access (internal network)"
+        }
+      ]
+    },
+    {
+      "id": "docker-compose",
+      "title": "11. Docker Compose — Multi-Container Applications",
+      "description": "Defining and running multi-service applications with Docker Compose.",
+      "content": [
+        "Docker Compose lets you define your entire application stack — multiple services, networks, and volumes — in a single YAML file. With one command (docker compose up), you start everything: the web server, API, database, cache, and any other service.",
+        "In 2026, Docker Compose v2 is the standard. The legacy docker-compose (Python, hyphenated) command is fully retired. Compose files use the unified Compose Specification, and the version: top-level key is deprecated."
+      ],
+      "infoBox": {
+        "type": "info",
+        "content": "The canonical filename is now compose.yaml (though docker-compose.yml still works). The version: key is deprecated — Compose v2.21+ ignores it entirely. The schema is implicit based on the file content."
+      },
+      "items": [
+        {
+          "label": "Compose File Structure",
+          "code": "# compose.yaml — Basic web app with PostgreSQL\nname: myapp\n\nservices:\n  web:\n    build: .\n    ports:\n      - \"3000:3000\"\n    environment:\n      - DATABASE_URL=postgres://myapp:secret@db:5432/mydb\n      - NODE_ENV=production\n    depends_on:\n      db:\n        condition: service_healthy\n    networks:\n      - frontend\n      - backend\n    restart: unless-stopped\n\n  db:\n    image: postgres:16-alpine\n    volumes:\n      - pg_data:/var/lib/postgresql/data\n    environment:\n      - POSTGRES_USER=myapp\n      - POSTGRES_PASSWORD=secret\n      - POSTGRES_DB=mydb\n    healthcheck:\n      test: [\"CMD-SHELL\", \"pg_isready -U myapp -d mydb\"]\n      interval: 10s\n      timeout: 5s\n      retries: 5\n    networks:\n      - backend\n    restart: unless-stopped\n\nnetworks:\n  frontend:\n  backend:\n    internal: true\n\nvolumes:\n  pg_data:"
+        },
+        {
+          "label": "Core Compose Commands",
+          "table": {
+            "headers": ["Command", "Description"],
+            "rows": [
+              ["docker compose up -d", "Start all services in detached mode"],
+              ["docker compose up -d --build", "Rebuild images and start"],
+              ["docker compose down", "Stop and remove containers, networks"],
+              ["docker compose down -v", "Down AND remove volumes (DESTRUCTIVE)"],
+              ["docker compose logs -f", "Follow logs from all services"],
+              ["docker compose logs -f web", "Follow logs from a specific service"],
+              ["docker compose ps", "List service status"],
+              ["docker compose exec web sh", "Execute command in a running service"],
+              ["docker compose build", "Build or rebuild all service images"],
+              ["docker compose pull", "Pull all service images"],
+              ["docker compose restart", "Restart all services"],
+              ["docker compose config", "Validate and view the resolved compose file"]
+            ]
+          }
+        },
+        {
+          "label": "Start Your Stack",
+          "code": "user@host:~/myapp$ docker compose up -d\n[+] Running 4/4\n ✔ Network myapp_frontend    Created\n ✔ Network myapp_backend     Created\n ✔ Volume myapp_pg_data      Created\n ✔ Container myapp-web-1     Started\n ✔ Container myapp-db-1      Started\n\nuser@host:~/myapp$ docker compose ps\nNAME          IMAGE               COMMAND                  SERVICE   STATUS        PORTS\nmyapp-web-1   myapp-web           \"node server.js\"         web       running       0.0.0.0:3000->3000/tcp\nmyapp-db-1    postgres:16-alpine  \"docker-entrypoint.…\"    db        running (healthy)  5432/tcp\n\nuser@host:~/myapp$ docker compose logs -f web\nmyapp-web-1  | Server listening on port 3000\nmyapp-web-1  | Connected to database at db:5432\n\nuser@host:~/myapp$ curl http://localhost:3000/health\n{\"status\":\"ok\",\"database\":\"connected\"}\n\nuser@host:~/myapp$ docker compose down\n[+] Running 3/3\n ✔ Container myapp-web-1     Removed\n ✔ Container myapp-db-1      Removed\n ✔ Network myapp_frontend    Removed\n ✔ Network myapp_backend     Removed\n# Volume myapp_pg_data persists (not removed with down)"
+        },
+        {
+          "label": "Docker Compose for Development (Hot Reload)",
+          "code": "# compose.dev.yaml — Development overrides\nname: myapp-dev\n\nservices:\n  web:\n    build:\n      context: .\n      dockerfile: Dockerfile.dev\n    volumes:\n      - .:/app          # Bind mount for live code reload\n    ports:\n      - \"3000:3000\"\n      - \"9229:9229\"    # Debug port\n    environment:\n      - NODE_ENV=development\n      - DEBUG=true\n    command: npx nodemon --inspect=0.0.0.0 server.js\n\n  db:\n    image: postgres:16-alpine\n    ports:\n      - \"5432:5432\"     # Expose for local DB tools\n    volumes:\n      - pg_data_dev:/var/lib/postgresql/data\n      - ./init.sql:/docker-entrypoint-initdb.d/init.sql\n      environment:\n      - POSTGRES_USER=myapp\n      - POSTGRES_PASSWORD=secret\n      - POSTGRES_DB=mydb\n\nvolumes:\n  pg_data_dev:\n\n# Usage:\n# docker compose -f compose.dev.yaml up -d\n# docker compose -f compose.dev.yaml down"
+        }
+      ]
+    },
+    {
+      "id": "production-compose",
+      "title": "12. Docker Compose for Production",
+      "description": "Production-hardening your Compose stack with health checks, resource limits, secrets, and proper networking.",
+      "content": [
+        "Docker Compose is not just for development. With careful configuration, it is a reliable deployment tool for single-server production environments. The key differences between a dev Compose file and a production one: explicit everything."
+      ],
+      "items": [
+        {
+          "label": "Production Compose File Template",
+          "code": "# compose.prod.yaml — Production-ready stack\nname: myapp-prod\n\nservices:\n  web:\n    image: ghcr.io/myorg/myapp:1.4.2          # Pinned — never :latest in production\n    ports:\n      - \"127.0.0.1:3000:3000\"                  # Bind to localhost; reverse proxy in front\n    env_file: .env.production\n    secrets:\n      - db_password\n    depends_on:\n      db:\n        condition: service_healthy\n    networks:\n      - frontend\n      - backend\n    restart: unless-stopped\n    logging:\n      driver: journald\n      options:\n        tag: \"myapp-web\"\n    deploy:\n      resources:\n        limits:\n          cpus: \"1.0\"\n          memory: 512M\n    healthcheck:\n      test: [\"CMD\", \"wget\", \"-qO-\", \"http://localhost:3000/healthz\"]\n      interval: 30s\n      timeout: 5s\n      retries: 3\n      start_period: 10s\n    security_opt:\n      - no-new-privileges:true\n    read_only: true\n    tmpfs:\n      - /tmp:size=100m,noexec\n\n  db:\n    image: postgres:16.3-alpine\n    volumes:\n      - pg_data:/var/lib/postgresql/data\n    env_file: .env.production\n    secrets:\n      - db_password\n    networks:\n      - backend                          # Internal network only\n    restart: unless-stopped\n    logging:\n      driver: journald\n      options:\n        tag: \"myapp-db\"\n    deploy:\n      resources:\n        limits:\n          cpus: \"1.0\"\n          memory: 512M\n    healthcheck:\n      test: [\"CMD-SHELL\", \"pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB\"]\n      interval: 10s\n      timeout: 5s\n      retries: 5\n    security_opt:\n      - no-new-privileges:true\n\n  nginx:\n    image: nginx:1.27-alpine\n    ports:\n      - \"80:80\"\n      - \"443:443\"\n    volumes:\n      - ./nginx.conf:/etc/nginx/nginx.conf:ro\n      - ./ssl:/etc/nginx/ssl:ro\n      - ./public:/var/www/html:ro\n    depends_on:\n      - web\n    networks:\n      - frontend\n    restart: unless-stopped\n    deploy:\n      resources:\n        limits:\n          cpus: \"0.5\"\n          memory: 256M\n\nnetworks:\n  frontend:\n  backend:\n    internal: true                       # No external internet access\n\nvolumes:\n  pg_data:\n    driver: local\n\nsecrets:\n  db_password:\n    file: ./secrets/db_password.txt"
+        },
+        {
+          "label": "Key Production Settings Explained",
+          "table": {
+            "headers": ["Setting", "Purpose", "Why It Matters"],
+            "rows": [
+              ["restart: unless-stopped", "Auto-restart on crash or host reboot", "Without this, a service failure requires manual intervention"],
+              ["depends_on: condition: service_healthy", "Wait for service readiness", "Prevents app from starting before DB is ready to accept connections"],
+              ["healthcheck", "Define what 'healthy' means for each service", "Enables depends_on conditions, enables monitoring"],
+              ["deploy.resources.limits", "CPU and memory limits", "Prevents one service from starving others"],
+              ["read_only: true", "Read-only root filesystem", "Prevents unauthorized writes, improves security"],
+              ["tmpfs", "In-memory writable storage", "Provides writable /tmp without compromising read-only FS"],
+              ["cap_drop: ALL", "Drop all Linux capabilities", "Minimizes kernel attack surface"],
+              ["logging.driver: journald", "Structured logging to systemd journal", "Centralized log management, log rotation"],
+              ["network internal: true", "No external network access", "Database cannot reach the internet"],
+              ["ports: 127.0.0.1:HOST:CONTAINER", "Bind to localhost only", "DB and internal services not exposed on network"]
+            ]
+          }
+        },
+        {
+          "label": "Environment Variables and Secrets",
+          "content": [
+            "In production, never hardcode secrets in Compose files. Use these methods in order of preference:",
+            "1. Docker secrets — files mounted at /run/secrets/ (available in Swarm mode or via the secrets top-level key with file: source)",
+            "2. Env file — .env.production (not committed to version control)",
+            "3. External secret manager — HashiCorp Vault, AWS Secrets Manager (via entrypoint script)"
+          ],
+          "code": "# Method 1: Docker Secrets (best for passwords, tokens)\nservices:\n  web:\n    secrets:\n      - db_password\n      - api_key\n    environment:\n      - DB_PASSWORD_FILE=/run/secrets/db_password\n\nsecrets:\n  db_password:\n    file: ./secrets/db_password.txt\n  api_key:\n    file: ./secrets/api_key.txt\n\n# Method 2: Env file (good for non-secret config)\nservices:\n  web:\n    env_file: .env.production\n\n# .env.production file:\n# NODE_ENV=production\n# DATABASE_URL=postgres://myapp@db:5432/mydb\n# REDIS_URL=redis://cache:6379\n\n# Method 3: Environment variables inline (for non-sensitive config only)\nservices:\n  web:\n    environment:\n      - NODE_ENV=production\n      - LOG_LEVEL=info"
+        }
+      ]
+    },
+    {
+      "id": "security",
+      "title": "13. Docker Security Hardening",
+      "description": "Hardening containers from Dockerfile to runtime.",
+      "content": [
+        "Container security is not automatic. Default Docker settings prioritize ease of use over security. In production, you must harden every layer: the Dockerfile, the Compose configuration, and the runtime environment.",
+        "The most critical security practices: run as a non-root user, use read-only filesystems, drop unnecessary capabilities, never mount the Docker socket into containers, and scan images for vulnerabilities."
+      ],
+      "infoBox": {
+        "type": "warning",
+        "content": "Never mount /var/run/docker.sock into a container unless you fully understand the implications. It gives the container root-level access to the Docker daemon — effectively root on the host."
+      },
+      "items": [
+        {
+          "label": "Docker Security Checklist",
+          "table": {
+            "headers": ["Practice", "Implementation", "Risk If Ignored"],
+            "rows": [
+              ["Non-root user", "USER appuser in Dockerfile", "Container runs as root — if compromised, attacker has host root"],
+              ["Read-only filesystem", "read_only: true in Compose", "Attacker can write malicious files, modify application code"],
+              ["Drop all capabilities", "cap_drop: ALL + cap_add only what's needed", "Unnecessary kernel capabilities expand attack surface"],
+              ["No privileged mode", "Never use --privileged or privileged: true", "Container has unrestricted access to host devices"],
+              ["No Docker socket", "Never mount /var/run/docker.sock", "Container can execute docker commands as root on host"],
+              ["Resource limits", "deploy.resources.limits in Compose", "DoS attack can consume all host memory/CPU"],
+              ["Image scanning", "docker scout or Trivy in CI", "Deploying images with known CVEs"],
+              ["Pinned image tags", "Use postgres:16.3-alpine not :latest", "Unpredictable base image changes introduce CVEs"],
+              ["Internal networks", "internal: true for backend networks", "Database accessible from compromised frontend container"],
+              ["Secrets management", "Docker secrets or env_file, not inline env", "Secrets visible in docker inspect, Compose files, logs"]
+            ]
+          }
+        },
+        {
+          "label": "Non-Root User in Dockerfile",
+          "code": "# Dockerfile — always run as non-root\nFROM node:22-alpine\n\n# Create a non-root user\nRUN addgroup -S appgroup && adduser -S appuser -G appgroup\n\nWORKDIR /app\n\n# Copy and install dependencies (as root — only needed during build)\nCOPY package*.json ./\nRUN npm ci --only=production\n\nCOPY . .\n\n# Switch to non-root user before CMD\nUSER appuser\n\nEXPOSE 3000\n\nCMD [\"node\", \"server.js\"]\n\n# Verify:\nuser@host:~$ docker exec myapp whoami\nappuser"
+        },
+        {
+          "label": "Read-Only Filesystem with tmpfs",
+          "code": "# compose.yaml — production security settings\nservices:\n  app:\n    image: myapp:1.0.0\n    read_only: true                         # Root filesystem is read-only\n    tmpfs:\n      - /tmp:size=100m,noexec               # Writable /tmp, no code execution\n      - /var/run:size=50m                   # Runtime files\n    cap_drop:\n      - ALL                                 # Drop all Linux capabilities\n    cap_add:\n      - NET_BIND_SERVICE                    # Only allow binding to ports < 1024\n    security_opt:\n      - no-new-privileges:true              # Prevent privilege escalation\n    user: \"1001:1001\"                       # Run as UID:GID (not by name)\n    ulimits:\n      nofile:\n        soft: 1024\n        hard: 2048"
+        },
+        {
+          "label": "Never Use Privileged Mode",
+          "code": "# BAD — Never do this in production\ndocker run --privileged myapp\n\n# What --privileged does:\n# - Access to all host devices (/dev)\n# - Ability to load kernel modules\n# - Bypass all capability restrictions\n# - Access to host kernel parameters\n# In short: the container has almost the same access as root on the host\n\n# GOOD — Be explicit about what you need\n# If you need specific device access:\ndocker run --device /dev/snd:/dev/snd myapp\n\n# If you need specific capabilities:\ndocker run --cap-add=NET_ADMIN --cap-add=SYS_TIME myapp"
+        }
+      ]
+    },
+    {
+      "id": "image-scanning",
+      "title": "14. Image Scanning and Registries",
+      "description": "Scanning images for vulnerabilities and managing registries.",
+      "content": [
+        "Container images inherit vulnerabilities from their base OS packages, language runtime, and application dependencies. An unpatched CVE in a base image affects every service built on it. Scan images at build time (in CI/CD), at push time (registry-side), and continuously for running images.",
+        "In 2026, the primary tools are Docker Scout (built into Docker) and Trivy (open-source, fast, CI-friendly)."
+      ],
+      "items": [
+        {
+          "label": "Scan with Docker Scout",
+          "code": "# Enable Docker Scout (requires Docker Desktop or Docker Hub login)\ndocker scout quickview myapp:1.0.0\n    ✓ Image stored for analysis\n    ✓ SBOM loaded for myapp:1.0.0\n    ✓ No vulnerable packages detected\n\n# Detailed CVE report\ndocker scout cves myapp:1.0.0\n\n# Get remediation recommendations\ndocker scout recommendations myapp:1.0.0\n\n# Scan during build\ndocker build --provenance=true --sbom=true -t myapp:1.0.0 .\ndocker scout policy myapp:1.0.0"
+        },
+        {
+          "label": "Scan with Trivy (Recommended for CI)",
+          "code": "# Install Trivy\nuser@host:~$ sudo apt-get install -y trivy\n\n# Scan an image for HIGH and CRITICAL CVEs\ntrivy image --severity HIGH,CRITICAL --exit-code 1 myapp:1.0.0\n\nmyapp:1.0.0 (alpine 3.20.0)\n========================================\nTotal: 0 (HIGH: 0, CRITICAL: 0)\n\n# Scan with more detail\ntrivy image --format table myapp:1.0.0\n\n# Scan Dockerfile for misconfigurations\ntrivy config --severity HIGH,CRITICAL Dockerfile\n\n# Generate SARIF output for GitHub Security tab\ntrivy image --format sarif --output result.sarif myapp:1.0.0"
+        },
+        {
+          "label": "Tagging and Pushing to a Registry",
+          "code": "# Log in to a registry\ndocker login ghcr.io -u myusername\nPassword:\nLogin Succeeded\n\n# Tag your image with the registry path\ndocker tag myapp:1.0.0 ghcr.io/myorg/myapp:1.0.0\ndocker tag myapp:1.0.0 ghcr.io/myorg/myapp:latest\n\n# Push to the registry\ndocker push ghcr.io/myorg/myapp:1.0.0\nThe push refers to repository [ghcr.io/myorg/myapp]\n1.0.0: digest: sha256:abc123... size: 1786\n\ndocker push ghcr.io/myorg/myapp:latest\n\n# Pull from any machine\ndocker pull ghcr.io/myorg/myapp:1.0.0"
+        },
+        {
+          "label": "Semantic Image Tagging Strategy",
+          "table": {
+            "headers": ["Tag Pattern", "Example", "Use Case"],
+            "rows": [
+              ["<major>.<minor>.<patch>", "1.4.2", "Exact version — immutable, reproducible"],
+              ["<major>.<minor>", "1.4", "Latest patch for a minor version"],
+              ["<major>", "1", "Latest minor for a major version"],
+              ["git-<sha>", "git-a1b2c3d", "CI/CD — traceable to commit"],
+              ["latest", "latest", "Convenience only — never use in production"]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "logging-monitoring",
+      "title": "15. Logging and Monitoring",
+      "description": "Managing container logs and monitoring resource usage.",
+      "content": [
+        "Docker provides built-in log management through log drivers and resource monitoring through docker stats. For production, you'll want to use structured logging drivers and integrate with external monitoring systems."
+      ],
+      "items": [
+        {
+          "label": "Docker Log Drivers",
+          "table": {
+            "headers": ["Driver", "Destination", "Use Case"],
+            "rows": [
+              ["json-file (default)", "JSON files on disk", "Development, single-server debugging"],
+              ["journald", "systemd journal", "Linux production servers"],
+              ["syslog", "syslog server", "Centralized logging infrastructure"],
+              ["fluentd", "Fluentd aggregator", "Log aggregation pipelines"],
+              ["awslogs", "CloudWatch Logs", "AWS deployments"],
+              ["gelf", "Graylog Extended Log Format", "Graylog / Logstash"],
+              ["none", "Nowhere", "Performance-critical, no logging needed"]
+            ]
+          }
+        },
+        {
+          "label": "Configuring Log Drivers",
+          "code": "# Global config: /etc/docker/daemon.json\n{\n  \"log-driver\": \"journald\",\n  \"log-opts\": {\n    \"tag\": \"{{.Name}}/{{.ID}}\"\n  }\n}\n\n# Per-container (or in Compose):\ndocker run -d \\\n    --log-driver journald \\\n    --log-opt tag=\"myapp-web\" \\\n    --name myapp \\\n    myapp:1.0.0\n\n# View logs via journalctl:\njournalctl -t myapp-web -f\n\n# Compose service:\nservices:\n  web:\n    logging:\n      driver: journald\n      options:\n        tag: \"myapp-web\""
+        },
+        {
+          "label": "Monitoring Resource Usage",
+          "code": "# Real-time container resource usage\ndocker stats\nCONTAINER ID   NAME         CPU %     MEM USAGE / LIMIT     MEM %     NET I/O          BLOCK I/O\nabc12345def6   myapp-web    2.15%     128.5MiB / 512MiB     25.1%     1.2MB / 3.4MB    0B / 0B\ndef67890abc1   myapp-db     5.30%     245.8MiB / 512MiB     48.0%     3.4MB / 1.2MB    45MB / 12MB\n\n# Inspect resource usage for a specific container\ndocker stats myapp-web --no-stream\n\n# View container events in real time\ndocker events --filter 'type=container' --filter 'event=die'\n2026-07-06T10:30:00Z container die abc12345def6 (name=myapp-web, exitCode=0, image=myapp:1.0.0)\n\n# Check Docker daemon disk usage\ndocker system df\nTYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE\nImages          5         2         1.234GB   856MB (69%)\nContainers      3         2         32.5kB    0B (0%)\nLocal Volumes   2         1         1.5GB     0B (0%)\nBuild Cache     12        0         245MB     245MB"
+        },
+        {
+          "label": "Limit Log File Size (json-file driver)",
+          "code": "# In production, always set log rotation limits:\n\n# /etc/docker/daemon.json\n{\n  \"log-driver\": \"json-file\",\n  \"log-opts\": {\n    \"max-size\": \"10m\",\n    \"max-file\": \"3\"\n  }\n}\n\n# Or per-container:\ndocker run -d \\\n    --log-opt max-size=10m \\\n    --log-opt max-file=3 \\\n    --name myapp \\\n    myapp:1.0.0\n\n# In Compose:\nservices:\n  web:\n    logging:\n      driver: json-file\n      options:\n        max-size: \"10m\"\n        max-file: \"3\""
+        }
+      ]
+    },
+    {
+      "id": "docker-in-ci",
+      "title": "16. Docker in CI/CD Pipelines",
+      "description": "Integrating Docker builds and scanning into your CI/CD workflow.",
+      "content": [
+        "The standard CI/CD pattern for Docker: build and scan the image, push to a registry, then deploy. Every stage should be automated and gated by quality checks — vulnerability scans, image size limits, and policy compliance."
+      ],
+      "items": [
+        {
+          "label": "GitHub Actions — Docker Build and Push",
+          "code": "# .github/workflows/docker-build.yml\nname: Build and Push Docker Image\n\non:\n  push:\n    branches: [main]\n    tags: ['v*']\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    permissions:\n      contents: read\n      packages: write\n\n    steps:\n      - uses: actions/checkout@v4\n\n      - name: Set up Docker Buildx\n        uses: docker/setup-buildx-action@v3\n\n      - name: Log in to GitHub Container Registry\n        uses: docker/login-action@v3\n        with:\n          registry: ghcr.io\n          username: ${{ github.actor }}\n          password: ${{ secrets.GITHUB_TOKEN }}\n\n      - name: Extract metadata\n        id: meta\n        uses: docker/metadata-action@v5\n        with:\n          images: ghcr.io/${{ github.repository }}\n          tags: |\n            type=semver,pattern={{version}}\n            type=semver,pattern={{major}}.{{minor}}\n            type=sha,format=short\n            type=raw,value=latest,enable={{is_default_branch}}\n\n      - name: Build and push\n        uses: docker/build-push-action@v6\n        with:\n          context: .\n          push: true\n          tags: ${{ steps.meta.outputs.tags }}\n          labels: ${{ steps.meta.outputs.labels }}\n          cache-from: type=gha\n          cache-to: type=gha,mode=max\n          provenance: true\n          sbom: true\n\n      - name: Scan image with Trivy\n        uses: aquasecurity/trivy-action@master\n        with:\n          image-ref: ghcr.io/${{ github.repository }}:${{ github.sha }}\n          format: sarif\n          output: trivy-results.sarif\n          exit-code: '1'\n          severity: 'HIGH,CRITICAL'\n\n      - name: Upload Trivy results\n        uses: github/codeql-action/upload-sarif@v3\n        with:\n          sarif_file: trivy-results.sarif"
+        },
+        {
+          "label": "GitLab CI — Docker Build and Scan",
+          "code": "# .gitlab-ci.yml\ndocker-build:\n  stage: build\n  image: docker:29\n  services:\n    - docker:dind\n  variables:\n    IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA\n\n  before_script:\n    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY\n    - apk add --no-cache trivy\n\n  script:\n    - docker build --provenance=true --sbom=true -t $IMAGE_TAG .\n    - docker tag $IMAGE_TAG $CI_REGISTRY_IMAGE:latest\n    - trivy image --severity HIGH,CRITICAL --exit-code 1 $IMAGE_TAG\n    - docker push $IMAGE_TAG\n    - docker push $CI_REGISTRY_IMAGE:latest\n\n  only:\n    - main"
+        }
+      ]
+    },
+    {
+      "id": "best-practices",
+      "title": "17. Docker Best Practices — The Complete Guide",
+      "description": "Battle-tested patterns for Dockerfiles, Compose, and daily operations.",
+      "content": [
+        "These are the patterns used by teams running Docker in production at scale. Apply them consistently for secure, efficient, and maintainable containerization."
+      ],
+      "cards": [
+        {
+          "title": "Dockerfile Best Practices",
+          "desc": "Use specific base image tags, multi-stage builds, order layers by change frequency, combine RUN statements, use .dockerignore, run as non-root, set HEALTHCHECK, use BuildKit cache mounts."
+        },
+        {
+          "title": "Docker Compose Best Practices",
+          "desc": "Pin image versions, use health checks with depends_on condition, set resource limits, use internal networks for DBs, bind ports to localhost, use secrets for sensitive data, set restart policy."
+        }
+      ],
+      "items": [
+        {
+          "label": "Dockerfile Best Practices Summary",
+          "code": "# 1. Pin base image versions with full digest\nFROM node:22-alpine@sha256:abc123def456...\n\n# 2. Use multi-stage builds\nFROM ... AS builder\n# ... build stage\nFROM ... AS runtime\nCOPY --from=builder ...\n\n# 3. Order layers by change frequency (least-changing first)\nFROM node:22-alpine\nWORKDIR /app                    # Rarely changes\nCOPY package*.json ./           # Changes with dependencies\nRUN npm ci                      # Expensive — cache it\nCOPY . .                        # Changes most often — keep last\n\n# 4. Combine RUN statements to reduce layers\nRUN apt-get update && \\\n    apt-get install -y pkg1 pkg2 && \\\n    rm -rf /var/lib/apt/lists/*\n\n# 5. Use BuildKit cache mounts for package managers\nRUN --mount=type=cache,target=/root/.cache/pip \\\n    pip install -r requirements.txt\n\n# 6. Run as non-root\nRUN addgroup -S appgroup && adduser -S appuser -G appgroup\nUSER appuser\n\n# 7. Add a HEALTHCHECK\nHEALTHCHECK --interval=30s --timeout=3s --retries=3 \\\n  CMD wget -qO- http://localhost:3000/healthz || exit 1\n\n# 8. Use LABEL for metadata\nLABEL org.opencontainers.image.source=\"https://github.com/myorg/myapp\"\nLABEL org.opencontainers.image.version=\"1.4.2\""
+        },
+        {
+          "label": "Docker Compose Best Practices Summary",
+          "code": "# compose.prod.yaml — battle-tested production config\nname: myapp\n\nservices:\n  app:\n    image: ghcr.io/myorg/myapp:1.4.2          # Pinned version\n    ports:\n      - \"127.0.0.1:3000:3000\"                  # Localhost-only binding\n    env_file: .env.production\n    secrets:\n      - db_password\n    depends_on:\n      db:\n        condition: service_healthy             # Wait for readiness\n    restart: unless-stopped                    # Auto-recovery\n    deploy:\n      resources:\n        limits:\n          cpus: \"1.0\"\n          memory: 512M\n    healthcheck:\n      test: [\"CMD\", \"wget\", \"-qO-\", \"http://localhost:3000/healthz\"]\n      interval: 30s\n      timeout: 5s\n      retries: 3\n      start_period: 10s\n    read_only: true\n    tmpfs:\n      - /tmp:size=100m,noexec\n    cap_drop:\n      - ALL\n    cap_add:\n      - NET_BIND_SERVICE\n    security_opt:\n      - no-new-privileges:true\n    networks:\n      - frontend\n      - backend\n\n  db:\n    image: postgres:16.3-alpine\n    volumes:\n      - pg_data:/var/lib/postgresql/data\n    env_file: .env.production\n    secrets:\n      - db_password\n    restart: unless-stopped\n    deploy:\n      resources:\n        limits:\n          cpus: \"1.0\"\n          memory: 512M\n    healthcheck:\n      test: [\"CMD-SHELL\", \"pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB\"]\n      interval: 10s\n      timeout: 5s\n      retries: 5\n    networks:\n      - backend                                    # Internal network\n\nnetworks:\n  frontend:\n  backend:\n    internal: true\n\nvolumes:\n  pg_data:\n\nsecrets:\n  db_password:\n    file: ./secrets/db_password.txt"
+        },
+        {
+          "label": "Docker Workflow Best Practices",
+          "text": [
+            "1. Never use :latest in production — always pin exact versions with semantic tags",
+            "2. Use .dockerignore to exclude unnecessary files from build context",
+            "3. Set log rotation limits (max-size: 10m, max-file: 3) to prevent disk filling",
+            "4. Use docker system prune periodically to clean unused resources",
+            "5. Never run containers as root (unless absolutely required)",
+            "6. Never mount the Docker socket into a container",
+            "7. Scan images for CVEs before every deployment",
+            "8. Use BuildKit for faster builds (default in Docker 29+)",
+            "9. Separate Compose files for dev and production (compose.dev.yaml, compose.prod.yaml)",
+            "10. Always set resource limits to prevent noisy neighbor problems"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "troubleshooting",
+      "title": "18. Troubleshooting Common Issues",
+      "description": "Solutions to the most frequent Docker problems.",
+      "items": [
+        {
+          "label": "Issue 1: Port Already Allocated",
+          "code": "docker: Error response from daemon: driver failed programming external connectivity\non endpoint myapp (abc123): Bind for 0.0.0.0:3000 failed: port is already allocated.\n\n# Find what's using the port:\nuser@host:~$ docker ps --format '{{.Names}} {{.Ports}}' | grep 3000\nmy-other-app 0.0.0.0:3000->3000/tcp\n\n# Stop the conflicting container:\nuser@host:~$ docker stop my-other-app\n\n# Or use a different port:\nuser@host:~$ docker run -d -p 3001:3000 --name myapp myapp:1.0.0"
+        },
+        {
+          "label": "Issue 2: Connection Refused Between Containers",
+          "code": "# Error: API cannot connect to database: connect ECONNREFUSED db:5432\n\n# Check if containers are on the same network:\nuser@host:~$ docker inspect api --format '{{range $net, $v := .NetworkSettings.Networks}}{{$net}}{{end}}'\nbridge\n\nuser@host:~$ docker inspect db --format '{{range $net, $v := .NetworkSettings.Networks}}{{$net}}{{end}}'\nmyapp_default\n\n# Fix: Put both on the same user-defined network:\nuser@host:~$ docker network create myapp-network\nuser@host:~$ docker network connect myapp-network api\nuser@host:~$ docker network connect myapp-network db\n\n# Verify DNS resolution:\nuser@host:~$ docker exec api ping db\nPING db (172.18.0.2) 56(84) bytes of data.\n64 bytes from db.myapp-network (172.18.0.2): icmp_seq=1 ttl=64 time=0.089ms"
+        },
+        {
+          "label": "Issue 3: Docker Disk Space Full",
+          "code": "# Check disk usage:\nuser@host:~$ docker system df\nTYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE\nImages          15        3         5.2GB     3.8GB (73%)\nContainers      5         2         1.2MB     0B (0%)\nLocal Volumes   4         1         8.5GB     7.2GB (85%)\nBuild Cache     28        0         1.8GB     1.8GB\n\n# Clean up:\nuser@host:~$ docker system prune -a --volumes\nWARNING! This will remove:\n  - all stopped containers\n  - all networks not used by at least one container\n  - all volumes not used by at least one container\n  - all dangling images\n  - all build cache\nAre you sure you want to continue? [y/N] y\n\nTotal reclaimed space: 14.3GB"
+        },
+        {
+          "label": "Issue 4: Container Exits Immediately",
+          "code": "# Problem: container runs briefly then exits with code 0 or 1\n\n# Check logs:\nuser@host:~$ docker logs myapp\n> myapp@1.0.0 start\n> node server.js\n\nServer listening on port 3000\n# But then exits? That's a process manager issue.\n\n# Fix: Ensure your CMD runs as a foreground process, not a background one:\n# BAD: CMD service nginx start    (starts in background, container exits)\n# GOOD: CMD nginx -g 'daemon off;'  (runs in foreground)\n\n# Check exit code:\nuser@host:~$ docker inspect myapp --format '{{.State.ExitCode}}'\n1\n\n# Common causes:\n# - Exit code 0: CMD finished, no process kept alive\n# - Exit code 1: Application crashed during startup\n# - Exit code 137: OOM killed (received SIGKILL)\n# - Exit code 139: Segmentation fault"
+        },
+        {
+          "label": "Issue 5: Permission Denied on Bind Mount",
+          "code": "# Error: Permission denied when trying to write to a bind-mounted directory\n\n# The container user (usually root or node) doesn't match the host file ownership\n\n# Solutions:\n\n# 1. Create the directory with proper permissions before mounting:\nuser@host:~$ mkdir -p ./data && sudo chown 1001:1001 ./data\n\n# 2. Use a named volume instead of a bind mount:\ndocker run -d -v app_data:/app/data myapp\n\n# 3. In development, run as the current host user:\ndocker run -d -u $(id -u):$(id -g) -v $(pwd)/data:/app/data myapp\n\n# 4. Use Docker's rootless mode (advanced, no permission issues)"
+        },
+        {
+          "label": "Issue 6: docker compose down -v Deleted My Database",
+          "infoBox": {
+            "type": "warning",
+            "content": "docker compose down -v removes ALL volumes. This is destructive and irreversible unless you have backups. Never run this command in production without verifying you have a recent database backup."
+          },
+          "text": "The -v flag in docker compose down removes named volumes declared in the Compose file. This is the #1 cause of accidental data loss in Docker.\n\nSafe alternatives:\n- docker compose down (without -v) — stops containers, removes networks, preserves volumes\n- docker compose stop — just stops containers, everything else stays\n- docker compose pause — freezes containers without stopping them\n\nTo recover from accidental volume deletion: restore from your last backup (you do have backups, right?)."
+        }
+      ]
+    },
+    {
+      "id": "summary",
+      "title": "19. Summary and Next Steps",
+      "description": "Key takeaways and resources for continuing your Docker journey.",
+      "items": [
+        {
+          "label": "What You Learned",
+          "text": [
+            "✓ Docker concepts — images vs containers, Docker Engine, registries, layers",
+            "✓ Running containers — lifecycle management, port mapping, exec, logs",
+            "✓ Dockerfile writing — FROM, RUN, COPY, CMD, ENV, EXPOSE, USER, HEALTHCHECK",
+            "✓ Layer optimization — ordering layers by change frequency, BuildKit cache mounts",
+            "✓ Multi-stage builds — separating build and runtime for smaller, more secure images",
+            "✓ Volumes and persistence — named volumes, bind mounts, tmpfs, backup strategies",
+            "✓ Docker networking — bridge, host, user-defined networks, DNS, network isolation",
+            "✓ Docker Compose — multi-service stacks, compose.yaml, development vs production configs",
+            "✓ Security hardening — non-root user, read-only FS, cap_drop, secrets management",
+            "✓ Image scanning — Trivy, Docker Scout, CI/CD integration for vulnerability detection",
+            "✓ Production patterns — health checks, resource limits, restart policies, logging"
+          ]
+        },
+        {
+          "label": "Key Commands Reference",
+          "code": "# ── Image Management ──────────────────────────────────────\ndocker images                         # List images\ndocker build -t myapp:tag .            # Build an image\ndocker pull nginx:alpine               # Pull from registry\ndocker push myuser/myapp:tag           # Push to registry\ndocker rmi IMAGE                       # Remove image\ndocker tag SOURCE TARGET               # Tag an image\n\n# ── Container Management ───────────────────────────────────\ndocker run -d -p 8080:80 nginx         # Run detached with port mapping\ndocker ps -a                           # List all containers\ndocker stop CONTAINER                  # Stop a container\ndocker rm CONTAINER                    # Remove a container\ndocker logs -f CONTAINER               # Follow logs\ndocker exec -it CONTAINER sh           # Interactive shell inside container\ndocker inspect CONTAINER               # Detailed metadata\n\n# ── Volumes and Networks ───────────────────────────────────\ndocker volume create NAME              # Create volume\ndocker volume ls                       # List volumes\ndocker network create NAME             # Create network\ndocker network ls                      # List networks\ndocker network connect NET CONTAINER   # Connect container to network\n\n# ── Docker Compose ──────────────────────────────────────────\ndocker compose up -d                   # Start all services\ndocker compose down                    # Stop and remove\ndocker compose logs -f                 # Follow all logs\ndocker compose exec SERVICE sh         # Shell into service\ndocker compose ps                      # Service status\n\n# ── Cleanup ──────────────────────────────────────────────────\ndocker system prune                    # Remove unused data\ndocker system prune -a --volumes       # Aggressive cleanup (DESTRUCTIVE)\ndocker container prune                 # Remove stopped containers\ndocker volume prune                    # Remove unused volumes\n\n# ── Debugging ───────────────────────────────────────────────\ndocker stats                           # Resource usage\ndocker events                          # Real-time events\ndocker system df                       # Disk usage\ndocker inspect CONTAINER | grep IP     # Find container IP"
+        },
+        {
+          "label": "Recommended Learning Path",
+          "text": [
+            "1. Docker's official documentation (docs.docker.com) — the single best reference",
+            "2. Play with Docker (labs.play-with-docker.com) — free online Docker playground",
+            "3. Docker Best Practices Guide on docs.docker.com — official best practices for Dockerfiles and Compose",
+            "4. CNCF Cloud Native Interactive Landscape (landscape.cncf.io) — see how Docker fits in the ecosystem",
+            "5. Study real-world compose.yaml files from open-source projects on GitHub",
+            "6. Practice deploying a multi-service stack with Docker Compose on a VPS",
+            "7. Next: learn Kubernetes — it extends Docker concepts to multi-node orchestration"
+          ]
+        },
+        {
+          "label": "Quick Reference: Docker Compose Lifecycle",
+          "code": "# Development workflow:\ngit clone <repo> && cd <project>\ndocker compose -f compose.dev.yaml up -d    # Start dev environment\ndocker compose -f compose.dev.yaml logs -f  # Watch logs\n# Make code changes (hot reload via bind mount)\ndocker compose -f compose.dev.yaml down     # Stop\n\n# Production workflow:\ndocker compose -f compose.prod.yaml build\ndocker compose -f compose.prod.yaml up -d\ndocker compose -f compose.prod.yaml ps\ndocker compose -f compose.prod.yaml logs -f web\n# Update:\ndocker compose -f compose.prod.yaml pull\ndocker compose -f compose.prod.yaml up -d --force-recreate\ndocker compose -f compose.prod.yaml down"
+        }
+      ]
+    }
+  ]
+}
