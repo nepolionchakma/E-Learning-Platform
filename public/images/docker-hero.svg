@@ -1,0 +1,305 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 450" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="450" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0a0a1a"/>
+      <stop offset="0.5" stop-color="#0f172a"/>
+      <stop offset="1" stop-color="#0a0f1e"/>
+    </linearGradient>
+    <linearGradient id="dockerGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#2496ed"/>
+      <stop offset="1" stop-color="#1a7dcf"/>
+    </linearGradient>
+    <linearGradient id="blueGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#3b82f6"/>
+      <stop offset="1" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="greenGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#10b981"/>
+      <stop offset="1" stop-color="#059669"/>
+    </linearGradient>
+    <linearGradient id="amberGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#f59e0b"/>
+      <stop offset="1" stop-color="#d97706"/>
+    </linearGradient>
+    <linearGradient id="purpleGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#8b5cf6"/>
+      <stop offset="1" stop-color="#6d28d9"/>
+    </linearGradient>
+    <linearGradient id="cyanGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#06b6d4"/>
+      <stop offset="1" stop-color="#0891b2"/>
+    </linearGradient>
+    <linearGradient id="pinkGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#ec4899"/>
+      <stop offset="1" stop-color="#be185d"/>
+    </linearGradient>
+    <linearGradient id="containerGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#1e293b"/>
+      <stop offset="1" stop-color="#0f172a"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="boxShadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+    <filter id="glowSoft">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="450" fill="url(#bg)"/>
+
+  <!-- Subtle grid -->
+  <g stroke="#ffffff" stroke-opacity="0.015" stroke-width="1">
+    <line x1="0" y1="60" x2="1200" y2="60"/><line x1="0" y1="120" x2="1200" y2="120"/>
+    <line x1="0" y1="180" x2="1200" y2="180"/><line x1="0" y1="240" x2="1200" y2="240"/>
+    <line x1="0" y1="300" x2="1200" y2="300"/><line x1="0" y1="360" x2="1200" y2="360"/>
+    <line x1="0" y1="420" x2="1200" y2="420"/>
+    <line x1="200" y1="0" x2="200" y2="450"/><line x1="400" y1="0" x2="400" y2="450"/>
+    <line x1="600" y1="0" x2="600" y2="450"/><line x1="800" y1="0" x2="800" y2="450"/>
+    <line x1="1000" y1="0" x2="1000" y2="450"/>
+  </g>
+
+  <!-- ===== DOCKER CONTAINER SHIP (logo area left) ===== -->
+  <g transform="translate(35, 30)" filter="url(#boxShadow)">
+    <rect x="0" y="0" width="280" height="210" rx="8" fill="#1a2332" stroke="#334155" stroke-width="1"/>
+    <rect x="0" y="0" width="280" height="28" rx="8" fill="url(#dockerGrad)"/>
+    <rect x="0" y="16" width="280" height="12" fill="url(#dockerGrad)"/>
+    <text x="140" y="19" fill="#ffffff" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">DOCKER ENGINE 29</text>
+
+    <!-- Docker whale logo -->
+    <g transform="translate(55, 50)">
+      <!-- Container boxes stacked like shipping containers -->
+      <rect x="0" y="45" width="170" height="28" rx="3" fill="#1d4ed8" stroke="#3b82f6" stroke-width="0.8"/>
+      <text x="85" y="63" fill="#93c5fd" font-family="monospace" font-size="8" text-anchor="middle">Containers</text>
+      <rect x="0" y="75" width="170" height="28" rx="3" fill="#059669" stroke="#10b981" stroke-width="0.8"/>
+      <text x="85" y="93" fill="#6ee7b7" font-family="monospace" font-size="8" text-anchor="middle">Images</text>
+      <rect x="0" y="105" width="170" height="28" rx="3" fill="#6d28d9" stroke="#8b5cf6" stroke-width="0.8"/>
+      <text x="85" y="123" fill="#c4b5fd" font-family="monospace" font-size="8" text-anchor="middle">Volumes &amp; Networks</text>
+
+      <!-- Whale body -->
+      <rect x="20" y="10" width="130" height="30" rx="15" fill="#2496ed" fill-opacity="0.2" stroke="#2496ed" stroke-width="1.5"/>
+      <text x="85" y="30" fill="#2496ed" font-family="system-ui, sans-serif" font-size="18" font-weight="bold" text-anchor="middle">docker</text>
+    </g>
+
+    <!-- Version info -->
+    <rect x="40" y="178" width="200" height="18" rx="4" fill="#2496ed" fill-opacity="0.12" stroke="#2496ed" stroke-width="0.5"/>
+    <text x="140" y="190" fill="#60a5fa" font-family="monospace" font-size="8" text-anchor="middle">BuildKit • Compose v2 • containerd</text>
+  </g>
+
+  <!-- ===== BUILD → SHIP → RUN PIPELINE (center) ===== -->
+  <g transform="translate(330, 30)" filter="url(#boxShadow)">
+    <rect x="0" y="0" width="530" height="210" rx="8" fill="#1a2332" stroke="#334155" stroke-width="1"/>
+    <rect x="0" y="0" width="530" height="28" rx="8" fill="#1d4ed8"/>
+    <rect x="0" y="16" width="530" height="12" fill="#1d4ed8"/>
+    <text x="265" y="19" fill="#ffffff" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">BUILD → SHIP → RUN PIPELINE</text>
+
+    <!-- BUILD stage -->
+    <g transform="translate(15, 40)">
+      <rect x="0" y="0" width="155" height="75" rx="6" fill="#0f172a" stroke="#3b82f6" stroke-width="0.8"/>
+      <rect x="0" y="0" width="155" height="20" rx="6" fill="#1d4ed8"/>
+      <rect x="0" y="12" width="155" height="8" fill="#1d4ed8"/>
+      <text x="78" y="14" fill="#ffffff" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">1. BUILD</text>
+      <text x="78" y="35" fill="#93c5fd" font-family="monospace" font-size="7" text-anchor="middle">Dockerfile</text>
+      <text x="78" y="48" fill="#9ca3af" font-family="monospace" font-size="7" text-anchor="middle">docker build</text>
+      <text x="78" y="61" fill="#9ca3af" font-family="monospace" font-size="7" text-anchor="middle">.dockerignore</text>
+      <rect x="38" y="65" width="80" height="8" rx="2" fill="#3b82f6" fill-opacity="0.15" stroke="#3b82f6" stroke-width="0.3"/>
+      <text x="78" y="72" fill="#60a5fa" font-family="monospace" font-size="6" text-anchor="middle">Multi-stage BuildKit</text>
+    </g>
+
+    <!-- Arrow BUILD → SHIP -->
+    <line x1="180" y1="77" x2="200" y2="77" stroke="#ffffff" stroke-width="1.2" stroke-opacity="0.25"/>
+    <polygon points="203,77 195,72 195,82" fill="#ffffff" fill-opacity="0.25"/>
+
+    <!-- SHIP stage -->
+    <g transform="translate(210, 40)">
+      <rect x="0" y="0" width="155" height="75" rx="6" fill="#0f172a" stroke="#10b981" stroke-width="0.8"/>
+      <rect x="0" y="0" width="155" height="20" rx="6" fill="#059669"/>
+      <rect x="0" y="12" width="155" height="8" fill="#059669"/>
+      <text x="78" y="14" fill="#ffffff" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">2. SHIP</text>
+      <text x="78" y="35" fill="#6ee7b7" font-family="monospace" font-size="7" text-anchor="middle">docker push</text>
+      <text x="78" y="48" fill="#9ca3af" font-family="monospace" font-size="7" text-anchor="middle">Docker Hub • ECR • ghcr.io</text>
+      <text x="78" y="61" fill="#9ca3af" font-family="monospace" font-size="7" text-anchor="middle">Image Tags: 1.4.2, latest</text>
+      <rect x="28" y="65" width="100" height="8" rx="2" fill="#10b981" fill-opacity="0.15" stroke="#10b981" stroke-width="0.3"/>
+      <text x="78" y="72" fill="#34d399" font-family="monospace" font-size="6" text-anchor="middle">Trivy / Docker Scout Scan</text>
+    </g>
+
+    <!-- Arrow SHIP → RUN -->
+    <line x1="375" y1="77" x2="395" y2="77" stroke="#ffffff" stroke-width="1.2" stroke-opacity="0.25"/>
+    <polygon points="398,77 390,72 390,82" fill="#ffffff" fill-opacity="0.25"/>
+
+    <!-- RUN stage -->
+    <g transform="translate(405, 40)">
+      <rect x="0" y="0" width="115" height="75" rx="6" fill="#0f172a" stroke="#f59e0b" stroke-width="0.8"/>
+      <rect x="0" y="0" width="115" height="20" rx="6" fill="#d97706"/>
+      <rect x="0" y="12" width="115" height="8" fill="#d97706"/>
+      <text x="58" y="14" fill="#ffffff" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">3. RUN</text>
+      <text x="58" y="35" fill="#fde68a" font-family="monospace" font-size="7" text-anchor="middle">docker run</text>
+      <text x="58" y="48" fill="#9ca3af" font-family="monospace" font-size="7" text-anchor="middle">docker compose</text>
+      <text x="58" y="61" fill="#9ca3af" font-family="monospace" font-size="7" text-anchor="middle">Production</text>
+      <rect x="18" y="65" width="80" height="8" rx="2" fill="#f59e0b" fill-opacity="0.15" stroke="#f59e0b" stroke-width="0.3"/>
+      <text x="58" y="72" fill="#fbbf24" font-family="monospace" font-size="6" text-anchor="middle">Health checks</text>
+    </g>
+
+    <!-- Horizontal connector bars below pipeline -->
+    <line x1="15" y1="128" x2="520" y2="128" stroke="#334155" stroke-width="0.5"/>
+    <line x1="15" y1="130" x2="520" y2="130" stroke="#334155" stroke-width="0.5"/>
+
+    <!-- Key concepts chips -->
+    <rect x="15" y="142" width="100" height="22" rx="4" fill="#0f172a" stroke="#3b82f6" stroke-width="0.5"/>
+    <text x="65" y="156" fill="#60a5fa" font-family="monospace" font-size="8" text-anchor="middle">FROM base:tag</text>
+    <rect x="125" y="142" width="100" height="22" rx="4" fill="#0f172a" stroke="#10b981" stroke-width="0.5"/>
+    <text x="175" y="156" fill="#34d399" font-family="monospace" font-size="8" text-anchor="middle">COPY . /app</text>
+    <rect x="235" y="142" width="100" height="22" rx="4" fill="#0f172a" stroke="#8b5cf6" stroke-width="0.5"/>
+    <text x="285" y="156" fill="#a78bfa" font-family="monospace" font-size="8" text-anchor="middle">RUN npm ci</text>
+    <rect x="345" y="142" width="100" height="22" rx="4" fill="#0f172a" stroke="#f59e0b" stroke-width="0.5"/>
+    <text x="395" y="156" fill="#fbbf24" font-family="monospace" font-size="8" text-anchor="middle">CMD node app</text>
+    <rect x="455" y="142" width="62" height="22" rx="4" fill="#0f172a" stroke="#ec4899" stroke-width="0.5"/>
+    <text x="486" y="156" fill="#f472b6" font-family="monospace" font-size="8" text-anchor="middle">EXPOSE</text>
+
+    <!-- Port mapping example -->
+    <rect x="15" y="172" width="502" height="24" rx="4" fill="#0f172a" stroke="#334155" stroke-width="0.5"/>
+    <text x="266" y="188" fill="#9ca3af" font-family="monospace" font-size="9" text-anchor="middle">docker run -d -p 8080:80 --name myapp myapp:1.0.0</text>
+  </g>
+
+  <!-- ===== DOCKER COMPOSE STACK (right) ===== -->
+  <g transform="translate(875, 30)" filter="url(#boxShadow)">
+    <rect x="0" y="0" width="290" height="210" rx="8" fill="#1a2332" stroke="#334155" stroke-width="1"/>
+    <rect x="0" y="0" width="290" height="28" rx="8" fill="#8b5cf6"/>
+    <rect x="0" y="16" width="290" height="12" fill="#8b5cf6"/>
+    <text x="145" y="19" fill="#ffffff" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">DOCKER COMPOSE</text>
+
+    <!-- Nginx service -->
+    <g transform="translate(12, 40)">
+      <rect x="0" y="0" width="266" height="32" rx="4" fill="#0f172a" stroke="#3b82f6" stroke-width="0.5"/>
+      <rect x="0" y="0" width="80" height="32" rx="4" fill="#1d4ed8"/>
+      <text x="25" y="17" fill="#ffffff" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">nginx:</text>
+      <text x="90" y="15" fill="#93c5fd" font-family="monospace" font-size="7">image: nginx:alpine</text>
+      <text x="90" y="26" fill="#9ca3af" font-family="monospace" font-size="7">ports: 80:80 • volumes: ./html</text>
+    </g>
+
+    <!-- API service -->
+    <g transform="translate(12, 78)">
+      <rect x="0" y="0" width="266" height="32" rx="4" fill="#0f172a" stroke="#10b981" stroke-width="0.5"/>
+      <rect x="0" y="0" width="80" height="32" rx="4" fill="#059669"/>
+      <text x="25" y="17" fill="#ffffff" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">api:</text>
+      <text x="90" y="15" fill="#6ee7b7" font-family="monospace" font-size="7">build: ./api</text>
+      <text x="90" y="26" fill="#9ca3af" font-family="monospace" font-size="7">depends_on: db (healthy)</text>
+    </g>
+
+    <!-- PostgreSQL service -->
+    <g transform="translate(12, 116)">
+      <rect x="0" y="0" width="266" height="32" rx="4" fill="#0f172a" stroke="#f59e0b" stroke-width="0.5"/>
+      <rect x="0" y="0" width="80" height="32" rx="4" fill="#d97706"/>
+      <text x="25" y="17" fill="#ffffff" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">db:</text>
+      <text x="90" y="15" fill="#fde68a" font-family="monospace" font-size="7">image: postgres:16-alpine</text>
+      <text x="90" y="26" fill="#9ca3af" font-family="monospace" font-size="7">volumes: pg_data • healthcheck</text>
+    </g>
+
+    <!-- Redis service -->
+    <g transform="translate(12, 154)">
+      <rect x="0" y="0" width="266" height="32" rx="4" fill="#0f172a" stroke="#ec4899" stroke-width="0.5"/>
+      <rect x="0" y="0" width="80" height="32" rx="4" fill="#be185d"/>
+      <text x="25" y="17" fill="#ffffff" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">cache:</text>
+      <text x="90" y="15" fill="#f472b6" font-family="monospace" font-size="7">image: redis:7-alpine</text>
+      <text x="90" y="26" fill="#9ca3af" font-family="monospace" font-size="7">volumes: redis_data</text>
+    </g>
+
+    <!-- Compose command -->
+    <rect x="12" y="188" width="266" height="16" rx="4" fill="#0f172a" stroke="#8b5cf6" stroke-width="0.5"/>
+    <text x="145" y="199" fill="#a78bfa" font-family="monospace" font-size="8" text-anchor="middle">docker compose up -d</text>
+  </g>
+
+  <!-- ===== CONNECTION LINES between sections ===== -->
+  <g opacity="0.3">
+    <!-- Engine to Pipeline -->
+    <path d="M315 135 L330 135" stroke="#2496ed" stroke-width="1.5"/>
+    <path d="M315 137 L330 137" stroke="#2496ed" stroke-width="1.5"/>
+    <!-- Pipeline to Compose -->
+    <path d="M860 135 L875 135" stroke="#8b5cf6" stroke-width="1.5"/>
+    <path d="M860 137 L875 137" stroke="#8b5cf6" stroke-width="1.5"/>
+  </g>
+
+  <!-- ===== BOTTOM: PRODUCTION FEATURES BAR ===== -->
+  <g transform="translate(35, 255)" filter="url(#boxShadow)">
+    <rect x="0" y="0" width="1130" height="155" rx="8" fill="#1a2332" stroke="#334155" stroke-width="1"/>
+    <rect x="0" y="0" width="1130" height="28" rx="8" fill="#0f172a"/>
+    <rect x="0" y="16" width="1130" height="12" fill="#0f172a"/>
+    <text x="565" y="19" fill="#ffffff" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">PRODUCTION FEATURES</text>
+
+    <!-- Feature blocks row 1 -->
+    <g transform="translate(20, 38)">
+      <!-- Multi-stage Builds -->
+      <rect x="0" y="0" width="260" height="48" rx="6" fill="#0f172a" stroke="#3b82f6" stroke-width="0.5"/>
+      <rect x="0" y="0" width="8" height="48" rx="4" fill="#3b82f6"/>
+      <text x="18" y="17" fill="#60a5fa" font-family="monospace" font-size="9" font-weight="bold">Multi-Stage Builds</text>
+      <text x="18" y="32" fill="#9ca3af" font-family="monospace" font-size="8">FROM golang:alpine AS builder</text>
+      <text x="18" y="44" fill="#9ca3af" font-family="monospace" font-size="8">FROM scratch → 95% smaller images</text>
+
+      <!-- Volumes -->
+      <rect x="272" y="0" width="260" height="48" rx="6" fill="#0f172a" stroke="#10b981" stroke-width="0.5"/>
+      <rect x="272" y="0" width="8" height="48" rx="4" fill="#10b981"/>
+      <text x="290" y="17" fill="#34d399" font-family="monospace" font-size="9" font-weight="bold">Volumes &amp; Data Persistence</text>
+      <text x="290" y="32" fill="#9ca3af" font-family="monospace" font-size="8">Named volumes for databases</text>
+      <text x="290" y="44" fill="#9ca3af" font-family="monospace" font-size="8">Bind mounts for development</text>
+
+      <!-- Networking -->
+      <rect x="544" y="0" width="260" height="48" rx="6" fill="#0f172a" stroke="#8b5cf6" stroke-width="0.5"/>
+      <rect x="544" y="0" width="8" height="48" rx="4" fill="#8b5cf6"/>
+      <text x="562" y="17" fill="#a78bfa" font-family="monospace" font-size="9" font-weight="bold">Networking &amp; Isolation</text>
+      <text x="562" y="32" fill="#9ca3af" font-family="monospace" font-size="8">User-defined bridge networks</text>
+      <text x="562" y="44" fill="#9ca3af" font-family="monospace" font-size="8">Internal: true for DB isolation</text>
+
+      <!-- Security -->
+      <rect x="816" y="0" width="290" height="48" rx="6" fill="#0f172a" stroke="#f59e0b" stroke-width="0.5"/>
+      <rect x="816" y="0" width="8" height="48" rx="4" fill="#f59e0b"/>
+      <text x="834" y="17" fill="#fbbf24" font-family="monospace" font-size="9" font-weight="bold">Security Hardening</text>
+      <text x="834" y="32" fill="#9ca3af" font-family="monospace" font-size="8">Non-root USER • Read-only FS</text>
+      <text x="834" y="44" fill="#9ca3af" font-family="monospace" font-size="8">cap_drop: ALL • No privileged</text>
+    </g>
+
+    <!-- Feature blocks row 2 -->
+    <g transform="translate(20, 94)">
+      <!-- Health Checks -->
+      <rect x="0" y="0" width="260" height="48" rx="6" fill="#0f172a" stroke="#06b6d4" stroke-width="0.5"/>
+      <rect x="0" y="0" width="8" height="48" rx="4" fill="#06b6d4"/>
+      <text x="18" y="17" fill="#22d3ee" font-family="monospace" font-size="9" font-weight="bold">Health Checks &amp; Restart</text>
+      <text x="18" y="32" fill="#9ca3af" font-family="monospace" font-size="8">HEALTHCHECK + depends_on condition</text>
+      <text x="18" y="44" fill="#9ca3af" font-family="monospace" font-size="8">restart: unless-stopped</text>
+
+      <!-- Resource Limits -->
+      <rect x="272" y="0" width="260" height="48" rx="6" fill="#0f172a" stroke="#ec4899" stroke-width="0.5"/>
+      <rect x="272" y="0" width="8" height="48" rx="4" fill="#ec4899"/>
+      <text x="290" y="17" fill="#f472b6" font-family="monospace" font-size="9" font-weight="bold">Resource Limits</text>
+      <text x="290" y="32" fill="#9ca3af" font-family="monospace" font-size="8">CPU: 1.0 • Memory: 512M</text>
+      <text x="290" y="44" fill="#9ca3af" font-family="monospace" font-size="8">Prevent noisy neighbor problems</text>
+
+      <!-- Image Scanning -->
+      <rect x="544" y="0" width="260" height="48" rx="6" fill="#0f172a" stroke="#22c55e" stroke-width="0.5"/>
+      <rect x="544" y="0" width="8" height="48" rx="4" fill="#22c55e"/>
+      <text x="562" y="17" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">Image Scanning &amp; CI/CD</text>
+      <text x="562" y="32" fill="#9ca3af" font-family="monospace" font-size="8">Trivy • Docker Scout</text>
+      <text x="562" y="44" fill="#9ca3af" font-family="monospace" font-size="8">GitHub Actions • GitLab CI</text>
+
+      <!-- Logging -->
+      <rect x="816" y="0" width="290" height="48" rx="6" fill="#0f172a" stroke="#f97316" stroke-width="0.5"/>
+      <rect x="816" y="0" width="8" height="48" rx="4" fill="#f97316"/>
+      <text x="834" y="17" fill="#fb923c" font-family="monospace" font-size="9" font-weight="bold">Logging &amp; Monitoring</text>
+      <text x="834" y="32" fill="#9ca3af" font-family="monospace" font-size="8">journald • json-file (max 10m)</text>
+      <text x="834" y="44" fill="#9ca3af" font-family="monospace" font-size="8">docker stats • docker events</text>
+    </g>
+  </g>
+
+  <!-- ===== TITLE ===== -->
+  <text x="600" y="435" fill="#ffffff" font-family="system-ui, sans-serif" font-size="22" font-weight="bold" text-anchor="middle" letter-spacing="1">Docker: The Complete A–Z Guide</text>
+  <text x="600" y="449" fill="#2496ed" font-family="monospace" font-size="11" text-anchor="middle">Containers • Images • Dockerfiles • Compose • Security • Production</text>
+</svg>
