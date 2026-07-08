@@ -122,6 +122,14 @@
         {
           "label": "Verify Docker Engine and Compose Versions",
           "code": "user@host:~$ docker --version\nDocker version 29.4.2, build abc1234\n\nuser@host:~$ docker compose version\nDocker Compose version v2.40.0\n\nuser@host:~$ docker info\nClient:\n Version:    29.4.2\n Context:    default\n\nServer:\n Engine Version:  29.4.2\n OSType:          linux\n Architecture:    x86_64\n CPUs:            4\n Total Memory:    7.78GiB\n Containers:      2\n Running:         1\n Paused:          0\n Stopped:         1\n Images:          8\n Server Version:  29.4.2"
+        },
+        {
+          "label": "Check Docker Daemon Logs (Troubleshooting)",
+          "content": [
+            "If Docker is not starting or behaving unexpectedly, check the daemon logs. On systemd-based Linux systems, journalctl is your primary tool for debugging Docker daemon issues.",
+            "Useful for diagnosing: daemon crash loops, configuration errors, network setup failures, TLS/certificate problems, and out-of-disk-space conditions."
+          ],
+          "code": "# View last 50 lines of Docker daemon logs\nuser@host:~$ sudo journalctl -u docker.service -n 50\n\n# Follow new log entries in real time\nuser@host:~$ sudo journalctl -u docker.service -f\n\n# View logs from the last hour\nuser@host:~$ sudo journalctl -u docker.service --since \"1 hour ago\"\n\n# Check if Docker failed to start and why\nuser@host:~$ sudo journalctl -u docker.service --no-pager | grep -i error | tail -20\n\n# Common daemon log output (healthy):\nJul 06 10:00:00 host dockerd[1234]: API listen on /var/run/docker.sock\nJul 06 10:00:00 host dockerd[1234]: daemon configuration reload completed\nJul 06 10:00:00 host dockerd[1234]: containerd successfully booted\nJul 06 10:00:00 host dockerd[1234]: Loading containers: start\nJul 06 10:00:01 host dockerd[1234]: Default bridge (docker0) is assigned with an IP address 172.17.0.0/16\nJul 06 10:00:01 host dockerd[1234]: Daemon has completed initialization"
         }
       ]
     },
@@ -144,6 +152,8 @@
               ["docker run --name NAME IMAGE", "Assign a name to the container"],
               ["docker ps", "List running containers"],
               ["docker ps -a", "List all containers (including stopped)"],
+              ["docker ps -a --filter 'name=nginx'", "Filter containers by name, status, or label"],
+              ["docker top CONTAINER", "Show running processes inside a container"],
               ["docker stop CONTAINER", "Gracefully stop a container"],
               ["docker kill CONTAINER", "Force stop a container"],
               ["docker rm CONTAINER", "Remove a stopped container"],
@@ -162,6 +172,29 @@
         {
           "label": "Inspect and Debug a Container",
           "code": "user@host:~$ docker logs my-nginx\n/docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration\n/docker-entrypoint.sh: Looking for shell scripts...\n/docker-entrypoint.sh: Launching...\n2026/07/06 10:00:00 [notice] 1#1: start worker processes\n\nuser@host:~$ docker exec -it my-nginx sh\n/ # ls -la /usr/share/nginx/html/\ndrwxr-xr-x   2 root root   4096 Jul  6 10:00 .\ndrwxr-xr-x   3 root root   4096 Jul  6 10:00 ..\n-rw-r--r--   1 root root    497 Jul  6 10:00 50x.html\n-rw-r--r--   1 root root    615 Jul  6 10:00 index.html\n/ # exit\n\nuser@host:~$ docker inspect my-nginx --format '{{.NetworkSettings.IPAddress}}'\n172.17.0.2\n\nuser@host:~$ docker inspect my-nginx --format '{{.State.Status}}'\nrunning"
+        },
+        {
+          "label": "Port Mapping — What It Is and How to Do It",
+          "content": [
+            "Port mapping (or port publishing) connects a port on your host machine to a port inside the container. Without it, containers run in an isolated network and are not reachable from outside the host.",
+            "The syntax is: docker run -p HOST_PORT:CONTAINER_PORT. Traffic reaching the host on HOST_PORT is forwarded to CONTAINER_PORT inside the container. You can also bind to a specific host IP: docker run -p 127.0.0.1:8080:80.",
+            "Why it matters: every container gets its own IP (like 172.17.0.2), but that IP is internal to Docker's bridge network. To reach the container from your browser, curl, or another machine, you must publish the port to the host. Without -p, the container is only reachable from other containers on the same Docker network."
+          ],
+          "code": "# Syntax:  -p HOST_PORT:CONTAINER_PORT\n#          -p HOST_IP:HOST_PORT:CONTAINER_PORT\n\n# Example 1: Map host port 8080 to container port 80\ndocker run -d -p 8080:80 --name web nginx:alpine\n# Now visit http://localhost:8080 → reaches nginx inside container on port 80\n\n# Example 2: Multiple ports\ndocker run -d -p 8080:80 -p 8443:443 --name web nginx:alpine\n\n# Example 3: Bind to localhost only (safer for databases)\ndocker run -d -p 127.0.0.1:5432:5432 --name db postgres:16-alpine\n# Only accessible from the host itself, not from other machines on the network\n\n# Example 4: Random host port (Docker picks an available port)\ndocker run -d -p 80 --name web nginx:alpine\ndocker ps\n# PORTS: 0.0.0.0:32768->80/tcp  (port 32768 was auto-assigned)\n\n# View port mapping of a running container:\ndocker port my-nginx\n80/tcp -> 0.0.0.0:8080\n\n# The key insight:\n# Without -p:   container is isolated (172.17.0.2:80) — only reachable from other containers\n# With -p 8080:80:  container is reachable at localhost:8080 from the host\n# With -p 0.0.0.0:8080:80:  container is reachable from any machine on your network at HOST_IP:8080"
+        },
+        {
+          "label": "Filter and Search Containers with grep",
+          "content": [
+            "When you have many containers running, docker ps -a shows everything. Combine it with grep to find specific containers by name, image, or status. You can also use Docker's built-in --filter flag for cleaner results."
+          ],
+          "code": "# Find all containers using the nginx image\nuser@host:~$ docker ps -a | grep \"nginx\"\nabc12345def6   nginx:alpine   \"/docker-entrypoint.…\"   0.0.0.0:8080->80/tcp   Up 2 hours    my-nginx\ndef67890abc1   nginx:alpine   \"/docker-entrypoint.…\"   0.0.0.0:8081->80/tcp   Exited (0)    old-nginx\n\n# Filter by name (built-in Docker filter)\nuser@host:~$ docker ps -a --filter 'name=nginx'\n\n# Filter by status\nuser@host:~$ docker ps -a --filter 'status=exited'\nuser@host:~$ docker ps -a --filter 'status=running'\n\n# Filter by image\nuser@host:~$ docker ps -a --filter 'ancestor=postgres:16-alpine'\n\n# Find by exposed port\nuser@host:~$ docker ps -a --filter 'publish=8080'\n\n# Combine filters\nuser@host:~$ docker ps -a --filter 'status=running' --filter 'name=api'\n\n# Using watch for continuous monitoring\n# See the 'Monitoring Resource Usage' section for docker stats\n# To watch container status live:\nuser@host:~$ watch -n 2 docker ps\n# Every 2 seconds, the command runs and refreshes the output\n# Great for monitoring deployments, restarts, or container crashes"
+        },
+        {
+          "label": "Live Container Monitoring with watch",
+          "content": [
+            "The watch command runs any Docker command repeatedly and shows the output in real time. It is invaluable during deployments, restarts, or when debugging containers that crash frequently."
+          ],
+          "code": "# Watch running containers (refreshes every 2 seconds)\nuser@host:~$ watch -n 2 docker ps\n\n# Watch all containers (including stopped)\nuser@host:~$ watch -n 2 docker ps -a\n\n# Watch filtered by name\nuser@host:~$ watch -n 2 docker ps -a --filter 'name=myapp'\n\n# Watch resource usage (built-in)\nuser@host:~$ docker stats\n\n# Example output of watch docker ps:\nEvery 2.0s: docker ps\n\nCONTAINER ID   IMAGE               COMMAND                  PORTS                    STATUS          NAMES\nabc12345def6   myapp:latest        \"node server.js\"         0.0.0.0:3000->3000/tcp   Up 2 minutes    myapp-web-1\ndef67890abc1   postgres:16-alpine  \"docker-entrypoint.…\"   5432/tcp                 Up 3 minutes    myapp-db-1\n\n# Press Ctrl+C to stop watch"
         },
         {
           "label": "Clean Up Containers and Images",
