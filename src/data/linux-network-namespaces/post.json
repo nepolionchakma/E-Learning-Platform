@@ -1,0 +1,483 @@
+{
+  "title": "Linux Network Namespaces: The Complete Guide",
+  "icon": "🌐",
+  "description": "A comprehensive end-to-end guide to Linux network namespaces. Covers what network namespaces are, how they isolate network stacks, managing namespaces with ip netns, veth pairs, Linux bridges, NAT/masquerading for external access, hands-on lab from zero to ping, real-world use cases in Docker and Kubernetes, and troubleshooting common issues.",
+  "author": "E-Learning Platform",
+  "date": "2026-07-09",
+  "readTime": "35 min read",
+  "heroImage": "/images/linux-network-ns-hero.svg",
+  "heroAlt": "Linux network namespaces architecture diagram showing isolated namespaces with veth pairs, Linux bridge connectivity, and NAT gateway for internet access",
+  "sections": [
+    {
+      "id": "introduction",
+      "title": "1. Introduction to Linux Network Namespaces",
+      "description": "What network namespaces are and why every DevOps engineer should understand them.",
+      "content": [
+        "Linux network namespaces are the fundamental building block of container networking. Every Docker container, every Kubernetes pod, and every modern cloud-native workload relies on network namespaces for isolation. Understanding them is essential for debugging connectivity issues, designing secure multi-tenant architectures, and building your own container runtimes from scratch.",
+        "A network namespace is a Linux kernel feature that provides an isolated, independent copy of the entire network stack for a group of processes. Each namespace gets its own network interfaces, IP addresses, routing tables, firewall rules, and socket port spaces. Processes inside a namespace see only their own network  they are completely unaware of the host's network or other namespaces.",
+        "This guide takes you from zero to a deep understanding of network namespaces  with theory, practical commands, and a complete hands-on lab."
+      ],
+      "items": [
+        {
+          "label": "Prerequisites",
+          "text": [
+            "A Linux machine (physical, VM, or cloud instance) with root/sudo access",
+            "iproute2 package installed (ip, bridge, ss commands)",
+            "Basic familiarity with the Linux command line",
+            "iptables or nftables installed (for NAT section)",
+            "No Docker or containers required  we work with raw namespaces"
+          ]
+        },
+        {
+          "label": "What You Will Learn",
+          "text": [
+            "What network namespaces are and how they isolate the network stack",
+            "How to create, manage, and delete namespaces with ip netns",
+            "How to connect namespaces using veth pairs",
+            "How to build virtual networks with Linux bridges",
+            "How to provide internet access via NAT/masquerading",
+            "How Docker and Kubernetes use network namespaces in production",
+            "How to troubleshoot common network namespace connectivity issues"
+          ]
+        }
+      ],
+      "infoBox": {
+        "type": "info",
+        "content": "Network namespaces are one of the seven Linux namespace types (mount, PID, net, IPC, UTS, user, cgroup). They are the foundation of container networking  Docker uses CLONE_NEWNET when creating containers."
+      }
+    },
+    {
+      "id": "what-are-netns",
+      "title": "2. What Are Network Namespaces?",
+      "description": "Deep dive into kernel-level network isolation.",
+      "infoBox": {
+        "type": "tip",
+        "content": "Think of a network namespace as a virtual computer within your computer. It has its own network interfaces, IP addresses, routing table, firewall rules, and port numbers  completely isolated from the host."
+      },
+      "items": [
+        {
+          "label": "What Gets Isolated",
+          "table": {
+            "headers": ["Resource", "Isolated?", "Why It Matters"],
+            "rows": [
+              ["Network interfaces (eth0, lo, veth*)", "Yes", "Each namespace has its own set of interfaces; interfaces can be moved between namespaces"],
+              ["IP addresses", "Yes", "Two namespaces can use 10.0.0.1 without conflict; no IP overlap issues"],
+              ["Routing table (FIB)", "Yes", "Each namespace has its own routing table; default routes, static routes are independent"],
+              ["Firewall rules (iptables/nftables)", "Yes", "Host firewall rules don't affect container traffic unless it traverses a host interface"],
+              ["Socket/port space", "Yes", "Two containers can both bind to port 80 without conflict  they're in different namespaces"],
+              ["Connection tracking (conntrack)", "Yes", "NAT and stateful firewall state is per-namespace"],
+              ["/proc/net, /sys/class/net", "Yes", "Tools inside the namespace see only their own interfaces and sockets"]
+            ]
+          }
+        },
+        {
+          "label": "What Is NOT Isolated",
+          "text": [
+            "Filesystem (mount namespace is separate  CLONE_NEWNS)",
+            "Process IDs (PID namespace is separate  CLONE_NEWPID)",
+            "Hostname (UTS namespace is separate  CLONE_NEWUTS)",
+            "Kernel itself  all namespaces share the same kernel (no hypervisor)",
+            "Hardware  physical NICs can belong to only one namespace at a time"
+          ]
+        },
+        {
+          "label": "Default State of a Fresh Namespace",
+          "text": [
+            "When you create a new network namespace, it starts with almost nothing:",
+            " One loopback interface (lo)  and it is DOWN by default",
+            " Zero other interfaces  no eth0, no wlan0, no veth",
+            " Empty routing table  no default route, no static routes",
+            " No iptables rules  the FORWARD, INPUT, OUTPUT chains exist but are empty",
+            " No outside connectivity  you must explicitly wire it up",
+            "",
+            "This empty state is the starting point. Everything a namespace needs  interfaces, IPs, routes, firewall rules  must be explicitly configured. This gives you complete control over the network environment."
+          ]
+        }
+      ],
+      "subsections": [
+        {
+          "title": "Kernel Internals (For the Curious)",
+          "content": "Under the hood, the Linux kernel maintains a struct net per namespace (defined in include/net/net_namespace.h). When you create a new namespace, the kernel calls setup_net(), which initializes per-namespace data structures via pernet_operations hooks  routing tables, conntrack, the loopback device, and more. This is structural separation: the kernel literally maintains separate data structures, not access control lists."
+        }
+      ]
+    },
+    {
+      "id": "managing-namespaces",
+      "title": "3. Managing Namespaces with ip netns",
+      "description": "Creating, listing, deleting, and executing commands inside network namespaces.",
+      "content": [
+        "The ip netns command (part of iproute2) is the standard tool for managing network namespaces. Under the hood, ip netns add creates a bind mount at /var/run/netns/<name> that keeps the namespace alive even when no process is running inside it."
+      ],
+      "items": [
+        {
+          "label": "Key ip netns Commands",
+          "table": {
+            "headers": ["Command", "Purpose"],
+            "rows": [
+              ["ip netns add <name>", "Create a new named network namespace"],
+              ["ip netns list", "List all named network namespaces"],
+              ["ip netns delete <name>", "Delete a named namespace (removes all interfaces inside it)"],
+              ["ip netns exec <name> <cmd>", "Run a command inside the specified namespace"],
+              ["ip netns identify <PID>", "Show the namespace name for a process"],
+              ["ip netns pids <name>", "List all PIDs running inside a namespace"],
+              ["ip netns monitor", "Monitor namespace creation and deletion events"]
+            ]
+          }
+        },
+        {
+          "label": "Create and List Namespaces",
+          "code": "user@host:~$ sudo ip netns add red\nuser@host:~$ sudo ip netns add blue\nuser@host:~$ sudo ip netns add green\n\nuser@host:~$ sudo ip netns list\nred\nblue\ngreen\n\n# Each namespace has a bind mount at:\nuser@host:~$ ls -la /var/run/netns/\ntotal 0\ndrwxr-xr-x 2 root root 100 Jul  9 10:00 .\ndrwxr-xr-x 3 root root  80 Jul  9 10:00 ..\n-r--r--r-- 1 root root   0 Jul  9 10:00 blue\n-r--r--r-- 1 root root   0 Jul  9 10:00 green\n-r--r--r-- 1 root root   0 Jul  9 10:00 red"
+        },
+        {
+          "label": "Execute Commands Inside a Namespace",
+          "code": "# Check the default state of a fresh namespace\nuser@host:~$ sudo ip netns exec red ip addr show\n1: lo: <LOOPBACK> mtu 65536 qdisc noop state DOWN group default qlen 1000\n    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00\n    inet 127.0.0.1/8 scope host lo\n       valid_lft forever preferred_lft forever\n\n# No routes:\nuser@host:~$ sudo ip netns exec red ip route show\n# (nothing  empty routing table)\n\n# No iptables rules:\nuser@host:~$ sudo ip netns exec red iptables -L -n\nChain INPUT (policy ACCEPT)\ntarget     prot opt source               destination\n\nChain FORWARD (policy ACCEPT)\ntarget     prot opt source               destination\n\nChain OUTPUT (policy ACCEPT)\ntarget     prot opt source               destination\n\n# Open an interactive shell inside the namespace\nuser@host:~$ sudo ip netns exec red bash\nroot@host:~# ip addr show\n1: lo: <LOOPBACK> ...\nroot@host:~# exit"
+        },
+        {
+          "label": "Delete a Namespace",
+          "code": "# Deleting a namespace destroys ALL interfaces inside it\nuser@host:~$ sudo ip netns delete green\n\n# Verify it's gone\nuser@host:~$ sudo ip netns list\nred\nblue\n\n# Deleting also kills all processes running inside the namespace"
+        }
+      ]
+    },
+    {
+      "id": "veth-pairs",
+      "title": "4. veth Pairs  Connecting Namespaces",
+      "description": "Virtual Ethernet cables that connect isolated network namespaces.",
+      "infoBox": {
+        "type": "info",
+        "content": "A veth pair is like an Ethernet cable with two ends. Packets sent into one end come out the other end, and vice versa. No encapsulation, no userspace forwarder  the kernel's veth driver hands the skb (socket buffer) directly between the two ends."
+      },
+      "items": [
+        {
+          "label": "What Is a veth Pair?",
+          "text": [
+            "A veth (virtual Ethernet) pair is two virtual network interfaces connected back-to-back. They are created as a pair and always come together  you cannot create a single veth interface. Data transmitted through one end is immediately received by the other, and vice versa.",
+            "veth pairs are the standard way to connect a network namespace to the host or to another namespace. One end stays in the root/host namespace, and the other end is moved into the target namespace."
+          ]
+        },
+        {
+          "label": "Create a veth Pair and Move into Namespace",
+          "code": "# Step 1: Create the veth pair in the root namespace\nuser@host:~$ sudo ip link add veth-red type veth peer name veth-blue\n\n# Step 2: Verify both ends exist in the root namespace\nuser@host:~$ ip link show | grep veth\n6: veth-blue@veth-red: <BROADCAST,MULTICAST,M-DOWN> mtu 1500 ...\n7: veth-red@veth-blue: <BROADCAST,MULTICAST,M-DOWN> mtu 1500 ...\n\n# Step 3: Move each end into its respective namespace\nuser@host:~$ sudo ip link set veth-red netns red\nuser@host:~$ sudo ip link set veth-blue netns blue\n\n# Step 4: Verify the interfaces moved\nuser@host:~$ sudo ip netns exec red ip link show\n1: lo: <LOOPBACK> ...\n7: veth-red@if6: <BROADCAST,MULTICAST> mtu 1500 ...\n\nuser@host:~$ sudo ip netns exec blue ip link show\n1: lo: <LOOPBACK> ...\n6: veth-blue@if7: <BROADCAST,MULTICAST> mtu 1500 ..."
+        },
+        {
+          "label": "Assign IP Addresses and Bring Interfaces Up",
+          "code": "# Assign IP addresses to both ends\nuser@host:~$ sudo ip netns exec red ip addr add 10.0.1.1/24 dev veth-red\nuser@host:~$ sudo ip netns exec blue ip addr add 10.0.1.2/24 dev veth-blue\n\n# Bring the interfaces up (they start DOWN)\nuser@host:~$ sudo ip netns exec red ip link set veth-red up\nuser@host:~$ sudo ip netns exec blue ip link set veth-blue up\n\n# Also bring loopback up in each namespace\nuser@host:~$ sudo ip netns exec red ip link set lo up\nuser@host:~$ sudo ip netns exec blue ip link set lo up\n\n# Verify IP assignments\nuser@host:~$ sudo ip netns exec red ip addr show veth-red\n7: veth-red@if6: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 ...\n    inet 10.0.1.1/24 scope global veth-red\n\nuser@host:~$ sudo ip netns exec blue ip addr show veth-blue\n6: veth-blue@if7: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 ...\n    inet 10.0.1.2/24 scope global veth-blue"
+        },
+        {
+          "label": "Test Connectivity Between Namespaces",
+          "code": "# Ping from red to blue\nuser@host:~$ sudo ip netns exec red ping -c 4 10.0.1.2\nPING 10.0.1.2 (10.0.1.2) 56(84) bytes of data.\n64 bytes from 10.0.1.2: icmp_seq=1 ttl=64 time=0.089 ms\n64 bytes from 10.0.1.2: icmp_seq=2 ttl=64 time=0.068 ms\n64 bytes from 10.0.1.2: icmp_seq=3 ttl=64 time=0.072 ms\n64 bytes from 10.0.1.2: icmp_seq=4 ttl=64 time=0.065 ms\n\n--- 10.0.1.2 ping statistics ---\n4 packets transmitted, 4 received, 0% packet loss, time 3065ms\nrtt min/avg/max/mdev = 0.065/0.073/0.089/0.009 ms\n\n# Ping back from blue to red\nuser@host:~$ sudo ip netns exec blue ping -c 4 10.0.1.1\nPING 10.0.1.1 (10.0.1.1) 56(84) bytes of data.\n64 bytes from 10.0.1.1: icmp_seq=1 ttl=64 time=0.101 ms\n...\n\n# What about the internet?\nuser@host:~$ sudo ip netns exec red ping -c 1 8.8.8.8\nping: connect: Network is unreachable\n# No route to the internet yet  the namespace has no default gateway!"
+        },
+        {
+          "label": "Add Default Route for Internet Access (via Host)",
+          "code": "# Add the host side as the default gateway for red namespace\n# First, assign an IP to the host side of the veth pair\n\n# But wait  we already moved veth-red into the red namespace.\n# The standard pattern is DIFFERENT: one end stays in the HOST namespace,\n# the other end goes into the container/namespace.\n\n# Let's redo this properly in the lab section.\n\n# Quick preview: to give a namespace internet access, you need:\n# 1. A veth pair with one end in the host namespace\n# 2. IP forwarding enabled on the host\n# 3. A default route inside the namespace pointing to the host end\n# 4. NAT/masquerading on the host for the namespace subnet"
+        }
+      ]
+    },
+    {
+      "id": "linux-bridge",
+      "title": "5. Linux Bridge  Connecting Multiple Namespaces",
+      "description": "A virtual Layer 2 switch for connecting three or more namespaces.",
+      "infoBox": {
+        "type": "info",
+        "content": "A Linux bridge is a software Ethernet switch that forwards frames between ports based on MAC address learning (FDB  Forwarding Database). It operates at Layer 2  exactly like a physical network switch. Frames coming in on one port leave on the correct port based on the destination MAC address."
+      },
+      "items": [
+        {
+          "label": "Why a Bridge?",
+          "text": "With a simple veth pair, you can connect exactly two namespaces. To connect three or more namespaces (or to give a namespace internet access), you need a bridge. The bridge acts as a virtual switch that all namespaces connect to. Each namespace gets a veth pair  one end in the namespace, the other end attached to the bridge."
+        },
+        {
+          "label": "Create a Bridge and Attach Namespaces",
+          "code": "# Step 1: Create the bridge\nuser@host:~$ sudo ip link add br0 type bridge\nuser@host:~$ sudo ip link set br0 up\nuser@host:~$ sudo ip addr add 10.0.0.1/24 dev br0  # Bridge gets an IP\n\n# Step 2: Create namespaces\nuser@host:~$ sudo ip netns add ns1\nuser@host:~$ sudo ip netns add ns2\nuser@host:~$ sudo ip netns add ns3\n\n# Step 3: Connect each namespace to the bridge\n# For ns1:\nuser@host:~$ sudo ip link add veth-host1 type veth peer name veth-ns1\nuser@host:~$ sudo ip link set veth-host1 master br0\nuser@host:~$ sudo ip link set veth-host1 up\nuser@host:~$ sudo ip link set veth-ns1 netns ns1\nuser@host:~$ sudo ip netns exec ns1 ip addr add 10.0.0.11/24 dev veth-ns1\nuser@host:~$ sudo ip netns exec ns1 ip link set veth-ns1 up\nuser@host:~$ sudo ip netns exec ns1 ip link set lo up\nuser@host:~$ sudo ip netns exec ns1 ip route add default via 10.0.0.1\n\n# For ns2:\nuser@host:~$ sudo ip link add veth-host2 type veth peer name veth-ns2\nuser@host:~$ sudo ip link set veth-host2 master br0\nuser@host:~$ sudo ip link set veth-host2 up\nuser@host:~$ sudo ip link set veth-ns2 netns ns2\nuser@host:~$ sudo ip netns exec ns2 ip addr add 10.0.0.12/24 dev veth-ns2\nuser@host:~$ sudo ip netns exec ns2 ip link set veth-ns2 up\nuser@host:~$ sudo ip netns exec ns2 ip link set lo up\nuser@host:~$ sudo ip netns exec ns2 ip route add default via 10.0.0.1\n\n# For ns3 (same pattern):\nuser@host:~$ sudo ip link add veth-host3 type veth peer name veth-ns3\nuser@host:~$ sudo ip link set veth-host3 master br0\nuser@host:~$ sudo ip link set veth-host3 up\nuser@host:~$ sudo ip link set veth-ns3 netns ns3\nuser@host:~$ sudo ip netns exec ns3 ip addr add 10.0.0.13/24 dev veth-ns3\nuser@host:~$ sudo ip netns exec ns3 ip link set veth-ns3 up\nuser@host:~$ sudo ip netns exec ns3 ip link set lo up\nuser@host:~$ sudo ip netns exec ns3 ip route add default via 10.0.0.1"
+        },
+        {
+          "label": "Test Inter-Namespace Connectivity via Bridge",
+          "code": "# ns1 can ping ns2 (via the bridge)\nuser@host:~$ sudo ip netns exec ns1 ping -c 3 10.0.0.12\nPING 10.0.0.12 (10.0.0.12) 56(84) bytes of data.\n64 bytes from 10.0.0.12: icmp_seq=1 ttl=64 time=0.112 ms\n64 bytes from 10.0.0.12: icmp_seq=2 ttl=64 time=0.087 ms\n64 bytes from 10.0.0.12: icmp_seq=3 ttl=64 time=0.093 ms\n\n# ns2 can ping ns3\nuser@host:~$ sudo ip netns exec ns2 ping -c 3 10.0.0.13\n64 bytes from 10.0.0.13: icmp_seq=1 ttl=64 time=0.078 ms\n\n# ns3 can ping the bridge IP (the host side)\nuser@host:~$ sudo ip netns exec ns3 ping -c 3 10.0.0.1\n64 bytes from 10.0.0.1: icmp_seq=1 ttl=64 time=0.051 ms\n\n# All namespaces can talk to each other  but still NO internet"
+        },
+        {
+          "label": "Check Bridge Forwarding Database",
+          "code": "# See which MAC addresses the bridge has learned\nuser@host:~$ bridge fdb show br br0\n00:00:00:00:00:00 dev veth-host1 master br0 permanent\n2a:3b:4c:5d:6e:7f dev veth-host1 master br0\n3b:4c:5d:6e:7f:80 dev veth-host2 master br0\n4c:5d:6e:7f:80:91 dev veth-host3 master br0\n\n# See the bridge itself\nuser@host:~$ ip link show br0\n4: br0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue ...\n    link/ether 1a:2b:3c:4d:5e:6f\n    inet 10.0.0.1/24 scope global br0\n\n# Show bridge ports and STP status\nuser@host:~$ bridge link show\n5: veth-host1 state UP @(bridge: br0) <BROADCAST,MULTICAST,UP,LOWER_UP>\n6: veth-host2 state UP @(bridge: br0) <BROADCAST,MULTICAST,UP,LOWER_UP>\n7: veth-host3 state UP @(bridge: br0) <BROADCAST,MULTICAST,UP,LOWER_UP>"
+        }
+      ]
+    },
+    {
+      "id": "nat-internet-access",
+      "title": "6. NAT and Internet Access",
+      "description": "Giving your namespaces internet connectivity through IP masquerading.",
+      "infoBox": {
+        "type": "warning",
+        "content": "Without NAT, packets from namespaces (using private IPs like 10.0.0.0/24) would be dropped by upstream routers because private IPs are not routable on the public internet. NAT rewrites the source IP to the host's public IP, making the response traffic return to the host, which then forwards it back to the namespace."
+      },
+      "content": [
+        "Namespaces use private IP addresses (10.0.0.0/24 in our lab). To reach the internet, the host must perform Source NAT (SNAT)  also called IP masquerading. The host rewrites the source IP address of outgoing packets to its own public IP, and remembers the mapping so it can forward the response back to the correct namespace."
+      ],
+      "items": [
+        {
+          "label": "Step-by-Step: Enable Internet Access",
+          "code": "# Step 1: Enable IP forwarding on the host\nuser@host:~$ sudo sysctl -w net.ipv4.ip_forward=1\nnet.ipv4.ip_forward = 1\n\n# Make it permanent\nuser@host:~$ echo 'net.ipv4.ip_forward=1' | sudo tee -a /etc/sysctl.d/99-forwarding.conf\n\n# Step 2: Find your external interface (the one with internet access)\nuser@host:~$ ip route | grep default\ndefault via 192.168.1.1 dev eth0 proto dhcp src 192.168.1.100\n# Our external interface is eth0\n\n# Step 3: Add MASQUERADE rule for the namespace subnet\n# ! -o br0 means: don't masquerade traffic going TO the bridge (inter-namespace traffic stays private)\nuser@host:~$ sudo iptables -t nat -A POSTROUTING -s 10.0.0.0/24 ! -o br0 -j MASQUERADE\n\n# Step 4: Allow forwarding through the bridge\n# Docker often sets FORWARD policy to DROP  check and fix if needed\nuser@host:~$ sudo iptables -A FORWARD -i br0 -j ACCEPT\nuser@host:~$ sudo iptables -A FORWARD -o br0 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT"
+        },
+        {
+          "label": "Test Internet Access from a Namespace",
+          "code": "# Test ping to internet (Google DNS)\nuser@host:~$ sudo ip netns exec ns1 ping -c 3 8.8.8.8\nPING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.\n64 bytes from 8.8.8.8: icmp_seq=1 ttl=117 time=12.3 ms\n64 bytes from 8.8.8.8: icmp_seq=2 ttl=117 time=11.8 ms\n64 bytes from 8.8.8.8: icmp_seq=3 ttl=117 time=12.1 ms\n\n# Test DNS resolution (need resolv.conf in the namespace)\nuser@host:~$ sudo ip netns exec ns1 bash -c 'echo \"nameserver 8.8.8.8\" > /etc/resolv.conf'\nuser@host:~$ sudo ip netns exec ns1 ping -c 2 google.com\nPING google.com (142.250.80.78) 56(84) bytes of data.\n64 bytes from 142.250.80.78: icmp_seq=1 ttl=118 time=14.1 ms\n\n# Test HTTP (curl)\nuser@host:~$ sudo ip netns exec ns1 curl -s http://example.com | head -n 3\n<!doctype html>\n<html>\n<head>"
+        },
+        {
+          "label": "Verify the NAT Rules",
+          "code": "# Check masquerade rule\nuser@host:~$ sudo iptables -t nat -L POSTROUTING -n -v\nChain POSTROUTING (policy ACCEPT 0 packets, 0 bytes)\npkts bytes target     prot opt in     out     source               destination\n  47  3940 MASQUERADE  all  --  *      !br0    10.0.0.0/24          0.0.0.0/0\n\n# Check FORWARD rules\nuser@host:~$ sudo iptables -L FORWARD -n -v\nChain FORWARD (policy ACCEPT 0 packets, 0 bytes)\npkts bytes target     prot opt in     out     source               destination\n  23  1932 ACCEPT     all  --  br0    *       0.0.0.0/0            0.0.0.0/0\n  18  2000 ACCEPT     all  --  *      br0     0.0.0.0/0            0.0.0.0/0    ctstate ESTABLISHED,RELATED\n\n# Watch live connection tracking\nuser@host:~$ sudo conntrack -L -n | head -10\nicmp     1 29 src=10.0.0.11 dst=8.8.8.8 type=8 code=0 id=12345 src=8.8.8.8 dst=192.168.1.100 type=0 code=0 id=12345 mark=0 use=1"
+        }
+      ]
+    },
+    {
+      "id": "hands-on-lab",
+      "title": "7. Hands-On Lab: From Zero to Ping",
+      "description": "A complete step-by-step lab from creating namespaces to internet access, with DNS and HTTP testing.",
+      "content": [
+        "This lab combines everything you've learned into a single, reproducible workflow. Run each command in order on any Linux machine with root access."
+      ],
+      "items": [
+        {
+          "label": "Phase 1: Two Namespaces with Direct veth Connection",
+          "code": "# Clean up any previous lab setup\nsudo ip netns delete red 2>/dev/null; sudo ip netns delete blue 2>/dev/null\n\n# Create two namespaces\nsudo ip netns add red\nsudo ip netns add blue\n\n# Create a veth pair\nsudo ip link add veth-red type veth peer name veth-blue\n\n# Move each end into its namespace\nsudo ip link set veth-red netns red\nsudo ip link set veth-blue netns blue\n\n# Assign IPs\nsudo ip netns exec red ip addr add 10.0.1.1/24 dev veth-red\nsudo ip netns exec blue ip addr add 10.0.1.2/24 dev veth-blue\n\n# Bring interfaces up\nsudo ip netns exec red ip link set veth-red up\nsudo ip netns exec blue ip link set veth-blue up\nsudo ip netns exec red ip link set lo up\nsudo ip netns exec blue ip link set lo up\n\n# Test\nsudo ip netns exec red ping -c 2 10.0.1.2\nsudo ip netns exec blue ping -c 2 10.0.1.1\n\n# Expected: both pings succeed with 0% packet loss"
+        },
+        {
+          "label": "Phase 2: Three Namespaces via Bridge",
+          "code": "# Clean up phase 1\nsudo ip link delete veth-red 2>/dev/null\n\n# Create bridge\nsudo ip link add br0 type bridge\nsudo ip link set br0 up\nsudo ip addr add 10.0.0.1/24 dev br0\n\n# Create additional namespaces\nsudo ip netns add ns1\nsudo ip netns add ns2\nsudo ip netns add ns3\n\n# Connect ns1\nsudo ip link add veth-h1 type veth peer name veth-ns1\nsudo ip link set veth-h1 master br0\nsudo ip link set veth-h1 up\nsudo ip link set veth-ns1 netns ns1\nsudo ip netns exec ns1 ip addr add 10.0.0.11/24 dev veth-ns1\nsudo ip netns exec ns1 ip link set veth-ns1 up\nsudo ip netns exec ns1 ip link set lo up\nsudo ip netns exec ns1 ip route add default via 10.0.0.1\n\n# Connect ns2 (reuse red namespace, renamed)\nsudo ip link add veth-h2 type veth peer name veth-ns2\nsudo ip link set veth-h2 master br0\nsudo ip link set veth-h2 up\nsudo ip link set veth-ns2 netns ns2\nsudo ip netns exec ns2 ip addr add 10.0.0.12/24 dev veth-ns2\nsudo ip netns exec ns2 ip link set veth-ns2 up\nsudo ip netns exec ns2 ip link set lo up\nsudo ip netns exec ns2 ip route add default via 10.0.0.1\n\n# Connect ns3 (reuse blue namespace, renamed)\nsudo ip link add veth-h3 type veth peer name veth-ns3\nsudo ip link set veth-h3 master br0\nsudo ip link set veth-h3 up\nsudo ip link set veth-ns3 netns ns3\nsudo ip netns exec ns3 ip addr add 10.0.0.13/24 dev veth-ns3\nsudo ip netns exec ns3 ip link set veth-ns3 up\nsudo ip netns exec ns3 ip link set lo up\nsudo ip netns exec ns3 ip route add default via 10.0.0.1\n\n# Test inter-namespace connectivity\nsudo ip netns exec ns1 ping -c 2 10.0.0.12\nsudo ip netns exec ns2 ping -c 2 10.0.0.13\nsudo ip netns exec ns3 ping -c 2 10.0.0.1\n\n# All should succeed!"
+        },
+        {
+          "label": "Phase 3: Internet Access with NAT",
+          "code": "# Enable IP forwarding\nsudo sysctl -w net.ipv4.ip_forward=1\n\n# Identify external interface\nEXT_IF=$(ip route | grep default | awk '{print $5}')\necho \"External interface: $EXT_IF\"\n\n# Add MASQUERADE rule\nsudo iptables -t nat -A POSTROUTING -s 10.0.0.0/24 ! -o br0 -j MASQUERADE\n\n# Allow FORWARD traffic\nsudo iptables -A FORWARD -i br0 -j ACCEPT\nsudo iptables -A FORWARD -o br0 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT\n\n# Test internet from ns1\nsudo ip netns exec ns1 ping -c 3 8.8.8.8\n\n# Setup DNS and test name resolution\nsudo ip netns exec ns1 bash -c 'echo \"nameserver 8.8.8.8\" > /etc/resolv.conf'\nsudo ip netns exec ns1 ping -c 2 google.com\n\n# Test HTTP(S)\nsudo ip netns exec ns1 curl -s -o /dev/null -w \"%{http_code}\" https://example.com\n# Expected output: 200"
+        },
+        {
+          "label": "Phase 4: Run a Web Server Inside a Namespace",
+          "code": "# Start a simple Python HTTP server in ns1 (background)\nsudo ip netns exec ns1 python3 -m http.server 8888 &\n\n# From ns2, access ns1's web server (via bridge)\nsudo ip netns exec ns2 curl -s http://10.0.0.11:8888 | head -n 5\n\n# From the host, access it via bridge IP\ncurl -s http://10.0.0.11:8888 | head -n 5\n\n# Stop the server when done\nkill %1 2>/dev/null"
+        },
+        {
+          "label": "Cleanup Everything",
+          "code": "# Delete namespaces (removes all interfaces inside them)\nsudo ip netns delete ns1\nsudo ip netns delete ns2\nsudo ip netns delete ns3\nsudo ip netns delete red 2>/dev/null\nsudo ip netns delete blue 2>/dev/null\n\n# Delete the bridge\nsudo ip link delete br0\n\n# Remove iptables rules (use -D to delete specific rules, or flush)\nsudo iptables -t nat -D POSTROUTING -s 10.0.0.0/24 ! -o br0 -j MASQUERADE 2>/dev/null\nsudo iptables -D FORWARD -i br0 -j ACCEPT 2>/dev/null\nsudo iptables -D FORWARD -o br0 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT 2>/dev/null\n\n# Verify everything is gone\nsudo ip netns list\n# Expected: empty output"
+        }
+      ]
+    },
+    {
+      "id": "real-world-use-cases",
+      "image": {
+        "src": "/images/networking-devops-hero.svg",
+        "alt": "Docker bridge networking diagram showing how containers connect through docker0 bridge"
+      },
+      "title": "8. Real-World Use Cases",
+      "description": "How network namespaces power Docker, Kubernetes, VPNs, and more.",
+      "items": [
+        {
+          "label": "Docker Containers",
+          "text": [
+            "Every Docker container gets its own network namespace. When you run docker run, Docker Engine performs these steps internally:",
+            "",
+            "1. Creates a new network namespace via the clone() syscall with CLONE_NEWNET flag",
+            "2. Creates a veth pair in the host namespace",
+            "3. Moves one end of the veth pair into the container's namespace and renames it to eth0",
+            "4. Attaches the other end to the docker0 bridge (or a user-defined bridge)",
+            "5. Assigns an IP address from the bridge subnet (default 172.17.0.0/16)",
+            "6. Sets the bridge IP as the default gateway inside the container",
+            "7. Adds MASQUERADE iptables rules on the host for outbound traffic",
+            "8. Adds DNAT iptables rules for port publishing (-p 8080:80)",
+            "",
+            "Docker also supports other networking modes:",
+            " --net host: The container shares the host's network namespace (no isolation)",
+            " --net none: The container gets its own namespace with no interfaces except lo",
+            " --net container:<id>: The container shares another container's network namespace (used in Kubernetes pods)"
+          ]
+        },
+        {
+          "label": "Kubernetes Pods",
+          "text": [
+            "In Kubernetes, the pod is the unit of network identity  not the individual container. This is a key difference from Docker:",
+            "",
+            "1. When kubelet creates a pod, it first starts a pause (infra/sandbox) container",
+            "2. The pause container holds the pod's network namespace",
+            "3. A CNI (Container Network Interface) plugin configures networking in the pause container's namespace",
+            "4. The CNI plugin creates a veth pair, attaches one end to the pause namespace, and the other to a CNI bridge",
+            "5. An IP is assigned to the pod (from the CNI's IPAM  e.g., 10.244.1.5)",
+            "6. All other containers in the pod join via --net container:<pause>",
+            "",
+            "This means:",
+            " All containers in a pod share the same IP and port space",
+            " Containers can communicate via localhost",
+            " The pause container keeps the namespace alive across container restarts",
+            " When the pod is deleted, the pause container exits and the namespace is destroyed"
+          ]
+        },
+        {
+          "label": "VPN Isolation",
+          "text": [
+            "Network namespaces provide a clean way to isolate VPN traffic from the host's network. The VPN client runs inside a dedicated namespace  only processes in that namespace use the VPN tunnel. The host's traffic stays on the regular network.",
+            "This pattern is used for:",
+            " Running work-related tools through a corporate VPN while personal browsing stays on the home network",
+            " Accessing geo-restricted services in one namespace while using local internet in another",
+            " Testing applications against different network conditions without affecting the host"
+          ]
+        },
+        {
+          "label": "Network Function Virtualization (NFV)",
+          "text": [
+            "Linux network namespaces provide lightweight isolation for virtual network functions (VNFs) like firewalls, NAT gateways, load balancers, and Deep Packet Inspection (DPI) engines. Multiple VNFs run as processes in separate namespaces, connected via veth pairs and bridges to create complex network topologies  all on a single Linux machine without hypervisors or VMs."
+          ]
+        },
+        {
+          "label": "Testing and Development",
+          "text": [
+            "Network namespaces let you build complex multi-router topologies on a single machine. You can run BGP daemons (BIRD, FRR) in separate namespaces, simulate OSPF adjacencies, test firewall rules, and validate VPN configurations  all without provisioning multiple VMs or physical hardware. This makes them invaluable for network automation testing (Ansible, Terraform) and CI/CD pipelines."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "troubleshooting",
+      "title": "9. Troubleshooting Common Issues",
+      "description": "Diagnose and fix the most frequent network namespace problems.",
+      "infoBox": {
+        "type": "warning",
+        "content": "When debugging network namespace connectivity issues, use tcpdump on both sides of the veth pair to isolate where packets are being dropped. This single technique resolves 90% of connectivity problems."
+      },
+      "items": [
+        {
+          "label": "Issue 1: Destination Host Unreachable",
+          "text": [
+            "Symptoms: ping returns Destination Host Unreachable from inside a namespace",
+            "",
+            "Causes and fixes:",
+            " Missing default route  sudo ip netns exec ns1 ip route add default via 10.0.0.1",
+            " Interface is DOWN  sudo ip netns exec ns1 ip link show (look for state DOWN)",
+            " Wrong IP subnet  ensure both ends of the veth pair are on the same subnet",
+            " IP subnet collision  if the host's eth0 uses 10.0.0.0/24, your namespace subnet will conflict; use a different subnet like 10.0.100.0/24",
+            ""
+          ]
+        },
+        {
+          "label": "Systematic Connectivity Check",
+          "code": "# Verify IPs, interfaces, and routes in sequence\nuser@host:~$ sudo ip netns exec ns1 ip addr show\n# Check that IP is assigned correctly\n\nuser@host:~$ sudo ip netns exec ns1 ip link show\n# Check that interfaces are state UP\n\nuser@host:~$ sudo ip netns exec ns1 ip route show\n# Verify the default route exists (default via 10.0.0.1)"
+        },
+        {
+          "label": "Issue 2: Can Ping Bridge IP but Not the Internet",
+          "text": [
+            "Symptoms: ping 10.0.0.1 works but ping 8.8.8.8 fails",
+            "",
+            "Check these in order:",
+            "1. IP forwarding  sysctl net.ipv4.ip_forward must be 1: sudo sysctl -w net.ipv4.ip_forward=1",
+            "2. FORWARD chain  Docker often sets iptables FORWARD policy to DROP:",
+            "   sudo iptables -L FORWARD -n -v",
+            "   Fix: sudo iptables --policy FORWARD ACCEPT or add explicit rules",
+            "3. MASQUERADE rule  verify it exists:",
+            "   sudo iptables -t nat -L POSTROUTING -n -v",
+            "   Expected: MASQUERADE all -- * !br0 10.0.0.0/24 0.0.0.0/0",
+            "4. rp_filter  if you have multiple network paths, strict reverse path filtering can drop packets:",
+            "   sudo sysctl net.ipv4.conf.all.rp_filter",
+            "   Fix: sudo sysctl -w net.ipv4.conf.all.rp_filter=2 (loose mode)"
+          ]
+        },
+        {
+          "label": "Issue 3: Ping Works One Way But Not the Other",
+          "text": [
+            "Symptoms: ns1 can ping ns2, but ns2 cannot ping ns1 (asymmetric routing)",
+            "",
+            "Causes and fixes:",
+            " Missing route in one direction  both namespaces need a route to each other",
+            " When using a bridge, ensure both veth ends are up and both namespaces have a default gateway",
+            " Check iptables in each namespace: sudo ip netns exec ns1 iptables -L -n  there may be rules dropping traffic",
+            " Use tcpdump to trace packets:",
+            "  Terminal 1: sudo ip netns exec ns1 tcpdump -i veth-ns1 -nn icmp",
+            "  Terminal 2: sudo ip netns exec ns2 ping 10.0.0.11"
+          ]
+        },
+        {
+          "label": "Issue 4: veth Interface Disappeared",
+          "text": [
+            "Symptoms: The veth interface is gone after deleting a namespace",
+            "",
+            "Cause: When you delete a namespace with ip netns delete, ALL interfaces inside it are destroyed. The kernel also destroys the orphaned peer end in the root/host namespace. This is expected behavior.",
+            "Fix: Recreate the veth pair with ip link add and reattach.",
+            "Note: Always clean up from the namespace side first, or delete the veth pair from the root namespace before deleting the namespace."
+          ]
+        },
+        {
+          "label": "Issue 5: Container Cannot Resolve DNS",
+          "text": [
+            "Symptoms: Ping to IP works but ping to hostname fails",
+            "",
+            "Cause: Network namespaces do not inherit the host's /etc/resolv.conf. The namespace starts with no DNS configuration.",
+            "Fix: Create a resolv.conf inside the namespace:",
+            "sudo ip netns exec ns1 bash -c 'echo \"nameserver 8.8.8.8\" > /etc/resolv.conf'",
+            "Or copy the host's resolv.conf:",
+            "sudo ip netns exec ns1 bash -c 'cp /etc/resolv.conf /etc/resolv.conf' 2>/dev/null",
+            "Note: When Docker creates containers, it bind-mounts /etc/resolv.conf from the host into the container's namespace  this is why Docker containers can resolve DNS by default."
+          ]
+        },
+        {
+          "label": "Issue 6: Docker's iptables Rules Break Custom Namespace Traffic",
+          "text": [
+            "Symptoms: Your custom namespace setup stops working after Docker starts",
+            "",
+            "Cause: Docker Engine aggressively manages iptables rules. It may set the FORWARD policy to DROP and insert its own rules that interfere with your custom namespace traffic.",
+            "Fix options:",
+            " Add your rules before Docker's: sudo iptables -I FORWARD 1 -i br0 -j ACCEPT",
+            " Disable Docker's iptables management (in /etc/docker/daemon.json):",
+            "  { \"iptables\": false }",
+            " Or re-apply your rules after restarting Docker"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "summary",
+      "title": "10. Summary and Next Steps",
+      "description": "Key takeaways and what to explore next.",
+      "items": [
+        {
+          "label": "Key Takeaways",
+          "text": [
+            " Network namespaces provide full isolation of the network stack  interfaces, IPs, routing, firewall, ports",
+            " Each namespace starts with only a loopback interface (DOWN by default)  you must wire everything explicitly",
+            " veth pairs act like Ethernet cables connecting a namespace to the host or to another namespace",
+            " Linux bridges act as virtual L2 switches connecting multiple namespaces",
+            " NAT/masquerading is required for namespace internet access since they use private IPs",
+            " Docker containers each get their own network namespace  this is how container networking works under the hood",
+            " Kubernetes pods share a single network namespace across all containers in the pod via the pause container",
+            " Troubleshooting follows a systematic path: check interfaces  IPs  routes  iptables  tcpdump"
+          ]
+        },
+        {
+          "label": "Commands Cheat Sheet",
+          "table": {
+            "headers": ["Category", "Command", "Description"],
+            "rows": [
+              ["Namespace Mgmt", "ip netns add <name>", "Create a namespace"],
+              ["Namespace Mgmt", "ip netns list", "List all namespaces"],
+              ["Namespace Mgmt", "ip netns delete <name>", "Delete a namespace"],
+              ["Namespace Mgmt", "ip netns exec <name> <cmd>", "Run command in namespace"],
+              ["veth", "ip link add v0 type veth peer name v1", "Create veth pair"],
+              ["veth", "ip link set veth1 netns ns1", "Move interface to namespace"],
+              ["Bridge", "ip link add br0 type bridge", "Create a bridge"],
+              ["Bridge", "ip link set veth0 master br0", "Attach veth to bridge"],
+              ["NAT", "iptables -t nat -A POSTROUTING -s SUBNET -j MASQUERADE", "Enable masquerade"],
+              ["NAT", "sysctl -w net.ipv4.ip_forward=1", "Enable IP forwarding"],
+              ["Debug", "tcpdump -i any -nn icmp", "Capture ICMP packets"],
+              ["Debug", "bridge fdb show", "Show bridge MAC table"]
+            ]
+          }
+        },
+        {
+          "label": "What to Explore Next",
+          "text": [
+            "Now that you understand network namespaces, here are natural next topics to explore:",
+            "",
+            " Docker Networking  deep dive into bridge, overlay, macvlan, and ipvlan drivers",
+            " CNI Plugins  how Kubernetes uses Flannel, Calico, Cilium, and Weave for pod networking",
+            " eBPF and Cilium  modern kernel networking that replaces iptables for better performance",
+            " Network Policies  Kubernetes NetworkPolicy resources for microsegmentation",
+            " Service Mesh  Istio, Linkerd, Consul Connect for L7 traffic management",
+            " VXLAN and Overlay Networks  how containers communicate across multiple hosts",
+            " Linux TC (Traffic Control)  shaping, policing, and QoS inside network namespaces",
+            "",
+            "The foundation you've built here applies directly to all of these  every container networking technology builds on Linux network namespaces."
+          ]
+        }
+      ]
+    }
+  ]
+}
