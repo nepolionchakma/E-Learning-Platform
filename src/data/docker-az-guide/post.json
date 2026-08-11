@@ -78,13 +78,67 @@
             "└─────────────────────────────────────────────────────────┘",
             "                         │",
             "┌────────────────────────▼────────────────────────────────┐",
-            "│                 Registries (Docker Hub, ECR, ghcr.io)    │",
-            "│              Store and distribute container images      │",
-            "└─────────────────────────────────────────────────────────┘"
-          ]
-        }
-      ]
-    },
+             "│                 Registries (Docker Hub, ECR, ghcr.io)    │",
+             "│              Store and distribute container images      │",
+             "└─────────────────────────────────────────────────────────┘"
+           ]
+         },
+         {
+           "label": "Linux Namespaces — How Containers Get Isolation",
+           "content": [
+             "Containers are not virtual machines — they are normal Linux processes with restricted views. Linux namespaces provide this restriction by giving each container its own isolated view of the system. When you run a container, Docker calls the clone() syscall with namespace flags, creating these isolated views:",
+             "",
+             "• PID namespace (CLONE_NEWPID) — the container only sees its own processes (PID 1 inside is the container's main process)",
+             "• Network namespace (CLONE_NEWNET) — its own network interfaces, IPs, routing table, and firewall rules",
+             "• Mount namespace (CLONE_NEWNS) — its own filesystem tree, so /usr, /etc, and /proc inside are the image's, not the host's",
+             "• UTS namespace (CLONE_NEWUTS) — its own hostname",
+             "• IPC namespace (CLONE_NEWIPC) — its own inter-process communication channels",
+             "• User namespace (CLONE_NEWUSER) — root inside the container can map to a non-privileged user on the host",
+             "",
+             "This is why two containers can both listen on port 80, or run different versions of the same library — each lives in its own namespace."
+           ]
+         },
+         {
+           "label": "cgroups — How Containers Are Limited",
+           "content": [
+             "While namespaces give a container an isolated VIEW of the system, control groups (cgroups) limit how much of the system a container can USE. Cgroups are the kernel mechanism that enforces:",
+             "",
+             "• CPU limits — a container can use at most 0.5 CPU cores",
+             "• Memory limits — a container is killed (OOM-killed) when it exceeds its memory cap",
+             "• I/O limits — disk and network bandwidth throttling",
+             "• PID limits — preventing fork bombs inside a container",
+             "",
+             "Every docker run --cpus, --memory, and --ulimit flag maps directly to a cgroup setting. Compose's deploy.resources.limits does the same. Without cgroups, one runaway container could starve the entire host."
+           ]
+         },
+         {
+           "label": "containerd, runc, and the Container Runtime Stack",
+           "content": [
+             "Modern Docker Engine is a layered architecture. When you run a container, the request flows through multiple components:",
+             "",
+             "1. Docker CLI sends the request to the Docker daemon (dockerd) via REST API",
+             "2. dockerd hands the work to containerd — the industry-standard container runtime (also used by Kubernetes, Amazon ECS, and Google GKE)",
+             "3. containerd spawns runc — the low-level OCI runtime that actually creates the container using namespaces and cgroups",
+             "4. runc uses the Open Container Initiative (OCI) runtime spec to set up the container's root filesystem, mount points, and process",
+             "",
+             "The output of a single docker run is a collaboration between four programs. Each layer is swappable — you can replace runc with gVisor or Kata Containers for stronger isolation, or use containerd directly without Docker at all."
+           ]
+         },
+         {
+           "label": "OverlayFS — How Image Layers Become a Filesystem",
+           "content": [
+             "A Docker image is a stack of read-only layers. But a container needs a writable filesystem. The answer is OverlayFS — a union filesystem that merges layers into a single view:",
+             "",
+             "• Each image layer (FROM, RUN, COPY results) is a read-only directory",
+             "• OverlayFS stacks them: lowerdir = the image layers, upperdir = the container's writable layer",
+             "• The container sees one unified filesystem, but only writes go to the thin upper layer",
+             "• When a file in a lower layer is modified, OverlayFS copies it up to the upper layer first (copy-on-write)",
+             "",
+             "This design is why containers are so cheap: running 100 containers from the same image shares the same read-only layers in memory and disk, and each container only costs the tiny writable layer it actually changes."
+           ]
+         }
+       ]
+     },
     {
       "id": "installation",
       "title": "3. Installing Docker",
@@ -197,6 +251,27 @@
           "code": "# Watch running containers (refreshes every 2 seconds)\nuser@host:~$ watch -n 2 docker ps\n\n# Watch all containers (including stopped)\nuser@host:~$ watch -n 2 docker ps -a\n\n# Watch filtered by name\nuser@host:~$ watch -n 2 docker ps -a --filter 'name=myapp'\n\n# Watch resource usage (built-in)\nuser@host:~$ docker stats\n\n# Example output of watch docker ps:\nEvery 2.0s: docker ps\n\nCONTAINER ID   IMAGE               COMMAND                  PORTS                    STATUS          NAMES\nabc12345def6   myapp:latest        \"node server.js\"         0.0.0.0:3000->3000/tcp   Up 2 minutes    myapp-web-1\ndef67890abc1   postgres:16-alpine  \"docker-entrypoint.…\"   5432/tcp                 Up 3 minutes    myapp-db-1\n\n# Press Ctrl+C to stop watch"
         },
         {
+          "label": "Copy Files Between Host and Container",
+          "content": [
+            "docker cp transfers files in both directions — host to container or container to host. It works whether the container is running or stopped, which makes it invaluable for extracting logs, debugging configs, or injecting files temporarily."
+          ],
+          "code": "# Copy FROM host INTO container\ndocker cp ./backup.sql myapp:/backup.sql\n\n# Copy FROM container TO host (extract files, logs)\ndocker cp myapp:/var/log/app.log ./app.log\n\n# Copy a directory\nuser@host:~$ docker cp myapp:/app/dist ./dist\n\n# Example: pull a config file out to inspect it\nuser@host:~$ docker cp my-nginx:/etc/nginx/nginx.conf ./nginx.conf\nuser@host:~$ cat nginx.conf | head -20"
+        },
+        {
+          "label": "Inspect Processes Inside a Container (docker top)",
+          "content": [
+            "docker top shows the actual processes running inside a container — the Linux processes as seen from the host, with their host PIDs. Use it when you need to confirm what the container is really running, or when a container looks hung."
+          ],
+          "code": "# Show processes inside a container (like ps inside the container)\nuser@host:~$ docker top my-nginx\nUID                 PID                 PPID                C                   STIME               TTY                 TIME                CMD\nroot                24567               24551               0                   10:00                ?                   00:00:00            nginx: master process nginx -g daemon off;\n101                 24579               24567               0                   10:00                ?                   00:00:00            nginx: worker process\n\n# Useful combinations:\nuser@host:~$ docker top my-nginx -o pid,cmd | grep worker\n# Show specific columns, filter for worker processes\n\n# Compare with inside the container:\nuser@host:~$ docker exec my-nginx ps aux"
+        },
+        {
+          "label": "Runtime Resource Limits (CPU and Memory)",
+          "content": [
+            "By default a container can consume ALL host CPU and memory. In production you must cap resources at runtime — the flags below map directly to cgroup limits and protect the host from a runaway container."
+          ],
+          "code": "# Limit memory: hard cap + soft reservation\ndocker run -d --name myapp \\\n    --memory 512m \\\n    --memory-reservation 256m \\\n    -p 3000:3000 \\\n    myapp:1.0.0\n# Exceeding 512m triggers the OOM killer on that container\n\n# Limit CPU: 1.5 cores, with 0.25 core guaranteed\n# --cpus accepts fractional values\ndocker run -d --name myapp \\\n    --cpus 1.5 \\\n    --cpuset-cpus 0-1 \\\n    myapp:1.0.0\n\n# Limit swap (memory + swap combined cap)\ndocker run -d --name myapp --memory 512m --memory-swap 1g myapp:1.0.0\n\n# Verify the limits are applied:\nuser@host:~$ docker inspect myapp --format '{{.HostConfig.Memory}} {{.HostConfig.NanoCpus}}'\n536870912 1500000000\n\n# Check OOM events:\nuser@host:~$ docker inspect myapp --format '{{.State.OOMKilled}}'\nfalse\n\n# In Compose, the same limits:\nservices:\n  web:\n    deploy:\n      resources:\n        limits:\n          cpus: \"1.5\"\n          memory: 512M"
+        },
+        {
           "label": "Clean Up Containers and Images",
           "code": "user@host:~$ docker stop my-nginx\nmy-nginx\n\nuser@host:~$ docker rm my-nginx\nmy-nginx\n\nuser@host:~$ docker rm -f my-nginx  # If still running\nmy-nginx\n\n# Remove unused resources:\nuser@host:~$ docker container prune\nWARNING! This will remove all stopped containers.\nAre you sure you want to continue? [y/N] y\nDeleted Containers:\nabc12345def6\n\nuser@host:~$ docker image prune\nWARNING! This will remove all dangling images.\nAre you sure you want to continue? [y/N] y\n\nuser@host:~$ docker system prune -a  # Remove ALL unused containers, images, networks\nWARNING! This will remove all unused resources.\nAre you sure you want to continue? [y/N] y\n\nTotal reclaimed space: 342.5MB"
         }
@@ -254,6 +329,43 @@
             "Place .dockerignore in the same directory as your Dockerfile."
           ],
           "code": "# .dockerignore\nnode_modules\nnpm-debug.log\n.git\n.gitignore\n.env\n.env.*\nDockerfile\n.dockerignore\n*.md\ndist\n.cache\ncoverage\ntest\n__pycashe__\n*.pyc"
+        },
+        {
+          "label": "ARG vs ENV — Build-Time vs Run-Time Variables",
+          "content": [
+            "ARG and ENV both define variables in a Dockerfile, but at different times and for different audiences. Getting this distinction wrong is a common source of confusion.",
+            "ARG: build-time only. Available during docker build, gone when the image runs. Passed with docker build --build-arg. Used for base image tags, build flags, and non-sensitive config. NEVER put secrets in ARG — they are visible in docker history.",
+            "ENV: run-time. Baked into the image and available to the process when the container starts. Also visible in docker inspect and docker exec env. Use for application configuration like NODE_ENV and port numbers.",
+            "A common pattern: declare an ARG and copy it into an ENV if the running app needs it."
+          ],
+          "code": "# Dockerfile showing ARG vs ENV\n\n# ARG — available only during build\nARG NODE_VERSION=22\nFROM node:${NODE_VERSION}-alpine\n\nARG BUILD_MODE=production\nARG VERSION=1.0.0\n\n# Build-time usage:\nRUN echo \"Building version $VERSION in $BUILD_MODE mode\"\n\n# ENV — available at build AND at runtime\nENV NODE_ENV=${BUILD_MODE}\nENV PORT=3000\n\nWORKDIR /app\nCOPY . .\n\n# The app reads NODE_ENV and PORT at runtime\nCMD [\"node\", \"server.js\"]\n\n# Build with build args:\n# docker build --build-arg VERSION=1.4.2 --build-arg BUILD_MODE=staging -t myapp .\n\n# ⚠️ NEVER use ARG for secrets:\n# ARG DB_PASSWORD=secret      ← visible in docker history!\n# Use BuildKit secret mounts instead (see section 6)\n\n# ENV at runtime — override without rebuilding:\n# docker run -e NODE_ENV=staging -e PORT=8080 -p 8080:8080 myapp"
+        },
+        {
+          "label": "CMD vs ENTRYPOINT — When to Use Which",
+          "content": [
+            "Both CMD and ENTRYPOINT define what runs when the container starts, but they behave differently. ENTRYPOINT is the container's main executable; CMD provides default arguments for it. There are three patterns:",
+            "",
+            "1. ENTRYPOINT only — the container is the command; docker run cannot change it",
+            "2. ENTRYPOINT + CMD — ENTRYPOINT is the executable, CMD supplies default args that CAN be overridden at runtime",
+            "3. CMD only — the whole command can be overridden at runtime",
+            "",
+            "Rule of thumb: use CMD when the command is the whole story (node server.js), use ENTRYPOINT when the container is a tool users run with arguments (like the nginx image's entrypoint script, or a CLI container)."
+          ],
+          "code": "# Pattern 1: ENTRYPOINT only — fixed command\nENTRYPOINT [\"python\", \"app.py\"]\n# docker run myimage          → python app.py\n# docker run myimage --help   → python app.py --help\n\n# Pattern 2: ENTRYPOINT + CMD — defaults, overridable args (RECOMMENDED)\nENTRYPOINT [\"nginx\"]\nCMD [\"-g\", \"daemon off;\"]\n# docker run nginx                    → nginx -g daemon off;\n# docker run nginx -t                 → nginx -t  (CMD replaced)\n\n# Pattern 3: CMD only — fully overridable\nCMD [\"node\", \"server.js\"]\n# docker run myimage                        → node server.js\n# docker run myimage npm test               → npm test (CMD replaced)\n# docker run --entrypoint bash myimage      → bash (both replaced)\n\n# IMPORTANT: shell vs exec form\n# Exec form (JSON array) — the container's PID 1 is the app directly:\nCMD [\"node\", \"server.js\"]\n# Shell form — runs through /bin/sh -c, signals are NOT forwarded to the app:\nCMD node server.js\n# Always prefer exec form in production so Ctrl+C / docker stop work correctly"
+        },
+        {
+          "label": "HEALTHCHECK — Container Readiness",
+          "content": [
+            "A health check tells Docker what 'healthy' means for a container. It runs a command inside the container at a fixed interval; if it fails retries times, the container is marked unhealthy. Health status powers compose depends_on: condition: service_healthy, orchestration restarts, and monitoring dashboards."
+          ],
+          "code": "# Dockerfile — built-in health check (Linux images)\nFROM node:22-alpine\nWORKDIR /app\nCOPY . .\nEXPOSE 3000\n\n# curl is NOT in alpine by default — use wget or node instead\nHEALTHCHECK --interval=30s --timeout=5s --retries=3 --start-period=10s \\\n  CMD wget -qO- http://localhost:3000/healthz || exit 1\n\nCMD [\"node\", \"server.js\"]\n\n# Inspect health status:\nuser@host:~$ docker inspect myapp --format '{{.State.Health.Status}}'\nhealthy\n\n# Watch status transitions:\nuser@host:~$ docker events --filter 'event=health_status'\n2026-07-06T10:30:00Z container health_status: healthy abc12345def6 (name=myapp)\n\n# Alternative: external check with no Dockerfile change (compose)\nservices:\n  web:\n    healthcheck:\n      test: [\"CMD\", \"node\", \"-e\", \"fetch('http://localhost:3000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\"]\n      interval: 30s\n      timeout: 5s\n      retries: 3\n      start_period: 10s"
+        },
+        {
+          "label": "docker init — Scaffold Dockerfiles Automatically",
+          "content": [
+            "docker init (available in Docker Desktop and Engine 27+) analyzes your project and generates a complete, best-practice Dockerfile, .dockerignore, and compose.yaml — tailored to your language and framework. It is the fastest way to start containerizing an existing project correctly."
+          ],
+          "code": "user@host:~/myapp$ docker init\nWelcome to the Docker Init CLI!\n\nThis utility will walk you through creating the following files with sensible defaults for your project:\n  - .dockerignore\n  - Dockerfile\n  - compose.yaml\n\n? What application platform does your project use? [Use arrows to move, type to filter]\n  Go\n> Node\n  Python\n  Rust\n  Other\n\n? What version of Node do you want to use? 22\n? What port does your server listen on? 3000\n? What is the command to run your app? node server.js\n\n✔ Created Dockerfile\n✔ Created compose.yaml\n✔ Created .dockerignore\n\n# Files generated with production defaults: multi-stage build, non-root user,\n# healthcheck, pinned base image — then customize from there."
         }
       ]
     },
@@ -306,7 +418,22 @@
         },
         {
           "label": "Using BuildKit Cache Mounts",
-          "code": "# Dockerfile with BuildKit cache mounts\n# Cache apt and pip packages across builds\nFROM python:3.12-slim\n\nWORKDIR /app\n\n# Cache apt packages\nRUN --mount=type=cache,target=/var/cache/apt,sharing=locked \\\n    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \\\n    apt-get update && apt-get install -y --no-install-recommends gcc\n\nCOPY requirements.txt .\n\n# Cache pip packages\nRUN --mount=type=cache,target=/root/.cache/pip \\\n    pip install --no-cache-dir -r requirements.txt\n\nCOPY . .\n\nCMD [\"python\", \"app.py\"]"
+           "code": "# Dockerfile with BuildKit cache mounts\n# Cache apt and pip packages across builds\nFROM python:3.12-slim\n\nWORKDIR /app\n\n# Cache apt packages\nRUN --mount=type=cache,target=/var/cache/apt,sharing=locked \\\n    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \\\n    apt-get update && apt-get install -y --no-install-recommends gcc\n\nCOPY requirements.txt .\n\n# Cache pip packages\nRUN --mount=type=cache,target=/root/.cache/pip \\\n    pip install --no-cache-dir -r requirements.txt\n\nCOPY . .\n\nCMD [\"python\", \"app.py\"]"
+        },
+        {
+          "label": "Multi-Architecture Builds with Buildx",
+          "content": [
+            "One image, every architecture. A single docker buildx build command can produce images for amd64 (Intel/AMD servers), arm64 (Apple Silicon, Graviton, Raspberry Pi), and arm/v7 simultaneously, then push one multi-arch manifest to the registry. Every machine that pulls the image gets the right binary automatically.",
+            "This matters because 'works on my laptop' is no longer enough — cloud ARM instances, Apple Silicon developers, and edge devices all need the same image."
+          ],
+          "code": "# 1. Check available builders and platforms:\nuser@host:~$ docker buildx ls\nNAME/NODE     DRIVER    ENDPOINT             STATUS     BUILDKIT   PLATFORMS\nmybuilder     docker-container  mybuilder0  running    1.20.0    linux/amd64, linux/arm64, linux/arm/v7\n\n# 2. Create a docker-container builder with multi-arch support (QEMU emulation):\nuser@host:~$ docker buildx create --name mybuilder --use --bootstrap\n\n# 3. Build for multiple platforms and push one manifest:\nuser@host:~$ docker buildx build \\\n    --platform linux/amd64,linux/arm64,linux/arm/v7 \\\n    -t ghcr.io/myorg/myapp:1.4.2 \\\n    -t ghcr.io/myorg/myapp:latest \\\n    --push .\n\n# 4. The registry now stores ONE multi-arch image:\nuser@host:~$ docker buildx imagetools inspect ghcr.io/myorg/myapp:1.4.2\nName:      ghcr.io/myorg/myapp:1.4.2\nMediaType: application/vnd.oci.image.index.v1+json\nPlatforms: linux/amd64, linux/arm64, linux/arm/v7\n\n# 5. Any machine pulls the right variant automatically:\n# On ARM server:  docker pull ghcr.io/myorg/myapp:1.4.2  → arm64 image\n# On x86 server:  docker pull ghcr.io/myorg/myapp:1.4.2  → amd64 image\n\n# 6. Build for another arch locally without pushing (uses QEMU emulation):\nuser@host:~$ docker buildx build --platform linux/arm64 -t myapp:arm64 .\n\n# 7. Inspect current machine's platform:\nuser@host:~$ docker info --format '{{.Architecture}}'\nx86_64"
+        },
+        {
+          "label": "Docker Contexts — Manage Multiple Docker Daemons",
+          "content": [
+            "A Docker context bundles the endpoint information for a Docker daemon — local or remote. With contexts you can run docker commands against a production server from your laptop, without changing any CLI flags. The docker context concept replaces the old DOCKER_HOST + TLS environment variable juggling."
+          ],
+          "code": "# 1. List contexts:\nuser@host:~$ docker context ls\nNAME        DESCRIPTION                               DOCKER ENDPOINT               ERROR\ndefault *   Current DOCKER_HOST based configuration   unix:///var/run/docker.sock\ndesktop    Docker Desktop\n\n# 2. Create a context for a remote server over SSH:\nuser@host:~$ docker context create prod \\\n    --docker host=ssh://deploy@203.0.113.42\n\n# 3. Use it — every docker command now hits the remote daemon:\nuser@host:~$ docker context use prod\nuser@host:~$ docker ps          # lists containers on the production server\nuser@host:~$ docker compose up -d   # deploys to production\n\n# 4. Switch back:\nuser@host:~$ docker context use default\n\n# 5. Inspect a context's endpoint:\nuser@host:~$ docker context inspect prod --format '{{.Endpoints.docker.Host}}'\nssh://deploy@203.0.113.42\n\n# ⚠️ Security: never point a context at a remote daemon exposed over plain TCP.\n# Always use SSH transport or the docker:// protocol with TLS as above."
         }
       ]
     },
@@ -554,7 +681,28 @@
             "2. Env file — .env.production (not committed to version control)",
             "3. External secret manager — HashiCorp Vault, AWS Secrets Manager (via entrypoint script)"
           ],
-          "code": "# Method 1: Docker Secrets (best for passwords, tokens)\nservices:\n  web:\n    secrets:\n      - db_password\n      - api_key\n    environment:\n      - DB_PASSWORD_FILE=/run/secrets/db_password\n\nsecrets:\n  db_password:\n    file: ./secrets/db_password.txt\n  api_key:\n    file: ./secrets/api_key.txt\n\n# Method 2: Env file (good for non-secret config)\nservices:\n  web:\n    env_file: .env.production\n\n# .env.production file:\n# NODE_ENV=production\n# DATABASE_URL=postgres://myapp@db:5432/mydb\n# REDIS_URL=redis://cache:6379\n\n# Method 3: Environment variables inline (for non-sensitive config only)\nservices:\n  web:\n    environment:\n      - NODE_ENV=production\n      - LOG_LEVEL=info"
+           "code": "# Method 1: Docker Secrets (best for passwords, tokens)\nservices:\n  web:\n    secrets:\n      - db_password\n      - api_key\n    environment:\n      - DB_PASSWORD_FILE=/run/secrets/db_password\n\nsecrets:\n  db_password:\n    file: ./secrets/db_password.txt\n  api_key:\n    file: ./secrets/api_key.txt\n\n# Method 2: Env file (good for non-secret config)\nservices:\n  web:\n    env_file: .env.production\n\n# .env.production file:\n# NODE_ENV=production\n# DATABASE_URL=postgres://myapp@db:5432/mydb\n# REDIS_URL=redis://cache:6379\n\n# Method 3: Environment variables inline (for non-sensitive config only)\nservices:\n  web:\n    environment:\n      - NODE_ENV=production\n      - LOG_LEVEL=info"
+        },
+        {
+          "label": "Zero-Downtime Deployment Strategies",
+          "content": [
+            "docker compose up --force-recreate kills the old container before starting the new one — a brief outage. For real applications you need zero-downtime deployments. With Compose on a single server, the standard patterns are:",
+            "",
+            "1. Rolling update (compose up --no-deps -d service): Compose starts the new container, then removes the old one — but on a single host both would fight over the port, so you need one more piece: a reverse proxy that switches between versions.",
+            "2. Blue-green with a reverse proxy: run two versions side by side (blue = old, green = new), health-check the new one, then switch the proxy traffic to it. When green is healthy, stop blue.",
+            "3. Canary: route a small percentage of traffic to the new version, monitor, then ramp up.",
+            "",
+            "The blue-green pattern below is the most practical on a single Docker host with NGINX in front."
+          ],
+          "code": "# Blue-green deployment with Compose\n\n# compose.blue.yaml — version A (currently live)\nname: myapp-blue\nservices:\n  web:\n    image: ghcr.io/myorg/myapp:1.3.0\n    ports:\n      - \"127.0.0.1:3001:3000\"   # blue on internal port 3001\n    networks: [app]\nnetworks:\n  app:\n\n# compose.green.yaml — version B (new release)\nname: myapp-green\nservices:\n  web:\n    image: ghcr.io/myorg/myapp:1.4.0\n    ports:\n      - \"127.0.0.1:3002:3000\"   # green on internal port 3002\n    networks: [app]\nnetworks:\n  app:\n\n# NGINX routes production traffic to BLUE:\n# upstream app {\n#     server 127.0.0.1:3001;   # switch this line to 3002 for green\n# }\n\n# Deploy new version:\nuser@host:~$ docker compose -f compose.green.yaml up -d\nuser@host:~$ curl -s http://127.0.0.1:3002/healthz\n{\"status\":\"ok\"}\n\n# Switch NGINX to green (reload config), then retire blue:\nuser@host:~$ sudo nginx -s reload\nuser@host:~$ docker compose -f compose.blue.yaml down\n\n# Rollback is equally fast: switch NGINX back to blue and restart it.\n\n# Simpler alternative — Rolling restart with health-gated dependencies:\nuser@host:~$ docker compose pull web\nuser@host:~$ docker compose up -d --no-deps web\n# Note: brief downtime without a proxy; acceptable for internal tools"
+        },
+        {
+          "label": "docker compose watch — Auto-Rebuild on File Changes",
+          "content": [
+            "docker compose watch (Compose v2.24+) watches your project files and automatically syncs them into running containers — rebuilding and restarting services when their Dockerfile inputs change. It replaces the manual up --build && restart loop in development.",
+            "Three actions: sync (copy files into container, like a bind mount), rebuild (rebuild image and recreate container when Dockerfile inputs change), and sync-restart (copy files, then restart the process)."
+          ],
+          "code": "# compose.yaml — development services with watch\nname: myapp-dev\n\nservices:\n  web:\n    build: .\n    ports:\n      - \"3000:3000\"\n    develop:\n      watch:\n        - action: sync          # copy source into container instantly\n          path: ./src\n          target: /app/src\n        - action: rebuild       # rebuild when package files change\n          path: package.json\n        - action: sync-restart  # sync + restart the process\n          path: ./public\n          target: /app/public\n\n  db:\n    image: postgres:16-alpine\n    volumes:\n      - pg_data:/var/lib/postgresql/data\n    develop:\n      watch:\n        - action: rebuild\n          path: ./init.sql\n\nvolumes:\n  pg_data:\n\n# Run:\nuser@host:~$ docker compose watch\n[+] Watching for changes...\n[web] File changed: /src/index.ts\n[web] Syncing to container /app/src/index.ts\n[web] Restarting service...\n\n# Press Ctrl+C to stop watching (containers keep running)"
         }
       ]
     },
