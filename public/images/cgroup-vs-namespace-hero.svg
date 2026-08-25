@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 450" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="450" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0a0a1a"/>
+      <stop offset="0.5" stop-color="#0f172a"/>
+      <stop offset="1" stop-color="#0a0f1e"/>
+    </linearGradient>
+    <linearGradient id="nsGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#06b6d4"/>
+      <stop offset="1" stop-color="#0891b2"/>
+    </linearGradient>
+    <linearGradient id="cgGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#8b5cf6"/>
+      <stop offset="1" stop-color="#6d28d9"/>
+    </linearGradient>
+    <linearGradient id="greenGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#10b981"/>
+      <stop offset="1" stop-color="#059669"/>
+    </linearGradient>
+    <linearGradient id="amberGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#f59e0b"/>
+      <stop offset="1" stop-color="#d97706"/>
+    </linearGradient>
+    <filter id="boxShadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="450" fill="url(#bg)"/>
+
+  <!-- Subtle grid -->
+  <g stroke="#ffffff" stroke-opacity="0.015" stroke-width="1">
+    <line x1="0" y1="60" x2="1200" y2="60"/><line x1="0" y1="120" x2="1200" y2="120"/>
+    <line x1="0" y1="180" x2="1200" y2="180"/><line x1="0" y1="240" x2="1200" y2="240"/>
+    <line x1="0" y1="300" x2="1200" y2="300"/><line x1="0" y1="360" x2="1200" y2="360"/>
+    <line x1="0" y1="420" x2="1200" y2="420"/>
+    <line x1="200" y1="0" x2="200" y2="450"/><line x1="400" y1="0" x2="400" y2="450"/>
+    <line x1="600" y1="0" x2="600" y2="450"/><line x1="800" y1="0" x2="800" y2="450"/>
+    <line x1="1000" y1="0" x2="1000" y2="450"/>
+  </g>
+
+  <!-- ===== TITLE STRIP ===== -->
+  <text x="600" y="44" fill="#ffffff" font-family="system-ui, sans-serif" font-size="22" font-weight="bold" text-anchor="middle" letter-spacing="1">cgroups vs Namespaces</text>
+  <text x="600" y="68" fill="#9ca3af" font-family="monospace" font-size="11" text-anchor="middle">Two pillars of container isolation  ·  VIEW vs USAGE</text>
+
+  <!-- ===== LEFT: NAMESPACE (VIEW) ===== -->
+  <g transform="translate(40, 100)" filter="url(#boxShadow)">
+    <rect x="0" y="0" width="520" height="270" rx="8" fill="#1a2332" stroke="#06b6d4" stroke-width="1"/>
+    <rect x="0" y="0" width="520" height="30" rx="8" fill="#0891b2"/>
+    <rect x="0" y="15" width="520" height="15" fill="#0891b2"/>
+    <text x="260" y="20" fill="#ffffff" font-family="monospace" font-size="12" font-weight="bold" text-anchor="middle">NAMESPACE  =  WHAT YOU SEE</text>
+
+    <text x="20" y="56" fill="#22d3ee" font-family="monospace" font-size="10" font-weight="bold">Isolation of VIEW (visibility)</text>
+
+    <!-- type chips -->
+    <g font-family="monospace" font-size="9">
+      <rect x="20" y="70" width="150" height="22" rx="4" fill="#0f172a" stroke="#06b6d4" stroke-width="0.4"/>
+      <text x="95" y="85" fill="#67e8f9" text-anchor="middle">NET (CLONE_NEWNET)</text>
+
+      <rect x="185" y="70" width="150" height="22" rx="4" fill="#0f172a" stroke="#06b6d4" stroke-width="0.4"/>
+      <text x="260" y="85" fill="#67e8f9" text-anchor="middle">PID (CLONE_NEWPID)</text>
+
+      <rect x="350" y="70" width="150" height="22" rx="4" fill="#0f172a" stroke="#06b6d4" stroke-width="0.4"/>
+      <text x="425" y="85" fill="#67e8f9" text-anchor="middle">MNT (CLONE_NEWNS)</text>
+
+      <rect x="20" y="100" width="150" height="22" rx="4" fill="#0f172a" stroke="#06b6d4" stroke-width="0.4"/>
+      <text x="95" y="115" fill="#67e8f9" text-anchor="middle">UTS (CLONE_NEWUTS)</text>
+
+      <rect x="185" y="100" width="150" height="22" rx="4" fill="#0f172a" stroke="#06b6d4" stroke-width="0.4"/>
+      <text x="260" y="115" fill="#67e8f9" text-anchor="middle">IPC (CLONE_NEWIPC)</text>
+
+      <rect x="350" y="100" width="150" height="22" rx="4" fill="#0f172a" stroke="#06b6d4" stroke-width="0.4"/>
+      <text x="425" y="115" fill="#67e8f9" text-anchor="middle">USER (CLONE_NEWUSER)</text>
+    </g>
+
+    <!-- behavior box -->
+    <rect x="20" y="138" width="480" height="118" rx="4" fill="#0f172a" stroke="#334155" stroke-width="0.5"/>
+    <text x="32" y="158" fill="#9ca3af" font-family="monospace" font-size="9">Behavior:</text>
+    <text x="32" y="176" fill="#cbd5e1" font-family="monospace" font-size="9">• Process sees ONLY its own interfaces, PIDs, mounts</text>
+    <text x="32" y="194" fill="#cbd5e1" font-family="monospace" font-size="9">• Created via clone() + CLONE_NEW* flags</text>
+    <text x="32" y="212" fill="#cbd5e1" font-family="monospace" font-size="9">• 7 fixed types (stable API)</text>
+    <text x="32" y="230" fill="#cbd5e1" font-family="monospace" font-size="9">• Failure = "Operation not permitted" / "No such dev"</text>
+    <text x="32" y="248" fill="#fbbf24" font-family="monospace" font-size="9">• Alone: isolated but can EAT all host RAM</text>
+  </g>
+
+  <!-- ===== RIGHT: CGROUP (USAGE) ===== -->
+  <g transform="translate(640, 100)" filter="url(#boxShadow)">
+    <rect x="0" y="0" width="520" height="270" rx="8" fill="#1a2332" stroke="#8b5cf6" stroke-width="1"/>
+    <rect x="0" y="0" width="520" height="30" rx="8" fill="#6d28d9"/>
+    <rect x="0" y="15" width="520" height="15" fill="#6d28d9"/>
+    <text x="260" y="20" fill="#ffffff" font-family="monospace" font-size="12" font-weight="bold" text-anchor="middle">CGROUP  =  HOW MUCH YOU USE</text>
+
+    <text x="20" y="56" fill="#c4b5fd" font-family="monospace" font-size="10" font-weight="bold">Governance of USAGE (limits)</text>
+
+    <!-- controller chips -->
+    <g font-family="monospace" font-size="9">
+      <rect x="20" y="70" width="150" height="22" rx="4" fill="#0f172a" stroke="#8b5cf6" stroke-width="0.4"/>
+      <text x="95" y="85" fill="#c4b5fd" text-anchor="middle">CPU (cpu.max)</text>
+
+      <rect x="185" y="70" width="150" height="22" rx="4" fill="#0f172a" stroke="#8b5cf6" stroke-width="0.4"/>
+      <text x="260" y="85" fill="#c4b5fd" text-anchor="middle">MEM (memory.max)</text>
+
+      <rect x="350" y="70" width="150" height="22" rx="4" fill="#0f172a" stroke="#8b5cf6" stroke-width="0.4"/>
+      <text x="425" y="85" fill="#c4b5fd" text-anchor="middle">IO (io.max)</text>
+
+      <rect x="20" y="100" width="150" height="22" rx="4" fill="#0f172a" stroke="#8b5cf6" stroke-width="0.4"/>
+      <text x="95" y="115" fill="#c4b5fd" text-anchor="middle">PIDS (pids.max)</text>
+
+      <rect x="185" y="100" width="150" height="22" rx="4" fill="#0f172a" stroke="#8b5cf6" stroke-width="0.4"/>
+      <text x="260" y="115" fill="#c4b5fd" text-anchor="middle">DEVICES</text>
+
+      <rect x="350" y="100" width="150" height="22" rx="4" fill="#0f172a" stroke="#8b5cf6" stroke-width="0.4"/>
+      <text x="425" y="115" fill="#c4b5fd" text-anchor="middle">v1 vs v2 split</text>
+    </g>
+
+    <!-- behavior box -->
+    <rect x="20" y="138" width="480" height="118" rx="4" fill="#0f172a" stroke="#334155" stroke-width="0.5"/>
+    <text x="32" y="158" fill="#9ca3af" font-family="monospace" font-size="9">Behavior:</text>
+    <text x="32" y="176" fill="#cbd5e1" font-family="monospace" font-size="9">• Kernel meters &amp; caps CPU/mem/io per group</text>
+    <text x="32" y="194" fill="#cbd5e1" font-family="monospace" font-size="9">• Created via mkdir on /sys/fs/cgroup</text>
+    <text x="32" y="212" fill="#cbd5e1" font-family="monospace" font-size="9">• Many controllers (hierarchical tree)</text>
+    <text x="32" y="230" fill="#cbd5e1" font-family="monospace" font-size="9">• Failure = throttle / OOM kill / EAGAIN</text>
+    <text x="32" y="248" fill="#fbbf24" font-family="monospace" font-size="9">• Alone: capped but SEES host net/pids</text>
+  </g>
+
+  <!-- ===== BOTTOM: TOGETHER = CONTAINER ===== -->
+  <g transform="translate(40, 388)" filter="url(#boxShadow)">
+    <rect x="0" y="0" width="1120" height="48" rx="8" fill="#1a2332" stroke="#10b981" stroke-width="1"/>
+    <rect x="0" y="0" width="1120" height="14" rx="8" fill="#059669"/>
+    <rect x="0" y="7" width="1120" height="7" fill="#059669"/>
+    <text x="560" y="34" fill="#ffffff" font-family="monospace" font-size="12" font-weight="bold" text-anchor="middle">CONTAINER = NAMESPACE (private room)  +  CGROUP (ration card)  →  isolated view AND capped usage</text>
+  </g>
+
+  <!-- VS badge in center -->
+  <g transform="translate(600, 240)">
+    <circle cx="0" cy="0" r="34" fill="#0f172a" stroke="#f59e0b" stroke-width="2"/>
+    <text x="0" y="8" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="22" font-weight="bold" text-anchor="middle">VS</text>
+  </g>
+</svg>

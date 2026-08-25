@@ -1,0 +1,258 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 450" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="450" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0a0a1a"/>
+      <stop offset="0.5" stop-color="#0f172a"/>
+      <stop offset="1" stop-color="#0a0f1e"/>
+    </linearGradient>
+    <linearGradient id="cyanGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#06b6d4"/>
+      <stop offset="1" stop-color="#0891b2"/>
+    </linearGradient>
+    <linearGradient id="blueGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#3b82f6"/>
+      <stop offset="1" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="greenGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#10b981"/>
+      <stop offset="1" stop-color="#059669"/>
+    </linearGradient>
+    <linearGradient id="amberGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#f59e0b"/>
+      <stop offset="1" stop-color="#d97706"/>
+    </linearGradient>
+    <linearGradient id="purpleGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#8b5cf6"/>
+      <stop offset="1" stop-color="#6d28d9"/>
+    </linearGradient>
+    <linearGradient id="pinkGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#ec4899"/>
+      <stop offset="1" stop-color="#be185d"/>
+    </linearGradient>
+    <filter id="boxShadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="450" fill="url(#bg)"/>
+
+  <!-- Subtle grid -->
+  <g stroke="#ffffff" stroke-opacity="0.015" stroke-width="1">
+    <line x1="0" y1="60" x2="1200" y2="60"/><line x1="0" y1="120" x2="1200" y2="120"/>
+    <line x1="0" y1="180" x2="1200" y2="180"/><line x1="0" y1="240" x2="1200" y2="240"/>
+    <line x1="0" y1="300" x2="1200" y2="300"/><line x1="0" y1="360" x2="1200" y2="360"/>
+    <line x1="0" y1="420" x2="1200" y2="420"/>
+    <line x1="200" y1="0" x2="200" y2="450"/><line x1="400" y1="0" x2="400" y2="450"/>
+    <line x1="600" y1="0" x2="600" y2="450"/><line x1="800" y1="0" x2="800" y2="450"/>
+    <line x1="1000" y1="0" x2="1000" y2="450"/>
+  </g>
+
+  <!-- ===== HOST / ROOT CGROUP PANEL (left) ===== -->
+  <g transform="translate(30, 30)" filter="url(#boxShadow)">
+    <rect x="0" y="0" width="340" height="230" rx="8" fill="#1a2332" stroke="#334155" stroke-width="1"/>
+    <rect x="0" y="0" width="340" height="28" rx="8" fill="#1d4ed8"/>
+    <rect x="0" y="16" width="340" height="12" fill="#1d4ed8"/>
+    <text x="170" y="19" fill="#ffffff" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">ROOT CGROUP (cgroup v2)</text>
+
+    <!-- systemd -->
+    <rect x="12" y="36" width="316" height="28" rx="4" fill="#0f172a" stroke="#3b82f6" stroke-width="0.5"/>
+    <text x="22" y="54" fill="#60a5fa" font-family="monospace" font-size="8">systemd</text>
+    <text x="170" y="54" fill="#9ca3af" font-family="monospace" font-size="8">/sys/fs/cgroup (unified)</text>
+
+    <!-- Controllers -->
+    <rect x="12" y="70" width="316" height="20" rx="4" fill="#0f172a" stroke="#06b6d4" stroke-width="0.5"/>
+    <text x="170" y="84" fill="#67e8f9" font-family="monospace" font-size="8" text-anchor="middle">controllers: cpu  memory  io  pids  devices</text>
+
+    <!-- memory.max -->
+    <rect x="12" y="96" width="316" height="20" rx="4" fill="#0f172a" stroke="#10b981" stroke-width="0.5"/>
+    <text x="170" y="110" fill="#34d399" font-family="monospace" font-size="7" text-anchor="middle">memory.max  →  OOM kill inside cgroup only</text>
+
+    <!-- cpu.max -->
+    <rect x="12" y="122" width="316" height="20" rx="4" fill="#0f172a" stroke="#8b5cf6" stroke-width="0.5"/>
+    <text x="170" y="136" fill="#a78bfa" font-family="monospace" font-size="7" text-anchor="middle">cpu.max 100000 100000  →  throttle at quota</text>
+
+    <!-- cgroup tree -->
+    <rect x="12" y="148" width="316" height="20" rx="4" fill="#0f172a" stroke="#f59e0b" stroke-width="0.5"/>
+    <text x="170" y="162" fill="#fbbf24" font-family="monospace" font-size="7" text-anchor="middle">system.slice / user.slice / docker / kubepods</text>
+
+    <!-- Connection lines going downward -->
+    <line x1="60" y1="170" x2="60" y2="210" stroke="#06b6d4" stroke-width="1" stroke-dasharray="3 2"/>
+    <line x1="170" y1="170" x2="170" y2="210" stroke="#06b6d4" stroke-width="1" stroke-dasharray="3 2"/>
+    <line x1="280" y1="170" x2="280" y2="210" stroke="#06b6d4" stroke-width="1" stroke-dasharray="3 2"/>
+
+    <!-- cgroup leaf paths -->
+    <rect x="40" y="210" width="40" height="14" rx="3" fill="#0f172a" stroke="#334155" stroke-width="0.5"/>
+    <text x="60" y="220" fill="#9ca3af" font-family="monospace" font-size="6" text-anchor="middle">red.scope</text>
+    <rect x="150" y="210" width="40" height="14" rx="3" fill="#0f172a" stroke="#334155" stroke-width="0.5"/>
+    <text x="170" y="220" fill="#9ca3af" font-family="monospace" font-size="6" text-anchor="middle">blue.scope</text>
+    <rect x="260" y="210" width="40" height="14" rx="3" fill="#0f172a" stroke="#334155" stroke-width="0.5"/>
+    <text x="280" y="220" fill="#9ca3af" font-family="monospace" font-size="6" text-anchor="middle">green.scope</text>
+  </g>
+
+  <!-- ===== CONNECTION ARROWS (vertical) ===== -->
+  <g>
+    <line x1="90" y1="260" x2="90" y2="285" stroke="#06b6d4" stroke-width="1.5" stroke-dasharray="4 2"/>
+    <polygon points="90,288 85,280 95,280" fill="#06b6d4"/>
+    <line x1="200" y1="260" x2="200" y2="285" stroke="#06b6d4" stroke-width="1.5" stroke-dasharray="4 2"/>
+    <polygon points="200,288 195,280 205,280" fill="#06b6d4"/>
+    <line x1="310" y1="260" x2="310" y2="285" stroke="#06b6d4" stroke-width="1.5" stroke-dasharray="4 2"/>
+    <polygon points="310,288 305,280 315,280" fill="#06b6d4"/>
+  </g>
+
+  <!-- ===== THREE ISOLATED RESOURCE GROUPS (bottom row) ===== -->
+  <!-- Group 1: CPU -->
+  <g transform="translate(30, 295)" filter="url(#boxShadow)">
+    <rect x="0" y="0" width="185" height="115" rx="6" fill="#1a2332" stroke="#06b6d4" stroke-width="0.8"/>
+    <rect x="0" y="0" width="185" height="22" rx="6" fill="#0891b2"/>
+    <rect x="0" y="14" width="185" height="8" fill="#0891b2"/>
+    <text x="92" y="14" fill="#ffffff" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">CGROUP: red</text>
+
+    <rect x="8" y="28" width="169" height="22" rx="3" fill="#0f172a" stroke="#06b6d4" stroke-width="0.5"/>
+    <text x="18" y="43" fill="#67e8f9" font-family="monospace" font-size="7">cpu.max: 50% (0.5 core)</text>
+
+    <rect x="8" y="54" width="169" height="18" rx="3" fill="#0f172a" stroke="#3b82f6" stroke-width="0.5"/>
+    <text x="92" y="66" fill="#60a5fa" font-family="monospace" font-size="7" text-anchor="middle">memory.max: 100M</text>
+
+    <rect x="8" y="76" width="169" height="18" rx="3" fill="#0f172a" stroke="#10b981" stroke-width="0.5"/>
+    <text x="92" y="88" fill="#34d399" font-family="monospace" font-size="7" text-anchor="middle">io.max: 10MB/s</text>
+
+    <rect x="8" y="97" width="169" height="14" rx="3" fill="#0f172a" stroke="#334155" stroke-width="0.3"/>
+    <text x="92" y="107" fill="#9ca3af" font-family="monospace" font-size="6" text-anchor="middle">pids.max: 100</text>
+  </g>
+
+  <!-- Group 2: Memory -->
+  <g transform="translate(230, 295)" filter="url(#boxShadow)">
+    <rect x="0" y="0" width="185" height="115" rx="6" fill="#1a2332" stroke="#10b981" stroke-width="0.8"/>
+    <rect x="0" y="0" width="185" height="22" rx="6" fill="#059669"/>
+    <rect x="0" y="14" width="185" height="8" fill="#059669"/>
+    <text x="92" y="14" fill="#ffffff" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">CGROUP: blue</text>
+
+    <rect x="8" y="28" width="169" height="22" rx="3" fill="#0f172a" stroke="#10b981" stroke-width="0.5"/>
+    <text x="18" y="43" fill="#6ee7b7" font-family="monospace" font-size="7">cpu.max: 150% (1.5)</text>
+
+    <rect x="8" y="54" width="169" height="18" rx="3" fill="#0f172a" stroke="#3b82f6" stroke-width="0.5"/>
+    <text x="92" y="66" fill="#60a5fa" font-family="monospace" font-size="7" text-anchor="middle">memory.max: 512M</text>
+
+    <rect x="8" y="76" width="169" height="18" rx="3" fill="#0f172a" stroke="#10b981" stroke-width="0.5"/>
+    <text x="92" y="88" fill="#34d399" font-family="monospace" font-size="7" text-anchor="middle">io.max: 50MB/s</text>
+
+    <rect x="8" y="97" width="169" height="14" rx="3" fill="#0f172a" stroke="#334155" stroke-width="0.3"/>
+    <text x="92" y="107" fill="#9ca3af" font-family="monospace" font-size="6" text-anchor="middle">pids.max: 256</text>
+  </g>
+
+  <!-- Group 3: IO -->
+  <g transform="translate(430, 295)" filter="url(#boxShadow)">
+    <rect x="0" y="0" width="185" height="115" rx="6" fill="#1a2332" stroke="#8b5cf6" stroke-width="0.8"/>
+    <rect x="0" y="0" width="185" height="22" rx="6" fill="#6d28d9"/>
+    <rect x="0" y="14" width="185" height="8" fill="#6d28d9"/>
+    <text x="92" y="14" fill="#ffffff" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">CGROUP: green</text>
+
+    <rect x="8" y="28" width="169" height="22" rx="3" fill="#0f172a" stroke="#8b5cf6" stroke-width="0.5"/>
+    <text x="18" y="43" fill="#c4b5fd" font-family="monospace" font-size="7">cpu.weight: 50</text>
+
+    <rect x="8" y="54" width="169" height="18" rx="3" fill="#0f172a" stroke="#3b82f6" stroke-width="0.5"/>
+    <text x="92" y="66" fill="#60a5fa" font-family="monospace" font-size="7" text-anchor="middle">memory.max: 256M</text>
+
+    <rect x="8" y="76" width="169" height="18" rx="3" fill="#0f172a" stroke="#10b981" stroke-width="0.5"/>
+    <text x="92" y="88" fill="#34d399" font-family="monospace" font-size="7" text-anchor="middle">io.weight: 200</text>
+
+    <rect x="8" y="97" width="169" height="14" rx="3" fill="#0f172a" stroke="#334155" stroke-width="0.3"/>
+    <text x="92" y="107" fill="#9ca3af" font-family="monospace" font-size="6" text-anchor="middle">pids.max: 100</text>
+  </g>
+
+  <!-- ===== TOOLS AND CONCEPTS PANEL (right side) ===== -->
+  <g transform="translate(640, 30)" filter="url(#boxShadow)">
+    <rect x="0" y="0" width="530" height="230" rx="8" fill="#1a2332" stroke="#334155" stroke-width="1"/>
+    <rect x="0" y="0" width="530" height="28" rx="8" fill="#0f172a"/>
+    <rect x="0" y="16" width="530" height="12" fill="#0f172a"/>
+    <text x="265" y="19" fill="#ffffff" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">CGROUP CONCEPTS</text>
+
+    <!-- CPU controller -->
+    <g transform="translate(15, 38)">
+      <rect x="0" y="0" width="500" height="60" rx="6" fill="#0f172a" stroke="#06b6d4" stroke-width="0.5"/>
+      <rect x="0" y="0" width="8" height="60" rx="4" fill="#06b6d4"/>
+      <text x="20" y="17" fill="#22d3ee" font-family="monospace" font-size="9" font-weight="bold">CPU Controller (cpu.max / cpu.weight)</text>
+      <text x="20" y="35" fill="#9ca3af" font-family="monospace" font-size="8">systemd-run --scope -p CPUQuota=50% bash -c 'yes'</text>
+      <text x="20" y="50" fill="#9ca3af" font-family="monospace" font-size="8">echo 50000 100000 &gt; /sys/fs/cgroup/demo/cpu.max</text>
+    </g>
+
+    <!-- memory controller -->
+    <g transform="translate(15, 106)">
+      <rect x="0" y="0" width="500" height="60" rx="6" fill="#0f172a" stroke="#3b82f6" stroke-width="0.5"/>
+      <rect x="0" y="0" width="8" height="60" rx="4" fill="#3b82f6"/>
+      <text x="20" y="17" fill="#60a5fa" font-family="monospace" font-size="9" font-weight="bold">Memory Controller (memory.max)</text>
+      <text x="20" y="35" fill="#9ca3af" font-family="monospace" font-size="8">systemctl set-property nginx MemoryMax=512M</text>
+      <text x="20" y="50" fill="#9ca3af" font-family="monospace" font-size="8">echo 512M &gt; /sys/fs/cgroup/demo/memory.max  →  OOM kill</text>
+    </g>
+
+    <!-- IO controller -->
+    <g transform="translate(15, 174)">
+      <rect x="0" y="0" width="500" height="48" rx="6" fill="#0f172a" stroke="#10b981" stroke-width="0.5"/>
+      <rect x="0" y="0" width="8" height="48" rx="4" fill="#10b981"/>
+      <text x="20" y="17" fill="#34d399" font-family="monospace" font-size="9" font-weight="bold">IO Controller (io.max per device)</text>
+      <text x="20" y="33" fill="#9ca3af" font-family="monospace" font-size="8">echo "8:0 rbps=10M" &gt; /sys/fs/cgroup/demo/io.max</text>
+      <text x="20" y="46" fill="#9ca3af" font-family="monospace" font-size="8">cat memory.events  →  oom_kill  •  cat cpu.stat  →  nr_throttled</text>
+    </g>
+  </g>
+
+  <!-- ===== VERTICAL DIVIDER BETWEEN VISUAL AND COMMAND PANEL ===== -->
+  <g opacity="0.15">
+    <line x1="625" y1="30" x2="625" y2="260" stroke="#ffffff" stroke-width="0.5"/>
+    <line x1="627" y1="30" x2="627" y2="260" stroke="#ffffff" stroke-width="0.5"/>
+  </g>
+
+  <!-- ===== BOTTOM: USE CASES / REAL-WORLD BAR ===== -->
+  <g transform="translate(640, 275)" filter="url(#boxShadow)">
+    <rect x="0" y="0" width="530" height="135" rx="8" fill="#1a2332" stroke="#334155" stroke-width="1"/>
+    <rect x="0" y="0" width="530" height="28" rx="8" fill="#0f172a"/>
+    <rect x="0" y="16" width="530" height="12" fill="#0f172a"/>
+    <text x="265" y="19" fill="#ffffff" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">REAL-WORLD USE CASES</text>
+
+    <!-- Docker -->
+    <g transform="translate(15, 36)">
+      <rect x="0" y="0" width="240" height="42" rx="4" fill="#0f172a" stroke="#3b82f6" stroke-width="0.5"/>
+      <rect x="0" y="0" width="40" height="42" rx="4" fill="#1d4ed8"/>
+      <text x="20" y="24" fill="#ffffff" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">🐳</text>
+      <text x="50" y="17" fill="#60a5fa" font-family="monospace" font-size="8" font-weight="bold">Docker Containers</text>
+      <text x="50" y="32" fill="#9ca3af" font-family="monospace" font-size="7">Each container = 1 cgroup via --cpus/--memory</text>
+    </g>
+
+    <!-- Kubernetes -->
+    <g transform="translate(265, 36)">
+      <rect x="0" y="0" width="250" height="42" rx="4" fill="#0f172a" stroke="#ec4899" stroke-width="0.5"/>
+      <rect x="0" y="0" width="40" height="42" rx="4" fill="#be185d"/>
+      <text x="20" y="24" fill="#ffffff" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">⎈</text>
+      <text x="50" y="17" fill="#f472b6" font-family="monospace" font-size="8" font-weight="bold">Kubernetes Pods</text>
+      <text x="50" y="32" fill="#9ca3af" font-family="monospace" font-size="7">Pod limits → kubepods.slice cgroup files</text>
+    </g>
+
+    <!-- systemd -->
+    <g transform="translate(15, 86)">
+      <rect x="0" y="0" width="240" height="42" rx="4" fill="#0f172a" stroke="#10b981" stroke-width="0.5"/>
+      <rect x="0" y="0" width="40" height="42" rx="4" fill="#059669"/>
+      <text x="20" y="24" fill="#ffffff" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">⚙</text>
+      <text x="50" y="17" fill="#34d399" font-family="monospace" font-size="8" font-weight="bold">systemd Services</text>
+      <text x="50" y="32" fill="#9ca3af" font-family="monospace" font-size="7">CPUQuota / MemoryMax in unit files</text>
+    </g>
+
+    <!-- Fork bomb -->
+    <g transform="translate(265, 86)">
+      <rect x="0" y="0" width="250" height="42" rx="4" fill="#0f172a" stroke="#f59e0b" stroke-width="0.5"/>
+      <rect x="0" y="0" width="40" height="42" rx="4" fill="#d97706"/>
+      <text x="20" y="24" fill="#ffffff" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">🛡</text>
+      <text x="50" y="17" fill="#fbbf24" font-family="monospace" font-size="8" font-weight="bold">Fork Bomb Protection</text>
+      <text x="50" y="32" fill="#9ca3af" font-family="monospace" font-size="7">TasksMax / pids.max caps process count</text>
+    </g>
+  </g>
+
+  <!-- ===== TITLE ===== -->
+  <text x="600" y="435" fill="#ffffff" font-family="system-ui, sans-serif" font-size="20" font-weight="bold" text-anchor="middle" letter-spacing="1">Linux Control Groups: The Complete Guide</text>
+  <text x="600" y="449" fill="#06b6d4" font-family="monospace" font-size="11" text-anchor="middle">cgroup v2 • cpu.max • memory.max • io.max • systemd • Docker • Kubernetes</text>
+</svg>

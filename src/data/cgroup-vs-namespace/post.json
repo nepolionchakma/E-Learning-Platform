@@ -1,0 +1,389 @@
+{
+  "title": "cgroups vs Namespaces: How They Work, Differences & Similarities",
+  "icon": "⚖️",
+  "description": "A clear, side-by-side guide to Linux cgroups and namespaces. Learn how each works at the kernel level, why you use them, their key differences and surprising similarities, and how Docker and Kubernetes combine both to build containers.",
+  "author": "E-Learning Platform",
+  "date": "2026-08-25",
+  "readTime": "22 min read",
+  "heroImage": "/images/cgroup-vs-namespace-hero.svg",
+  "heroAlt": "Comparison diagram of Linux cgroups (resource limits) versus namespaces (resource visibility) showing how both isolate processes and combine to form containers",
+  "sections": [
+    {
+      "id": "introduction",
+      "title": "1. Introduction: Two Pillars of Container Isolation",
+      "description": "Why every container is built from two different kernel features.",
+      "content": [
+        "If you've ever run a Docker container, you've already used two Linux kernel features without realizing it: **namespaces** and **cgroups**. They are the two invisible pillars that make containers possible. Yet they solve completely different problems, and confusing them is one of the most common mistakes when debugging container behavior.",
+        "A simple way to remember: **namespaces control WHAT a process can SEE, while cgroups control HOW MUCH of a resource a process can USE.** One is about visibility, the other about limits.",
+        "This guide puts them side by side so you understand exactly how each works, why you reach for one vs the other, where they overlap, and how they combine into the containers you ship to production."
+      ],
+      "items": [
+        {
+          "label": "The One-Line Summary",
+          "text": [
+            "Namespace = isolation of view (what a process sees: its own network, PIDs, mounts, hostname)",
+            "cgroup = isolation of usage (how much CPU, memory, IO, PIDs a process may consume)",
+            "Together = a container: a process that sees its own world AND is capped in how much of the host it can eat"
+          ]
+        },
+        {
+          "label": "What You Will Learn",
+          "text": [
+            "How namespaces isolate the view of a process at the kernel level",
+            "How cgroups account for and limit resource usage at the kernel level",
+            "Why each exists and when to use one without the other",
+            "The real similarities (both are kernel primitives, both are hierarchical)",
+            "The real differences (view vs usage, seven types vs many controllers)",
+            "How Docker and Kubernetes wire both together per container"
+          ]
+        }
+      ],
+      "infoBox": {
+        "type": "info",
+        "content": "Neither namespaces nor cgroups provide security by themselves. They are isolation primitives. Real security comes from combining them with capabilities dropping, seccomp, MAC (SELinux/AppArmor), and rootless configurations."
+      }
+    },
+    {
+      "id": "what-is-namespace",
+      "title": "2. What Is a Namespace?",
+      "description": "The kernel feature that hides the rest of the system from a process.",
+      "content": [
+        "A namespace wraps a global system resource in an abstraction that makes the processes inside it think they have their own isolated instance. The kernel maintains separate data structures per namespace, so a process in one namespace simply cannot see or affect the equivalent resource in another."
+      ],
+      "items": [
+        {
+          "label": "The Seven Namespace Types",
+          "table": {
+            "headers": ["Namespace", "Flag", "What It Isolates"],
+            "rows": [
+              ["Mount", "CLONE_NEWNS", "Filesystem mount points (/proc/mounts, chroot-like)"],
+              ["PID", "CLONE_NEWPID", "Process IDs (a container's init is PID 1)"],
+              ["Network", "CLONE_NEWNET", "Interfaces, IPs, routes, firewall, port space"],
+              ["UTS", "CLONE_NEWUTS", "Hostname and domain name"],
+              ["IPC", "CLONE_NEWIPC", "SysV IPC and POSIX message queues"],
+              ["User", "CLONE_NEWUSER", "UID/GID mappings (root inside ≠ root outside)"],
+              ["Cgroup", "CLONE_NEWCGROUP", "View of the cgroup filesystem itself"]
+            ]
+          }
+        },
+        {
+          "label": "How It Works (Kernel View)",
+          "text": [
+            "When a process is created with clone() and a CLONE_NEW* flag, the kernel allocates a fresh namespace struct.",
+            "Global resources (e.g., the network stack) are duplicated per namespace instead of shared.",
+            "Tools inside the namespace only enumerate what belongs to that namespace: ip addr shows only veth-red, not eth0; ps shows only local PIDs.",
+            "The host keeps a reference; it can still reach into the namespace via ip netns exec or nsenter."
+          ]
+        },
+        {
+          "label": "Example: A Network Namespace",
+          "code": "# Create an isolated network namespace\nuser@host:~$ sudo ip netns add red\n\n# Inside it, the process sees NO host interfaces\nuser@host:~$ sudo ip netns exec red ip link show\n1: lo: <LOOPBACK> ...   # only loopback exists\n\n# The host still has eth0, ens33, br0  completely separate\nuser@host:~$ ip link show | grep -E 'eth0|ens33|br0'\n\n# The namespace cannot see or touch the host network at all"
+        }
+      ]
+    },
+    {
+      "id": "what-is-cgroup",
+      "title": "3. What Is a cgroup?",
+      "description": "The kernel feature that meters and caps how much a process can consume.",
+      "content": [
+        "A cgroup (control group) groups processes and applies resource policies to the group as a whole. The kernel tracks usage per cgroup and enforces limits by throttling, reclaiming, or killing processes within that group  without affecting the rest of the host."
+      ],
+      "items": [
+        {
+          "label": "The Main Controllers",
+          "table": {
+            "headers": ["Controller", "File (v2)", "What It Limits"],
+            "rows": [
+              ["CPU", "cpu.max", "Quota of CPU time per period (throttle at quota)"],
+              ["CPU", "cpu.weight", "Relative priority when contended"],
+              ["Memory", "memory.max", "Hard RAM cap; OOM kill inside group on exceed"],
+              ["Memory", "memory.high", "Soft cap; reclaim before OOM"],
+              ["IO", "io.max", "Read/write bandwidth & IOPS per block device"],
+              ["PIDs", "pids.max", "Max number of processes (fork-bomb guard)"],
+              ["Devices", "devices.list", "Allow/deny access to device nodes"]
+            ]
+          }
+        },
+        {
+          "label": "How It Works (Kernel View)",
+          "text": [
+            "The kernel maintains a cgroup hierarchy (a tree) under /sys/fs/cgroup.",
+            "Each process belongs to exactly one cgroup per hierarchy.",
+            "When a process consumes CPU/memory/IO, the kernel charges its cgroup's counters.",
+            "When a counter hits a limit, the kernel acts: throttle (CPU), reclaim then OOM-kill (memory), or cap bandwidth (IO)."
+          ]
+        },
+        {
+          "label": "Example: A Memory cgroup",
+          "code": "# Create a cgroup capped at 100 MB\nuser@host:~$ sudo mkdir -p /sys/fs/cgroup/demo\nuser@host:~$ sudo sh -c 'echo 100M > /sys/fs/cgroup/demo/memory.max'\n\n# Move a process in\nuser@host:~$ sudo sh -c 'echo $$ > /sys/fs/cgroup/demo/cgroup.procs'\n\n# If this process allocates 500 MB, the KERNEL kills ONLY it\nuser@host:~$ cat /sys/fs/cgroup/demo/memory.events\n# oom_kill 1   <- other processes on the host are untouched"
+        }
+      ]
+    },
+    {
+      "id": "how-they-work",
+      "title": "4. How They Work: Side by Side",
+      "description": "The kernel mechanisms compared directly.",
+      "content": [
+        "Both are kernel primitives created with similar syscalls, but they operate on different axes of isolation."
+      ],
+      "items": [
+        {
+          "label": "Creation Mechanism",
+          "table": {
+            "headers": ["Aspect", "Namespace", "cgroup"],
+            "rows": [
+              [" Syscall", "clone() / unshare() / setns()", "created via mkdir on cgroupfs or systemd"],
+              [" Kernel struct", "struct nsproxy per task", "struct cgroup per hierarchy"],
+              [" Granularity", "per task (inherited by children)", "per process group (tree)"],
+              [" Enabled by", "CLONE_NEW* flags", "echo +controller > subtree_control"],
+              [" Lifetime", "lives while ≥1 process references it", "lives while ≥1 process or child cgroup"]
+            ]
+          }
+        },
+        {
+          "label": "The Mental Model",
+          "text": [
+            "Namespace = a private ROOM. The process is in a room where the walls hide the rest of the building. It sees only its own furniture (interfaces, PIDs, mounts).",
+            "cgroup = a RATION CARD. The process can wander the whole building but carries a card that says 'you may eat at most 100MB of food and use 0.5 CPU cores worth of energy'.",
+            "A container = a private room WITH a ration card. You can't see the neighbors (namespace) and you can't bankrupt the building (cgroup)."
+          ]
+        },
+        {
+          "label": "Can You Have One Without the Other?",
+          "text": [
+            "YES  namespace without cgroup: a process in its own network namespace but with NO CPU/memory limit. It's isolated in view but can eat all host RAM (risk of OOM on the host).",
+            "YES  cgroup without namespace: a process capped to 1 core and 512MB but sharing the host's network and PIDs. Common for systemd services that need limits but not isolation.",
+            "NO (safely)  production containers use BOTH, because either alone is incomplete: view without limits = noisy neighbor; limits without view = still sees/shares host resources."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "why-use",
+      "title": "5. Why Use Each? (Motivation)",
+      "description": "The problems each primitive actually solves.",
+      "items": [
+        {
+          "label": "Why Use Namespaces",
+          "text": [
+            "Multi-tenancy: run many apps that each believe they're the only one on the box (own hostname, own ports).",
+            "Port reuse: two apps can both bind port 80 because they're in different network namespaces.",
+            "Clean teardown: deleting a namespace destroys all its interfaces and mounts atomically.",
+            "Security boundary: a process in a user namespace can be root inside but is mapped to an unprivileged UID outside.",
+            "Reproducible environments: the same container image runs identically because its view is identical everywhere."
+          ]
+        },
+        {
+          "label": "Why Use cgroups",
+          "text": [
+            "Resource guarantees: ensure a critical service always gets CPU/memory even under load.",
+            "Noisy-neighbor containment: a buggy batch job can't starve the database of RAM.",
+            "OOM containment: a memory leak kills the cgroup, not the host.",
+            "Cost control: cloud providers bill per cgroup because limits map to billable units.",
+            "Fork-bomb protection: pids.max caps process spawn rate per group.",
+            "Fair sharing: cpu.weight splits contended CPU by priority, not by who hogs first."
+          ]
+        },
+        {
+          "label": "Decision Guide",
+          "table": {
+            "headers": ["I want to...", "Use"],
+            "rows": [
+              ["Hide the host network from an app", "Network namespace"],
+              ["Give an app its own hostname", "UTS namespace"],
+              ["Let an app think it's PID 1", "PID namespace"],
+              ["Stop an app eating all RAM", "Memory cgroup"],
+              ["Cap an app at 2 CPU cores", "CPU cgroup"],
+              ["Throttle disk I/O of a job", "IO cgroup"],
+              ["Prevent fork bombs", "PIDs cgroup"],
+              ["Run many apps on one host cleanly", "Namespaces + cgroups (containers)"]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "similarities",
+      "title": "6. Similarities (They're More Alike Than You Think)",
+      "description": "Where the two primitives converge.",
+      "items": [
+        {
+          "label": "Shared Properties",
+          "text": [
+            "Both are Linux KERNEL features (not userspace daemons)  enforcement is in-kernel, so it's hard to escape.",
+            "Both are HIERARCHICAL: namespaces nest (a child ns can see less); cgroups form a tree (limits are inherited/summed).",
+            "Both are created per-PROCESS and INHERITED by child processes.",
+            "Both use VIRTUALIZATION-LITE: no hypervisor, no separate kernel, just structural separation in the same kernel.",
+            "Both are the FOUNDATION of containers: Docker and Kubernetes would not exist without either.",
+            "Both are INSPECTABLE from the host: ip netns list, systemd-cgls, cat /proc/<pid>/cgroup, lsns.",
+            "Both can be ENTERED from outside: nsenter and ip netns exec for namespaces; writing PIDs to cgroup.procs for cgroups."
+          ]
+        },
+        {
+          "label": "Both Are Opt-In and Composable",
+          "text": [
+            "Neither is forced on a process. A normal process lives in the initial namespace and root cgroup.",
+            "You can mix selectively: give a process a new network namespace but keep it in the root cgroup; or keep it in the host netns but put it in a memory cgroup.",
+            "This composability is exactly why containers can be built from small, orthogonal primitives rather than one monolithic 'jail'."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "differences",
+      "title": "7. Differences (The Critical Distinctions)",
+      "description": "Where they diverge and why it matters for debugging.",
+      "items": [
+        {
+          "label": "The Core Difference Table",
+          "table": {
+            "headers": ["Dimension", "Namespace", "cgroup"],
+            "rows": [
+              [" Isolates", "View / visibility (WHAT you see)", "Usage / consumption (HOW MUCH you use)"],
+              [" Count", "7 fixed types", "Many controllers (cpu, mem, io, pids, ...)"],
+              [" On exceed", "Process just can't see the resource", "Kernel throttles / reclaims / OOM-kills"],
+              [" Versions", "Stable API, no v1/v2 split", "v1 (legacy) vs v2 (unified) split"],
+              [" Filesystem", "/proc, /proc/<pid>/ns, ip netns", "/sys/fs/cgroup (cgroupfs)"],
+              [" Manager", "ip, unshare, nsenter, Docker", "systemd, cgroupfs, Docker, kubelet"],
+              [" Failure mode", "Permission denied / not found", "Throttle / OOM kill / EAGAIN"],
+              [" Primary goal", "Isolation & packaging", "Resource governance & fairness"]
+            ]
+          }
+        },
+        {
+          "label": "Failure Modes Tell Them Apart",
+          "text": [
+            "Namespace problem: 'Operation not permitted' or 'No such device'  the process literally cannot see the resource.",
+            "cgroup problem: 'Killed' (OOM), silent slowness (CPU throttle), or 'Cannot allocate memory' / fork fails (pids.max).",
+            "Debugging tip: if a container can't reach the network, suspect the NETWORK namespace; if it's slow or dying, suspect the cgroup."
+          ]
+        },
+        {
+          "label": "Versioning Difference",
+          "text": [
+            "Namespaces have a stable, mostly unchanged API across kernels  a network namespace behaves the same on old and new kernels.",
+            "cgroups had a major overhaul: cgroup v1 (per-controller hierarchies, still around) vs cgroup v2 (single unified hierarchy, the modern default). A command that works on v1 may fail on v2.",
+            "Check: stat -fc %T /sys/fs/cgroup → cgroup2fs means v2; tmpfs means v1."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "together",
+      "title": "8. How They Work Together: The Container",
+      "description": "Why production containers always combine both.",
+      "content": [
+        "A container is not a namespace and not a cgroup  it is a process (or process tree) that has BOTH applied at creation time. The container runtime sets up the namespaces first, then places the process into a cgroup with the requested limits."
+      ],
+      "items": [
+        {
+          "label": "Container Creation Order (Docker)",
+          "text": [
+            "1. Docker calls clone() with CLONE_NEW* flags → the container gets its own namespaces (net, pid, mount, uts, ipc).",
+            "2. Docker creates a cgroup at /sys/fs/cgroup/system.slice/docker-<id>.scope.",
+            "3. Docker writes cpu.max / memory.max / io.max from --cpus / --memory / --device-read-bps.",
+            "4. Docker moves the container's init PID into that cgroup.",
+            "5. The container process now has a private view AND a hard resource budget.",
+            "6. If the container exceeds memory, the in-cgroup OOM killer fires  not the host's."
+          ]
+        },
+        {
+          "label": "Kubernetes Maps Both From One Spec",
+          "code": "# pod.yaml\napiVersion: v1\nkind: Pod\nspec:\n  containers:\n  - name: app\n    image: nginx\n    resources:\n      requests:\n        cpu: 100m\n        memory: 128Mi\n      limits:\n        cpu: 500m        # -> cgroup cpu.max (0.5 core)\n        memory: 256Mi    # -> cgroup memory.max (OOM if exceeded)\n# namespace isolation (net/pid/mount) is automatic per pod\n# requests -> cpu.weight (relative priority)\n# limits   -> cpu.max / memory.max (hard caps)"
+        },
+        {
+          "label": "What Breaks If You Drop One",
+          "text": [
+            "Namespaces only (no cgroup): the container is neatly isolated but a memory leak OOM-kills the WHOLE HOST because nothing capped it.",
+            "cgroups only (no namespace): the container is capped but shares the host's network and PID 1, so it can see and interfere with other processes and ports.",
+            "Neither: that's just a normal process running directly on the host. No isolation, no limits."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "real-world",
+      "title": "9. Real-World Debugging Scenarios",
+      "description": "Telling them apart when things go wrong in production.",
+      "items": [
+        {
+          "label": "Scenario A: 'My container can't bind port 80'",
+          "text": [
+            "Cause: a different process already bound 80 in the SAME network namespace.",
+            "Namespace side: check ip netns and ss -tlnp inside the container.",
+            "NOT a cgroup issue  cgroups never block port binding (no net controller in v2).",
+            "Fix: use a different port, or run in a fresh network namespace (docker run -p 8080:80)."
+          ]
+        },
+        {
+          "label": "Scenario B: 'My container is mysteriously slow'",
+          "text": [
+            "Cause: CPU throttling from cpu.max, or memory reclaim from memory.high.",
+            "cgroup side: cat /sys/fs/cgroup/.../cpu.stat | grep nr_throttled; cat memory.events.",
+            "NOT a namespace issue  namespaces don't throttle.",
+            "Fix: raise --cpus / --memory, or lower competing containers' cpu.weight."
+          ]
+        },
+        {
+          "label": "Scenario C: 'My container keeps restarting'",
+          "text": [
+            "Cause: OOM kill inside the memory cgroup (memory.max exceeded).",
+            "cgroup side: dmesg | grep 'Out of memory'; cat memory.events → oom_kill > 0.",
+            "Fix: increase --memory, or fix the leak. The host stays up because the kill was contained."
+          ]
+        },
+        {
+          "label": "Quick Inspection Commands",
+          "code": "# Namespace view of a PID\nuser@host:~$ lsns -p <pid>            # all namespaces a process is in\nuser@host:~$ cat /proc/<pid>/cgroup   # all cgroups a process is in\n\n# cgroup live state\nuser@host:~$ systemd-cgls | grep docker\nuser@host:~$ cat /sys/fs/cgroup/system.slice/docker-<id>.scope/memory.current\nuser@host:~$ cat /sys/fs/cgroup/system.slice/docker-<id>.scope/cpu.stat"
+        }
+      ]
+    },
+    {
+      "id": "summary",
+      "title": "10. Summary & Mental Cheat Sheet",
+      "description": "The takeaway you can apply immediately.",
+      "items": [
+        {
+          "label": "The 10-Second Recap",
+          "text": [
+            " Namespace = WHAT you see (view isolation: net, pid, mount, uts, ipc, user, cgroup)",
+            " cgroup = HOW MUCH you use (resource governance: cpu, memory, io, pids, devices)",
+            " Both are in-kernel, hierarchical, per-process, and composable",
+            " Containers = namespaces + cgroups applied together at process creation",
+            " Namespace failure = can't see it; cgroup failure = throttled or killed",
+            " Drop namespaces → leaky view; drop cgroups → noisy neighbor / host OOM"
+          ]
+        },
+        {
+          "label": "Comparison Cheat Sheet",
+          "table": {
+            "headers": ["Question", "Namespace", "cgroup"],
+            "rows": [
+              ["Isolates?", "View", "Usage"],
+              ["Count of kinds", "7 types", "Many controllers"],
+              ["On overflow", "Not visible", "Throttle / OOM kill"],
+              ["API stable?", "Yes", "v1 vs v2 split"],
+              ["Filesystem", "/proc, ip netns", "/sys/fs/cgroup"],
+              ["Tool", "unshare, nsenter", "systemd, cgroupfs"],
+              ["Alone is enough?", "No (sees host load)", "No (sees host net/pids)"],
+              ["Together =", "Container isolation", "Container limits"]
+            ]
+          }
+        },
+        {
+          "label": "What to Explore Next",
+          "text": [
+            "Linux Network Namespaces: The Complete Guide  deep dive into the NET namespace",
+            "Linux Control Groups (cgroups): The Complete Guide  deep dive into cpu/memory/io",
+            "User namespaces  the trickiest but most powerful (root-inside, unpriv-outside)",
+            "seccomp & capabilities  the third pillar of container security",
+            "Rootless Docker  how user namespaces remove the need for host root",
+            "Kubernetes QoS classes  how requests/limits map to cgroup files and OOM priority",
+            "",
+            "Master these two primitives and every container runtime  Docker, containerd, Podman, Kubernetes  becomes readable, debuggable, and predictable."
+          ]
+        }
+      ]
+    }
+  ]
+}
