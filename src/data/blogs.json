@@ -102,5 +102,19 @@
     "content": "A comprehensive end-to-end guide to Linux network namespaces. Covers what network namespaces are, how they isolate network stacks, managing namespaces with ip netns, veth pairs, Linux bridges, NAT/masquerading for external access, hands-on lab from zero to ping, real-world use cases in Docker and Kubernetes, and troubleshooting common issues.",
     "author": "E-Learning Platform",
     "date": "2026-07-09"
+  },
+  {
+    "slug": "cgroup",
+    "title": "Linux Control Groups (cgroups): The Complete Guide",
+    "content": "A comprehensive end-to-end guide to Linux control groups. Covers what cgroups are, how they limit and isolate resource usage, cgroup v1 vs v2, managing CPU/memory/IO controllers with systemd and the cgroup filesystem, a hands-on lab from zero to limits, real-world use cases in Docker and Kubernetes, and troubleshooting OOM kills and CPU throttling.",
+    "author": "E-Learning Platform",
+    "date": "2026-08-25"
+  },
+  {
+    "slug": "cgroup-vs-namespace",
+    "title": "cgroups vs Namespaces: How They Work, Differences & Similarities",
+    "content": "A clear side-by-side guide to Linux cgroups and namespaces. Explains how each works at the kernel level, why you use them, their key differences and surprising similarities, how Docker and Kubernetes combine both to build containers, and how to tell them apart when debugging production issues.",
+    "author": "E-Learning Platform",
+    "date": "2026-08-25"
   }
 ]

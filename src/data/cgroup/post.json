@@ -1,0 +1,461 @@
+{
+  "title": "Linux Control Groups (cgroups): The Complete Guide",
+  "icon": "📦",
+  "description": "A comprehensive end-to-end guide to Linux control groups. Covers what cgroups are, how they limit and isolate resource usage, cgroup v1 vs v2, managing CPU/memory/IO controllers with systemd and the cgroup filesystem, a hands-on lab from zero to limits, real-world use cases in Docker and Kubernetes, and troubleshooting common issues.",
+  "author": "E-Learning Platform",
+  "date": "2026-08-25",
+  "readTime": "30 min read",
+  "heroImage": "/images/cgroup-hero.svg",
+  "heroAlt": "Linux cgroups architecture diagram showing resource controllers limiting CPU, memory, and IO for isolated process groups with systemd and Docker integration",
+  "sections": [
+    {
+      "id": "introduction",
+      "title": "1. Introduction to Linux Control Groups",
+      "description": "What cgroups are and why every DevOps engineer should understand them.",
+      "content": [
+        "Linux control groups (cgroups) are the fundamental resource-isolation building block of containers. Every Docker container, every Kubernetes pod, and every systemd service relies on cgroups to limit, account for, and isolate the resource usage (CPU, memory, disk I/O, network) of a collection of processes. Understanding them is essential for debugging OOM kills, tuning performance, designing multi-tenant systems, and building your own container runtimes from scratch.",
+        "A cgroup is a Linux kernel feature that groups processes and applies resource limits to that group as a whole. Each cgroup gets its own view of how much CPU, memory, and I/O it may consume. Processes inside a cgroup share the limits of that group  they are constrained even though the host may have far more resources available.",
+        "This guide takes you from zero to a deep understanding of cgroups  with theory, practical commands, and a complete hands-on lab."
+      ],
+      "items": [
+        {
+          "label": "Prerequisites",
+          "text": [
+            "A Linux machine (physical, VM, or cloud instance) with root/sudo access",
+            "A kernel from the last decade (cgroup v2 is default on most modern distros)",
+            "systemd installed (most distros use systemd as the cgroup manager)",
+            "Basic familiarity with the Linux command line",
+            "No Docker or containers required  we work with raw cgroups"
+          ]
+        },
+        {
+          "label": "What You Will Learn",
+          "text": [
+            "What cgroups are and how they isolate resource usage",
+            "How to create, manage, and inspect cgroups with systemd and the cgroupfs",
+            "How the CPU, memory, and IO controllers work",
+            "How to set hard and soft limits on CPU and memory",
+            "How Docker and Kubernetes use cgroups in production",
+            "How to troubleshoot OOM kills and CPU throttling",
+            "How to debug common cgroup configuration issues"
+          ]
+        }
+      ],
+      "infoBox": {
+        "type": "info",
+        "content": "cgroups are one of the seven Linux namespace types' siblings for isolation. While namespaces isolate WHAT a process can see (network, mounts, PIDs), cgroups isolate HOW MUCH of a resource a process can USE (CPU, memory, IO)."
+      }
+    },
+    {
+      "id": "what-are-cgroups",
+      "title": "2. What Are Control Groups?",
+      "description": "Deep dive into kernel-level resource isolation.",
+      "infoBox": {
+        "type": "tip",
+        "content": "Think of a cgroup as a resource budget for a group of processes. It has its own CPU quota, memory cap, and IO bandwidth  completely isolated from the host's total capacity."
+      },
+      "items": [
+        {
+          "label": "What Gets Limited",
+          "table": {
+            "headers": ["Resource", "Limited?", "Why It Matters"],
+            "rows": [
+              ["CPU", "Yes", "A cgroup can be capped to a fraction of one core or many cores; throttled when over quota"],
+            ["Memory", "Yes", "A cgroup can be capped to a max memory; the OOM killer reclaims or kills within the group"],
+            ["Block I/O (disk)", "Yes", "Read/write bandwidth and IOPS per device can be throttled per cgroup"],
+
+            ["Network I/O", "Partial", "cgroups v2 have no native net controller; use TC (traffic control) or namespaces instead"],
+            ["PIDs", "Yes", "A cgroup can limit how many processes/threads it may spawn (fork bomb protection)"],
+              ["Devices", "Yes", "A cgroup can allow/deny access to specific device nodes (e.g., /dev/sda)"]
+            ]
+          }
+        },
+        {
+          "label": "What Is NOT Limited",
+          "text": [
+            "Filesystem contents (that's the mount namespace  CLONE_NEWNS)",
+            "Network visibility (that's the network namespace  CLONE_NEWNET)",
+            "Process IDs seen by the group (that's the PID namespace  CLONE_NEWPID)",
+            "Kernel itself  all cgroups share the same kernel (no hypervisor)",
+            "Hardware  physical devices are shared, but access can be denied per cgroup"
+          ]
+        },
+        {
+          "label": "Default State of a Fresh Cgroup",
+          "text": [
+            "When you create a new cgroup, it starts with inherited limits from its parent:",
+            " No CPU limit  the group may use all available CPU by default",
+            " No memory limit  the group may use all available memory by default",
+            " No IO limit  the group may use all disk bandwidth by default",
+            " Inherited controllers  child cgroups enable the same controllers as the parent",
+            " No processes  the cgroup is empty until you add a PID",
+            "",
+            "This empty state is the starting point. Limits must be explicitly configured. You can start with no limits and tighten them, or set strict caps from the beginning."
+          ]
+        }
+      ],
+      "subsections": [
+        {
+          "title": "Kernel Internals (For the Curious)",
+          "content": "Under the hood, the Linux kernel maintains a cgroup hierarchy as a tree of cgroup structures. Each process belongs to exactly one cgroup per hierarchy. When you write to a controller file (e.g., memory.max), the kernel's memory controller updates the page-counter for that cgroup and enforces reclaim when the limit is exceeded. This is structural accounting: the kernel literally tracks bytes per cgroup, not just access control lists."
+        }
+      ]
+    },
+    {
+      "id": "managing-cgroups",
+      "title": "3. Managing Cgroups with systemd and cgroupfs",
+      "description": "Creating, inspecting, and configuring cgroups on a systemd host.",
+      "content": [
+        "On a modern systemd host, cgroups are managed through two paths: the systemd API (recommended) and the cgroup filesystem (cgroupfs) at /sys/fs/cgroup. Under the hood, systemd writes to the cgroupfs for you. You rarely need to touch the filesystem directly, but understanding it helps debugging."
+      ],
+      "items": [
+        {
+          "label": "Key systemd Commands",
+          "table": {
+            "headers": ["Command", "Purpose"],
+            "rows": [
+              ["systemd-cgls", "Show the cgroup tree (like ls for cgroups)"],
+              ["systemctl status", "Show the cgroup a unit belongs to"],
+              ["systemd-run --scope", "Start a transient cgroup scope with limits"],
+              ["systemd-run --slice", "Start a transient cgroup slice with limits"],
+              ["systemctl set-property", "Change live limits on a unit's cgroup"],
+              ["cat /proc/<pid>/cgroup", "Show which cgroup a process is in"]
+            ]
+          }
+        },
+        {
+          "label": "Create a Transient Cgroup with systemd-run",
+          "code": "# Create a scope limited to 0.5 CPU and 100MB memory, run a command in it\nuser@host:~$ sudo systemd-run --scope -p CPUQuota=50% -p MemoryMax=100M --unit demo bash -c 'stress --cpu 2 --timeout 10'\n\n# Inspect the new scope\nuser@host:~$ systemd-cgls /system.slice/demo.scope\n\n# View the live limits written to the cgroupfs\nuser@host:~$ cat /sys/fs/cgroup/system.slice/demo.scope/cpu.max\nuser@host:~$ cat /sys/fs/cgroup/system.slice/demo.scope/memory.max"
+        },
+        {
+          "label": "Inspect an Existing Process",
+          "code": "# Which cgroup is the current shell in?\nuser@host:~$ cat /proc/self/cgroup\n0::/user.slice/user-1000.slice/session-1.scope\n\n# Which cgroup is a Docker container in?\nuser@host:~$ cat /proc/$(pgrep -f nginx | head -1)/cgroup\n0::/system.slice/docker-<id>.scope\n\n# Show the full cgroup tree\nuser@host:~$ systemd-cgls --no-pager | head -40"
+        },
+        {
+          "label": "Manual cgroupfs (Advanced)",
+          "code": "# Create a cgroup directly on the cgroup v2 filesystem\nuser@host:~$ sudo mkdir -p /sys/fs/cgroup/demo\n\n# Enable the cpu and memory controllers for this cgroup\nuser@host:~$ sudo sh -c 'echo \"+cpu +memory\" > /sys/fs/cgroup/demo/cgroup.subtree_control'\n\n# Set limits by writing to controller files\nuser@host:~$ sudo sh -c 'echo 50000 100000 > /sys/fs/cgroup/demo/cpu.max'   # 50% of one CPU\nuser@host:~$ sudo sh -c 'echo 100M > /sys/fs/cgroup/demo/memory.max'        # 100 MB cap\n\n# Move the current shell into the cgroup\nuser@host:~$ sudo sh -c 'echo $$ > /sys/fs/cgroup/demo/cgroup.procs'\n\n# Verify\nuser@host:~$ cat /sys/fs/cgroup/demo/cgroup.procs"
+        }
+      ]
+    },
+    {
+      "id": "cpu-controller",
+      "title": "4. CPU Controller  Limiting Compute",
+      "description": "How to throttle and weight CPU usage per cgroup.",
+      "infoBox": {
+        "type": "info",
+        "content": "The CPU controller in cgroup v2 uses two mechanisms: cpu.max (a hard quota, like a speed limit) and cpu.weight (a relative share, like priority when the system is busy)."
+      },
+      "items": [
+        {
+          "label": "Hard CPU Quota (cpu.max)",
+          "text": [
+            "The cpu.max file takes two values: MAX MICROSECONDS PER PERIOD (default period 100000 us = 100 ms).",
+            " 50000 100000  means the cgroup may use at most 50 ms of CPU per 100 ms = 50% of one core",
+            " 200000 100000 means the cgroup may use at most 200 ms per 100 ms = 2 full cores",
+            " max (or 0 100000) means no limit",
+            "When the cgroup exceeds its quota, the kernel throttles it  processes in the group stop getting CPU until the next period."
+          ]
+        },
+        {
+          "label": "CPU Weight (cpu.weight)",
+          "text": [
+            "cpu.weight is a relative priority from 1 to 10000 (default 100).",
+            "When the system is under load and multiple cgroups want CPU, the scheduler divides available time by weight.",
+            " A cgroup with weight 200 gets roughly twice the CPU of one with weight 100, but only when contended.",
+            " Unlike cpu.max, weight never caps usage  an idle-priority cgroup can still use all CPU if nothing else wants it."
+          ]
+        },
+        {
+          "label": "Examples",
+          "code": "# Cap a systemd service to 1.5 cores\nuser@host:~$ sudo systemctl set-property nginx.service CPUQuota=150%\n\n# Cap via cgroupfs directly (150% = 150000 us per 100000 us period)\nuser@host:~$ sudo sh -c 'echo 150000 100000 > /sys/fs/cgroup/system.slice/nginx.service/cpu.max'\n\n# Give a batch job low priority (weight 20 vs default 100)\nuser@host:~$ sudo systemd-run --scope -p CPUWeight=20 --unit batch bash -c 'while true; do :; done'\n\n# Verify the quota\nuser@host:~$ systemctl show nginx.service -p CPUQuotaPerSecUSec\nuser@host:~$ cat /sys/fs/cgroup/system.slice/nginx.service/cpu.max"
+        },
+        {
+          "label": "Test CPU Throttling",
+          "code": "# Run a CPU burner inside a 25% quota scope\nuser@host:~$ sudo systemd-run --scope -p CPUQuota=25% --unit burn bash -c 'taskset -c 0 yes > /dev/null & sleep 5; kill %1'\n\n# Watch throttling counters\nuser@host:~$ cat /sys/fs/cgroup/system.slice/burn.scope/cpu.stat\n# Look for: throttled_usec and nr_throttled\n# nr_throttled > 0 means the cgroup hit its quota and was paused"
+        }
+      ]
+    },
+    {
+      "id": "memory-controller",
+      "title": "5. Memory Controller  Limiting RAM",
+      "description": "How to cap memory and survive the OOM killer.",
+      "infoBox": {
+        "type": "warning",
+        "content": "When a cgroup hits memory.max, the kernel first tries to reclaim (drop caches, move pages to swap). If that fails, the OOM killer terminates the heaviest process INSIDE that cgroup only  not on the whole host."
+      },
+      "items": [
+        {
+          "label": "Key Memory Files",
+          "table": {
+            "headers": ["File", "Meaning"],
+            "rows": [
+              ["memory.max", "Hard cap. Exceeding it triggers reclaim then OOM kill"],
+              ["memory.high", "Soft limit. Throttles and reclaims above this, but no OOM kill"],
+              ["memory.min", "Protected floor. Kernel avoids reclaiming below this if possible"],
+              ["memory.current", "Current usage (read-only)"],
+              ["memory.stat", "Detailed breakdown of cache, anon, swap, etc. (read-only)"],
+              ["memory.events", "OOM and pressure events (read-only)"]
+            ]
+          }
+        },
+        {
+          "label": "Set Memory Limits",
+          "code": "# Cap a service at 512 MB with systemd\nuser@host:~$ sudo systemctl set-property myapp.service MemoryMax=512M\n\n# Cap via cgroupfs\nuser@host:~$ sudo sh -c 'echo 512M > /sys/fs/cgroup/system.slice/myapp.service/memory.max'\n\n# Set a soft limit (high) to encourage early reclaim\nuser@host:~$ sudo sh -c 'echo 400M > /sys/fs/cgroup/system.slice/myapp.service/memory.high'\n\n# Watch usage grow\nuser@host:~$ cat /sys/fs/cgroup/system.slice/myapp.service/memory.current"
+        },
+        {
+          "label": "Detect OOM Kills",
+          "code": "# Did the cgroup hit an OOM?\nuser@host:~$ cat /sys/fs/cgroup/system.slice/myapp.service/memory.events\n# oom_kill 5   <- 5 processes were killed inside this cgroup\n\n# Full dmesg evidence\nuser@host:~$ sudo dmesg | grep -i \"out of memory\" | tail -5\nuser@host:~$ sudo dmesg | grep -i \"killed process\" | tail -5\n\n# memory.stat for pressure\nuser@host:~$ cat /sys/fs/cgroup/system.slice/myapp.service/memory.stat | grep -E 'anon|file|swap'"
+        },
+        {
+          "label": "Hands-On: Trigger an OOM",
+          "code": "# Start a scope capped at 50MB and try to eat 500MB\nuser@host:~$ sudo systemd-run --scope -p MemoryMax=50M --unit oomtest bash -c '\\\n  python3 -c \"x=bytearray(500_000_000); input()\"'\n\n# In another terminal, watch it die:\nuser@host:~$ cat /sys/fs/cgroup/system.slice/oomtest.scope/memory.events\n# oom_kill 1\n\n# The bash process is killed; systemd reports the scope as failed"
+        }
+      ]
+    },
+    {
+      "id": "io-controller",
+      "title": "6. IO Controller  Limiting Disk Throughput",
+      "description": "Throttling block device bandwidth per cgroup.",
+      "content": [
+        "The IO controller (io controller) limits read/write throughput and IOPS per block device. It is useful for preventing a noisy neighbor from starving others of disk bandwidth. Limits are set per device using major:minor numbers."
+      ],
+      "items": [
+        {
+          "label": "Key IO Files",
+          "table": {
+            "headers": ["File", "Meaning"],
+            "rows": [
+              ["io.max", "Bandwidth/IOPS cap per device (e.g., 8:0 rbps=10M)"],
+              ["io.weight", "Relative priority per device (default 100)"],
+              ["io.stat", "Per-device usage statistics (read-only)"]
+            ]
+          }
+        },
+        {
+          "label": "Throttle a Device",
+          "code": "# Find the device major:minor for / (usually 8:0 for sda)\nuser@host:~$ ls -l /dev/sda\n# brw-rw---- 1 root disk 8, 0 ...\n\n# Cap the cgroup to 10 MB/s reads and 100 IOPS writes on sda\nuser@host:~$ sudo sh -c 'echo \"8:0 rbps=10M wbps=0 wiops=100\" > /sys/fs/cgroup/system.slice/myapp.service/io.max'\n\n# Relative weight instead of hard cap\nuser@host:~$ sudo sh -c 'echo \"8:0 50\" > /sys/fs/cgroup/system.slice/myapp.service/io.weight'\n\n# Verify\nuser@host:~$ cat /sys/fs/cgroup/system.slice/myapp.service/io.max\nuser@host:~$ cat /sys/fs/cgroup/system.slice/myapp.service/io.stat"
+        }
+      ]
+    },
+    {
+      "id": "hands-on-lab",
+      "title": "7. Hands-On Lab: From Zero to Limits",
+      "description": "A complete step-by-step lab creating cgroups and observing limits in action.",
+      "content": [
+        "This lab combines everything you've learned into a single, reproducible workflow. Run each command in order on any Linux machine with systemd and cgroup v2."
+      ],
+      "items": [
+        {
+          "label": "Phase 1: Verify cgroup v2",
+          "code": "# Confirm the host uses cgroup v2 (unified hierarchy)\nuser@host:~$ stat -fc %T /sys/fs/cgroup\n# Expected: cgroup2fs (NOT tmpfs, which would mean v1)\n\n# See which controllers are available at the root\nuser@host:~$ cat /sys/fs/cgroup/cgroup.controllers\n# cpu memory io pids\n\n# Show the root cgroup's enabled subtree controllers\nuser@host:~$ cat /sys/fs/cgroup/cgroup.subtree_control"
+        },
+        {
+          "label": "Phase 2: CPU Limit via systemd-run",
+          "code": "# Start a CPU burner capped at 30% of one core\nuser@host:~$ sudo systemd-run --scope -p CPUQuota=30% --unit cpulab bash -c '\\n  taskset -c 0 yes > /dev/null & echo $! > /tmp/cpulab.pid; sleep 8; kill $(cat /tmp/cpulab.pid)'\n\n# In another terminal, watch the CPU usage\nuser@host:~$ top -p $(cat /tmp/cpulab.pid)\n# The process shows ~30% CPU, not 100%\n\n# Confirm throttling happened\nuser@host:~$ cat /sys/fs/cgroup/system.slice/cpulab.scope/cpu.stat | grep throttled\n# nr_throttled > 0 means it hit the quota"
+        },
+        {
+          "label": "Phase 3: Memory Limit via systemd-run",
+          "code": "# Start a scope capped at 80MB and allocate 200MB\nuser@host:~$ sudo systemd-run --scope -p MemoryMax=80M --unit memlab bash -c '\\n  python3 -c \"x=bytearray(200_000_000); input()\"'\n\n# Watch it get OOM-killed\nuser@host:~$ sudo dmesg | tail -3\n# Memory cgroup out of memory: Killed process ...\n\n# Confirm the kill counter\nuser@host:~$ cat /sys/fs/cgroup/system.slice/memlab.scope/memory.events\n# oom_kill 1"
+        },
+        {
+          "label": "Phase 4: Manual cgroupfs Group",
+          "code": "# Create a persistent cgroup for a batch job\nuser@host:~$ sudo mkdir -p /sys/fs/cgroup/batchjob\nuser@host:~$ sudo sh -c 'echo \"+cpu +memory\" > /sys/fs/cgroup/batchjob/cgroup.subtree_control'\nuser@host:~$ sudo sh -c 'echo 100000 100000 > /sys/fs/cgroup/batchjob/cpu.max'  # 1 core\nuser@host:~$ sudo sh -c 'echo 256M > /sys/fs/cgroup/batchjob/memory.max'\n\n# Run a process inside it\nuser@host:~$ sudo sh -c 'echo $$ > /sys/fs/cgroup/batchjob/cgroup.procs; exec stress --cpu 4 --vm 1 --vm-bytes 200M --timeout 10'\n\n# Inspect\nuser@host:~$ cat /sys/fs/cgroup/batchjob/cgroup.procs\nuser@host:~$ cat /sys/fs/cgroup/batchjob/memory.current\n\n# Clean up\nuser@host:~$ sudo rmdir /sys/fs/cgroup/batchjob"
+        },
+        {
+          "label": "Cleanup Everything",
+          "code": "# Stop any running scopes\nuser@host:~$ sudo systemctl stop cpulab.scope memlab.scope 2>/dev/null\n\n# Remove manual cgroups\nuser@host:~$ sudo rmdir /sys/fs/cgroup/batchjob 2>/dev/null\n\n# Verify the tree is clean\nuser@host:~$ systemd-cgls --no-pager | head -20\n# Expected: no demo/cpulab/memlab/batchjob scopes remain"
+        }
+      ]
+    },
+    {
+      "id": "real-world-use-cases",
+      "title": "8. Real-World Use Cases",
+      "description": "How cgroups power Docker, Kubernetes, systemd, and more.",
+      "items": [
+        {
+          "label": "Docker Containers",
+          "text": [
+            "Every Docker container gets its own cgroup. When you run docker run, Docker Engine configures cgroups internally:",
+            "",
+            "1. Docker creates a cgroup at /sys/fs/cgroup/system.slice/docker-<id>.scope",
+            "2. It writes cpu.max / cpu.weight based on --cpus and --cpu-shares",
+            "3. It writes memory.max based on --memory",
+            "4. It writes io.max based on --device-read-bps / --device-write-bps",
+            "5. It moves the container's init PID into the cgroup",
+            "6. If the container exceeds --memory, the in-cgroup OOM killer fires (not the host)",
+            "",
+            "Example: docker run -d --name web --cpus=1.5 --memory=512m nginx"
+          ]
+        },
+        {
+          "label": "Kubernetes Pods",
+          "text": [
+            "In Kubernetes, the kubelet sets cgroup limits from the pod's resources requests/limits:",
+            "",
+            "1. The pod's containers share a cgroup parent (usually kubepods.slice)",
+            "2. Each container gets a child cgroup with cpu.max and memory.max",
+            "3. The pod-level cgroup sums the container limits (plus overhead)",
+            "4. When a container exceeds its memory limit, the in-cgroup OOM killer terminates it",
+            "5. The kubelet detects the OOM and marks the container CrashLoopBackOff",
+            "6. CPU limits cause throttling (nr_throttled increments) but not termination",
+            "",
+            "This means: a misconfigured limit in Kubernetes maps directly to a cgroup file  understanding cgroups explains pod evictions and throttling."
+          ]
+        },
+        {
+          "label": "systemd Services",
+          "text": [
+            "systemd uses cgroups for every service unit by default. You can set limits in the unit file:",
+            "",
+            " [Service]",
+            " CPUQuota=150%",
+            " MemoryMax=512M",
+            " IOWeight=200",
+            " TasksMax=256",
+            "",
+            "This protects the host from a runaway service without containers at all  a best practice for bare-metal servers."
+          ]
+        },
+        {
+          "label": "Fork Bomb Protection",
+          "text": [
+            "cgroups can cap the number of processes (PIDs) a group may spawn, preventing fork bombs from taking down the host:",
+            "",
+            " TasksMax=100  in a systemd unit, or",
+            " echo 100 > /sys/fs/cgroup/demo/pids.max  on the cgroupfs",
+            "",
+            "When a cgroup hits pids.max, fork() returns EAGAIN  the bomb is contained to that group."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "troubleshooting",
+      "title": "9. Troubleshooting Common Issues",
+      "description": "Diagnose and fix the most frequent cgroup problems.",
+      "infoBox": {
+        "type": "warning",
+        "content": "When debugging cgroup issues, always check memory.events for oom_kill and cpu.stat for nr_throttled first. These two counters resolve 90% of resource-limit problems."
+      },
+      "items": [
+        {
+          "label": "Issue 1: Process Killed Unexpectedly (OOM)",
+          "text": [
+            "Symptoms: a process dies with no error, or a container restarts in a loop",
+            "",
+            "Causes and fixes:",
+            " Memory limit too low  raise memory.max / --memory",
+            " Memory leak  the process genuinely needs more; profile it",
+            " No swap configured  the kernel can't offload pages; add swap or raise the limit",
+            " Hit pids.max instead  check memory.events vs pids.events",
+            "",
+            "Diagnostic: cat /sys/fs/cgroup/.../memory.events | grep oom_kill"
+          ]
+        },
+        {
+          "label": "Issue 2: CPU Throttling (Slow But Alive)",
+          "text": [
+            "Symptoms: a CPU-bound job runs much slower than expected but never dies",
+            "",
+            "Causes and fixes:",
+            " CPUQuota too low  raise cpu.max / --cpus",
+            " Competing cgroups with higher weight  the scheduler favors them under load",
+            " Wrong period assumption  remember cpu.max is MAX per 100000 us period",
+            "",
+            "Diagnostic: cat /sys/fs/cgroup/.../cpu.stat | grep -E 'throttled|nr_throttled'"
+          ]
+        },
+        {
+          "label": "Issue 3: Controller Not Available",
+          "text": [
+            "Symptoms: writing to memory.max fails with 'No such file or directory' or 'Permission denied'",
+            "",
+            "Causes and fixes:",
+            " Controller not enabled in subtree_control  run: echo +memory > /sys/fs/cgroup/parent/cgroup.subtree_control",
+            " On cgroup v1, the path differs (/sys/fs/cgroup/memory/...)  check stat -fc %T /sys/fs/cgroup",
+            " Delegated cgroup (rootless container)  you can only enable controllers the parent allows",
+            " Docker not mounting the controller  ensure --memory is passed so Docker enables memory"
+          ]
+        },
+        {
+          "label": "Issue 4: Limits Don't Apply",
+          "text": [
+            "Symptoms: you set a limit but the process ignores it",
+            "",
+            "Causes and fixes:",
+            " Wrong cgroup  you wrote to the parent, not the leaf where the PID lives. Check: cat /proc/<pid>/cgroup",
+            " Thread vs process  cgroup.procs moves the whole thread group; use cgroup.threads for individual threads",
+            " systemd override conflict  a unit file or drop-in resets the property. Check: systemctl show <unit> -p MemoryMax",
+            " Inheritance  child cgroups inherit limits only at creation; existing children keep old values"
+          ]
+        },
+        {
+          "label": "Issue 5: cgroup v1 vs v2 Confusion",
+          "text": [
+            "Symptoms: commands from a tutorial don't work on your machine",
+            "",
+            "Cause: your distro uses cgroup v1 (separate hierarchies) while the tutorial assumes v2 (unified).",
+            "Check: stat -fc %T /sys/fs/cgroup",
+            " cgroup2fs  → v2 (use cpu.max, memory.max, io.max)",
+            " tmpfs      → v1 (use /sys/fs/cgroup/cpu/cpu.cfs_quota_us, /sys/fs/cgroup/memory/memory.limit_in_bytes)",
+            "Fix: switch the boot param to v2 (systemd.unified_cgroup_hierarchy=1) or follow v1 syntax."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "summary",
+      "title": "10. Summary and Next Steps",
+      "description": "Key takeaways and what to explore next.",
+      "items": [
+        {
+          "label": "Key Takeaways",
+          "text": [
+            " cgroups limit, account for, and isolate resource usage (CPU, memory, IO, PIDs, devices)",
+            " cgroup v2 uses a unified hierarchy with controller files like cpu.max, memory.max, io.max",
+            " CPU can be capped (cpu.max) or weighted (cpu.weight)",
+            " Memory has hard (memory.max) and soft (memory.high) limits; exceeding hard triggers OOM kill in-group",
+            " IO limits are per-block-device using major:minor numbers",
+            " systemd-run and systemctl set-property are the easy, safe way to manage cgroups",
+            " Docker containers and Kubernetes pods each get their own cgroup  limits map directly to cgroup files",
+            " Troubleshooting: check memory.events (oom_kill) and cpu.stat (nr_throttled) first"
+          ]
+        },
+        {
+          "label": "Commands Cheat Sheet",
+          "table": {
+            "headers": ["Category", "Command", "Description"],
+            "rows": [
+              ["Inspect", "systemd-cgls", "Show the cgroup tree"],
+              ["Inspect", "cat /proc/<pid>/cgroup", "Find a process's cgroup"],
+              ["Create", "systemd-run --scope -p CPUQuota=50% cmd", "Transient CPU-limited scope"],
+              ["Create", "systemd-run --scope -p MemoryMax=100M cmd", "Transient memory-limited scope"],
+              ["Limit", "systemctl set-property svc CPUQuota=150%", "Set CPU quota on a unit"],
+              ["Limit", "systemctl set-property svc MemoryMax=512M", "Set memory cap on a unit"],
+              ["Limit", "echo 50000 100000 > cpu.max", "Cap to 50% of one core (cgroupfs)"],
+              ["Limit", "echo 100M > memory.max", "Cap memory to 100 MB (cgroupfs)"],
+              ["Debug", "cat memory.events", "Show OOM kill count"],
+              ["Debug", "cat cpu.stat", "Show throttling counters"]
+            ]
+          }
+        },
+        {
+          "label": "What to Explore Next",
+          "text": [
+            "Now that you understand cgroups, here are natural next topics to explore:",
+            "",
+            " Docker Deep Dive  how --cpus, --memory, and --pids-limit map to cgroup files",
+            " Kubernetes Resource Management  requests vs limits, QoS classes, and OOM eviction",
+            " systemd Unit Tuning  CPUAffinity, MemoryZSwap, and IODeviceWeight in unit files",
+            " eBPF and BPF Controllers  modern replacements for some cgroup accounting",
+            " Pressure Stall Information (PSI)  detecting memory/IO/CPU pressure before OOM",
+            " cgroup v1 Internals  the legacy per-controller hierarchies and why v2 replaced them",
+            " NRI and crun  how runtimes configure cgroups for containers",
+            "",
+            "The foundation you've built here applies directly to all of these  every container runtime builds on Linux cgroups."
+          ]
+        }
+      ]
+    }
+  ]
+}

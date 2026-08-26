@@ -168,7 +168,7 @@
         },
         {
           "label": "Add Default Route for Internet Access (via Host)",
-          "code": "# Add the host side as the default gateway for red namespace\n# First, assign an IP to the host side of the veth pair\n\n# But wait  we already moved veth-red into the red namespace.\n# The standard pattern is DIFFERENT: one end stays in the HOST namespace,\n# the other end goes into the container/namespace.\n\n# Let's redo this properly in the lab section.\n\n# Quick preview: to give a namespace internet access, you need:\n# 1. A veth pair with one end in the host namespace\n# 2. IP forwarding enabled on the host\n# 3. A default route inside the namespace pointing to the host end\n# 4. NAT/masquerading on the host for the namespace subnet"
+          "code": "# Quick preview: to give a namespace internet access, you need:\n# 1. A veth pair with one end in the HOST namespace (not both in namespaces)\n# 2. IP forwarding enabled on the host\n# 3. A default route inside the namespace pointing to the host end\n# 4. NAT/masquerading on the host for the namespace subnet\n#\n# Note: In this veth-pairs example, both ends were moved into namespaces.\n# For internet access, ONE end must stay in the host namespace.\n# See the Linux Bridge and Hands-On Lab sections for the full setup."
         }
       ]
     },
@@ -187,15 +187,15 @@
         },
         {
           "label": "Create a Bridge and Attach Namespaces",
-          "code": "# Step 1: Create the bridge\nuser@host:~$ sudo ip link add br0 type bridge\nuser@host:~$ sudo ip link set br0 up\nuser@host:~$ sudo ip addr add 10.0.0.1/24 dev br0  # Bridge gets an IP\n\n# Step 2: Create namespaces\nuser@host:~$ sudo ip netns add ns1\nuser@host:~$ sudo ip netns add ns2\nuser@host:~$ sudo ip netns add ns3\n\n# Step 3: Connect each namespace to the bridge\n# For ns1:\nuser@host:~$ sudo ip link add veth-host1 type veth peer name veth-ns1\nuser@host:~$ sudo ip link set veth-host1 master br0\nuser@host:~$ sudo ip link set veth-host1 up\nuser@host:~$ sudo ip link set veth-ns1 netns ns1\nuser@host:~$ sudo ip netns exec ns1 ip addr add 10.0.0.11/24 dev veth-ns1\nuser@host:~$ sudo ip netns exec ns1 ip link set veth-ns1 up\nuser@host:~$ sudo ip netns exec ns1 ip link set lo up\nuser@host:~$ sudo ip netns exec ns1 ip route add default via 10.0.0.1\n\n# For ns2:\nuser@host:~$ sudo ip link add veth-host2 type veth peer name veth-ns2\nuser@host:~$ sudo ip link set veth-host2 master br0\nuser@host:~$ sudo ip link set veth-host2 up\nuser@host:~$ sudo ip link set veth-ns2 netns ns2\nuser@host:~$ sudo ip netns exec ns2 ip addr add 10.0.0.12/24 dev veth-ns2\nuser@host:~$ sudo ip netns exec ns2 ip link set veth-ns2 up\nuser@host:~$ sudo ip netns exec ns2 ip link set lo up\nuser@host:~$ sudo ip netns exec ns2 ip route add default via 10.0.0.1\n\n# For ns3 (same pattern):\nuser@host:~$ sudo ip link add veth-host3 type veth peer name veth-ns3\nuser@host:~$ sudo ip link set veth-host3 master br0\nuser@host:~$ sudo ip link set veth-host3 up\nuser@host:~$ sudo ip link set veth-ns3 netns ns3\nuser@host:~$ sudo ip netns exec ns3 ip addr add 10.0.0.13/24 dev veth-ns3\nuser@host:~$ sudo ip netns exec ns3 ip link set veth-ns3 up\nuser@host:~$ sudo ip netns exec ns3 ip link set lo up\nuser@host:~$ sudo ip netns exec ns3 ip route add default via 10.0.0.1"
+          "code": "# Step 1: Create the bridge\nuser@host:~$ sudo ip link add v-net-0 type bridge\nuser@host:~$ sudo ip link set v-net-0 up\nuser@host:~$ sudo ip addr add 10.0.0.1/24 dev v-net-0  # Bridge gets an IP\n\n# Step 2: Create namespaces\nuser@host:~$ sudo ip netns add red\nuser@host:~$ sudo ip netns add blue\nuser@host:~$ sudo ip netns add green\n\n# Step 3: Connect each namespace to the bridge\n# For red:\nuser@host:~$ sudo ip link add veth-red-br type veth peer name veth-red\nuser@host:~$ sudo ip link set veth-red-br master v-net-0\nuser@host:~$ sudo ip link set veth-red-br up\nuser@host:~$ sudo ip link set veth-red netns red\nuser@host:~$ sudo ip netns exec red ip addr add 10.0.0.11/24 dev veth-red\nuser@host:~$ sudo ip netns exec red ip link set veth-red up\nuser@host:~$ sudo ip netns exec red ip link set lo up\nuser@host:~$ sudo ip netns exec red ip route add default via 10.0.0.1\n\n# For blue:\nuser@host:~$ sudo ip link add veth-blue-br type veth peer name veth-blue\nuser@host:~$ sudo ip link set veth-blue-br master v-net-0\nuser@host:~$ sudo ip link set veth-blue-br up\nuser@host:~$ sudo ip link set veth-blue netns blue\nuser@host:~$ sudo ip netns exec blue ip addr add 10.0.0.12/24 dev veth-blue\nuser@host:~$ sudo ip netns exec blue ip link set veth-blue up\nuser@host:~$ sudo ip netns exec blue ip link set lo up\nuser@host:~$ sudo ip netns exec blue ip route add default via 10.0.0.1\n\n# For green (same pattern):\nuser@host:~$ sudo ip link add veth-green-br type veth peer name veth-green\nuser@host:~$ sudo ip link set veth-green-br master v-net-0\nuser@host:~$ sudo ip link set veth-green-br up\nuser@host:~$ sudo ip link set veth-green netns green\nuser@host:~$ sudo ip netns exec green ip addr add 10.0.0.13/24 dev veth-green\nuser@host:~$ sudo ip netns exec green ip link set veth-green up\nuser@host:~$ sudo ip netns exec green ip link set lo up\nuser@host:~$ sudo ip netns exec green ip route add default via 10.0.0.1"
         },
         {
           "label": "Test Inter-Namespace Connectivity via Bridge",
-          "code": "# ns1 can ping ns2 (via the bridge)\nuser@host:~$ sudo ip netns exec ns1 ping -c 3 10.0.0.12\nPING 10.0.0.12 (10.0.0.12) 56(84) bytes of data.\n64 bytes from 10.0.0.12: icmp_seq=1 ttl=64 time=0.112 ms\n64 bytes from 10.0.0.12: icmp_seq=2 ttl=64 time=0.087 ms\n64 bytes from 10.0.0.12: icmp_seq=3 ttl=64 time=0.093 ms\n\n# ns2 can ping ns3\nuser@host:~$ sudo ip netns exec ns2 ping -c 3 10.0.0.13\n64 bytes from 10.0.0.13: icmp_seq=1 ttl=64 time=0.078 ms\n\n# ns3 can ping the bridge IP (the host side)\nuser@host:~$ sudo ip netns exec ns3 ping -c 3 10.0.0.1\n64 bytes from 10.0.0.1: icmp_seq=1 ttl=64 time=0.051 ms\n\n# All namespaces can talk to each other  but still NO internet"
+          "code": "# red can ping blue (via the bridge)\nuser@host:~$ sudo ip netns exec red ping -c 3 10.0.0.12\nPING 10.0.0.12 (10.0.0.12) 56(84) bytes of data.\n64 bytes from 10.0.0.12: icmp_seq=1 ttl=64 time=0.112 ms\n64 bytes from 10.0.0.12: icmp_seq=2 ttl=64 time=0.087 ms\n64 bytes from 10.0.0.12: icmp_seq=3 ttl=64 time=0.093 ms\n\n# blue can ping green\nuser@host:~$ sudo ip netns exec blue ping -c 3 10.0.0.13\n64 bytes from 10.0.0.13: icmp_seq=1 ttl=64 time=0.078 ms\n\n# green can ping the bridge IP (the host side)\nuser@host:~$ sudo ip netns exec green ping -c 3 10.0.0.1\n64 bytes from 10.0.0.1: icmp_seq=1 ttl=64 time=0.051 ms\n\n# All namespaces can talk to each other  but still NO internet"
         },
         {
           "label": "Check Bridge Forwarding Database",
-          "code": "# See which MAC addresses the bridge has learned\nuser@host:~$ bridge fdb show br br0\n00:00:00:00:00:00 dev veth-host1 master br0 permanent\n2a:3b:4c:5d:6e:7f dev veth-host1 master br0\n3b:4c:5d:6e:7f:80 dev veth-host2 master br0\n4c:5d:6e:7f:80:91 dev veth-host3 master br0\n\n# See the bridge itself\nuser@host:~$ ip link show br0\n4: br0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue ...\n    link/ether 1a:2b:3c:4d:5e:6f\n    inet 10.0.0.1/24 scope global br0\n\n# Show bridge ports and STP status\nuser@host:~$ bridge link show\n5: veth-host1 state UP @(bridge: br0) <BROADCAST,MULTICAST,UP,LOWER_UP>\n6: veth-host2 state UP @(bridge: br0) <BROADCAST,MULTICAST,UP,LOWER_UP>\n7: veth-host3 state UP @(bridge: br0) <BROADCAST,MULTICAST,UP,LOWER_UP>"
+          "code": "# See which MAC addresses the bridge has learned\nuser@host:~$ bridge fdb show br v-net-0\n00:00:00:00:00:00 dev veth-red-br master v-net-0 permanent\n2a:3b:4c:5d:6e:7f dev veth-red-br master v-net-0\n3b:4c:5d:6e:7f:80 dev veth-blue-br master v-net-0\n4c:5d:6e:7f:80:91 dev veth-green-br master v-net-0\n\n# See the bridge itself\nuser@host:~$ ip link show v-net-0\n4: v-net-0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue ...\n    link/ether 1a:2b:3c:4d:5e:6f\n    inet 10.0.0.1/24 scope global v-net-0\n\n# Show bridge ports and STP status\nuser@host:~$ bridge link show\n5: veth-red-br state UP @(bridge: v-net-0) <BROADCAST,MULTICAST,UP,LOWER_UP>\n6: veth-blue-br state UP @(bridge: v-net-0) <BROADCAST,MULTICAST,UP,LOWER_UP>\n7: veth-green-br state UP @(bridge: v-net-0) <BROADCAST,MULTICAST,UP,LOWER_UP>"
         }
       ]
     },
@@ -213,15 +213,15 @@
       "items": [
         {
           "label": "Step-by-Step: Enable Internet Access",
-          "code": "# Step 1: Enable IP forwarding on the host\nuser@host:~$ sudo sysctl -w net.ipv4.ip_forward=1\nnet.ipv4.ip_forward = 1\n\n# Make it permanent\nuser@host:~$ echo 'net.ipv4.ip_forward=1' | sudo tee -a /etc/sysctl.d/99-forwarding.conf\n\n# Step 2: Find your external interface (the one with internet access)\nuser@host:~$ ip route | grep default\ndefault via 192.168.1.1 dev eth0 proto dhcp src 192.168.1.100\n# Our external interface is eth0\n\n# Step 3: Add MASQUERADE rule for the namespace subnet\n# ! -o br0 means: don't masquerade traffic going TO the bridge (inter-namespace traffic stays private)\nuser@host:~$ sudo iptables -t nat -A POSTROUTING -s 10.0.0.0/24 ! -o br0 -j MASQUERADE\n\n# Step 4: Allow forwarding through the bridge\n# Docker often sets FORWARD policy to DROP  check and fix if needed\nuser@host:~$ sudo iptables -A FORWARD -i br0 -j ACCEPT\nuser@host:~$ sudo iptables -A FORWARD -o br0 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT"
+          "code": "# Step 1: Enable IP forwarding on the host\nuser@host:~$ sudo sysctl -w net.ipv4.ip_forward=1\nnet.ipv4.ip_forward = 1\n\n# Make it permanent\nuser@host:~$ echo 'net.ipv4.ip_forward=1' | sudo tee -a /etc/sysctl.d/99-forwarding.conf\n\n# Step 2: Find your external interface (the one with internet access)\nuser@host:~$ ip route | grep default\ndefault via 192.168.1.1 dev eth0 proto dhcp src 192.168.1.100\n# Our external interface is eth0\n\n# Step 3: Add MASQUERADE rule for the namespace subnet\n# ! -o v-net-0 means: don't masquerade traffic going TO the bridge (inter-namespace traffic stays private)\nuser@host:~$ sudo iptables -t nat -A POSTROUTING -s 10.0.0.0/24 ! -o v-net-0 -j MASQUERADE\n\n# Step 4: Allow forwarding through the bridge\n# Docker often sets FORWARD policy to DROP  check and fix if needed\nuser@host:~$ sudo iptables -A FORWARD -i v-net-0 -j ACCEPT\nuser@host:~$ sudo iptables -A FORWARD -o v-net-0 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT"
         },
         {
           "label": "Test Internet Access from a Namespace",
-          "code": "# Test ping to internet (Google DNS)\nuser@host:~$ sudo ip netns exec ns1 ping -c 3 8.8.8.8\nPING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.\n64 bytes from 8.8.8.8: icmp_seq=1 ttl=117 time=12.3 ms\n64 bytes from 8.8.8.8: icmp_seq=2 ttl=117 time=11.8 ms\n64 bytes from 8.8.8.8: icmp_seq=3 ttl=117 time=12.1 ms\n\n# Test DNS resolution (need resolv.conf in the namespace)\nuser@host:~$ sudo ip netns exec ns1 bash -c 'echo \"nameserver 8.8.8.8\" > /etc/resolv.conf'\nuser@host:~$ sudo ip netns exec ns1 ping -c 2 google.com\nPING google.com (142.250.80.78) 56(84) bytes of data.\n64 bytes from 142.250.80.78: icmp_seq=1 ttl=118 time=14.1 ms\n\n# Test HTTP (curl)\nuser@host:~$ sudo ip netns exec ns1 curl -s http://example.com | head -n 3\n<!doctype html>\n<html>\n<head>"
+          "code": "# Test ping to internet (Google DNS)\nuser@host:~$ sudo ip netns exec red ping -c 3 8.8.8.8\nPING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.\n64 bytes from 8.8.8.8: icmp_seq=1 ttl=117 time=12.3 ms\n64 bytes from 8.8.8.8: icmp_seq=2 ttl=117 time=11.8 ms\n64 bytes from 8.8.8.8: icmp_seq=3 ttl=117 time=12.1 ms\n\n# Test DNS resolution (need resolv.conf in the namespace)\nuser@host:~$ sudo ip netns exec red bash -c 'echo \"nameserver 8.8.8.8\" > /etc/resolv.conf'\nuser@host:~$ sudo ip netns exec red ping -c 2 google.com\nPING google.com (142.250.80.78) 56(84) bytes of data.\n64 bytes from 142.250.80.78: icmp_seq=1 ttl=118 time=14.1 ms\n\n# Test HTTP (curl)\nuser@host:~$ sudo ip netns exec red curl -s http://example.com | head -n 3\n<!doctype html>\n<html>\n<head>"
         },
         {
           "label": "Verify the NAT Rules",
-          "code": "# Check masquerade rule\nuser@host:~$ sudo iptables -t nat -L POSTROUTING -n -v\nChain POSTROUTING (policy ACCEPT 0 packets, 0 bytes)\npkts bytes target     prot opt in     out     source               destination\n  47  3940 MASQUERADE  all  --  *      !br0    10.0.0.0/24          0.0.0.0/0\n\n# Check FORWARD rules\nuser@host:~$ sudo iptables -L FORWARD -n -v\nChain FORWARD (policy ACCEPT 0 packets, 0 bytes)\npkts bytes target     prot opt in     out     source               destination\n  23  1932 ACCEPT     all  --  br0    *       0.0.0.0/0            0.0.0.0/0\n  18  2000 ACCEPT     all  --  *      br0     0.0.0.0/0            0.0.0.0/0    ctstate ESTABLISHED,RELATED\n\n# Watch live connection tracking\nuser@host:~$ sudo conntrack -L -n | head -10\nicmp     1 29 src=10.0.0.11 dst=8.8.8.8 type=8 code=0 id=12345 src=8.8.8.8 dst=192.168.1.100 type=0 code=0 id=12345 mark=0 use=1"
+          "code": "# Check masquerade rule\nuser@host:~$ sudo iptables -t nat -L POSTROUTING -n -v\nChain POSTROUTING (policy ACCEPT 0 packets, 0 bytes)\npkts bytes target     prot opt in     out     source               destination\n  47  3940 MASQUERADE  all  --  *      !v-net-0    10.0.0.0/24          0.0.0.0/0\n\n# Check FORWARD rules\nuser@host:~$ sudo iptables -L FORWARD -n -v\nChain FORWARD (policy ACCEPT 0 packets, 0 bytes)\npkts bytes target     prot opt in     out     source               destination\n  23  1932 ACCEPT     all  --  v-net-0    *       0.0.0.0/0            0.0.0.0/0\n  18  2000 ACCEPT     all  --  *      v-net-0     0.0.0.0/0            0.0.0.0/0    ctstate ESTABLISHED,RELATED\n\n# Watch live connection tracking\nuser@host:~$ sudo conntrack -L -n | head -10\nicmp     1 29 src=10.0.0.11 dst=8.8.8.8 type=8 code=0 id=12345 src=8.8.8.8 dst=192.168.1.100 type=0 code=0 id=12345 mark=0 use=1"
         }
       ]
     },
@@ -239,19 +239,27 @@
         },
         {
           "label": "Phase 2: Three Namespaces via Bridge",
-          "code": "# Clean up phase 1\nsudo ip link delete veth-red 2>/dev/null\n\n# Create bridge\nsudo ip link add br0 type bridge\nsudo ip link set br0 up\nsudo ip addr add 10.0.0.1/24 dev br0\n\n# Create additional namespaces\nsudo ip netns add ns1\nsudo ip netns add ns2\nsudo ip netns add ns3\n\n# Connect ns1\nsudo ip link add veth-h1 type veth peer name veth-ns1\nsudo ip link set veth-h1 master br0\nsudo ip link set veth-h1 up\nsudo ip link set veth-ns1 netns ns1\nsudo ip netns exec ns1 ip addr add 10.0.0.11/24 dev veth-ns1\nsudo ip netns exec ns1 ip link set veth-ns1 up\nsudo ip netns exec ns1 ip link set lo up\nsudo ip netns exec ns1 ip route add default via 10.0.0.1\n\n# Connect ns2 (reuse red namespace, renamed)\nsudo ip link add veth-h2 type veth peer name veth-ns2\nsudo ip link set veth-h2 master br0\nsudo ip link set veth-h2 up\nsudo ip link set veth-ns2 netns ns2\nsudo ip netns exec ns2 ip addr add 10.0.0.12/24 dev veth-ns2\nsudo ip netns exec ns2 ip link set veth-ns2 up\nsudo ip netns exec ns2 ip link set lo up\nsudo ip netns exec ns2 ip route add default via 10.0.0.1\n\n# Connect ns3 (reuse blue namespace, renamed)\nsudo ip link add veth-h3 type veth peer name veth-ns3\nsudo ip link set veth-h3 master br0\nsudo ip link set veth-h3 up\nsudo ip link set veth-ns3 netns ns3\nsudo ip netns exec ns3 ip addr add 10.0.0.13/24 dev veth-ns3\nsudo ip netns exec ns3 ip link set veth-ns3 up\nsudo ip netns exec ns3 ip link set lo up\nsudo ip netns exec ns3 ip route add default via 10.0.0.1\n\n# Test inter-namespace connectivity\nsudo ip netns exec ns1 ping -c 2 10.0.0.12\nsudo ip netns exec ns2 ping -c 2 10.0.0.13\nsudo ip netns exec ns3 ping -c 2 10.0.0.1\n\n# All should succeed!"
+          "code": "# Clean up phase 1\nsudo ip netns delete red 2>/dev/null\nsudo ip netns delete blue 2>/dev/null\n\n# Create bridge\nsudo ip link add v-net-0 type bridge\nsudo ip link set v-net-0 up\nsudo ip addr add 10.0.0.1/24 dev v-net-0\n\n# Create namespaces\nsudo ip netns add red\nsudo ip netns add blue\nsudo ip netns add green\n\n# Connect red\nsudo ip link add veth-red-br type veth peer name veth-red\nsudo ip link set veth-red-br master v-net-0\nsudo ip link set veth-red-br up\nsudo ip link set veth-red netns red\nsudo ip netns exec red ip addr add 10.0.0.11/24 dev veth-red\nsudo ip netns exec red ip link set veth-red up\nsudo ip netns exec red ip link set lo up\nsudo ip netns exec red ip route add default via 10.0.0.1\n\n# Connect blue\nsudo ip link add veth-blue-br type veth peer name veth-blue\nsudo ip link set veth-blue-br master v-net-0\nsudo ip link set veth-blue-br up\nsudo ip link set veth-blue netns blue\nsudo ip netns exec blue ip addr add 10.0.0.12/24 dev veth-blue\nsudo ip netns exec blue ip link set veth-blue up\nsudo ip netns exec blue ip link set lo up\nsudo ip netns exec blue ip route add default via 10.0.0.1\n\n# Connect green\nsudo ip link add veth-green-br type veth peer name veth-green\nsudo ip link set veth-green-br master v-net-0\nsudo ip link set veth-green-br up\nsudo ip link set veth-green netns green\nsudo ip netns exec green ip addr add 10.0.0.13/24 dev veth-green\nsudo ip netns exec green ip link set veth-green up\nsudo ip netns exec green ip link set lo up\nsudo ip netns exec green ip route add default via 10.0.0.1\n\n# Test inter-namespace connectivity (ping each other)\nsudo ip netns exec red ping -c 2 10.0.0.12\nsudo ip netns exec blue ping -c 2 10.0.0.13\nsudo ip netns exec green ping -c 2 10.0.0.11\n\n# All should succeed!"
         },
         {
           "label": "Phase 3: Internet Access with NAT",
-          "code": "# Enable IP forwarding\nsudo sysctl -w net.ipv4.ip_forward=1\n\n# Identify external interface\nEXT_IF=$(ip route | grep default | awk '{print $5}')\necho \"External interface: $EXT_IF\"\n\n# Add MASQUERADE rule\nsudo iptables -t nat -A POSTROUTING -s 10.0.0.0/24 ! -o br0 -j MASQUERADE\n\n# Allow FORWARD traffic\nsudo iptables -A FORWARD -i br0 -j ACCEPT\nsudo iptables -A FORWARD -o br0 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT\n\n# Test internet from ns1\nsudo ip netns exec ns1 ping -c 3 8.8.8.8\n\n# Setup DNS and test name resolution\nsudo ip netns exec ns1 bash -c 'echo \"nameserver 8.8.8.8\" > /etc/resolv.conf'\nsudo ip netns exec ns1 ping -c 2 google.com\n\n# Test HTTP(S)\nsudo ip netns exec ns1 curl -s -o /dev/null -w \"%{http_code}\" https://example.com\n# Expected output: 200"
+          "code": "# Enable IP forwarding\nsudo sysctl -w net.ipv4.ip_forward=1\n\n# Identify external interface\nEXT_IF=$(ip route | grep default | awk '{print $5}')\necho \"External interface: $EXT_IF\"\n\n# Add MASQUERADE rule\nsudo iptables -t nat -A POSTROUTING -s 10.0.0.0/24 ! -o v-net-0 -j MASQUERADE\n\n# Allow FORWARD traffic\nsudo iptables -A FORWARD -i v-net-0 -j ACCEPT\nsudo iptables -A FORWARD -o v-net-0 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT\n\n# Test internet from red\nsudo ip netns exec red ping -c 3 8.8.8.8\n\n# Setup DNS and test name resolution\nsudo ip netns exec red bash -c 'echo \"nameserver 8.8.8.8\" > /etc/resolv.conf'\nsudo ip netns exec red ping -c 2 google.com\n\n# Test HTTP(S)\nsudo ip netns exec red curl -s -o /dev/null -w \"%{http_code}\" https://example.com\n# Expected output: 200"
         },
         {
           "label": "Phase 4: Run a Web Server Inside a Namespace",
-          "code": "# Start a simple Python HTTP server in ns1 (background)\nsudo ip netns exec ns1 python3 -m http.server 8888 &\n\n# From ns2, access ns1's web server (via bridge)\nsudo ip netns exec ns2 curl -s http://10.0.0.11:8888 | head -n 5\n\n# From the host, access it via bridge IP\ncurl -s http://10.0.0.11:8888 | head -n 5\n\n# Stop the server when done\nkill %1 2>/dev/null"
+          "code": "# Start a simple Python HTTP server in red (background)\nsudo ip netns exec red python3 -m http.server 8888 &\n\n# From blue, access red's web server (via bridge)\nsudo ip netns exec blue curl -s http://10.0.0.11:8888 | head -n 5\n\n# From the host, access it via bridge IP\ncurl -s http://10.0.0.11:8888 | head -n 5\n\n# Stop the server when done\nkill %1 2>/dev/null"
+        },
+        {
+          "label": "Phase 4.1: Run Docker Nginx Inside the Red Namespace",
+          "code": "# ============================================\n# Phase 4.1: Connect Docker to an existing namespace (red)\n# ============================================\n# Prerequisite: Red namespace must exist from Phase 2\n# If not, recreate it:\n#   sudo ip netns add red\n#   sudo ip link add veth-red-br type veth peer name veth-red\n#   sudo ip link set veth-red-br master v-net-0\n#   sudo ip link set veth-red-br up\n#   sudo ip link set veth-red netns red\n#   sudo ip netns exec red ip addr add 10.0.0.11/24 dev veth-red\n#   sudo ip netns exec red ip link set veth-red up\n#   sudo ip netns exec red ip link set lo up\n#   sudo ip netns exec red ip route add default via 10.0.0.1\n\n# Step 1: Run nginx with --net=none (Docker creates container but NO network)\nsudo docker run -d --name nginx-in-red --net=none nginx:alpine\n\n# Docker created the container but gave it NO network interface\n# The container only has a loopback inside its own namespace\n\n# Step 2: Find the Docker container's network namespace PID\nRED_NS_PID=$(sudo docker inspect nginx-in-red --format '{{.State.Pid}}')\necho \"Container PID: $RED_NS_PID\"\n\n# Step 3: Move the container INTO the red namespace\n# This is the key trick: we move the container's network namespace\n# into our existing red namespace using nsenter + unshare\n\n# Option A (Simpler): Use nsenter to run nginx inside red namespace directly\nsudo docker stop nginx-in-red 2>/dev/null\nsudo docker rm nginx-in-red 2>/dev/null\n\n# Run nginx using ip netns exec (it runs inside the red namespace)\nsudo ip netns exec red nginx -g 'daemon off;' &\nsleep 2\n\n# Step 4: Test - nginx is now running inside red namespace at 10.0.0.11\n# From blue namespace, access nginx\nsudo ip netns exec blue curl -s http://10.0.0.11 | head -n 5\n# Expected: nginx welcome page HTML\n\n# From green namespace, access nginx\nsudo ip netns exec green curl -s http://10.0.0.11 | head -n 5\n# Expected: nginx welcome page HTML\n\n# From the host, access nginx via bridge IP\ncurl -s http://10.0.0.11 | head -n 5\n# Expected: nginx welcome page HTML\n\n# Step 5: See that nginx is running inside the red namespace\nsudo ip netns exec red ps aux | grep nginx\n# Shows: nginx master process and worker processes\n\nsudo ip netns exec red ss -tlnp | grep 80\n# Shows: nginx listening on port 80 inside red namespace\n\n# Stop nginx\nsudo ip netns exec red pkill nginx\n\n# ============================================\n# Alternative: Docker container with --net=none + manual setup\n# ============================================\n\n# Step A: Run container with no network\nsudo docker run -d --name nginx-manual --net=none nginx:alpine\n\n# Step B: Get the container's PID\nMANUAL_PID=$(sudo docker inspect nginx-manual --format '{{.State.Pid}}')\necho \"Container PID: $MANUAL_PID\"\n\n# Step C: Move container's network interface into red namespace\n# First, find the veth pair Docker created\nMANUAL_VETH=$(sudo nsenter -t $MANUAL_PID -n ip link show eth0 | grep -oP 'eth0@if\\K[0-9]+')\necho \"Host-side veth index: $MANUAL_VETH\"\n\n# Move the container into red namespace\nsudo nsenter -t $MANUAL_PID -n ip link set eth0 netns red 2>/dev/null\n\n# Step D: Configure the interface inside red namespace\nsudo ip netns exec red ip addr add 10.0.0.15/24 dev eth0 2>/dev/null\nsudo ip netns exec red ip link set eth0 up\nsudo ip netns exec red ip route add default via 10.0.0.1\n\n# Step E: Now the Docker container is INSIDE the red namespace!\nsudo ip netns exec red curl -s http://10.0.0.11 | head -n 5\n# nginx responds from the red namespace's IP\n\n# Step F: Clean up\nsudo docker stop nginx-manual\nsudo docker rm nginx-manual"
+        },
+        {
+          "label": "Phase 4.2: Docker Container on the Same Bridge (v-net-0)",
+          "code": "# ============================================\n# Phase 4.2: Connect Docker to v-net-0 (same bridge as red/blue/green)\n# ============================================\n# This lets Docker containers talk to red/blue/green namespaces\n\n# Step 1: Run nginx with --net=none (no default network)\nsudo docker run -d --name nginx-bridge --net=none nginx:alpine\n\n# Step 2: Find container PID and veth interface\nNGINX_PID=$(sudo docker inspect nginx-bridge --format '{{.State.Pid}}')\n\n# Step 3: Create a veth pair for this container\nsudo ip link add veth-docker-1 type veth peer name veth-docker-2\n\n# Step 4: Move one end into the container's namespace\nsudo nsenter -t $NGINX_PID -n ip link set veth-docker-2 netns 1\n\n# Step 5: Configure the container side\nsudo nsenter -t $NGINX_PID -n ip addr add 10.0.0.50/24 dev veth-docker-2\nsudo nsenter -t $NGINX_PID -n ip link set veth-docker-2 up\nsudo nsenter -t $NGINX_PID -n ip link set lo up\nsudo nsenter -t $NGINX_PID -n ip route add default via 10.0.0.1\n\n# Step 6: Attach the host side to v-net-0\nsudo ip link set veth-docker-1 master v-net-0\nsudo ip link set veth-docker-1 up\n\n# Step 7: Verify - Docker container is now on the same bridge as red/blue/green!\nbridge link show v-net-0 | grep veth-docker\n# Shows: veth-docker-1 master v-net-0 state UP ...\n\n# Step 8: Test connectivity\n# Docker container (10.0.0.50) can ping red (10.0.0.11)\nsudo nsenter -t $NGINX_PID -n ping -c 2 10.0.0.11\n\n# Red namespace can ping Docker container\nsudo ip netns exec red ping -c 2 10.0.0.50\n\n# Blue can ping Docker container\nsudo ip netns exec blue ping -c 2 10.0.0.50\n\n# Docker container serves nginx on port 80\nsudo nsenter -t $NGINX_PID -n curl -s http://localhost | head -n 5\n\n# Red namespace accesses Docker container's nginx\nsudo ip netns exec blue curl -s http://10.0.0.50 | head -n 5\n\n# Host accesses Docker container's nginx\ncurl -s http://10.0.0.50 | head -n 5\n\n# Step 9: Clean up\nsudo docker stop nginx-bridge\nsudo docker rm nginx-bridge\nsudo ip link del veth-docker-1"
         },
         {
           "label": "Cleanup Everything",
-          "code": "# Delete namespaces (removes all interfaces inside them)\nsudo ip netns delete ns1\nsudo ip netns delete ns2\nsudo ip netns delete ns3\nsudo ip netns delete red 2>/dev/null\nsudo ip netns delete blue 2>/dev/null\n\n# Delete the bridge\nsudo ip link delete br0\n\n# Remove iptables rules (use -D to delete specific rules, or flush)\nsudo iptables -t nat -D POSTROUTING -s 10.0.0.0/24 ! -o br0 -j MASQUERADE 2>/dev/null\nsudo iptables -D FORWARD -i br0 -j ACCEPT 2>/dev/null\nsudo iptables -D FORWARD -o br0 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT 2>/dev/null\n\n# Verify everything is gone\nsudo ip netns list\n# Expected: empty output"
+          "code": "# Clean up Docker containers (Phase 4.1 and 4.2)\nsudo ip netns exec red pkill nginx 2>/dev/null\nsudo docker stop nginx-in-red nginx-manual nginx-bridge 2>/dev/null\nsudo docker rm nginx-in-red nginx-manual nginx-bridge 2>/dev/null\nsudo ip link del veth-docker-1 2>/dev/null\n\n# Delete namespaces (removes all interfaces inside them)\nsudo ip netns delete red 2>/dev/null\nsudo ip netns delete blue 2>/dev/null\nsudo ip netns delete green 2>/dev/null\n\n# Delete the bridge\nsudo ip link delete v-net-0 2>/dev/null\n\n# Remove iptables rules (use -D to delete specific rules, or flush)\nsudo iptables -t nat -D POSTROUTING -s 10.0.0.0/24 ! -o v-net-0 -j MASQUERADE 2>/dev/null\nsudo iptables -D FORWARD -i v-net-0 -j ACCEPT 2>/dev/null\nsudo iptables -D FORWARD -o v-net-0 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT 2>/dev/null\n\n# Verify everything is gone\nsudo ip netns list\n# Expected: empty output"
         }
       ]
     },
@@ -342,8 +350,8 @@
             "Symptoms: ping returns Destination Host Unreachable from inside a namespace",
             "",
             "Causes and fixes:",
-            " Missing default route  sudo ip netns exec ns1 ip route add default via 10.0.0.1",
-            " Interface is DOWN  sudo ip netns exec ns1 ip link show (look for state DOWN)",
+            " Missing default route  sudo ip netns exec red ip route add default via 10.0.0.1",
+            " Interface is DOWN  sudo ip netns exec red ip link show (look for state DOWN)",
             " Wrong IP subnet  ensure both ends of the veth pair are on the same subnet",
             " IP subnet collision  if the host's eth0 uses 10.0.0.0/24, your namespace subnet will conflict; use a different subnet like 10.0.100.0/24",
             ""
@@ -351,7 +359,7 @@
         },
         {
           "label": "Systematic Connectivity Check",
-          "code": "# Verify IPs, interfaces, and routes in sequence\nuser@host:~$ sudo ip netns exec ns1 ip addr show\n# Check that IP is assigned correctly\n\nuser@host:~$ sudo ip netns exec ns1 ip link show\n# Check that interfaces are state UP\n\nuser@host:~$ sudo ip netns exec ns1 ip route show\n# Verify the default route exists (default via 10.0.0.1)"
+          "code": "# Verify IPs, interfaces, and routes in sequence\nuser@host:~$ sudo ip netns exec red ip addr show\n# Check that IP is assigned correctly\n\nuser@host:~$ sudo ip netns exec red ip link show\n# Check that interfaces are state UP\n\nuser@host:~$ sudo ip netns exec red ip route show\n# Verify the default route exists (default via 10.0.0.1)\n\n# For bridge issues, check if the veth is attached and UP:\nuser@host:~$ bridge link show v-net-0\n# Each entry should show state UP (not DOWN or LOWERLAYERDOWN)\n# If missing, the veth was never attached: sudo ip link set veth-red-br master v-net-0"
         },
         {
           "label": "Issue 2: Can Ping Bridge IP but Not the Internet",
@@ -365,7 +373,7 @@
             "   Fix: sudo iptables --policy FORWARD ACCEPT or add explicit rules",
             "3. MASQUERADE rule  verify it exists:",
             "   sudo iptables -t nat -L POSTROUTING -n -v",
-            "   Expected: MASQUERADE all -- * !br0 10.0.0.0/24 0.0.0.0/0",
+            "   Expected: MASQUERADE all -- * !v-net-0 10.0.0.0/24 0.0.0.0/0",
             "4. rp_filter  if you have multiple network paths, strict reverse path filtering can drop packets:",
             "   sudo sysctl net.ipv4.conf.all.rp_filter",
             "   Fix: sudo sysctl -w net.ipv4.conf.all.rp_filter=2 (loose mode)"
@@ -374,15 +382,15 @@
         {
           "label": "Issue 3: Ping Works One Way But Not the Other",
           "text": [
-            "Symptoms: ns1 can ping ns2, but ns2 cannot ping ns1 (asymmetric routing)",
+            "Symptoms: red can ping blue, but blue cannot ping red (asymmetric routing)",
             "",
             "Causes and fixes:",
             " Missing route in one direction  both namespaces need a route to each other",
             " When using a bridge, ensure both veth ends are up and both namespaces have a default gateway",
-            " Check iptables in each namespace: sudo ip netns exec ns1 iptables -L -n  there may be rules dropping traffic",
+            " Check iptables in each namespace: sudo ip netns exec red iptables -L -n  there may be rules dropping traffic",
             " Use tcpdump to trace packets:",
-            "  Terminal 1: sudo ip netns exec ns1 tcpdump -i veth-ns1 -nn icmp",
-            "  Terminal 2: sudo ip netns exec ns2 ping 10.0.0.11"
+            "  Terminal 1: sudo ip netns exec red tcpdump -i veth-red -nn icmp",
+            "  Terminal 2: sudo ip netns exec blue ping 10.0.0.11"
           ]
         },
         {
@@ -402,20 +410,47 @@
             "",
             "Cause: Network namespaces do not inherit the host's /etc/resolv.conf. The namespace starts with no DNS configuration.",
             "Fix: Create a resolv.conf inside the namespace:",
-            "sudo ip netns exec ns1 bash -c 'echo \"nameserver 8.8.8.8\" > /etc/resolv.conf'",
-            "Or copy the host's resolv.conf:",
-            "sudo ip netns exec ns1 bash -c 'cp /etc/resolv.conf /etc/resolv.conf' 2>/dev/null",
+            "sudo ip netns exec red bash -c 'echo \"nameserver 8.8.8.8\" > /etc/resolv.conf'",
+            "Or use bind mount to copy the host's resolv.conf:",
+            "sudo mkdir -p /etc/netns/red",
+            "sudo cp /etc/resolv.conf /etc/netns/red/resolv.conf",
+            "Now: sudo ip netns exec red cat /etc/resolv.conf will show the host's DNS config.",
             "Note: When Docker creates containers, it bind-mounts /etc/resolv.conf from the host into the container's namespace  this is why Docker containers can resolve DNS by default."
           ]
         },
         {
-          "label": "Issue 6: Docker's iptables Rules Break Custom Namespace Traffic",
+          "label": "Issue 6: RTNETLINK answers: File exists",
+          "text": [
+            "Symptoms: Running ip addr add or ip link set returns 'RTNETLINK answers: File exists' or 'Error: ipv4: Address already assigned'",
+            "",
+            "Cause: You already ran the command once. The IP address is already assigned to the interface, or the interface was already moved to the namespace. Running it again will fail because it already exists.",
+            "",
+            "Fix options:",
+            " Option A (Quick): Delete the namespace and recreate it from scratch:",
+            "  sudo ip netns delete red",
+            "  sudo ip netns add red",
+            "  # Then re-run all setup commands",
+            "",
+            " Option B (Targeted): Remove just the IP address first, then re-add:",
+            "  sudo ip netns exec red ip addr del 10.0.0.11/24 dev veth-red",
+            "  sudo ip netns exec red ip addr add 10.0.0.11/24 dev veth-red",
+            "",
+            "Option C (Check first): Always check the current state before applying:",
+            "  sudo ip netns exec red ip addr show   # Check if IP is already there",
+            "  sudo ip netns exec red ip link show    # Check if interface exists and its state",
+            "  bridge link show v-net-0                    # Check if veth is attached to bridge",
+            "",
+            "Prevention: When re-running setup scripts, always delete the namespace first or add 2>/dev/null to suppress errors for non-critical commands."
+          ]
+        },
+        {
+          "label": "Issue 7: Docker's iptables Rules Break Custom Namespace Traffic",
           "text": [
             "Symptoms: Your custom namespace setup stops working after Docker starts",
             "",
             "Cause: Docker Engine aggressively manages iptables rules. It may set the FORWARD policy to DROP and insert its own rules that interfere with your custom namespace traffic.",
             "Fix options:",
-            " Add your rules before Docker's: sudo iptables -I FORWARD 1 -i br0 -j ACCEPT",
+            " Add your rules before Docker's: sudo iptables -I FORWARD 1 -i v-net-0 -j ACCEPT",
             " Disable Docker's iptables management (in /etc/docker/daemon.json):",
             "  { \"iptables\": false }",
             " Or re-apply your rules after restarting Docker"
@@ -451,13 +486,20 @@
               ["Namespace Mgmt", "ip netns delete <name>", "Delete a namespace"],
               ["Namespace Mgmt", "ip netns exec <name> <cmd>", "Run command in namespace"],
               ["veth", "ip link add v0 type veth peer name v1", "Create veth pair"],
-              ["veth", "ip link set veth1 netns ns1", "Move interface to namespace"],
-              ["Bridge", "ip link add br0 type bridge", "Create a bridge"],
-              ["Bridge", "ip link set veth0 master br0", "Attach veth to bridge"],
+              ["veth", "ip link set veth1 netns red", "Move interface to namespace"],
+              ["Bridge", "ip link add v-net-0 type bridge", "Create a bridge"],
+              ["Bridge", "ip link set veth0 master v-net-0", "Attach veth to bridge"],
               ["NAT", "iptables -t nat -A POSTROUTING -s SUBNET -j MASQUERADE", "Enable masquerade"],
               ["NAT", "sysctl -w net.ipv4.ip_forward=1", "Enable IP forwarding"],
               ["Debug", "tcpdump -i any -nn icmp", "Capture ICMP packets"],
-              ["Debug", "bridge fdb show", "Show bridge MAC table"]
+              ["Debug", "bridge fdb show", "Show bridge MAC table"],
+              ["Debug", "bridge link show v-net-0", "Show veth ports attached to bridge"],
+              ["Docker", "docker run --net none <image>", "Run container with no network"],
+              ["Docker", "docker inspect --format '{{.State.Pid}}' <id>", "Get container namespace PID"],
+              ["Docker", "docker network create --subnet=X.X.X.X/24 <name>", "Create custom bridge network"],
+              ["Docker", "nsenter -t <PID> -n ip addr", "View container network from host"],
+              ["Docker", "nsenter -t <PID> -n ip link set eth0 netns red", "Move container into red namespace"],
+              ["Docker", "nsenter -t <PID> -n ping 10.0.0.11", "Test from container to namespace"]
             ]
           }
         },
