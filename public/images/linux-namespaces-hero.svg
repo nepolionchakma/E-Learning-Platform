@@ -1,0 +1,211 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 450" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="450" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0a0a1a"/>
+      <stop offset="0.5" stop-color="#0f172a"/>
+      <stop offset="1" stop-color="#0a0f1e"/>
+    </linearGradient>
+    <linearGradient id="cyanGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#06b6d4"/>
+      <stop offset="1" stop-color="#0891b2"/>
+    </linearGradient>
+    <linearGradient id="blueGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#3b82f6"/>
+      <stop offset="1" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="greenGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#10b981"/>
+      <stop offset="1" stop-color="#059669"/>
+    </linearGradient>
+    <linearGradient id="amberGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#f59e0b"/>
+      <stop offset="1" stop-color="#d97706"/>
+    </linearGradient>
+    <linearGradient id="purpleGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#8b5cf6"/>
+      <stop offset="1" stop-color="#6d28d9"/>
+    </linearGradient>
+    <linearGradient id="pinkGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#ec4899"/>
+      <stop offset="1" stop-color="#be185d"/>
+    </linearGradient>
+    <linearGradient id="redGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#f43f5e"/>
+      <stop offset="1" stop-color="#be123c"/>
+    </linearGradient>
+    <filter id="boxShadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="450" fill="url(#bg)"/>
+
+  <!-- Subtle grid -->
+  <g stroke="#ffffff" stroke-opacity="0.015" stroke-width="1">
+    <line x1="0" y1="60" x2="1200" y2="60"/><line x1="0" y1="120" x2="1200" y2="120"/>
+    <line x1="0" y1="180" x2="1200" y2="180"/><line x1="0" y1="240" x2="1200" y2="240"/>
+    <line x1="0" y1="300" x2="1200" y2="300"/><line x1="0" y1="360" x2="1200" y2="360"/>
+    <line x1="0" y1="420" x2="1200" y2="420"/>
+    <line x1="200" y1="0" x2="200" y2="450"/><line x1="400" y1="0" x2="400" y2="450"/>
+    <line x1="600" y1="0" x2="600" y2="450"/><line x1="800" y1="0" x2="800" y2="450"/>
+    <line x1="1000" y1="0" x2="1000" y2="450"/>
+  </g>
+
+  <!-- ===== LEFT PANEL: ONE LINUX KERNEL ===== -->
+  <g transform="translate(30, 30)" filter="url(#boxShadow)">
+    <rect x="0" y="0" width="330" height="230" rx="8" fill="#1a2332" stroke="#334155" stroke-width="1"/>
+    <rect x="0" y="0" width="330" height="28" rx="8" fill="#334155"/>
+    <rect x="0" y="16" width="330" height="12" fill="#334155"/>
+    <text x="165" y="19" fill="#ffffff" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">ONE LINUX KERNEL</text>
+
+    <!-- CPU / RAM core -->
+    <rect x="12" y="36" width="306" height="60" rx="6" fill="#0f172a" stroke="#3b82f6" stroke-width="0.8"/>
+    <text x="165" y="55" fill="#93c5fd" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">CPU  •  RAM  •  DISK  •  DEVICES</text>
+    <text x="165" y="75" fill="#64748b" font-family="monospace" font-size="7" text-anchor="middle">one shared kernel — no hypervisor</text>
+    <text x="165" y="88" fill="#64748b" font-family="monospace" font-size="7" text-anchor="middle">syscalls: clone()  unshare()  setns()</text>
+
+    <!-- Global resources -->
+    <rect x="12" y="104" width="306" height="118" rx="6" fill="#0f172a" stroke="#475569" stroke-width="0.5"/>
+    <text x="24" y="122" fill="#94a3b8" font-family="monospace" font-size="8" font-weight="bold">GLOBAL RESOURCES (shared):</text>
+
+    <rect x="18" y="130" width="294" height="18" rx="3" fill="#0f172a" stroke="#475569" stroke-width="0.4"/>
+    <text x="165" y="143" fill="#94a3b8" font-family="monospace" font-size="7" text-anchor="middle">process table  •  mounts  •  hostname</text>
+    <rect x="18" y="152" width="294" height="18" rx="3" fill="#0f172a" stroke="#475569" stroke-width="0.4"/>
+    <text x="165" y="165" fill="#94a3b8" font-family="monospace" font-size="7" text-anchor="middle">network stack  •  IPC queues  •  clocks</text>
+    <rect x="18" y="174" width="294" height="18" rx="3" fill="#0f172a" stroke="#475569" stroke-width="0.4"/>
+    <text x="165" y="187" fill="#94a3b8" font-family="monospace" font-size="7" text-anchor="middle">uids/gids  •  capabilities  •  cgroups</text>
+
+    <!-- Arrows out to 8 types -->
+    <line x1="55" y1="222" x2="55" y2="245" stroke="#06b6d4" stroke-width="1.5" stroke-dasharray="4 2"/>
+    <polygon points="55,248 50,240 60,240" fill="#06b6d4"/>
+    <line x1="165" y1="222" x2="165" y2="245" stroke="#06b6d4" stroke-width="1.5" stroke-dasharray="4 2"/>
+    <polygon points="165,248 160,240 170,240" fill="#06b6d4"/>
+    <line x1="275" y1="222" x2="275" y2="245" stroke="#06b6d4" stroke-width="1.5" stroke-dasharray="4 2"/>
+    <polygon points="275,248 270,240 280,240" fill="#06b6d4"/>
+  </g>
+
+  <!-- ===== EIGHT NAMESPACE BOXES (middle) ===== -->
+  <!-- mnt -->
+  <g transform="translate(390, 30)" filter="url(#boxShadow)">
+    <rect x="0" y="0" width="130" height="44" rx="6" fill="#1a2332" stroke="#06b6d4" stroke-width="0.8"/>
+    <rect x="0" y="0" width="8" height="44" rx="4" fill="#06b6d4"/>
+    <text x="65" y="19" fill="#67e8f9" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">MOUNT</text>
+    <text x="65" y="33" fill="#94a3b8" font-family="monospace" font-size="6" text-anchor="middle">filesystem views</text>
+  </g>
+  <!-- pid -->
+  <g transform="translate(530, 30)" filter="url(#boxShadow)">
+    <rect x="0" y="0" width="130" height="44" rx="6" fill="#1a2332" stroke="#10b981" stroke-width="0.8"/>
+    <rect x="0" y="0" width="8" height="44" rx="4" fill="#10b981"/>
+    <text x="65" y="19" fill="#6ee7b7" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">PID</text>
+    <text x="65" y="33" fill="#94a3b8" font-family="monospace" font-size="6" text-anchor="middle">process numbering</text>
+  </g>
+  <!-- net -->
+  <g transform="translate(670, 30)" filter="url(#boxShadow)">
+    <rect x="0" y="0" width="130" height="44" rx="6" fill="#1a2332" stroke="#3b82f6" stroke-width="0.8"/>
+    <rect x="0" y="0" width="8" height="44" rx="4" fill="#3b82f6"/>
+    <text x="65" y="19" fill="#60a5fa" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">NETWORK</text>
+    <text x="65" y="33" fill="#94a3b8" font-family="monospace" font-size="6" text-anchor="middle">NICs, routes, rules</text>
+  </g>
+  <!-- uts -->
+  <g transform="translate(810, 30)" filter="url(#boxShadow)">
+    <rect x="0" y="0" width="130" height="44" rx="6" fill="#1a2332" stroke="#8b5cf6" stroke-width="0.8"/>
+    <rect x="0" y="0" width="8" height="44" rx="4" fill="#8b5cf6"/>
+    <text x="65" y="19" fill="#a78bfa" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">UTS</text>
+    <text x="65" y="33" fill="#94a3b8" font-family="monospace" font-size="6" text-anchor="middle">hostname, domain</text>
+  </g>
+  <!-- ipc -->
+  <g transform="translate(390, 84)" filter="url(#boxShadow)">
+    <rect x="0" y="0" width="130" height="44" rx="6" fill="#1a2332" stroke="#ec4899" stroke-width="0.8"/>
+    <rect x="0" y="0" width="8" height="44" rx="4" fill="#ec4899"/>
+    <text x="65" y="19" fill="#f472b6" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">IPC</text>
+    <text x="65" y="33" fill="#94a3b8" font-family="monospace" font-size="6" text-anchor="middle">queues, semaphores</text>
+  </g>
+  <!-- user -->
+  <g transform="translate(530, 84)" filter="url(#boxShadow)">
+    <rect x="0" y="0" width="130" height="44" rx="6" fill="#1a2332" stroke="#f59e0b" stroke-width="0.8"/>
+    <rect x="0" y="0" width="8" height="44" rx="4" fill="#f59e0b"/>
+    <text x="65" y="19" fill="#fbbf24" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">USER</text>
+    <text x="65" y="33" fill="#94a3b8" font-family="monospace" font-size="6" text-anchor="middle">uid/gid + caps</text>
+  </g>
+  <!-- cgroup -->
+  <g transform="translate(670, 84)" filter="url(#boxShadow)">
+    <rect x="0" y="0" width="130" height="44" rx="6" fill="#1a2332" stroke="#f43f5e" stroke-width="0.8"/>
+    <rect x="0" y="0" width="8" height="44" rx="4" fill="#f43f5e"/>
+    <text x="65" y="19" fill="#fb7185" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">CGROUP</text>
+    <text x="65" y="33" fill="#94a3b8" font-family="monospace" font-size="6" text-anchor="middle">virtualized /proc path</text>
+  </g>
+  <!-- time -->
+  <g transform="translate(810, 84)" filter="url(#boxShadow)">
+    <rect x="0" y="0" width="130" height="44" rx="6" fill="#1a2332" stroke="#22d3ee" stroke-width="0.8"/>
+    <rect x="0" y="0" width="8" height="44" rx="4" fill="#22d3ee"/>
+    <text x="65" y="19" fill="#67e8f9" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">TIME</text>
+    <text x="65" y="33" fill="#94a3b8" font-family="monospace" font-size="6" text-anchor="middle">monotonic offsets</text>
+  </g>
+
+  <!-- ===== MIDDLE CONTAINER PIPELINE ===== -->
+  <!-- Host process -->
+  <g transform="translate(390, 150)" filter="url(#boxShadow)">
+    <rect x="0" y="0" width="550" height="34" rx="6" fill="#0f172a" stroke="#475569" stroke-width="0.6"/>
+    <text x="16" y="21" fill="#e2e8f0" font-family="monospace" font-size="8">docker run → clone(CLONE_NEWNS|NEWPID|NEWNET|NEWUTS|NEWIPC|NEWCGROUP)</text>
+  </g>
+  <g transform="translate(390, 192)" filter="url(#boxShadow)">
+    <rect x="0" y="0" width="550" height="34" rx="6" fill="#0f172a" stroke="#475569" stroke-width="0.6"/>
+    <text x="16" y="21" fill="#e2e8f0" font-family="monospace" font-size="8">pivot_root(rootfs)  →  mount /proc /sys  →  set hostname  →  drop caps</text>
+  </g>
+
+  <!-- arrow down -->
+  <line x1="665" y1="226" x2="665" y2="252" stroke="#10b981" stroke-width="1.5" stroke-dasharray="4 2"/>
+  <polygon points="665,256 659,248 671,248" fill="#10b981"/>
+
+  <!-- ===== RIGHT PANEL: CONTAINER VIEW (isolated) ===== -->
+  <g transform="translate(390, 262)" filter="url(#boxShadow)">
+    <rect x="0" y="0" width="550" height="128" rx="8" fill="#1a2332" stroke="#10b981" stroke-width="1"/>
+    <rect x="0" y="0" width="550" height="26" rx="8" fill="#059669"/>
+    <rect x="0" y="14" width="550" height="12" fill="#059669"/>
+    <text x="275" y="17" fill="#ffffff" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">INSIDE THE CONTAINER (its own private world)</text>
+
+    <rect x="12" y="34" width="160" height="86" rx="6" fill="#0f172a" stroke="#10b981" stroke-width="0.5"/>
+    <text x="92" y="52" fill="#34d399" font-family="monospace" font-size="8" font-weight="bold" text-anchor="middle">PID 1 = app</text>
+    <text x="92" y="66" fill="#64748b" font-family="monospace" font-size="7" text-anchor="middle">own process tree</text>
+    <text x="92" y="78" fill="#64748b" font-family="monospace" font-size="7" text-anchor="middle">own /proc</text>
+    <text x="92" y="90" fill="#64748b" font-family="monospace" font-size="7" text-anchor="middle">own hostname</text>
+    <text x="92" y="102" fill="#64748b" font-family="monospace" font-size="7" text-anchor="middle">own netns + IPC</text>
+    <text x="92" y="114" fill="#64748b" font-family="monospace" font-size="7" text-anchor="middle">own uid 0 (mapped)</text>
+
+    <rect x="182" y="34" width="356" height="86" rx="6" fill="#0f172a" stroke="#475569" stroke-width="0.5"/>
+    <text x="194" y="52" fill="#94a3b8" font-family="monospace" font-size="8" font-weight="bold">HOST SEES THE SAME PROCESS AS:</text>
+    <rect x="194" y="60" width="332" height="16" rx="3" fill="#0f172a" stroke="#475569" stroke-width="0.4"/>
+    <text x="360" y="72" fill="#64748b" font-family="monospace" font-size="7" text-anchor="middle">ps shows host PID 3456 — not 1</text>
+    <rect x="194" y="80" width="332" height="16" rx="3" fill="#0f172a" stroke="#475569" stroke-width="0.4"/>
+    <text x="360" y="92" fill="#64748b" font-family="monospace" font-size="7" text-anchor="middle">hostname &amp; network stack untouched</text>
+    <rect x="194" y="100" width="332" height="16" rx="3" fill="#0f172a" stroke="#475569" stroke-width="0.4"/>
+    <text x="360" y="112" fill="#64748b" font-family="monospace" font-size="7" text-anchor="middle">cgroup limits keep it in its lane</text>
+  </g>
+
+  <!-- ===== TOOLS STRIP (bottom left area) ===== -->
+  <g transform="translate(30, 275)" filter="url(#boxShadow)">
+    <rect x="0" y="0" width="330" height="115" rx="8" fill="#1a2332" stroke="#334155" stroke-width="1"/>
+    <rect x="0" y="0" width="330" height="26" rx="8" fill="#0f172a"/>
+    <rect x="0" y="14" width="330" height="12" fill="#0f172a"/>
+    <text x="165" y="17" fill="#ffffff" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" text-anchor="middle">TOOLS &amp; API</text>
+
+    <rect x="12" y="34" width="306" height="18" rx="3" fill="#0f172a" stroke="#06b6d4" stroke-width="0.5"/>
+    <text x="165" y="47" fill="#67e8f9" font-family="monospace" font-size="7.5" text-anchor="middle">ls -l /proc/PID/ns/  •  lsns  •  readlink</text>
+    <rect x="12" y="56" width="306" height="18" rx="3" fill="#0f172a" stroke="#8b5cf6" stroke-width="0.5"/>
+    <text x="165" y="69" fill="#a78bfa" font-family="monospace" font-size="7.5" text-anchor="middle">unshare --mount --uts --ipc --pid --net</text>
+    <rect x="12" y="78" width="306" height="18" rx="3" fill="#0f172a" stroke="#10b981" stroke-width="0.5"/>
+    <text x="165" y="91" fill="#34d399" font-family="monospace" font-size="7.5" text-anchor="middle">nsenter -t PID -a  •  ip netns add</text>
+    <rect x="12" y="100" width="306" height="10" rx="3" fill="#0f172a" stroke="#475569" stroke-width="0.3"/>
+    <text x="165" y="108" fill="#64748b" font-family="monospace" font-size="6.5" text-anchor="middle">persist: mount --bind /proc/PID/ns/xxx /run/name</text>
+  </g>
+
+  <!-- ===== SECURITY STRIP (bottom middle-left) ===== -->
+  <g transform="translate(30, 398)" filter="url(#boxShadow)">
+    <rect x="0" y="0" width="330" height="24" rx="6" fill="#0f172a" stroke="#f59e0b" stroke-width="0.6"/>
+    <text x="165" y="15" fill="#fbbf24" font-family="monospace" font-size="8" text-anchor="middle">⚠ isolation ≠ security: add caps drop, seccomp, MAC</text>
+  </g>
+
+  <!-- ===== TITLE ===== -->
+  <text x="665" y="430" fill="#ffffff" font-family="system-ui, sans-serif" font-size="20" font-weight="bold" text-anchor="middle" letter-spacing="1">Linux Namespaces: The Complete A–Z Guide</text>
+  <text x="665" y="446" fill="#06b6d4" font-family="monospace" font-size="11" text-anchor="middle">mount • PID • network • UTS • IPC • user • cgroup • time</text>
+</svg>

@@ -1,0 +1,1224 @@
+{
+  "title": "Linux Namespaces: The Complete A–Z Guide (All 8 Types)",
+  "icon": "🧩",
+  "description": "A comprehensive end-to-end guide to all 8 Linux namespace types. Covers what namespaces are, how the kernel isolates views of mount, PID, network, UTS, IPC, user, cgroup, and time, observing namespaces via /proc/PID/ns and lsns, hands-on labs with unshare and nsenter, persistent namespaces, the clone/unshare/setns kernel API, how Docker and Kubernetes combine namespaces, security caveats, troubleshooting, and a command cheat sheet.",
+  "author": "E-Learning Platform",
+  "date": "2026-09-03",
+  "readTime": "50 min read",
+  "heroImage": "/images/linux-namespaces-hero.svg",
+  "heroAlt": "Linux namespaces architecture diagram showing one Linux kernel hosting eight isolated namespace types - mount, PID, network, UTS, IPC, user, cgroup, and time - that give every container its own private view of the system",
+  "sections": [
+    {
+      "id": "introduction",
+      "title": "1. Introduction to Linux Namespaces",
+      "description": "What namespaces are and why every DevOps engineer must understand them.",
+      "content": [
+        "Linux namespaces are the kernel feature that makes containers possible. When you run docker run, Kubernetes creates a pod, or systemd starts a sandboxed service, what is really happening is the kernel giving that workload its own private view of the system. Namespaces are that private view.",
+        "A namespace wraps one global kernel resource and presents an isolated copy of it to a group of processes. Two processes that live in different namespaces can have different hostnames, different process trees, different network stacks, and different filesystem mount points, even though they run on the very same kernel.",
+        "This guide is the umbrella companion to our deep dives on Linux Network Namespaces and Linux Control Groups. Here you get the full A-Z picture: all 8 namespace types, how they are created and joined, how to observe them, and how Docker and Kubernetes combine them."
+      ],
+      "items": [
+        {
+          "label": "Prerequisites",
+          "text": [
+            "A Linux machine (physical, VM, or cloud instance) with root/sudo access",
+            "Kernel 4.6+ for the cgroup namespace and 5.6+ to experiment with the time namespace",
+            "util-linux installed (provides unshare and nsenter) and iproute2 (ip, lsns)",
+            "On Windows? Use WSL2 (wsl --install -d Ubuntu) and run everything in the Ubuntu terminal - it ships a real Linux kernel, so every lab here works",
+            "capsh (package libcap2-bin) - only needed for the capability check in Chapter 10; skip it if the package is missing",
+            "Basic familiarity with the Linux command line",
+            "No Docker required - we work with raw namespaces so you can see the kernel mechanism directly"
+          ]
+        },
+        {
+          "label": "What You Will Learn",
+          "text": [
+            "What namespaces isolate and what they do NOT isolate",
+            "All 8 namespace types: mount, PID, network, UTS, IPC, user, cgroup, time",
+            "How to observe namespaces with /proc/PID/ns and lsns",
+            "How to create and enter namespaces with unshare and nsenter",
+            "How the kernel API (clone, unshare, setns) creates and joins them",
+            "How to make namespaces persistent with bind mounts",
+            "How Docker and Kubernetes combine namespaces into containers",
+            "Security caveats and how to troubleshoot namespace problems"
+          ]
+        }
+      ],
+      "infoBox": {
+        "type": "info",
+        "content": "Namespaces answer WHAT a process can see; cgroups answer HOW MUCH it can use. Namespaces give an isolated view of resources (PIDs, mounts, network), while cgroups limit actual consumption (CPU, memory, IO). Together they are the two pillars of container isolation."
+      }
+    },
+    {
+      "id": "the-big-idea",
+      "title": "2. The Big Idea: One Kernel, Many Private Worlds",
+      "description": "Understand the mental model before touching any command.",
+      "content": [
+        "Every Linux process sees the system through a set of namespaces. By default, every process belongs to the same set of namespaces: the ones created at boot. When the kernel boots, it creates one namespace of each type, and PID 1 (systemd) lives in all of them. Every normal process you start simply inherits that same set.",
+        "A container is just a set of processes that was given NEW namespaces at creation time, plus some cgroup limits and a root filesystem. The trick is that namespace creation happens at fork or clone time - a process cannot change its own namespaces, but it can create new ones for its children.",
+        "Inside the container, the process tree starts fresh with PID 1, the network stack is empty until you add interfaces, and the filesystem can be swapped out with a rootfs. To the processes inside, it genuinely looks like a small dedicated machine - because the kernel shows them only their own private copies of each global resource."
+      ],
+      "items": [
+        {
+          "label": "Namespaces Are Views, Not Limits",
+          "text": [
+            "A namespace does not limit CPU, memory, or disk. It only changes what the process can SEE.",
+            "Two containers can each believe they are PID 1 and bind port 80 - because each sees its own PID table and its own network stack.",
+            "But they share the same kernel, the same physical RAM, and the same CPUs. That sharing is why cgroups must sit next to namespaces.",
+            "Namespaces are hierarchical for some types: child namespaces exist inside parent namespaces and can be nested (e.g., a PID namespace inside another PID namespace).",
+            "Membership is per-process: each process belongs to exactly one namespace of each type. A process joins its parent's namespaces unless the parent explicitly created new ones at fork."
+          ]
+        },
+        {
+          "label": "History in One Line",
+          "text": [
+            "1991: chroot (2) - isolates the filesystem root only",
+            "2002: mount namespaces (CLONE_NEWNS, kernel 2.4.19) - the first real namespace, born from the need to give each chroot its own mounts",
+            "2006-2007: UTS, IPC, and PID namespaces arrive (kernels 2.6.19-2.6.24)",
+            "2007-2008: network namespaces arrive (2.6.24); LXC and early Docker build on them",
+            "2013: user namespaces (3.8) allow unprivileged containers - root inside, normal user outside",
+            "2016: cgroup namespace (4.6)",
+            "2020: time namespace (5.6) - the newest member of the family",
+            "",
+            "Docker (2013), Kubernetes pods, and systemd sandboxes all layer on top of this same kernel machinery."
+          ]
+        }
+      ],
+      "infoBox": {
+        "type": "tip",
+        "content": "Mental model: imagine a window. The window frame is the namespace - it defines what part of the world you can see. Moving the frame does not shrink the world, it just changes your view of it. Containers are processes standing at different windows."
+      }
+    },
+    {
+      "id": "the-8-types",
+      "title": "3. The 8 Namespace Types at a Glance",
+      "description": "The full map you will explore one by one.",
+      "content": [
+        "Since kernel 5.6, Linux has exactly 8 namespace types. Each one isolates a different global resource and is created with a matching CLONE_NEW* flag passed to clone (2), unshare (2), or setns (2)."
+      ],
+      "items": [
+        {
+          "label": "Namespace Type Map",
+          "table": {
+            "headers": [
+              "Namespace",
+              "Isolates",
+              "clone flag",
+              "Kernel since",
+              "See it in /proc"
+            ],
+            "rows": [
+              [
+                "Mount (mnt)",
+                "Filesystem mount points, mount propagation",
+                "CLONE_NEWNS",
+                "2.4.19",
+                "/proc/PID/ns/mnt"
+              ],
+              [
+                "UTS",
+                "Hostname and NIS domain name",
+                "CLONE_NEWUTS",
+                "2.6.19",
+                "/proc/PID/ns/uts"
+              ],
+              [
+                "IPC",
+                "System V IPC and POSIX message queues",
+                "CLONE_NEWIPC",
+                "2.6.19",
+                "/proc/PID/ns/ipc"
+              ],
+              [
+                "PID",
+                "Process ID numbering",
+                "CLONE_NEWPID",
+                "2.6.24",
+                "/proc/PID/ns/pid"
+              ],
+              [
+                "Network (net)",
+                "Network interfaces, routes, firewall, sockets",
+                "CLONE_NEWNET",
+                "2.6.24",
+                "/proc/PID/ns/net"
+              ],
+              [
+                "User",
+                "User and group ID numbering, capabilities",
+                "CLONE_NEWUSER",
+                "3.8",
+                "/proc/PID/ns/user"
+              ],
+              [
+                "cgroup",
+                "Virtualized /proc/PID/cgroup view",
+                "CLONE_NEWCGROUP",
+                "4.6",
+                "/proc/PID/ns/cgroup"
+              ],
+              [
+                "Time",
+                "CLOCK_MONOTONIC and CLOCK_BOOTTIME offsets",
+                "CLONE_NEWTIME",
+                "5.6",
+                "/proc/PID/ns/time"
+              ]
+            ]
+          }
+        },
+        {
+          "label": "Who Creates Namespaces in Real Life",
+          "table": {
+            "headers": [
+              "Tool",
+              "What it does with namespaces"
+            ],
+            "rows": [
+              [
+                "Docker / containerd",
+                "Creates mnt, UTS, IPC, PID, net, and cgroup namespaces for every container (user ns optional)"
+              ],
+              [
+                "Kubernetes (kubelet)",
+                "Pause container creates the pod's shared network/UTS/IPC namespaces; containers join them"
+              ],
+              [
+                "systemd",
+                "PrivateTmp, ProtectSystem, and service sandboxing use mount + user namespaces"
+              ],
+              [
+                "bwrap / Flatpak / Snap",
+                "Unprivileged sandboxing with user + mount namespaces"
+              ],
+              [
+                "unshare / nsenter",
+                "The raw CLI tools you will use in this guide to experiment"
+              ]
+            ]
+          }
+        }
+      ],
+      "infoBox": {
+        "type": "warning",
+        "content": "You will sometimes read that there are 7 namespace types. That text was written before kernel 5.6 added the time namespace. Since 2020 there are 8. Count the /proc/PID/ns directory to confirm on your own machine."
+      }
+    },
+    {
+      "id": "observing-namespaces",
+      "title": "4. Observing Namespaces: /proc/PID/ns and lsns",
+      "description": "Before creating anything, learn to see what is already there.",
+      "content": [
+        "Every process exposes its namespaces as symlinks under /proc/PID/ns/. Reading these symlinks is the fastest way to understand namespace identity, and the inode number is the key to comparing them."
+      ],
+      "items": [
+        {
+          "label": "Look at Your Own Namespaces",
+          "code": "# Show the namespace symlinks for the current shell\nuser@host:~$ ls -l /proc/$$/ns/\ntotal 0\nlrwxrwxrwx 1 root root 0 Sep  3 10:00 cgroup -> 'cgroup:[4026531835]'\nlrwxrwxrwx 1 root root 0 Sep  3 10:00 ipc -> 'ipc:[4026531839]'\nlrwxrwxrwx 1 root root 0 Sep  3 10:00 mnt -> 'mnt:[4026531840]'\nlrwxrwxrwx 1 root root 0 Sep  3 10:00 net -> 'net:[4026531993]'\nlrwxrwxrwx 1 root root 0 Sep  3 10:00 pid -> 'pid:[4026531836]'\nlrwxrwxrwx 1 root root 0 Sep  3 10:00 pid_for_children -> 'pid:[4026531836]'\nlrwxrwxrwx 1 root root 0 Sep  3 10:00 time -> 'time:[4026531834]'\nlrwxrwxrwx 1 root root 0 Sep  3 10:00 time_for_children -> 'time:[4026531834]'\nlrwxrwxrwx 1 root root 0 Sep  3 10:00 user -> 'user:[4026531837]'\nlrwxrwxrwx 1 root root 0 Sep  3 10:00 uts -> 'uts:[4026531838]'"
+        },
+        {
+          "label": "The Inode Rule (Most Important Observation Skill)",
+          "text": [
+            "Two processes share a namespace of a given type IF AND ONLY IF readlink on the matching /proc/PID/ns file returns the same inode number.",
+            "The numbers (4026531838, etc.) are the inode numbers of the namespace objects in the namespace filesystem (nsfs). They are unique system-wide.",
+            "Example: run the same shell twice and compare - the PIDs differ but the namespace inodes are identical because both shells were started normally.",
+            "When you create a container, its PID 1 will have different inode numbers than the host for every isolated type - and identical inodes for any type you chose NOT to isolate.",
+            "",
+            "Compare two processes quickly:",
+            "readlink /proc/1234/ns/pid  vs  readlink /proc/5678/ns/pid"
+          ]
+        },
+        {
+          "label": "List Namespaces System-Wide with lsns",
+          "code": "# List every namespace on the system (needs root for full info)\nuser@host:~$ sudo lsns\n        NS TYPE   NPROCS   PID  USER COMMAND\n4026531835 cgroup    211     1 root /sbin/init\n4026531836 pid       211     1 root /sbin/init\n4026531837 user      211     1 root /sbin/init\n4026531838 uts       211     1 root /sbin/init\n4026531839 ipc       211     1 root /sbin/init\n4026531840 mnt       155     1 root /sbin/init\n4026531993 net       211     1 root /sbin/init\n\n# Only network namespaces, one line per namespace\nuser@host:~$ sudo lsns -t net\n        NS TYPE NPROCS   PID USER COMMAND\n4026531993 net     211     1 root /sbin/init\n4026532100 net       1  2345 root sleep 9999\n\n# Which namespaces does a specific process live in?\nuser@host:~$ sudo lsns -p 2345\n        NS TYPE NPROCS   PID USER COMMAND\n4026532100 net       1  2345 root sleep 9999\n4026531835 cgroup    211     1 root /sbin/init\n4026531836 pid       211     1 root /sbin/init\n# ..."
+        }
+      ],
+      "infoBox": {
+        "type": "tip",
+        "content": "Note the special files: pid_for_children and time_for_children show the namespace that CHILDREN will be placed into, which is different from the process's own PID/time namespace. If a process calls unshare(CLONE_NEWPID) without fork, only its future children get the new namespace."
+      }
+    },
+    {
+      "id": "uts-namespace",
+      "title": "5. UTS Namespace: Private Hostnames",
+      "description": "The easiest namespace to see working - change the hostname in isolation.",
+      "content": [
+        "UTS (UNIX Time-Sharing) namespaces isolate two things: the hostname (uname -n / sethostname) and the NIS domain name (uname -d / setdomainname). Inside a UTS namespace you can rename the machine without touching the real hostname of the host - which is exactly how containers get their own names."
+      ],
+      "items": [
+        {
+          "label": "Lab: Give a Child Shell Its Own Hostname",
+          "code": "# 1. Start a shell in a new UTS namespace\nuser@host:~$ sudo unshare --uts /bin/bash\nroot@host:/# hostname\nhost\n\n# 2. Change the hostname INSIDE the namespace\nroot@host:/# hostname container-01\nroot@host:/# hostname\ncontainer-01\n\n# 3. Prove the namespace contains the change: open another terminal on the HOST\nuser@host:~$ hostname\nhost        <-- unchanged!\n\n# 4. Back inside the namespace, check the UTS namespace inode changed\nroot@container-01:/# readlink /proc/self/ns/uts\nuts:[4026532201]   <-- different from the host's 4026531838"
+        },
+        {
+          "label": "Why hostname Changes Matter",
+          "text": [
+            "hostname -f is used by many daemons to construct their identity, so per-container hostnames keep logs, metrics, and mDNS distinguishable.",
+            "Docker maps this directly: docker run --hostname web1 nginx runs inside a fresh UTS namespace.",
+            "The change is visible only inside the namespace - the host and other containers never see it.",
+            "The same lab works with the NIS domain name: domainname mydomain inside the namespace affects only processes in it."
+          ]
+        }
+      ],
+      "infoBox": {
+        "type": "tip",
+        "content": "A bare unshare without --fork is fine for UTS, IPC, mount, and network namespaces because the namespace is created for the calling process itself. PID and time namespaces are special: their effect applies to CHILDREN, so unshare --pid and unshare --time must be combined with --fork."
+      }
+    },
+    {
+      "id": "ipc-namespace",
+      "title": "6. IPC Namespace: Private Message Queues",
+      "description": "Isolate System V IPC objects and POSIX message queues.",
+      "content": [
+        "An IPC namespace gives processes their own set of System V IPC objects: semaphores, shared memory segments, and message queues, plus POSIX message queues. Two containers can each create queue key 1234 without colliding, because the keys are resolved inside each namespace."
+      ],
+      "items": [
+        {
+          "label": "Lab: Prove IPC Isolation",
+          "code": "# 1. On the host, create a message queue with key 1234\nuser@host:~$ ipcmk -Q 1234\nMessage queue id: 0\n\n# Confirm it is visible on the host\nuser@host:~$ ipcs -q\n\n------ Message Queues --------\nkey        msqid      owner      perms      used-bytes   messages\n0x000004d2 0          root       644        0            0\n\n# 2. Enter a new IPC namespace and try to see the same queue\nuser@host:~$ sudo unshare --ipc /bin/bash\nroot@host:/# ipcs -q\n\n------ Message Queues --------\nkey        msqid      owner      perms      used-bytes   messages\n# (empty - the host queue is invisible here)\n\n# 3. Create a queue with the SAME key inside the namespace - no conflict\nroot@host:/# ipcmk -Q 1234\nMessage queue id: 0\nroot@host:/# ipcs -q\nkey        msqid      owner      perms      used-bytes   messages\n0x000004d2 0          root       644        0            0\n\n# Exit; the queue inside the namespace dies with it (unless a process keeps it alive)\nroot@host:/# exit"
+        },
+        {
+          "label": "Docker Mapping",
+          "text": [
+            "Every container gets its own IPC namespace by default, so databases and app servers inside containers cannot clash on SysV semaphores.",
+            "docker run --ipc=host makes the container share the host IPC namespace - useful for debugging, dangerous for isolation.",
+            "docker run --ipc=shareable:<name> lets a group of containers share one IPC namespace so they can use shared memory with each other."
+          ]
+        }
+      ],
+      "infoBox": {
+        "type": "warning",
+        "content": "IPC isolation does NOT cover Unix domain sockets (/run/*.sock), TCP sockets, or regular files - those live in the filesystem and network namespace worlds. IPC namespaces cover only SysV IPC objects and POSIX mqueues."
+      }
+    },
+    {
+      "id": "mount-namespace",
+      "title": "7. Mount Namespace: Private Filesystem Views",
+      "description": "The oldest namespace and the one that makes chroot-style isolation real.",
+      "content": [
+        "A mount namespace gives each process its own mount table: its own view of which filesystems are mounted where, and its own mount propagation rules. This is the namespace that lets a container mount /proc, /sys, and a fresh /tmp without those mounts leaking into the host - and lets the host mount new disks without the container seeing them.",
+        "Everything mounted inside a mount namespace is private to it unless it is marked as shared/propagated. When a process starts a new mount namespace, it inherits a COPY of its parent's mount table - later mount and umount calls in either namespace do not affect the other."
+      ],
+      "items": [
+        {
+          "label": "Lab: Mounts Stay Inside the Namespace",
+          "code": "# 1. Check a mount point on the host\nuser@host:~$ mountpoint /mnt\n/mnt is not a mountpoint\n\n# 2. Enter a new mount namespace with a private /tmp\nuser@host:~$ sudo unshare --mount --mount-proc /bin/bash\nroot@host:/# mountpoint /tmp\n/tmp is a mountpoint\n\n# 3. Look at the fresh /proc inside (mounted just for this namespace)\nroot@host:/# head -1 /proc/self/status\nName:\tbash\n\n# 4. Prove isolation: in another host terminal\nuser@host:~$ mountpoint /tmp\n/tmp is not a mountpoint    <-- host unaffected\n\n# 5. Inside, unmount something - again host does not care\nroot@host:/# umount /tmp\nroot@host:/# exit"
+        },
+        {
+          "label": "Mount Propagation: shared vs private",
+          "text": [
+            "By default, mount namespaces are cloned with propagation events from their parents - this is why a USB stick mounted on the host can appear inside a container.",
+            "A child mount namespace created with unshare --mount starts as a private copy: later host mounts do NOT appear inside it unless the original mounts were shared.",
+            "systemd and Docker mark /, /proc, and /sys appropriately using shared, slave, and private flags so that some mounts propagate and others stay contained.",
+            "Every docker container gets its own mount namespace; the container's rootfs, /proc, /sys, and volumes are mounted inside it.",
+            "Slave is the one-way door: the host (master) sends mount events in, but mounts made inside the slave never propagate back - how containers safely share /proc, /sys, and volumes.",
+            "Shared is two-way: correct between trusted mounts of one host, dangerous across containers.",
+            "Check propagation: findmnt -o TARGET,PROPAGATION /"
+          ]
+        },
+        {
+          "label": "The 4 Propagation Modes",
+          "table": {
+            "headers": [
+              "Mode",
+              "Meaning",
+              "Typical use"
+            ],
+            "rows": [
+              [
+                "shared",
+                "Mount/umount events propagate BOTH ways",
+                "Host root /, /proc, /sys - lets hotplug events reach containers"
+              ],
+              [
+                "slave",
+                "Receives mount events from its master, sends none back",
+                "The one-way door: a container's /proc, /sys, and volume bind mounts"
+              ],
+              [
+                "private",
+                "No propagation in either direction",
+                "unshare --mount default; per-container tmpfs and rootfs"
+              ],
+              [
+                "unbindable",
+                "Like private, and cannot even be a bind-mount source",
+                "Blocks double-mount escapes on sensitive paths"
+              ]
+            ]
+          }
+        },
+        {
+          "label": "Lab: Shared on the Host, Private Inside",
+          "code": "# Your real root filesystem is SHARED - systemd needs to spread mount\n# events (hotplug, new disks) to every service that cares:\nuser@host:~$ findmnt -o TARGET,PROPAGATION /\nTARGET PROPAGATION\n/      shared\n\n# unshare --mount creates the namespace AND makes every mount PRIVATE:\nuser@host:~$ sudo unshare --mount findmnt -o TARGET,PROPAGATION /\nTARGET PROPAGATION\n/      private\n\n# This one command answers the classic question - why don't containers\n# see the disk I attach to the host? Because their mounts are private\n# (rprivate). Docker re-marks only the shares it WANTS (volumes, /proc,\n# /sys) as slave so the host can still update them one-way."
+        },
+        {
+          "label": "Why --mount-proc Matters for PID Namespaces",
+          "text": [
+            "The ps and top tools read the /proc filesystem, not the kernel directly.",
+            "Inside a fresh PID namespace, the OLD /proc still shows ALL host processes - defeating the illusion.",
+            "Mounting a fresh /proc inside the new PID namespace (mount -t proc proc /proc, or unshare --mount-proc) makes ps show only the processes of this PID namespace.",
+            "This pairing of a PID namespace (new process IDs) + mount namespace (new /proc) is exactly how container runtimes present a clean process list."
+          ]
+        }
+      ],
+      "subsections": [
+        {
+          "title": "Mount Namespaces + chroot = Mini Root Filesystem",
+          "content": "The mount namespace is the resource-isolation engine behind chroot-style tricks. Combined with a rootfs directory (like an extracted Alpine or Debian rootfs), a mount namespace lets a process believe it has an entire dedicated machine: pivot_root switches the real root, and then /proc, /dev, and /sys are mounted fresh inside the namespace. This is precisely how runc and containerd build a container's filesystem view."
+        }
+      ],
+      "infoBox": {
+        "type": "info",
+        "content": "Terminology: unshare --mount (or -m) creates a new mount namespace AND makes all mounts private (mount --make-rprivate) so host changes stop propagating in. This one flag is why containers do not see every disk you attach to the host."
+      }
+    },
+    {
+      "id": "pid-namespace",
+      "title": "8. PID Namespace: Process #1 Lives Here",
+      "description": "The namespace that gives every container its own init process.",
+      "content": [
+        "A PID namespace provides processes with an independent view of the process-ID space. The first process created inside a new PID namespace becomes PID 1 in that namespace, exactly like init on a booted machine. Processes in the namespace can only see (and signal) other processes in the same namespace or its descendants - the host's thousands of processes are invisible.",
+        "This is the source of the famous container illusion: ps inside a container shows a tiny process list starting at PID 1, even though the same processes have large host PIDs."
+      ],
+      "items": [
+        {
+          "label": "Lab: Inside a New PID Namespace",
+          "code": "# 1. Create a PID namespace, a child, and mount a fresh /proc\nuser@host:~$ sudo unshare --pid --fork --mount-proc /bin/bash\nroot@host:/# echo $$\n1                       <-- you are PID 1 in here!\n\n# 2. ps now shows only this namespace's processes\nroot@host:/# ps aux\nUSER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\nroot         1  0.0  0.0   9028  4100 pts/1    S     10:01   0:00 /bin/bash\nroot         2  0.0  0.0  10924  2128 pts/1    R+    10:01   0:00 ps aux\n\n# 3. Start a background sleeper, then look again\nroot@host:/# sleep 300 &\nroot@host:/# ps aux | grep sleep\nroot         3  0.0  0.0   7200   576 pts/1    S     10:01   0:00 sleep 300\n\n# 4. Exit. Open another host terminal: the sleeper is STILL running on the host\nuser@host:~$ ps aux | grep 'sleep 300'\nroot      2345  0.0  0.0   7200   576 pts/1    S     10:01   0:00 sleep 300   <-- host PID 2345"
+        },
+        {
+          "label": "The Rules of PID Namespaces",
+          "text": [
+            "A process has two PIDs: one inside its own namespace and one (the global one) seen from the host.",
+            "Nesting is unlimited in theory: a PID namespace inside a PID namespace inside another... Each level renumbers its own view.",
+            "PID 1 inside a namespace has special duties: if it dies, the kernel sends SIGKILL to every other process in that namespace. This is why containers need an init (tini, dumb-init) that reaps zombies.",
+            "A process can only see/signal other processes that share its PID namespace or live in DESCENDANT namespaces. It can never see processes in ancestor or sibling namespaces.",
+            "The init process of a namespace cannot be killed with SIGKILL from within that namespace - it is protected like real PID 1."
+          ]
+        },
+        {
+          "label": "Docker Mapping",
+          "code": "# Every container gets its own PID namespace by default\nuser@host:~$ docker run -d --name web nginx\nuser@host:~$ docker exec web ps aux\nUSER       PID %CPU %MEM ...\nroot         1  0.0  0.1 ... nginx: master process\nnginx       29  0.0  0.1 ... nginx: worker process\n\n# On the host, the same nginx master has a different (larger) PID\ndocker inspect web --format '{{.State.Pid}}'\n# e.g. 3456 - the host-visible PID of the container's PID 1\n\n# Share the host PID namespace (not recommended for isolation)\ndocker run --pid=host nginx"
+        }
+      ],
+      "infoBox": {
+        "type": "warning",
+        "content": "CLONE_NEWPID only affects CHILDREN: unshare(CLONE_NEWPID) does not move the calling process into the new namespace. That is why every PID-namespace example uses unshare --pid --fork (or clone), and why you saw echo $$ print 1 - $$ is evaluated by the forked child."
+      }
+    },
+    {
+      "id": "network-namespace",
+      "title": "9. Network Namespace: Private Network Stack",
+      "description": "Each namespace gets its own NICs, routes, firewall, and sockets.",
+      "content": [
+        "A network namespace isolates the entire network stack: network interfaces, IP addresses, routing tables, iptables/nftables rules, connection tracking, and the socket port space. A fresh network namespace starts with only a DOWN loopback interface and no routes at all - you must wire it up yourself, which is exactly why Docker creates bridge networks and veth pairs for you.",
+        "This guide covers the essentials plus one mini-lab. For the full deep dive (veth pairs, bridges, NAT to the internet, and troubleshooting), read our dedicated post: Linux Network Namespaces: The Complete Guide."
+      ],
+      "items": [
+        {
+          "label": "Mini-Lab: Two Private Networks in Five Commands",
+          "code": "# 1. Create two named network namespaces (netns)\nuser@host:~$ sudo ip netns add red\nuser@host:~$ sudo ip netns add blue\nuser@host:~$ sudo ip netns list\nred\nblue\n\n# 2. A fresh netns is empty: only lo, and it is DOWN\nuser@host:~$ sudo ip netns exec red ip addr show\n1: lo: <LOOPBACK> mtu 65536 qdisc noop state DOWN ...\n\n# 3. Bring loopback up inside each namespace\nuser@host:~$ sudo ip netns exec red ip link set lo up\nuser@host:~$ sudo ip netns exec blue ip link set lo up\n\n# 4. Prove isolation: the host's eth0 does not exist in red\nuser@host:~$ sudo ip netns exec red ip addr show eth0\nDevice \"eth0\" does not exist.\n\n# 5. Clean up\nuser@host:~$ sudo ip netns delete red\nuser@host:~$ sudo ip netns delete blue"
+        },
+        {
+          "label": "Isolated or Not Isolated",
+          "table": {
+            "headers": [
+              "Item",
+              "Isolated per netns?"
+            ],
+            "rows": [
+              [
+                "Network interfaces",
+                "Yes - each namespace has its own; move them with ip link set ... netns"
+              ],
+              [
+                "IP addresses",
+                "Yes - two netns can both use 10.0.0.1"
+              ],
+              [
+                "Routing table",
+                "Yes - independent default routes"
+              ],
+              [
+                "Firewall (iptables/nftables)",
+                "Yes - rules are per-namespace"
+              ],
+              [
+                "Socket port space",
+                "Yes - two containers can both bind port 80"
+              ],
+              [
+                "Filesystem / PIDs / hostname",
+                "No - those are other namespace types"
+              ],
+              [
+                "Physical hardware",
+                "Shared - a physical NIC can only be in one netns at a time"
+              ]
+            ]
+          }
+        },
+        {
+          "label": "Docker + Kubernetes Mapping",
+          "text": [
+            "docker run -d nginx creates a new netns with one veth end inside it; the other end plugs into the docker0 bridge.",
+            "docker network create mynet && docker run --network mynet connects containers on a private bridge; --network host skips the netns.",
+            "Kubernetes pods share ONE network namespace across all containers in the pod (created by the pause container) - that is why containers in a pod can talk on localhost.",
+            "The netns is also why two containers can bind port 80 at the same time without conflict."
+          ]
+        }
+      ],
+      "infoBox": {
+        "type": "info",
+        "content": "Named netns (ip netns add) are kept alive by a bind mount under /var/run/netns/. Raw kernel netns have no name - only processes keep them alive. lsns -t net lists both, but only named ones appear in ip netns list."
+      }
+    },
+    {
+      "id": "user-namespace",
+      "title": "10. User Namespace: Root Without Privilege",
+      "description": "Map unprivileged users to root inside - the basis of rootless containers.",
+      "content": [
+        "A user namespace isolates the user and group ID numbering space - and, crucially, the process's capability set. Inside a new user namespace, an unprivileged host user can be mapped to uid 0 (root) and gain full capabilities INSIDE that namespace, while remaining a normal user on the host. This is the foundation of rootless Docker, Podman, Flatpak, and unprivileged sandboxes.",
+        "Every other namespace type is owned by a user namespace. The owning user namespace determines which capabilities are needed to manipulate it - which is why creating network namespaces requires root, but creating user namespaces does not."
+      ],
+      "items": [
+        {
+          "label": "Lab: Become Root Inside, Stay Normal Outside",
+          "code": "# 1. As a NON-root user, create a user namespace with root mapped\nuser@host:~$ id -u\n1000\necho 1000\n\nuser@host:~$ unshare --user --map-root-user /bin/bash\nroot@host:/# id\nuid=0(root) gid=0(root) groups=0(root)\n\n# 2. You have full capabilities INSIDE this namespace\nroot@host:/# capsh --print | grep Current\nCurrent: = cap_chown,cap_dac_override,...cap_sys_admin,...\n\n# 3. But on the host you are still uid 1000 - the kernel maps you back\nuser@host:~$ ps -o user,pid,cmd -p <host-pid-of-that-shell>\nUSER       PID CMD\nuser      2345 bash   <-- still 'user', not 'root'"
+        },
+        {
+          "label": "UID/GID Mapping Files",
+          "code": "# Each process in a user namespace exposes its mappings\nuser@host:~$ cat /proc/self/uid_map\n         0       1000          1     # namespace uid 0 = host uid 1000, 1 entry\n\n# The same for group IDs\nuser@host:~$ cat /proc/self/gid_map\n         0       1000          1\n\n# The kernel's rule: write to a map file only ONCE, before any process\n# joins the namespace via setns, or the write fails with EINVAL"
+        },
+        {
+          "label": "Lab: Fake Root Writes Files You Own Outside",
+          "code": "# Inside the user namespace from the lab above (you are uid 0):\nroot@host:/# echo 'written by fake root' > /tmp/demo-file\nroot@host:/# ls -ln /tmp/demo-file\n-rw-r--r-- 1 0 0 26 ... /tmp/demo-file   <-- uid 0 INSIDE\n\n# Exit and inspect the SAME file from the host:\nroot@host:/# exit\nuser@host:~$ ls -ln /tmp/demo-file\n-rw-r--r-- 1 1000 1000 26 ... /tmp/demo-file   <-- uid 1000 = YOU\n\n# The kernel translated the owner on every filesystem write: fake root\n# gained nothing on the host. THIS is the user-namespace magic - and why\n# rootless containers are safe to run as a normal user."
+        },
+        {
+          "label": "What User Namespaces Unlock",
+          "text": [
+            "Rootless Docker/Podman: a normal user runs dockerd in a user namespace and containers inside it - no sudo anywhere.",
+            "Unprivileged sandboxes: Flatpak, Snap, and bubblewrap use user + mount namespaces so apps run with host-user rights while believing they are root.",
+            "Nested namespaces: inside a user namespace you can create more namespaces (including network ones) if the kernel allows it (kernel.unprivileged_userns_clone).",
+            "Capabilities become namespace-scoped: CAP_NET_ADMIN inside the userns only affects the network namespace that userns owns."
+          ]
+        },
+        {
+          "label": "Critical Security Rule",
+          "text": [
+            "Root inside a user namespace is NOT host root. It cannot read /etc/shadow or the host's files unless the host user mapping permits it.",
+            "The dangerous path is combining userns root with host filesystem access (bind mounts) - a mapped root that can write to a host directory can write as the host user, and if that directory holds setuid binaries the risk escalates.",
+            "setuid-root binaries executed inside a user namespace do NOT gain host root (kernel 3.8+); they gain only namespace capabilities. Older kernels (pre-3.8) had exploitable gaps.",
+            "Some distros disable unprivileged user namespaces by default (e.g., sysctl kernel.unprivileged_userns_clone=0 on older Ubuntu/Debian); enable them deliberately."
+          ]
+        }
+      ],
+      "infoBox": {
+        "type": "tip",
+        "content": "unshare --user --map-root-user (-Ur) maps your current uid/gid to root inside the namespace. You can also write custom ranges to /proc/PID/uid_map so multiple host users map into one namespace - this is how multi-tenant rootless setups share infrastructure safely."
+      }
+    },
+    {
+      "id": "cgroup-and-time",
+      "title": "11. cgroup and Time Namespaces: The Two Newcomers",
+      "description": "Virtualized cgroup paths and per-namespace clocks.",
+      "content": [
+        "The cgroup namespace (kernel 4.6) does not isolate resources - it virtualizes the PATH of the cgroup that a process belongs to, as shown in /proc/self/cgroup. A process inside a cgroup namespace sees a clean, root-relative path like / instead of the host's deep path like /user.slice/user-1000.slice/session-1.scope.",
+        "The time namespace (kernel 5.6) is the youngest namespace. It lets a namespace define its own offsets for the CLOCK_MONOTONIC and CLOCK_BOOTTIME clocks, so processes inside can see a different uptime than the host - useful for live migration and container checkpoint/restore."
+      ],
+      "items": [
+        {
+          "label": "cgroup Namespace: Cleaner /proc Views",
+          "code": "# On the host, a process reports its full cgroup path\nuser@host:~$ cat /proc/self/cgroup\n0::/user.slice/user-1000.slice/session-1.scope\n\n# Start a shell in a NEW cgroup namespace\nuser@host:~$ sudo unshare --cgroup /bin/bash\nroot@host:/# cat /proc/self/cgroup\n0::/            <-- root-relative: the cgroup hierarchy is virtualized\n\n# The kernel remembers the REAL cgroup; only the view changed\nroot@host:/# cat /proc/self/cgroup_namespace\ncgroup 4026532210"
+        },
+        {
+          "label": "Why Docker Wants the cgroup Namespace",
+          "text": [
+            "Monitoring tools and health checks inside a container read /proc/self/cgroup to find their cgroup.",
+            "Without a cgroup namespace, containers in a Kubernetes pod would see the host's cgroup paths and might read or even try to manage the WRONG cgroup - a classic escape vector.",
+            "docker run --cgroupns=private (default since Docker 20.10) gives each container a virtualized root; --cgroupns=host disables it for legacy tools.",
+            "Deep dive: our Linux Control Groups (cgroups) guide covers the resource controllers that sit on top of this namespace."
+          ]
+        },
+        {
+          "label": "time Namespace: Private Clocks",
+          "code": "# Only useful on kernels >= 5.6; needs a child (like PID)\nuser@host:~$ sudo unshare --time --fork /bin/bash\nroot@host:/# readlink /proc/self/ns/time\ntime:[4026532215]\n\n# Offsets default to zero. To set them, a privileged process must write\n# to the creator's /proc/PID/timens_offsets BEFORE any child joins the\n# namespace - from a second host terminal, before running the fork\n# above, NOT from inside this shell:\n#   echo 'monotonic 100000000 0' > /proc/PID/timens_offsets\n# That makes CLOCK_MONOTONIC inside start 100 seconds ahead of the host.\nroot@host:/# date +%s.%N          # wall clock is NOT affected\n# (time namespaces never change CLOCK_REALTIME - only monotonic clocks)"
+        },
+        {
+          "label": "Rules of Time Namespaces",
+          "text": [
+            "Only CLOCK_MONOTONIC and CLOCK_BOOTTIME can be offset - never CLOCK_REALTIME (wall clock).",
+            "Like PID namespaces, the effect applies to children: the namespace is created but the caller only enters it after fork.",
+            "The offsets file can be written once per namespace, and only while no other process has joined via setns.",
+            "Primary use cases: consistent uptime across live migration, deterministic timestamps in checkpoint/restore (CRIU), and container clock simulation."
+          ]
+        }
+      ],
+      "infoBox": {
+        "type": "info",
+        "content": "Unsurprisingly, the cgroup namespace (4.6) and time namespace (5.6) are the least used in daily Docker work - but they complete the 8-type picture, and understanding them explains modern /proc virtualization and checkpoint/restore tooling."
+      }
+    },
+    {
+      "id": "kernel-api",
+      "title": "12. The Kernel API: clone, unshare, setns",
+      "description": "The three syscalls behind every container runtime.",
+      "content": [
+        "All namespace creation and joining reduces to three syscalls. When you run unshare or nsenter on the command line, you are using thin wrappers over exactly these calls.",
+        "clone (2): create a new process (like fork) and, in the SAME call, place it in new namespaces by OR-ing CLONE_NEW* flags. Docker's runc calls clone with all the container flags at once.",
+        "unshare (2): create new namespace(s) for the CALLING process - but remember that PID and time namespaces only take effect for children, so a runtime follows unshare with fork.",
+        "setns (2): join an EXISTING namespace by opening its /proc/PID/ns/* file and passing the fd. This is what nsenter does - it teleports a new process into a running container's namespaces."
+      ],
+      "items": [
+        {
+          "label": "Syscall + Flag Cheat Sheet",
+          "table": {
+            "headers": [
+              "Syscall",
+              "Purpose",
+              "Needs"
+            ],
+            "rows": [
+              [
+                "clone(flags | CLONE_NEWPID | CLONE_NEWNS ...)",
+                "New process in new namespaces",
+                "Child gets the namespaces"
+              ],
+              [
+                "unshare(CLONE_NEWUTS | CLONE_NEWNS ...)",
+                "Calling process gets new namespaces",
+                "CAP_SYS_ADMIN for most types"
+              ],
+              [
+                "setns(fd, 0)",
+                "Join an existing namespace",
+                "CAP_SYS_ADMIN in its owning user ns"
+              ],
+              [
+                "open(\"/proc/PID/ns/pid\")",
+                "Get an fd to a namespace",
+                "PTRACE_MODE_READ on the target"
+              ],
+              [
+                "ioctl(NS_GET_USERNS)",
+                "Find the owning user namespace",
+                "Kernel 4.9+"
+              ]
+            ]
+          }
+        },
+        {
+          "label": "C Example: clone a Child Into a New UTS Namespace",
+          "code": "// uts_clone.c - compile with: gcc -o uts_clone uts_clone.c\n#define _GNU_SOURCE\n#include <sched.h>\n#include <stdio.h>\n#include <unistd.h>\n#include <sys/wait.h>\n\nstatic int child_fn(void *arg) {\n    printf(\"child: in new UTS namespace\\n\");\n    sethostname(\"cloned-ns\", 9);   /* requires CAP_SYS_ADMIN */\n    execlp(\"/bin/hostname\", \"hostname\", NULL);\n    return 0;\n}\n\nint main(void) {\n    char *stack = malloc(65536);\n    if (!stack) return 1;\n    printf(\"parent: hostname is \");\n    fflush(stdout);\n    system(\"hostname\");\n\n    pid_t pid = clone(child_fn, stack + 65536,\n                      CLONE_NEWUTS | SIGCHLD, NULL);\n    waitpid(pid, NULL, 0);\n    printf(\"parent: hostname is still \");\n    system(\"hostname\");\n    free(stack);\n    return 0;\n}\n\n# Run as root (sethostname needs CAP_SYS_ADMIN in the new UTS namespace)\nuser@host:~$ sudo ./uts_clone\nparent: hostname is host\nchild: in new UTS namespace\ncloned-ns\nparent: hostname is still host"
+        },
+        {
+          "label": "Try It: setns via nsenter Into a Running Container",
+          "code": "# 1. Run a container\nuser@host:~$ docker run -d --name sleepbox --rm alpine sleep 9999\n\n# 2. Find its host PID\nuser@host:~$ docker inspect -f '{{.State.Pid}}' sleepbox\n3456\n\n# 3. Teleport a NEW shell into ALL of the container's namespaces\nuser@host:~$ sudo nsenter -t 3456 -a /bin/sh\n/ # ps\nPID   USER     TIME  COMMAND\n    1 root      0:00 sleep 9999\n    2 root      0:00 sh\n/ # hostname\n<container-id>          <-- same UTS namespace as the container\n\n# Join only the network namespace (no PID/mount changes):\nuser@host:~$ sudo nsenter -t 3456 --net ip addr show\n# shows the container's interfaces only"
+        }
+      ],
+      "infoBox": {
+        "type": "warning",
+        "content": "nsenter -a -t PID requires CAP_SYS_ADMIN in every namespace's owning user namespace - in practice, root on the host. This is also the primitive that Docker exec, kubectl exec, and crictl exec use under the hood to run commands inside containers."
+      }
+    },
+    {
+      "id": "persistent-namespaces",
+      "title": "13. Persistent Namespaces and the Tools Reference",
+      "description": "Keep a namespace alive after its creator exits, and master unshare/nsenter.",
+      "content": [
+        "A namespace lives as long as at least one process belongs to it (or, for PID/time namespaces, as long as it could receive future children). Most namespaces die when the shell that created them exits. To keep a namespace alive without a process, you bind-mount its /proc/PID/ns/* symlink onto a regular file - the mount holds a reference to the namespace forever.",
+        "This is exactly how ip netns add keeps network namespaces alive (the bind mount lives under /var/run/netns/), and it is how you can build a lasting sandbox that other processes join later with nsenter or setns."
+      ],
+      "items": [
+        {
+          "label": "Lab: Create a Persistent Namespace",
+          "code": "# 1. Create a fresh UTS namespace (does not matter which type)\nuser@host:~$ sudo unshare --uts /bin/bash &\n# Note the shell's PID, e.g. 4567\n\n# 2. Bind-mount its UTS namespace onto a regular file\nuser@host:~$ sudo touch /run/ns-demo\nuser@host:~$ sudo mount --bind /proc/4567/ns/uts /run/ns-demo\n\n# 3. Kill the creator process - the namespace survives via the mount\nuser@host:~$ sudo kill 4567\n\n# 4. Enter the persisted namespace at any later time\nuser@host:~$ sudo nsenter --uts=/run/ns-demo hostname\nhost        # the namespace object still exists\n\n# 5. Clean up\nuser@host:~$ sudo umount /run/ns-demo && sudo rm /run/ns-demo"
+        },
+        {
+          "label": "unshare Reference (create)",
+          "table": {
+            "headers": [
+              "Flag",
+              "Meaning"
+            ],
+            "rows": [
+              [
+                "unshare --mount / -m",
+                "New mount namespace (all mounts become private)"
+              ],
+              [
+                "unshare --uts / -u",
+                "New UTS (hostname) namespace"
+              ],
+              [
+                "unshare --ipc / -i",
+                "New IPC namespace"
+              ],
+              [
+                "unshare --pid / -p",
+                "New PID namespace (children only - use --fork)"
+              ],
+              [
+                "unshare --net / -n",
+                "New network namespace"
+              ],
+              [
+                "unshare --user / -U",
+                "New user namespace"
+              ],
+              [
+                "unshare --cgroup / -C",
+                "New cgroup namespace"
+              ],
+              [
+                "unshare --time / -T",
+                "New time namespace (kernel 5.6+; children only)"
+              ],
+              [
+                "--fork / -f",
+                "Fork before exec so PID/time namespaces apply"
+              ],
+              [
+                "--mount-proc",
+                "Mount a fresh /proc inside the new PID+mount namespaces"
+              ],
+              [
+                "--map-root-user / -r",
+                "Map current user to root inside a new user namespace"
+              ],
+              [
+                "--kill-child",
+                "Kill forked child when the parent dies (container-style lifetime)"
+              ]
+            ]
+          }
+        },
+        {
+          "label": "nsenter Reference (join)",
+          "table": {
+            "headers": [
+              "Flag",
+              "Meaning"
+            ],
+            "rows": [
+              [
+                "nsenter -t PID",
+                "Target process whose namespaces to join"
+              ],
+              [
+                "nsenter -a",
+                "Join ALL namespaces of the target (PID ns requires -t and is entered for children)"
+              ],
+              [
+                "--mount / -m <file>",
+                "Join a mount namespace by nsfs path or /proc/PID/ns/mnt"
+              ],
+              [
+                "--uts / -u <file>",
+                "Join a UTS namespace"
+              ],
+              [
+                "--ipc / -i <file>",
+                "Join an IPC namespace"
+              ],
+              [
+                "--pid / -p <file>",
+                "Join a PID namespace (for the new process's children)"
+              ],
+              [
+                "--net / -n <file>",
+                "Join a network namespace"
+              ],
+              [
+                "--user / -U <file>",
+                "Join a user namespace"
+              ],
+              [
+                "--cgroup / -C <file>",
+                "Join a cgroup namespace"
+              ],
+              [
+                "--time / -T <file>",
+                "Join a time namespace"
+              ],
+              [
+                "--wd <dir>",
+                "Set working directory after entering (default: /)"
+              ],
+              [
+                "--setuid / --setgid",
+                "Set uid/gid after entering (needs the user namespace mapped)"
+              ]
+            ]
+          }
+        }
+      ],
+      "infoBox": {
+        "type": "tip",
+        "content": "Kernel helper: nsfs (namespace filesystem) is what /proc/PID/ns/* files live on. When you bind-mount one of those symlinks, you are mounting an nsfs object - which is why the mounted file still works after the original process dies."
+      }
+    },
+    {
+      "id": "docker-internals",
+      "title": "14. How Docker and Kubernetes Combine Namespaces",
+      "description": "From raw namespaces to a production container in one map.",
+      "content": [
+        "A container created by Docker/containerd/runc is not a VM - it is a process (or process tree) launched with a set of new namespaces and cgroup limits. The runtime (runc) performs the same sequence you have been doing manually: clone with CLONE_NEW* flags, pivot_root into the image's rootfs, mount /proc and /sys, drop capabilities, and exec the container command."
+      ],
+      "items": [
+        {
+          "label": "Namespace-to-Docker-Flag Map",
+          "table": {
+            "headers": [
+              "Namespace",
+              "Docker default",
+              "Flag to change",
+              "Kubernetes equivalent"
+            ],
+            "rows": [
+              [
+                "mount",
+                "Private (rootfs, /proc, /sys inside)",
+                "--volume / -v adds mounts",
+                "volumeMounts + overlayfs"
+              ],
+              [
+                "UTS",
+                "Private hostname = container ID",
+                "--hostname / -h",
+                "Pod name via pause container"
+              ],
+              [
+                "IPC",
+                "Private",
+                "--ipc=host|shareable:<name>",
+                "Shared within a pod"
+              ],
+              [
+                "PID",
+                "Private",
+                "--pid=host (shares host PIDs)",
+                "shareProcessNamespace: true for pod sharing"
+              ],
+              [
+                "network",
+                "Private, bridged via docker0",
+                "--network host|none|bridge|<net>",
+                "One netns per pod (pause)"
+              ],
+              [
+                "user",
+                "Off by default in classic Docker",
+                "--userns-remap (rootless mode)",
+                "Kubelet --rootless / user namespaces (alpha)"
+              ],
+              [
+                "cgroup",
+                "Private (cgroupns=private)",
+                "--cgroupns=host",
+                "Per-pod cgroup slice"
+              ],
+              [
+                "time",
+                "Not enabled by default",
+                "Runtime opt-in (kernel 5.6+)",
+                "Not used by default"
+              ]
+            ]
+          }
+        },
+        {
+          "label": "The Pod Trick: pause Container",
+          "text": [
+            "Kubernetes does not create namespaces per container. The kubelet first starts a tiny pause container per pod, and pause creates the pod's network, UTS, and IPC namespaces plus its cgroup.",
+            "Every real container in the pod then JOINs those namespaces via setns (the same primitive nsenter uses).",
+            "Because they share one network namespace, containers in a pod talk on localhost. Because they share UTS, they see the same hostname.",
+            "PID sharing is opt-in: shareProcessNamespace: true makes pause the pod's PID 1 so containers can signal each other by PID."
+          ]
+        },
+        {
+          "label": "What runc Does Step by Step (mental model)",
+          "text": [
+            "1. Load the OCI config (rootfs path, mounts, capabilities, env)",
+            "2. clone with CLONE_NEWNS|NEWUTS|NEWIPC|NEWNET|NEWPID|NEWCGROUP (+ user ns if configured)",
+            "3. In the child: unshare/setns remaining pieces, map uids if user namespace, pivot_root to the image rootfs",
+            "4. Mount /proc, /sys, /dev, and every volume; set hostname; write limits into the cgroup",
+            "5. drop to the container user, chdir to /, exec the command - the process now believes it is the only OS in the world",
+            "",
+            "Nothing here is magic: every step maps to a syscall you have already seen in this guide."
+          ]
+        }
+      ],
+      "infoBox": {
+        "type": "info",
+        "content": "Want the hands-on version? Build a container by hand in Chapter 18 (mini container project) using nothing but unshare, chroot/pivot_root, and mount - the same recipe runc automates."
+      }
+    },
+    {
+      "id": "docker-live-lab",
+      "title": "15. Live Lab: Watch Docker Create Namespaces",
+      "description": "Six short labs on a real container - see the isolation with your own eyes.",
+      "content": [
+        "This chapter puts you in front of a real Docker container so you can watch all 8 namespaces in action. The mental model: your machine is an apartment building and the kernel is the shared foundation - every container is an apartment that believes it is the whole building. It has its own name plate, its own rooms, its own mailbox, and its own residents - but the building underneath is shared.",
+        "You need a Linux machine with Docker. On Windows, run these commands inside a WSL2 terminal (wsl --install -d Ubuntu, then install Docker inside it). No special Docker knowledge is required - every lab is a copy-paste command followed by a moment of comparing outputs."
+      ],
+      "items": [
+        {
+          "label": "Lab 0: Start a Real Container",
+          "code": "# Pull the official nginx image and start a container\n$ docker run -d --name ns-demo nginx:alpine\ne0e7f2a9c1b3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f\n\n# Confirm it is running\n$ docker ps\nCONTAINER ID   IMAGE         STATUS         NAMES\nf5d3a9c1e2b3  nginx:alpine   Up 2 seconds   ns-demo"
+        },
+        {
+          "label": "Lab 1: PID Namespace - The Container Cannot See Your Processes",
+          "text": [
+            "A container has its own process table. Inside, nginx is PID 1 - the first process of its own little world - and only its own processes exist. On the host, that same nginx has a much higher PID among hundreds of processes.",
+            "Same kernel, two completely different views. That is the PID namespace, and it is exactly why killing a container's PID 1 inside the container never kills your host."
+          ],
+          "code": "# INSIDE the container\n$ docker exec ns-demo ps aux\nPID   USER     TIME  COMMAND\n    1 root      0:00 nginx: master process nginx -g daemon off;\n   22 nginx     0:00 nginx: worker process\n   23 nginx     0:00 nginx: worker process\n   ...\n\n# ON THE HOST\n$ ps aux | wc -l\n45        # hundreds on a busy server"
+        },
+        {
+          "label": "Lab 2: UTS Namespace - The Container Has Its Own Hostname",
+          "text": [
+            "The container's hostname defaults to its container ID, not your machine's name. You can even rename the container's hostname and the host stays untouched - two processes, two different views of the same kernel resource."
+          ],
+          "code": "# INSIDE the container: hostname = its own container ID\n$ docker exec ns-demo hostname\nf5d3a9c1e2b3\n\n# ON THE HOST: your real hostname\n$ hostname\nmy-laptop\n\n# Rename only the container's hostname:\n$ docker exec ns-demo hostname my-webserver\n$ docker exec ns-demo hostname\nmy-webserver   # your host's hostname is unchanged"
+        },
+        {
+          "label": "Lab 3: Mount Namespace - The Container Has Its Own Filesystem View",
+          "text": [
+            "Inside, / is the Alpine image: bin, dev, etc, usr, and nothing else. Outside, / is the host's real root with boot, snap, keys, home - everything. The container literally cannot see your files unless you mount them in with -v. That is the mount namespace (plus a chroot/pivot_root under the hood)."
+          ],
+          "code": "# INSIDE the container: only the image's directories\n$ docker exec ns-demo ls /\nbin  dev  docker-entrypoint.d  etc  home  lib  media  mnt  opt  proc  root  run  sbin  srv  sys  tmp  usr  var\n\n# ON THE HOST: your real root filesystem\n$ ls /\nbin  boot  dev  etc  home  keys  lib  lost+found  media  mnt  opt  proc  root  run  sbin  snap  srv  sys  tmp  usr  var"
+        },
+        {
+          "label": "Lab 4: Network Namespace - The Container Has Its Own Network Stack",
+          "text": [
+            "Inside, the container sees only lo and eth0 - a virtual interface Docker plugged into its virtual switch (docker0). On the host you see eth0, docker0, and a veth... interface: the virtual cable attached to your container.",
+            "Every container gets its own stack, which is why two containers can both listen on port 80 without colliding, and why a container's localhost is not your host's localhost."
+          ],
+          "code": "# INSIDE the container: only its own interfaces\n$ docker exec ns-demo ip addr\n1: lo: <LOOPBACK,UP,LOWER_UP> ...\n2: eth0@if4: <BROADCAST,MULTICAST,UP,LOWER_UP> ...\n\n# ON THE HOST: many interfaces, including the bridge and the veth cable\n$ ip addr\n1: lo: <LOOPBACK,UP,LOWER_UP> ...\n2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> ...\n3: docker0: <BROADCAST,MULTICAST,UP,LOWER_UP> ...\n4: veth2a49341@if2: ... master docker0 ..."
+        },
+        {
+          "label": "Lab 5: The Inode Rule on a Real Container (the Aha Moment)",
+          "text": [
+            "Now prove the isolation with the rule from Chapter 4: same inode number = same namespace, different number = different namespace.",
+            "Get the container's PID as seen by the host, then readlink the namespace files of the container and of your own shell. Every isolated type shows a different number - the container genuinely lives in different worlds. (Reading another process's ns files needs root, hence sudo.)"
+          ],
+          "code": "# 1. Find the container's host-PID\n$ docker inspect -f '{{.State.Pid}}' ns-demo\n836\n\n# 2. Compare namespace inodes\n$ sudo readlink /proc/self/ns/pid /proc/self/ns/mnt /proc/self/ns/net\npid:[4026532219]\nmnt:[4026532217]\nnet:[4026531833]\n\n$ sudo readlink /proc/836/ns/pid /proc/836/ns/mnt /proc/836/ns/net\npid:[4026532235]    # different from host -> isolated\nmnt:[4026532232]    # different from host -> isolated\nnet:[4026532237]    # different from host -> isolated"
+        },
+        {
+          "label": "Lab 6: lsns - See All 8 Namespaces of the Container at Once",
+          "text": [
+            "lsns -p <PID> prints every namespace the process lives in. The container has its own namespace object for all 8 types. Compare with the host: the user namespace is shared (classic Docker does not isolate it by default) - every other type is private to the container.",
+            "The second command shows the whole system has exactly two PID namespaces: the host's, and the container's. Inode numbers will differ on your machine - what matters is that the container's numbers differ from the host's."
+          ],
+          "code": "# All namespaces of the container (numbers will differ on your machine)\n$ sudo lsns -p 836\n        NS TYPE   NPROCS   PID USER COMMAND\n4026531837 user     43     1 root /sbin/init\n4026532232 mnt       7   836 root nginx: master process nginx -g daemon off;\n4026532233 uts       7   836 root nginx: master process nginx -g daemon off;\n4026532234 ipc       7   836 root nginx: master process nginx -g daemon off;\n4026532235 pid       7   836 root nginx: master process nginx -g daemon off;\n4026532236 cgroup    7   836 root nginx: master process nginx -g daemon off;\n4026532237 net       7   836 root nginx: master process nginx -g daemon off;\n4026532299 time      7   836 root nginx: master process nginx -g daemon off;\n\n# The host, for comparison: exactly TWO pid namespaces on the whole system\n$ sudo lsns --type=pid\n        NS TYPE NPROCS   PID USER COMMAND\n4026532219 pid     38     1 root /sbin/init\n4026532235 pid      7   836 root nginx: master process nginx -g daemon off;"
+        },
+        {
+          "label": "Clean Up",
+          "code": "# Stop and remove the demo container when you are done\n$ docker rm -f ns-demo"
+        }
+      ],
+      "infoBox": {
+        "type": "tip",
+        "content": "Every docker command in this lab has a raw-kernel equivalent you already practiced in Chapters 5-11 with unshare: PID -> unshare --pid --fork, UTS -> unshare --uts + hostname, network -> unshare --net, mount -> unshare --mount. Docker simply automates what you did by hand."
+      }
+    },
+    {
+      "id": "real-world-uses",
+      "title": "16. Real-World Use Cases: Where You Already Meet Namespaces",
+      "description": "Beyond Docker: systemd, browsers, and network labs all lean on namespaces.",
+      "content": [
+        "Namespaces are not an exotic container-only feature. On any modern Linux box they are working around you all day: systemd sandboxes services with them, desktop apps and browsers confine renderers with them, and network engineers build virtual labs with them. Learning to recognize namespaces in the wild turns abstract theory into a practical skill you use every day.",
+        "The pattern to spot: whenever something runs with its own hostname, its own process tree, no network, or a hidden filesystem - a namespace (or several) is doing the work."
+      ],
+      "items": [
+        {
+          "label": "Everyday Sandboxing You Already Use",
+          "text": [
+            "systemd service sandboxing: PrivateTmp=yes, PrivateDevices=yes, PrivateNetwork=yes, and ProtectSystem=strict each tell systemd to create fresh mount and network namespaces for the service before it starts.",
+            "Desktop apps: Flatpak, Snap, firejail, and bubblewrap run GUI apps inside user + mount namespaces, so an app believes it is root while staying your normal user.",
+            "Browsers: Chrome/Electron use a setuid sandbox helper plus user namespaces to confine each renderer process - a hijacked tab cannot read your files.",
+            "Network engineers: ip netns builds isolated lab topologies, tests VPNs, and separates tenants (VRF-style routing) on a single machine.",
+            "systemd-nspawn / machinectl: boots a whole distro image in namespaces - the tool behind systemd's lightweight 'machines'.",
+            "Checkpoint/restore: CRIU and live migration lean on PID and time namespaces to keep process trees and clocks consistent across hosts."
+          ]
+        },
+        {
+          "label": "Spot Namespaces on Your Own System",
+          "code": "# Which services on THIS machine are already sandboxed by namespaces?\nuser@host:~$ grep -lE 'PrivateTmp=yes|PrivateNetwork=yes' /usr/lib/systemd/system/*.service 2>/dev/null | head -3\n\n# How systemd hardens one service (namespaces are part of the answer):\nuser@host:~$ systemd-analyze security --no-pager ssh.service | grep -iE 'Private|ProtectSystem' | head -5\n\n# A unit you can write today - every line below is a namespace:\n# [Service]\n# ExecStart=/opt/myapp/server\n# PrivateTmp=yes        # new mount namespace: isolated /tmp\n# PrivateDevices=yes    # private /dev (mount namespace)\n# PrivateNetwork=yes    # new network namespace: NO internet access\n# ProtectSystem=strict  # root filesystem read-only (mount namespace)"
+        }
+      ],
+      "infoBox": {
+        "type": "tip",
+        "content": "Recognition drill: the next time you see a 'sandboxed' daemon, a Flatpak app, or a browser crash report mention a sandbox, ask yourself which of the 8 types is doing the isolating. You already know more about it than most sysadmins."
+      }
+    },
+    {
+      "id": "security",
+      "title": "17. Security: What Namespaces Do and Do Not Protect",
+      "description": "The honest security model - and the sharp edges.",
+      "content": [
+        "Namespaces are an isolation mechanism, not a security boundary by themselves. A container escape is possible whenever a process inside a namespace gains capabilities over host resources - which is why defense-in-depth (dropped capabilities, read-only rootfs, seccomp, AppArmor/SELinux, and cgroup limits) is mandatory in production."
+      ],
+      "items": [
+        {
+          "label": "What Namespaces Protect Well",
+          "text": [
+            "Process visibility: a compromised process inside a PID namespace cannot see or signal host processes by PID.",
+            "Filesystem surprise: mount namespaces prevent accidental host mounts from appearing (and vice versa) when propagation is configured correctly.",
+            "Network isolation: a process in a netns cannot bind host ports or sniff host traffic unless interfaces/routes are shared deliberately.",
+            "Identity confusion: user namespaces prevent host-uid-0 equivalence when mapping is done correctly - root inside maps to a normal host uid.",
+            "Clean shutdown: PID-1 semantics mean a dead init takes its whole container with it - good blast-radius containment."
+          ]
+        },
+        {
+          "label": "The Sharp Edges (Real Attack Vectors)",
+          "table": {
+            "headers": [
+              "Risk",
+              "Why it exists",
+              "Mitigation"
+            ],
+            "rows": [
+              [
+                "Shared kernel",
+                "All namespaces share one kernel; a kernel bug = host compromise",
+                "Stay patched; seccomp filters syscalls"
+              ],
+              [
+                "Host bind mounts",
+                "A host directory mounted into a container is a write path to the host (e.g., /var/run/docker.sock)",
+                "Read-only mounts; never mount the docker socket unless required"
+              ],
+              [
+                "Setuid + user namespaces",
+                "Mapped root inside userns with access to host setuid binaries can escalate (kernel < 3.8 was worse)",
+                "Map only what is needed; do not give containers host setuid tools"
+              ],
+              [
+                "Shared IPC/netns",
+                "--ipc=host, --net=host, --pid=host remove that namespace's isolation entirely",
+                "Avoid host-mode flags in multi-tenant setups"
+              ],
+              [
+                "Mount propagation leaks",
+                "Shared mounts can let a container's mounts propagate to the host",
+                "unshare --mount (private) is the default for containers"
+              ],
+              [
+                "/proc/self/cgroup escape",
+                "Old cgroup manipulation via visible host paths",
+                "cgroupns=private (default since Docker 20.10)"
+              ]
+            ]
+          }
+        },
+        {
+          "label": "Production Checklist",
+          "text": [
+            "Run containers as non-root user (USER directive) and map real users with --userns-remap.",
+            "Drop capabilities with --cap-drop=ALL --cap-add=<minimal set>.",
+            "Make the root filesystem read-only (--read-only) with tmpfs for /tmp.",
+            "Apply a seccomp profile and an AppArmor/SELinux profile - they close the kernel-escape gap namespaces cannot.",
+            "Never mount /var/run/docker.sock or /proc and /sys writable into containers.",
+            "Set memory/CPU/pids cgroup limits so a runaway container cannot starve the host."
+          ]
+        }
+      ],
+      "infoBox": {
+        "type": "warning",
+        "content": "Rule of thumb: namespaces answer who can SEE what. Access control (who can DO what), syscall filtering, and resource limits must be layered on top. No container runtime is secure by namespace isolation alone."
+      }
+    },
+    {
+      "id": "hands-on-lab",
+      "title": "18. The Grand Lab: Build a Container by Hand",
+      "description": "Combine mount + PID + UTS + IPC namespaces and a rootfs into a real mini-container.",
+      "content": [
+        "Time to glue everything together. This lab builds a working mini-container from raw ingredients: new namespaces, a tiny root filesystem, and an isolated /proc. Run it as root on a Linux VM (never a production host).",
+        "We use chroot here for simplicity; production runtimes use pivot_root. chroot + a mount namespace gives the same isolation for learning purposes."
+      ],
+      "items": [
+        {
+          "label": "Phase 1: Prepare a Tiny Root Filesystem",
+          "code": "# On Ubuntu/Debian: install debootstrap once\nuser@host:~$ sudo apt-get install -y debootstrap\n\n# Create a minimal Ubuntu rootfs (takes a few minutes)\nuser@host:~$ sudo debootstrap --variant=minbase jammy /var/lib/miniroot\n\n# Copy a couple of tools into it for the demo\nuser@host:~$ sudo cp /bin/busybox /var/lib/miniroot/bin/ 2>/dev/null || true\nuser@host:~$ sudo chroot /var/lib/miniroot /bin/bash -c 'echo rootfs ready'"
+        },
+        {
+          "label": "Phase 2: Launch It With Fresh Namespaces",
+          "code": "# Everything in ONE command:\n#   --mount      : new mount namespace (isolated mounts)\n#   --uts        : new hostname namespace\n#   --ipc        : new IPC namespace\n#   --pid --fork : new PID namespace for the child\n#   --mount-proc : mount a private /proc inside\nuser@host:~$ sudo unshare --mount --uts --ipc --pid --fork --mount-proc \\\n    chroot /var/lib/miniroot /bin/bash\n\nroot@miniroot:/# echo I am PID $$\nI am PID 1          <-- the container's init\n\nroot@miniroot:/# ps aux\nUSER       PID %CPU %MEM ... COMMAND\nroot         1  0.0  0.0 ... /bin/bash\nroot         2  0.0  0.0 ... ps aux\n# Only our processes - /proc was remounted inside this PID namespace\n\nroot@miniroot:/# mountpoint /proc\n/proc is a mountpoint\n\nroot@miniroot:/# hostname mini-container\nroot@miniroot:/# hostname\nmini-container     <-- host's hostname is untouched\n\nroot@miniroot:/# exit"
+        },
+        {
+          "label": "Phase 3: Prove the Isolation From the Host",
+          "code": "# The bash that ran as PID 1 inside is a normal process on the host\nuser@host:~$ ps aux | grep 'miniroot' | grep -v grep\nroot  6789  ...  chroot /var/lib/miniroot /bin/bash\n\n# Host hostname unchanged\nuser@host:~$ hostname\nhost\n\n# Host process list still huge\nuser@host:~$ ps -e | wc -l\n300+\n\n# Clean up the rootfs when done\nuser@host:~$ sudo rm -rf /var/lib/miniroot"
+        }
+      ],
+      "infoBox": {
+        "type": "tip",
+        "content": "You just built the same isolation stack as Docker: fresh PID 1, private mounts with its own /proc, a private hostname, and private IPC - around one unshare command. Add a veth + bridge for networking (Chapter 9) and cgroup limits (our cgroups guide) and you have recreated runc."
+      }
+    },
+    {
+      "id": "troubleshooting",
+      "title": "19. Troubleshooting Common Problems",
+      "description": "The five errors you will actually hit - and their fixes.",
+      "items": [
+        {
+          "label": "Issue 1: unshare: Operation not permitted",
+          "text": [
+            "Symptom: unshare fails with Operation not permitted (EPERM).",
+            "Causes and fixes:",
+            " Creating mount/PID/network/IPC/UTS/cgroup namespaces requires CAP_SYS_ADMIN - run with sudo or as root.",
+            " Network namespaces need CAP_SYS_ADMIN in the owning user namespace; rootless users must first create a user namespace (unshare -Urn).",
+            " The kernel or distro may disable unprivileged user namespaces: check sysctl kernel.unprivileged_userns_clone (older Ubuntu) or kernel.apparmor_restrict_unprivileged_userns (Ubuntu 23.10+).",
+            " The container/host seccomp profile may block unshare or clone flags - check with auditd or strace."
+          ]
+        },
+        {
+          "label": "Issue 2: ps Still Shows ALL Host Processes",
+          "text": [
+            "Symptom: inside a new PID namespace, ps lists the entire host.",
+            "Cause: ps reads /proc, and you are still looking at the host's /proc (mounted before the PID namespace existed).",
+            "Fix: mount a fresh proc: sudo unshare --pid --fork --mount-proc bash. Or after entering, run: mount -t proc proc /proc.",
+            "Remember: a PID namespace changes PIDs, not /proc - you must change the mount to see the effect."
+          ]
+        },
+        {
+          "label": "Issue 3: hostname Change Not Allowed",
+          "text": [
+            "Symptom: sethostname: Operation not permitted when running hostname inside the namespace.",
+            "Cause: changing the hostname needs CAP_SYS_ADMIN in the user namespace that OWNS the UTS namespace.",
+            "Fix: run as root on the host (sudo unshare -u bash), or create a user namespace too (unshare -Urfu bash) so the process has capabilities inside.",
+            "Unprivileged users without a user namespace cannot change hostnames - by design."
+          ]
+        },
+        {
+          "label": "Issue 4: nsenter: No such file or directory for the namespace",
+          "text": [
+            "Symptom: nsenter -t <PID> fails, or setns returns ENOENT/EPERM.",
+            "Causes and fixes:",
+            " The target process died - containers must stay running (docker run -d alpine sleep 9999).",
+            " You passed /proc/PID/ns/xxx for a namespace type the process never isolated (e.g., net of a --net=host container).",
+            " setns into a PID namespace does not move the caller; use nsenter which forks first.",
+            " SELinux/AppArmor may block ptrace access to the target: check dmesg and the profile."
+          ]
+        },
+        {
+          "label": "Issue 5: The Inode Rule Seems Wrong",
+          "text": [
+            "Symptom: two containers report the same network namespace inode even though they are separate.",
+            "Cause: --network=host, or both containers joined the same user-defined network's shared namespace helper (rare), or you compared the wrong /proc file (e.g., pid vs pid_for_children).",
+            "Fix: always compare the SAME type: readlink /proc/A/ns/net vs readlink /proc/B/ns/net. Use sudo lsns -p <PID> to see every namespace of one process at once."
+          ]
+        }
+      ],
+      "infoBox": {
+        "type": "info",
+        "content": "Golden debugging loop: (1) lsns -p <PID> to inventory the process's namespaces, (2) compare inodes with readlink against a known-good process, (3) check dmesg for EPERM or audit denials, (4) re-run under strace to see which syscall/flag failed."
+      }
+    },
+    {
+      "id": "summary",
+      "title": "20. Summary, Cheat Sheet, and Next Steps",
+      "description": "Everything on one page, plus where to go deeper.",
+      "items": [
+        {
+          "label": "Key Takeaways",
+          "text": [
+            " Namespaces give processes an isolated VIEW of 8 kernel resources - they do not limit usage (that is cgroups).",
+            " The 8 types: mount, UTS, IPC, PID, network, user, cgroup, time - each with its own CLONE_NEW* flag.",
+            " Every process belongs to one namespace of each type; membership is fixed at fork/clone time.",
+            " Observe with ls -l /proc/PID/ns/ and compare inodes; list everything with sudo lsns.",
+            " Create with unshare (add --fork for PID/time), join with nsenter -t PID -a.",
+            " PID namespaces renumber processes so containers have their own PID 1; the host PID stays different.",
+            " Mount namespaces give containers private /proc, /tmp, and rootfs; --mount-proc pairs them with PID namespaces.",
+            " User namespaces map unprivileged host users to root inside - the foundation of rootless containers.",
+            " Docker = clone(CLONE_NEW*) + pivot_root + cgroup limits; pods share namespaces via the pause container.",
+            " Isolation is not security: layer capabilities, seccomp, and MAC profiles on top."
+          ]
+        },
+        {
+          "label": "One-Page Cheat Sheet",
+          "table": {
+            "headers": [
+              "Task",
+              "Command"
+            ],
+            "rows": [
+              [
+                "See your namespaces",
+                "ls -l /proc/$$/ns/"
+              ],
+              [
+                "List all namespaces",
+                "sudo lsns (add -t net for one type)"
+              ],
+              [
+                "New UTS (hostname)",
+                "sudo unshare -u bash"
+              ],
+              [
+                "New IPC",
+                "sudo unshare -i bash"
+              ],
+              [
+                "New mount ns",
+                "sudo unshare -m bash"
+              ],
+              [
+                "New PID ns + fresh /proc",
+                "sudo unshare --pid --fork --mount-proc bash"
+              ],
+              [
+                "New netns (named)",
+                "sudo ip netns add red"
+              ],
+              [
+                "Run cmd in netns",
+                "sudo ip netns exec red ip addr"
+              ],
+              [
+                "New user ns as root",
+                "unshare -Ur bash"
+              ],
+              [
+                "New cgroup ns",
+                "sudo unshare -C bash"
+              ],
+              [
+                "New time ns",
+                "sudo unshare -T --fork bash (kernel 5.6+)"
+              ],
+              [
+                "Everything + chroot",
+                "sudo unshare --mount --uts --ipc --pid --fork --mount-proc chroot /rootfs /bin/bash"
+              ],
+              [
+                "Join a container",
+                "sudo nsenter -t <HOSTPID> -a bash"
+              ],
+              [
+                "Compare two processes",
+                "readlink /proc/A/ns/pid; readlink /proc/B/ns/pid"
+              ],
+              [
+                "Persist a namespace",
+                "mount --bind /proc/PID/ns/xxx /run/ns-name"
+              ]
+            ]
+          }
+        },
+        {
+          "label": "Where to Go Next",
+          "text": [
+            "Linux Network Namespaces: The Complete Guide - the full veth/bridge/NAT lab this guide only previewed",
+            "Linux Control Groups (cgroups): The Complete Guide - the resource-limitation half of containers",
+            "cgroups vs Namespaces - the side-by-side mental model for when to reach for which",
+            "Docker: The Complete A-Z Guide - how runtimes wrap all of this into docker run",
+            "man 7 namespaces, man 1 unshare, man 1 nsenter, man 2 clone - the definitive references",
+            "LWN 'Namespaces in operation' series by Michael Kerrisk - the classic deep reading"
+          ]
+        }
+      ]
+    }
+  ]
+}

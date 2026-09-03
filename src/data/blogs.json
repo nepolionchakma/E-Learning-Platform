@@ -116,5 +116,12 @@
     "content": "A clear side-by-side guide to Linux cgroups and namespaces. Explains how each works at the kernel level, why you use them, their key differences and surprising similarities, how Docker and Kubernetes combine both to build containers, and how to tell them apart when debugging production issues.",
     "author": "E-Learning Platform",
     "date": "2026-08-25"
+  },
+  {
+    "slug": "linux-namespaces",
+    "title": "Linux Namespaces: The Complete A–Z Guide (All 8 Types)",
+    "content": "A comprehensive end-to-end guide to all 8 Linux namespace types. Covers what namespaces are, how the kernel isolates views of mount, PID, network, UTS, IPC, user, cgroup, and time, observing namespaces via /proc/PID/ns and lsns, hands-on labs with unshare and nsenter, persistent namespaces, the clone/unshare/setns kernel API, how Docker and Kubernetes combine namespaces, security caveats, troubleshooting, and a command cheat sheet.",
+    "author": "E-Learning Platform",
+    "date": "2026-09-03"
   }
 ]
